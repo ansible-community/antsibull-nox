@@ -8,6 +8,8 @@
 Dummy test so there is at least one, and pytest won't complain.
 """
 
+from __future__ import annotations
+
 import antsibull_nox  # pylint: disable=unused-import
 
 
