@@ -425,7 +425,7 @@ def add_lint_sessions(
     run_pylint: bool = True,
     pylint_rcfile: str | os.PathLike | None = None,
     pylint_modules_rcfile: str | os.PathLike | None = None,
-    pylint_package: str = "flake8",
+    pylint_package: str = "pylint",
     pylint_ansible_core_package: str | None = "ansible-core",
     pylint_extra_deps: list[str] | None = None,
     # mypy:
