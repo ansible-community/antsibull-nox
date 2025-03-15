@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # antsibull-nox -- Antsibull Nox Helper
 [![Discuss on Matrix at #antsibull:ansible.com](https://img.shields.io/matrix/antsibull:ansible.com.svg?server_fqdn=ansible-accounts.ems.host&label=Discuss%20on%20Matrix%20at%20%23antsibull:ansible.com&logo=matrix)](https://matrix.to/#/#antsibull:ansible.com)
-[![Nox badge](https://github.com/ansible-community/antsibull-nox/workflows/nox/badge.svg?event=push&branch=main)](https://github.com/ansible-community/antsibull-nox/actions?query=workflow%3A%22nox%22+branch%3Amain)
+[![Nox badge](https://github.com/ansible-community/antsibull-nox/actions/workflows/nox.yml/badge.svg)](https://github.com/ansible-community/antsibull-nox/actions?query=workflow%3A%22nox%22+branch%3Amain)
 [![Codecov badge](https://img.shields.io/codecov/c/github/ansible-community/antsibull-nox)](https://codecov.io/gh/ansible-community/antsibull-nox)
 [![REUSE status](https://api.reuse.software/badge/github.com/ansible-community/antsibull-nox)](https://api.reuse.software/info/github.com/ansible-community/antsibull-nox)
 
