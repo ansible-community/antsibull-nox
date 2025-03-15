@@ -1,0 +1,56 @@
+---
+# Author: Felix Fontein <felix@fontein.de>
+# GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or
+# https://www.gnu.org/licenses/gpl-3.0.txt)
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025, Ansible Project
+
+name: Run Antsibull Nox
+description: |-
+  Install Python versions, nox, antsibull-nox, and runs nox.
+inputs:
+  python-version:
+    description: |-
+      Python-version to use. We recommend to stick to the default.
+    required: false
+    default: "3.13"
+  sessions:
+    description: |-
+      Nox sessions to run. We recommend to stick to the default.
+    required: false
+    default: lint
+  working-directory:
+    description: |-
+      The directory where to run the nox sessions in.
+      Should be the directory where the collection's `galaxy.yml` is in, and where the `noxfile.py` is in.
+    required: false
+    default: .
+
+runs:
+  using: composite
+  steps:
+    - name: "Install Python ${{ inputs.python-version }}"
+      uses: actions/setup-python@v5
+      id: python
+      with:
+        python-version: "${{ inputs.python-version }}"
+
+    - name: "Install nox and antsibull-nox"
+      run: |
+        ${{ steps.python.outputs.python-path }} -m pip install ${{ github.action_path }}
+
+    - name: "Set up nox environments"
+      run: |
+        nox --verbose --install-only --sessions ${{ inputs.sessions }}
+      env:
+        FORCE_COLOR: "1"
+      with:
+        working-directory: "${{ inputs.working-directory }}"
+
+    - name: "Run nox"
+      run: |
+        nox --verbose --reuse-existing-virtualenvs --no-install --sessions ${{ inputs.sessions }}
+      env:
+        FORCE_COLOR: "1"
+      with:
+        working-directory: "${{ inputs.working-directory }}"
