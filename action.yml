@@ -38,19 +38,20 @@ runs:
     - name: "Install nox and antsibull-nox"
       run: |
         ${{ steps.python.outputs.python-path }} -m pip install ${{ github.action_path }}
+      shell: bash
 
     - name: "Set up nox environments"
       run: |
         nox --verbose --install-only --sessions ${{ inputs.sessions }}
       env:
         FORCE_COLOR: "1"
-      with:
-        working-directory: "${{ inputs.working-directory }}"
+      shell: bash
+      working-directory: "${{ inputs.working-directory }}"
 
     - name: "Run nox"
       run: |
         nox --verbose --reuse-existing-virtualenvs --no-install --sessions ${{ inputs.sessions }}
       env:
         FORCE_COLOR: "1"
-      with:
-        working-directory: "${{ inputs.working-directory }}"
+      shell: bash
+      working-directory: "${{ inputs.working-directory }}"
