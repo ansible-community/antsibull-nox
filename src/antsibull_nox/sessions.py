@@ -13,8 +13,18 @@ from __future__ import annotations
 import contextlib
 import os
 import shlex
+import typing as t
+from collections.abc import Generator
+from dataclasses import dataclass
+from pathlib import Path
 
 import nox
+
+from .collection import (
+    CollectionData,
+    setup_collections,
+    setup_current_tree,
+)
 
 IN_CI = "GITHUB_ACTIONS" in os.environ
 ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not IN_CI)).lower() in (
@@ -52,8 +62,58 @@ def install(session: nox.Session, *args: str, editable: bool = False, **kwargs):
     session.install(*args, "-U", **kwargs)
 
 
+@dataclass
+class CollectionSetup:
+    collections_root: Path
+    current_place: Path
+    current_root: Path
+    current_collection: CollectionData
+    current_path: Path
+
+    def prefix_current_paths(self, paths: list[str]) -> list[str]:
+        result = []
+        for path in paths:
+            prefixed_path = (self.current_path / path).relative_to(self.current_place)
+            if prefixed_path.exists():
+                result.append(str(prefixed_path))
+        return result
+
+
+def prepare_collections(
+    session: nox.Session, *, extra_deps_files: list[str | os.PathLike] | None = None
+) -> CollectionSetup | None:
+    """
+    Install collections in site-packages.
+    """
+    if isinstance(session.virtualenv, nox.virtualenv.PassthroughEnv):
+        session.warn("No venv. Skip preparing collections...")
+        return None
+    purelib = (
+        session.run(
+            "python",
+            "-c",
+            "import sysconfig; print(sysconfig.get_path('purelib'))",
+            silent=True,
+        )
+        or ""
+    ).strip()
+    setup = setup_collections(
+        purelib, extra_deps_files=extra_deps_files, with_current=False
+    )
+    place = Path(session.virtualenv.location) / "collection-root"
+    place.mkdir(exist_ok=True)
+    current_setup = setup_current_tree(place, setup.current_collection)
+    return CollectionSetup(
+        collections_root=setup.root,
+        current_place=place,
+        current_root=current_setup.root,
+        current_collection=setup.current_collection,
+        current_path=t.cast(Path, current_setup.current_path),
+    )
+
+
 @contextlib.contextmanager
-def ansible_collection_root():
+def ansible_collection_root() -> Generator[tuple[str, str]]:
     """
     Context manager that changes to the root directory and yields the path of
     the root directory and the prefix to the current working directory from the root.
@@ -317,7 +377,9 @@ def add_codeqa(
         command.extend(filter_paths(CODE_FILES + ["noxfile.py"]))
         session.run(*command)
 
-    def execute_pylint(session: nox.Session) -> None:
+    def execute_pylint(
+        session: nox.Session, prepared_collections: CollectionSetup
+    ) -> None:
         if pylint_modules_rcfile is not None and pylint_modules_rcfile != pylint_rcfile:
             # Only run pylint twice when using different configurations
             module_paths = filter_paths(
@@ -331,7 +393,7 @@ def add_codeqa(
             module_paths = []
             other_paths = filter_paths(CODE_FILES)
         command: list[str]
-        with ansible_collection_root() as (root, prefix):
+        with session.chdir(prepared_collections.current_place):
             if module_paths:
                 command = ["pylint"]
                 config = pylint_modules_rcfile or pylint_rcfile
@@ -339,31 +401,46 @@ def add_codeqa(
                     command.extend(
                         [
                             "--rcfile",
-                            os.path.join(root, prefix, config),
+                            os.path.join(
+                                prepared_collections.current_collection.path, config
+                            ),
                         ]
                     )
-                command.extend(["--source-roots", root])
+                command.extend(["--source-roots", "."])
                 command.extend(session.posargs)
-                command.extend(prefix_paths(module_paths, prefix=prefix))
+                command.extend(prepared_collections.prefix_current_paths(module_paths))
                 session.run(*command)
 
             if other_paths:
                 command = ["pylint"]
                 if pylint_rcfile is not None:
                     command.extend(
-                        ["--rcfile", os.path.join(root, prefix, pylint_rcfile)]
+                        [
+                            "--rcfile",
+                            os.path.join(
+                                prepared_collections.current_collection.path,
+                                pylint_rcfile,
+                            ),
+                        ]
                     )
-                command.extend(["--source-roots", root])
+                command.extend(["--source-roots", "."])
                 command.extend(session.posargs)
-                command.extend(prefix_paths(other_paths, prefix=prefix))
+                command.extend(prepared_collections.prefix_current_paths(other_paths))
                 session.run(*command)
 
     def codeqa(session: nox.Session) -> None:
         install(session, *compose_dependencies())
+        prepared_collections: CollectionSetup | None = None
+        if run_pylint:
+            prepared_collections = prepare_collections(
+                session, extra_deps_files=["tests/unit/requirements.yml"]
+            )
+            if not prepared_collections:
+                session.warn("Skipping pylint...")
         if run_flake8:
             execute_flake8(session)
-        if run_pylint:
-            execute_pylint(session)
+        if run_pylint and prepared_collections:
+            execute_pylint(session, prepared_collections)
 
     nox.session(codeqa, name="codeqa", default=False)  # type: ignore
 
@@ -394,22 +471,40 @@ def add_typing(
                 deps.extend(shlex.split(extra_dep))
         return deps
 
-    def execute_mypy(session: nox.Session) -> None:
-        with ansible_collection_root() as (root, prefix):
+    def execute_mypy(
+        session: nox.Session, prepared_collections: CollectionSetup
+    ) -> None:
+        # Make sure that mypy thinks all collections are typed
+        # (prepared_collections.collections_root / "py.typed").touch()
+
+        # Run mypy
+        with session.chdir(prepared_collections.current_place):
             command = ["mypy"]
             if mypy_config is not None:
                 command.extend(
-                    ["--config-file", os.path.join(root, prefix, mypy_config)]
+                    [
+                        "--config-file",
+                        os.path.join(
+                            prepared_collections.current_collection.path, mypy_config
+                        ),
+                    ]
                 )
-            command.append("--explicit-package-bases")
+            # command.append("--explicit-package-bases")
             command.extend(session.posargs)
-            command.extend(prefix_paths(CODE_FILES, prefix=prefix))
-            session.run(*command, env={"MYPYPATH": root})
+            command.extend(prepared_collections.prefix_current_paths(CODE_FILES))
+            session.run(
+                *command, env={"MYPYPATH": str(prepared_collections.current_place)}
+            )
 
     def typing(session: nox.Session) -> None:
         install(session, *compose_dependencies())
-        if run_mypy:
-            execute_mypy(session)
+        prepared_collections = prepare_collections(
+            session, extra_deps_files=["tests/unit/requirements.yml"]
+        )
+        if not prepared_collections:
+            session.warn("Skipping mypy...")
+        if run_mypy and prepared_collections:
+            execute_mypy(session, prepared_collections)
 
     nox.session(typing, name="typing", default=False)  # type: ignore
 
