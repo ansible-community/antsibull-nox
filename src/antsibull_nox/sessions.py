@@ -174,7 +174,7 @@ def filter_paths(
         paths = restrict_paths(paths, restrict)
     if remove:
         paths = remove_paths(paths, remove, extensions)
-    return paths
+    return [path for path in paths if os.path.exists(path)]
 
 
 def add_lint(has_formatters: bool, has_codeqa: bool, has_typing: bool) -> None:
@@ -231,11 +231,12 @@ def add_formatters(
         if isort_config is not None:
             command.extend(["--settings-file", str(isort_config)])
         command.extend(session.posargs)
-        command.extend(CODE_FILES)
-        command.append("noxfile.py")
+        command.extend(filter_paths(CODE_FILES + ["noxfile.py"]))
         session.run(*command)
 
     def execute_black_for(session: nox.Session, paths: list[str]) -> None:
+        if not paths:
+            return
         command = ["black"]
         if black_config is not None:
             command.extend(["--config", str(black_config)])
@@ -245,18 +246,18 @@ def add_formatters(
 
     def execute_black(session: nox.Session) -> None:
         if run_black and run_black_modules:
-            execute_black_for(session, CODE_FILES + ["noxfile.py"])
+            execute_black_for(session, filter_paths(CODE_FILES + ["noxfile.py"]))
             return
         if run_black:
             paths = filter_paths(
-                CODE_FILES + ["noxfile.py"],
+                CODE_FILES,
                 remove=MODULE_PATHS,
                 extensions=[".py"],
             ) + ["noxfile.py"]
             execute_black_for(session, paths)
         if run_black_modules:
             paths = filter_paths(
-                CODE_FILES + ["noxfile.py"],
+                CODE_FILES,
                 restrict=MODULE_PATHS,
                 extensions=[".py"],
             )
@@ -313,8 +314,7 @@ def add_codeqa(
         if flake8_config is not None:
             command.extend(["--config", str(flake8_config)])
         command.extend(session.posargs)
-        command.extend(CODE_FILES)
-        command.append("noxfile.py")
+        command.extend(filter_paths(CODE_FILES + ["noxfile.py"]))
         session.run(*command)
 
     def execute_pylint(session: nox.Session) -> None:
