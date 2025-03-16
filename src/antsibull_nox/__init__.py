@@ -12,6 +12,6 @@ from __future__ import annotations
 
 from .sessions import add_lint_sessions  # noqa: F401
 
-__version__ = "0.0.1"
+__version__ = "0.0.1.post0"
 
 __all__ = ("__version__",)
