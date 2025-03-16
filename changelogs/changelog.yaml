@@ -1,3 +1,9 @@
 ---
 ancestor: null
-releases: {}
+releases:
+  0.0.1:
+    changes:
+      release_summary: Initial alpha release.
+    fragments:
+      - 0.0.1.yml
+    release_date: '2025-03-16'
