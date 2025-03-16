@@ -101,7 +101,7 @@ def restrict_paths(paths: list[str], restrict: list[str]) -> list[str]:
         if not match_path(path, is_file, restrict):
             if not is_file:
                 for check in restrict:
-                    if check.startswith(path):
+                    if check.startswith(path) and os.path.exists(check):
                         result.append(check)
             continue
         result.append(path)
