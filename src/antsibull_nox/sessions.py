@@ -323,7 +323,9 @@ def add_codeqa(
             module_paths = filter_paths(
                 CODE_FILES, restrict=MODULE_PATHS, extensions=[".py"]
             )
-            other_paths = filter_paths(CODE_FILES, remove=MODULE_PATHS, extensions=[".py"])
+            other_paths = filter_paths(
+                CODE_FILES, remove=MODULE_PATHS, extensions=[".py"]
+            )
         else:
             # Otherwise run it only once using the general configuration
             module_paths = []
