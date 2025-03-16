@@ -318,10 +318,16 @@ def add_codeqa(
         session.run(*command)
 
     def execute_pylint(session: nox.Session) -> None:
-        module_paths = filter_paths(
-            CODE_FILES, restrict=MODULE_PATHS, extensions=[".py"]
-        )
-        other_paths = filter_paths(CODE_FILES, remove=MODULE_PATHS, extensions=[".py"])
+        if pylint_modules_rcfile is not None and pylint_modules_rcfile != pylint_rcfile:
+            # Only run pylint twice when using different configurations
+            module_paths = filter_paths(
+                CODE_FILES, restrict=MODULE_PATHS, extensions=[".py"]
+            )
+            other_paths = filter_paths(CODE_FILES, remove=MODULE_PATHS, extensions=[".py"])
+        else:
+            # Otherwise run it only once using the general configuration
+            module_paths = []
+            other_paths = filter_paths(CODE_FILES)
         command: list[str]
         with ansible_collection_root() as (root, prefix):
             if module_paths:
