@@ -15,7 +15,7 @@ import json
 import os
 import shutil
 import subprocess
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -103,7 +103,7 @@ def _fs_list_local_collections() -> Generator[CollectionData]:
 
     # Determine potential root
     cwd = Path.cwd()
-    parents = cwd.parents
+    parents: Sequence[Path] = cwd.parents
     if len(parents) > 3 and parents[2].name == "ansible_collections":
         root = parents[3]
 
