@@ -64,6 +64,10 @@ def install(session: nox.Session, *args: str, editable: bool = False, **kwargs):
 
 @dataclass
 class CollectionSetup:
+    """
+    Information on the setup collections.
+    """
+
     collections_root: Path
     current_place: Path
     current_root: Path
@@ -71,6 +75,9 @@ class CollectionSetup:
     current_path: Path
 
     def prefix_current_paths(self, paths: list[str]) -> list[str]:
+        """
+        Prefix the list of given paths with ``current_path``.
+        """
         result = []
         for path in paths:
             prefixed_path = (self.current_path / path).relative_to(self.current_place)
@@ -88,20 +95,11 @@ def prepare_collections(
     if isinstance(session.virtualenv, nox.virtualenv.PassthroughEnv):
         session.warn("No venv. Skip preparing collections...")
         return None
-    purelib = (
-        session.run(
-            "python",
-            "-c",
-            "import sysconfig; print(sysconfig.get_path('purelib'))",
-            silent=True,
-        )
-        or ""
-    ).strip()
-    setup = setup_collections(
-        purelib, extra_deps_files=extra_deps_files, with_current=False
-    )
     place = Path(session.virtualenv.location) / "collection-root"
     place.mkdir(exist_ok=True)
+    setup = setup_collections(
+        place, extra_deps_files=extra_deps_files, with_current=False
+    )
     current_setup = setup_current_tree(place, setup.current_collection)
     return CollectionSetup(
         collections_root=setup.root,
@@ -333,7 +331,7 @@ def add_formatters(
     nox.session(formatters, name="formatters", default=False)  # type: ignore
 
 
-def add_codeqa(
+def add_codeqa(  # noqa: C901
     *,
     # flake8:
     run_flake8: bool,
@@ -377,6 +375,25 @@ def add_codeqa(
         command.extend(filter_paths(CODE_FILES + ["noxfile.py"]))
         session.run(*command)
 
+    def execute_pylint_impl(
+        session: nox.Session,
+        prepared_collections: CollectionSetup,
+        config: os.PathLike | str | None,
+        paths: list[str],
+    ):
+        command = ["pylint"]
+        if config is not None:
+            command.extend(
+                [
+                    "--rcfile",
+                    os.path.join(prepared_collections.current_collection.path, config),
+                ]
+            )
+        command.extend(["--source-roots", "."])
+        command.extend(session.posargs)
+        command.extend(prepared_collections.prefix_current_paths(paths))
+        session.run(*command)
+
     def execute_pylint(
         session: nox.Session, prepared_collections: CollectionSetup
     ) -> None:
@@ -392,41 +409,20 @@ def add_codeqa(
             # Otherwise run it only once using the general configuration
             module_paths = []
             other_paths = filter_paths(CODE_FILES)
-        command: list[str]
+
         with session.chdir(prepared_collections.current_place):
             if module_paths:
-                command = ["pylint"]
-                config = pylint_modules_rcfile or pylint_rcfile
-                if config is not None:
-                    command.extend(
-                        [
-                            "--rcfile",
-                            os.path.join(
-                                prepared_collections.current_collection.path, config
-                            ),
-                        ]
-                    )
-                command.extend(["--source-roots", "."])
-                command.extend(session.posargs)
-                command.extend(prepared_collections.prefix_current_paths(module_paths))
-                session.run(*command)
+                execute_pylint_impl(
+                    session,
+                    prepared_collections,
+                    pylint_modules_rcfile or pylint_rcfile,
+                    module_paths,
+                )
 
             if other_paths:
-                command = ["pylint"]
-                if pylint_rcfile is not None:
-                    command.extend(
-                        [
-                            "--rcfile",
-                            os.path.join(
-                                prepared_collections.current_collection.path,
-                                pylint_rcfile,
-                            ),
-                        ]
-                    )
-                command.extend(["--source-roots", "."])
-                command.extend(session.posargs)
-                command.extend(prepared_collections.prefix_current_paths(other_paths))
-                session.run(*command)
+                execute_pylint_impl(
+                    session, prepared_collections, pylint_rcfile, other_paths
+                )
 
     def codeqa(session: nox.Session) -> None:
         install(session, *compose_dependencies())
@@ -489,7 +485,8 @@ def add_typing(
                         ),
                     ]
                 )
-            # command.append("--explicit-package-bases")
+            command.append("--namespace-packages")
+            command.append("--explicit-package-bases")
             command.extend(session.posargs)
             command.extend(prepared_collections.prefix_current_paths(CODE_FILES))
             session.run(

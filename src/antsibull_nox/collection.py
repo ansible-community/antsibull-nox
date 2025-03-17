@@ -19,11 +19,13 @@ from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+from antsibull_fileutils.copier import Copier, GitCopier
+from antsibull_fileutils.vcs import detect_vcs
 from antsibull_fileutils.yaml import load_yaml_file
 
 
 @dataclass
-class CollectionData:
+class CollectionData:  # pylint: disable=too-many-instance-attributes
     """
     An Ansible collection.
     """
@@ -124,7 +126,7 @@ def _fs_list_local_collections() -> Generator[CollectionData]:
         ) from exc
 
     # Search tree
-    if root:
+    if root:  # pylint: disable=too-many-nested-blocks
         for namespace in root.iterdir():
             try:
                 if namespace.is_dir() or namespace.is_symlink():
@@ -315,19 +317,26 @@ def _extract_collections_from_extra_deps_file(path: str | os.PathLike) -> list[s
 
 @dataclass
 class SetupResult:
+    """
+    Information on how the collections are set up.
+    """
+
     root: Path
     current_collection: CollectionData
     current_path: Path | None
 
 
 def setup_collections(
-    purelib: str | os.PathLike,
+    destination: str | os.PathLike,
     *,
     extra_deps_files: list[str | os.PathLike] | None = None,
     with_current: bool = True,
 ) -> SetupResult:
+    """
+    Setup all collections in a tree structure inside the destination directory.
+    """
     all_collections = get_collection_list()
-    destination_root = Path(purelib) / "ansible_collections"
+    destination_root = Path(destination) / "ansible_collections"
     destination_root.mkdir(exist_ok=True)
     current = all_collections.current
     collections_to_install = {current.full_name: current}
@@ -357,21 +366,50 @@ def setup_collections(
     )
 
 
+def _copy_collection(collection: CollectionData, path: Path) -> None:
+    if path.exists():
+        _remove(path)
+    vcs = detect_vcs(collection.path)
+    copier = {
+        "none": Copier,
+        "git": GitCopier,
+    }.get(vcs, Copier)()
+    copier.copy(collection.path, path, exclude_root=[".nox", ".tox"])
+
+
+def _copy_collection_rsync_hard_links(collection: CollectionData, path: Path) -> None:
+    subprocess.run(
+        [
+            "rsync",
+            "-av",
+            "--delete",
+            "--exclude",
+            ".nox",
+            "--link-dest",
+            str(collection.path) + "/",
+            "--",
+            str(collection.path) + "/",
+            str(path) + "/",
+        ],
+        check=True,
+    )
+
+
 def setup_current_tree(
     place: str | os.PathLike, current_collection: CollectionData
 ) -> SetupResult:
+    """
+    Setup a tree structure with the current collection in it.
+    """
+
     path = Path(place)
     root = path / "ansible_collections"
     root.mkdir(exist_ok=True)
     namespace = root / current_collection.namespace
     namespace.mkdir(exist_ok=True)
     collection = namespace / current_collection.name
-    # _install_collection(current_collection, collection)
-    _install_current_collection(current_collection, collection)
-    # Another try using hard-links (as optimization of copying content):
-    # subprocess.run(["rsync", "-av", "--delete", "--exclude", ".nox",
-    #                 "--link-dest", str(current_collection.path) + "/",
-    #                 "--", str(current_collection.path) + "/", str(collection) + "/"])
+    _copy_collection(current_collection, collection)
+    # _copy_collection_rsync_hard_links(current_collection, collection)
     return SetupResult(
         root=root,
         current_collection=current_collection,
