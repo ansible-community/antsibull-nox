@@ -380,7 +380,7 @@ def add_codeqa(  # noqa: C901
         prepared_collections: CollectionSetup,
         config: os.PathLike | str | None,
         paths: list[str],
-    ):
+    ) -> None:
         command = ["pylint"]
         if config is not None:
             command.extend(

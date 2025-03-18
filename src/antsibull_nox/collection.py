@@ -47,7 +47,7 @@ def _load_collection_data_from_disk(
     name: str | None = None,
     root: Path | None = None,
     current: bool = False,
-):
+) -> CollectionData:
     galaxy_yml = path / "galaxy.yml"
     manifest_json = path / "MANIFEST.json"
     found: Path
