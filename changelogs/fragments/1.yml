@@ -4,3 +4,4 @@ minor_changes:
      and it also allows the dependent collections to live in another tree structure,
      as long as ``ansible-galaxy collection list`` can find them
      (https://github.com/ansible-community/antsibull-nox/pull/1)."
+  - "antsibull-nox now depends on antsibull-fileutils >= 1.2.0 (https://github.com/ansible-community/antsibull-nox/pull/1)."
