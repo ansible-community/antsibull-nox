@@ -98,7 +98,7 @@ def _load_collection_data_from_disk(
     )
 
 
-def _fs_list_local_collections() -> Generator[CollectionData]:
+def _fs_list_local_collections() -> Iterator[CollectionData]:
     root: Path | None = None
 
     # Determine potential root
