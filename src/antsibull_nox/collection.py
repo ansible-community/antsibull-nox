@@ -130,7 +130,7 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
         for namespace in root.iterdir():
             try:
                 if namespace.is_dir() or namespace.is_symlink():
-                    for name in root.iterdir():
+                    for name in namespace.iterdir():
                         try:
                             if name.is_dir() or name.is_symlink():
                                 yield _load_collection_data_from_disk(
