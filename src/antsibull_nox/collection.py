@@ -15,7 +15,7 @@ import json
 import os
 import shutil
 import subprocess
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -147,7 +147,7 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
                 pass
 
 
-def _galaxy_list_collections() -> Generator[CollectionData]:
+def _galaxy_list_collections() -> Iterator[CollectionData]:
     try:
         p = subprocess.run(
             ["ansible-galaxy", "collection", "list", "--format", "json"],
@@ -321,8 +321,13 @@ class SetupResult:
     Information on how the collections are set up.
     """
 
+    # The path of the ansible_collections directory.
     root: Path
+
+    # Data on the current collection (as in the repository).
     current_collection: CollectionData
+
+    # If it was installed, the path of the current collection inside the collection tree below root.
     current_path: Path | None
 
 

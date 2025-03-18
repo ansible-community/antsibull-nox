@@ -68,10 +68,26 @@ class CollectionSetup:
     Information on the setup collections.
     """
 
+    # The path of the ansible_collections directory where all dependent collections
+    # are installed. Is currently identical to current_root, but that might change
+    # or depend on options in the future.
     collections_root: Path
+
+    # The directory in which ansible_collections can be found, as well as
+    # ansible_collections/<namespace>/<name> points to a copy of the current collection.
     current_place: Path
+
+    # The path of the ansible_collections directory that contains the current collection.
+    # The following is always true:
+    #   current_root == current_place / "ansible_collections"
     current_root: Path
+
+    # Data on the current collection (as in the repository).
     current_collection: CollectionData
+
+    # The path of the current collection inside the collection tree below current_root.
+    # The following is always true:
+    #   current_path == current_root / current_collection.namespace / current_collection.name
     current_path: Path
 
     def prefix_current_paths(self, paths: list[str]) -> list[str]:
@@ -470,9 +486,6 @@ def add_typing(
     def execute_mypy(
         session: nox.Session, prepared_collections: CollectionSetup
     ) -> None:
-        # Make sure that mypy thinks all collections are typed
-        # (prepared_collections.collections_root / "py.typed").touch()
-
         # Run mypy
         with session.chdir(prepared_collections.current_place):
             command = ["mypy"]
