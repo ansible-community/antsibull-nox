@@ -139,10 +139,10 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
                                     name=name.name,
                                     root=root,
                                 )
-                        except:  # noqa: E722, pylint: disable=bare-except
+                        except Exception:  # pylint: disable=broad-exception-caught
                             # If name doesn't happen to be a (symlink to a) directory, ...
                             pass
-            except:  # noqa: E722, pylint: disable=bare-except
+            except Exception:  # pylint: disable=broad-exception-caught
                 # If namespace doesn't happen to be a (symlink to a) directory, ...
                 pass
 
