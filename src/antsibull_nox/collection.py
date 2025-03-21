@@ -110,11 +110,7 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
     # Current collection
     try:
         current = _load_collection_data_from_disk(cwd, root=root, current=True)
-        if (
-            root
-            and current.namespace == parents[0].name
-            and current.name == cwd.name
-        ):
+        if root and current.namespace == parents[0].name and current.name == cwd.name:
             yield current
         else:
             root = None
