@@ -104,16 +104,16 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
     # Determine potential root
     cwd = Path.cwd()
     parents: Sequence[Path] = cwd.parents
-    if len(parents) > 3 and parents[2].name == "ansible_collections":
-        root = parents[3]
+    if len(parents) > 2 and parents[1].name == "ansible_collections":
+        root = parents[1]
 
     # Current collection
     try:
         current = _load_collection_data_from_disk(cwd, root=root, current=True)
         if (
             root
-            and current.namespace == parents[1].name
-            and current.name == parents[0].name
+            and current.namespace == parents[0].name
+            and current.name == cwd.name
         ):
             yield current
         else:
@@ -131,6 +131,8 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
             try:
                 if namespace.is_dir() or namespace.is_symlink():
                     for name in namespace.iterdir():
+                        if name == cwd:
+                            continue
                         try:
                             if name.is_dir() or name.is_symlink():
                                 yield _load_collection_data_from_disk(
