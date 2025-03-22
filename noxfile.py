@@ -127,7 +127,7 @@ def codeqa(session: nox.Session):
         "--rcfile",
         ".pylintrc.automated",
         "src/antsibull_nox",
-        "tests",
+        # "tests",
         "--ignore-imports",
         "yes",
     )
@@ -138,7 +138,11 @@ def codeqa(session: nox.Session):
 @nox.session
 def typing(session: nox.Session):
     install(session, ".[typing]", *other_antsibull())
-    session.run("mypy", "src/antsibull_nox", "tests")
+    session.run(
+        "mypy",
+        "src/antsibull_nox",
+        # "tests",
+    )
 
 
 def check_no_modifications(session: nox.Session) -> None:

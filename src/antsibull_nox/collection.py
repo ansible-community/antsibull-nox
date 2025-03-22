@@ -14,7 +14,7 @@ import functools
 import json
 import os
 import shutil
-import subprocess
+import typing as t
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,6 +22,10 @@ from pathlib import Path
 from antsibull_fileutils.copier import Copier, GitCopier
 from antsibull_fileutils.vcs import detect_vcs
 from antsibull_fileutils.yaml import load_yaml_file
+
+# Function that runs a command (and fails on non-zero return code)
+# and returns a tuple (stdout, stderr)
+Runner = t.Callable[[list[str]], tuple[bytes, bytes]]
 
 
 @dataclass
@@ -39,6 +43,32 @@ class CollectionData:  # pylint: disable=too-many-instance-attributes
     dependencies: dict[str, str]
     current: bool
 
+    @classmethod
+    def create(
+        cls,
+        *,
+        collections_root_path: Path | None = None,
+        path: Path,
+        full_name: str,
+        version: str | None = None,
+        dependencies: dict[str, str] | None = None,
+        current: bool = False,
+    ):
+        """
+        Create a CollectionData object.
+        """
+        namespace, name = full_name.split(".", 1)
+        return CollectionData(
+            collections_root_path=collections_root_path,
+            path=path,
+            namespace=namespace,
+            name=name,
+            full_name=full_name,
+            version=version,
+            dependencies=dependencies or {},
+            current=current,
+        )
+
 
 def _load_collection_data_from_disk(
     path: Path,
@@ -53,18 +83,26 @@ def _load_collection_data_from_disk(
     found: Path
     if galaxy_yml.is_file():
         found = galaxy_yml
-        data = load_yaml_file(galaxy_yml)
-        ns = data["namespace"]
-        n = data["name"]
+        try:
+            data = load_yaml_file(galaxy_yml)
+        except Exception as exc:
+            raise ValueError(f"Cannot parse {found}: {exc}") from exc
+        ns = data.get("namespace")
+        n = data.get("name")
         v = data.get("version")
         d = data.get("dependencies")
     elif manifest_json.is_file():
         found = manifest_json
-        with open(manifest_json, "br") as f:
-            data = f.read()
-        ci = data["collection_info"]
-        ns = ci["namespace"]
-        n = ci["name"]
+        try:
+            with open(manifest_json, "br") as f:
+                data = json.load(f)
+        except Exception as exc:
+            raise ValueError(f"Cannot parse {found}: {exc}") from exc
+        ci = data.get("collection_info")
+        if not isinstance(ci, dict):
+            raise ValueError(f"{found} does not contain collection_info")
+        ns = ci.get("namespace")
+        n = ci.get("name")
         v = ci.get("version")
         d = ci.get("dependencies")
     else:
@@ -145,14 +183,10 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
                 pass
 
 
-def _galaxy_list_collections() -> Iterator[CollectionData]:
+def _galaxy_list_collections(runner: Runner) -> Iterator[CollectionData]:
     try:
-        p = subprocess.run(
-            ["ansible-galaxy", "collection", "list", "--format", "json"],
-            check=True,
-            capture_output=True,
-        )
-        data = json.loads(p.stdout)
+        stdout, _ = runner(["ansible-galaxy", "collection", "list", "--format", "json"])
+        data = json.loads(stdout)
         for collections_root_path, collections in data.items():
             root = Path(collections_root_path)
             for collection in collections:
@@ -182,26 +216,34 @@ class CollectionList:
     collection_map: dict[str, CollectionData]
     current: CollectionData
 
-    @staticmethod
-    def collect() -> CollectionList:
+    @classmethod
+    def create(cls, collections_map: dict[str, CollectionData]):
+        """
+        Given a dictionary mapping collection names to collection data, creates a CollectionList.
+
+        One of the collections must have the ``current`` flag set.
+        """
+        collections = sorted(collections_map.values(), key=lambda cli: cli.full_name)
+        current = next(c for c in collections if c.current)
+        return cls(
+            collections=collections,
+            collection_map=collections_map,
+            current=current,
+        )
+
+    @classmethod
+    def collect(cls, runner: Runner) -> CollectionList:
         """
         Search for a list of collections. The result is not cached.
         """
-
         found_collections = {}
         for collection_data in _fs_list_local_collections():
             found_collections[collection_data.full_name] = collection_data
-        for collection_data in _galaxy_list_collections():
+        for collection_data in _galaxy_list_collections(runner):
             # Similar to Ansible, we use the first match
             if collection_data.full_name not in found_collections:
                 found_collections[collection_data.full_name] = collection_data
-        collections = sorted(found_collections.values(), key=lambda cli: cli.full_name)
-        current = next(c for c in collections if c.current)
-        return CollectionList(
-            collections=collections,
-            collection_map=found_collections,
-            current=current,
-        )
+        return cls.create(found_collections)
 
     def find(self, name: str) -> CollectionData | None:
         """
@@ -211,11 +253,11 @@ class CollectionList:
 
 
 @functools.cache
-def get_collection_list() -> CollectionList:
+def get_collection_list(runner: Runner) -> CollectionList:
     """
     Search for a list of collections. The result is cached.
     """
-    return CollectionList.collect()
+    return CollectionList.collect(runner)
 
 
 def _add_all_dependencies(
@@ -297,15 +339,15 @@ def _extract_collections_from_extra_deps_file(path: str | os.PathLike) -> list[s
                 if isinstance(collection, str):
                     result.append(collection)
                     continue
-                if not isinstance(data, dict):
+                if not isinstance(collection, dict):
                     raise ValueError(
                         f"Collection entry #{index + 1} must be a string or dictionary"
                     )
-                if not isinstance(data.get("name"), str):
+                if not isinstance(collection.get("name"), str):
                     raise ValueError(
                         f"Collection entry #{index + 1} does not have a 'name' field of type string"
                     )
-                result.append(data["name"])
+                result.append(collection["name"])
         return result
     except Exception as exc:
         raise ValueError(
@@ -331,6 +373,7 @@ class SetupResult:
 
 def setup_collections(
     destination: str | os.PathLike,
+    runner: Runner,
     *,
     extra_deps_files: list[str | os.PathLike] | None = None,
     with_current: bool = True,
@@ -338,7 +381,7 @@ def setup_collections(
     """
     Setup all collections in a tree structure inside the destination directory.
     """
-    all_collections = get_collection_list()
+    all_collections = get_collection_list(runner)
     destination_root = Path(destination) / "ansible_collections"
     destination_root.mkdir(exist_ok=True)
     current = all_collections.current
@@ -380,8 +423,10 @@ def _copy_collection(collection: CollectionData, path: Path) -> None:
     copier.copy(collection.path, path, exclude_root=[".nox", ".tox"])
 
 
-def _copy_collection_rsync_hard_links(collection: CollectionData, path: Path) -> None:
-    subprocess.run(
+def _copy_collection_rsync_hard_links(
+    collection: CollectionData, path: Path, runner: Runner
+) -> None:
+    _, __ = runner(
         [
             "rsync",
             "-av",
@@ -393,8 +438,7 @@ def _copy_collection_rsync_hard_links(collection: CollectionData, path: Path) ->
             "--",
             str(collection.path) + "/",
             str(path) + "/",
-        ],
-        check=True,
+        ]
     )
 
 
@@ -412,7 +456,7 @@ def setup_current_tree(
     namespace.mkdir(exist_ok=True)
     collection = namespace / current_collection.name
     _copy_collection(current_collection, collection)
-    # _copy_collection_rsync_hard_links(current_collection, collection)
+    # _copy_collection_rsync_hard_links(current_collection, collection, runner)
     return SetupResult(
         root=root,
         current_collection=current_collection,
