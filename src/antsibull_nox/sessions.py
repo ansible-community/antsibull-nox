@@ -13,6 +13,7 @@ from __future__ import annotations
 import contextlib
 import os
 import shlex
+import subprocess
 import typing as t
 from collections.abc import Generator
 from dataclasses import dataclass
@@ -102,6 +103,11 @@ class CollectionSetup:
         return result
 
 
+def _run_subprocess(args: list[str]) -> tuple[bytes, bytes]:
+    p = subprocess.run(args, check=True, capture_output=True)
+    return p.stdout, p.stderr
+
+
 def prepare_collections(
     session: nox.Session, *, extra_deps_files: list[str | os.PathLike] | None = None
 ) -> CollectionSetup | None:
@@ -114,7 +120,7 @@ def prepare_collections(
     place = Path(session.virtualenv.location) / "collection-root"
     place.mkdir(exist_ok=True)
     setup = setup_collections(
-        place, extra_deps_files=extra_deps_files, with_current=False
+        place, _run_subprocess, extra_deps_files=extra_deps_files, with_current=False
     )
     current_setup = setup_current_tree(place, setup.current_collection)
     return CollectionSetup(
