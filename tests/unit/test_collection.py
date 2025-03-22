@@ -28,6 +28,7 @@ from antsibull_nox.collection import (
     _fs_list_local_collections,
     _galaxy_list_collections,
     _load_collection_data_from_disk,
+    get_collection_list,
 )
 
 
@@ -70,6 +71,11 @@ def test__add_all_dependencies() -> None:
                 ),
                 CollectionData.create(
                     path=path, full_name="foo.foo", dependencies={"foo.bam": "*"}
+                ),
+                CollectionData.create(
+                    path=path,
+                    full_name="foo.error",
+                    dependencies={"foo.does_not_exist": "*"},
                 ),
             ]
         }
@@ -120,6 +126,19 @@ def test__add_all_dependencies() -> None:
     }
     _add_all_dependencies(deps, all_collections)
     assert deps.keys() == {"foo.bar", "foo.bam", "foo.foo"}
+
+    # Missing collection
+    with pytest.raises(
+        ValueError,
+        match="^Cannot find collection foo.does_not_exist, a dependency of foo.error!$",
+    ):
+        deps = {
+            name: all_collections.find(name)
+            for name in [
+                "foo.error",
+            ]
+        }
+        _add_all_dependencies(deps, all_collections)
 
 
 def test__extract_collections_from_extra_deps_file_special(tmp_path: Path) -> None:
@@ -557,6 +576,21 @@ def test__galaxy_list_collections(
     assert res == expected_res
 
 
+def test__galaxy_list_collections_fail() -> None:
+    with pytest.raises(
+        ValueError,
+        match="^Error while loading collection list: Expecting property name enclosed in double quotes: ",
+    ):
+        list(
+            _galaxy_list_collections(
+                create_once_runner(
+                    ["ansible-galaxy", "collection", "list", "--format", "json"],
+                    stdout="{",
+                )
+            )
+        )
+
+
 LOAD_COLLECTION_DATA_FROM_DISK_DATA: list[
     tuple[str, str, dict[str, t.Any], dict[str, t.Any]]
 ] = [
@@ -673,6 +707,63 @@ def test__load_collection_data_from_disk_fail(
         _load_collection_data_from_disk(tmp_path, **paras)
 
 
-def test_collection_list_collect() -> None:
-    pass
-    # TODO
+def test_get_collection_list(tmp_path) -> None:
+    root1 = tmp_path / "root-1" / "ansible_collections"
+    root2 = tmp_path / "root-2" / "ansible_collections"
+    root3 = tmp_path / "root-3" / "ansible_collections"
+
+    root1_foo_bar = create_collection_w_dir(
+        root1, namespace="foo", name="bar", version="1.0.0"
+    )
+    root1_foo_bam = create_collection_w_dir(
+        root1, namespace="foo", name="bam", dependencies={"foo.bar": ">= 1.0.0"}
+    )
+    root2_foo_bam = create_collection_w_dir(
+        root2, namespace="foo", name="bam", version="0.1.0"
+    )
+    root3_foo_bar = create_collection_w_dir(root3, namespace="foo", name="bar")
+
+    content = r"""
+{
+    "<ROOT1>": {
+        "foo.bar": {},
+        "foo.bam": {}
+    },
+    "<ROOT2>": {
+        "foo.bam": {},
+        "foo.baz": {}
+    },
+    "<ROOT3>": {
+        "foo.bar": {}
+    }
+}
+"""
+
+    runner = create_once_runner(
+        ["ansible-galaxy", "collection", "list", "--format", "json"],
+        stdout=content.replace("<ROOT1>", str(root1))
+        .replace("<ROOT2>", str(root2))
+        .replace("<ROOT3>", str(root3)),
+    )
+
+    with chdir(root3 / "foo" / "bar"):
+        get_collection_list.cache_clear()  # added by @functools.cache
+        result = get_collection_list(runner)
+
+    assert result.collections == sorted(
+        [
+            CollectionData.create(
+                collections_root_path=root1,
+                path=root1_foo_bam,
+                full_name="foo.bam",
+                dependencies={"foo.bar": ">= 1.0.0"},
+            ),
+            CollectionData.create(
+                collections_root_path=root3,
+                path=root3_foo_bar,
+                full_name="foo.bar",
+                current=True,
+            ),
+        ],
+        key=lambda c: c.full_name,
+    )
