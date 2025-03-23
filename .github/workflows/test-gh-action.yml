@@ -1,0 +1,33 @@
+---
+# GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or
+# https://www.gnu.org/licenses/gpl-3.0.txt)
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2023 Maxwell G <maxwell@gtmx.me
+
+name: test-gh-action
+'on':
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Run once per week (Monday at 03:30 UTC)
+  schedule:
+    - cron: '30 3 * * 1'
+  workflow_dispatch:
+
+env:
+  FORCE_COLOR: "1"
+
+jobs:
+  test-gh-action:
+    runs-on: ubuntu-latest
+    name: "Run nox ${{ matrix.session }} session"
+    steps:
+      - name: Check out antsibull-nox
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run nox action in subdirectory
+        uses: .
+        with:
+          working-directory: tests/test-collection/
