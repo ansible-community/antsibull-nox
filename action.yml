@@ -37,12 +37,16 @@ runs:
 
     - name: "Install nox and antsibull-nox"
       run: |
+        echo "::group::Install nox and antsibull-nox"
         ${{ steps.python.outputs.python-path }} -m pip install ${{ github.action_path }}
+        echo "::endgroup::"
       shell: bash
 
     - name: "Set up nox environments"
       run: |
+        echo "::group::Set up nox environments"
         nox --verbose --install-only --sessions ${{ inputs.sessions }}
+        echo "::endgroup::"
       env:
         FORCE_COLOR: "1"
       shell: bash
