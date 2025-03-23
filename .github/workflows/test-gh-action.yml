@@ -28,6 +28,6 @@ jobs:
         with:
           persist-credentials: false
       - name: Run nox action in subdirectory
-        uses: .
+        uses: ./
         with:
           working-directory: tests/test-collection/
