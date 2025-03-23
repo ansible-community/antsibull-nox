@@ -3,6 +3,19 @@
 # GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+# This tries to recover the default configuration that is overwritten
+# in https://app.codecov.io/account/gh/ansible-community/yaml/:
+
+comment: {} # https://docs.codecov.com/docs/pull-request-comments
+coverage:
+  status: # https://docs.codecov.com/docs/commit-status
+    patch: {}
+    project:
+      default:
+        # https://docs.codecov.com/docs/commit-status#flag_coverage_not_uploaded_behavior
+        flag_coverage_not_uploaded_behavior: include
+
+# Common configurations:
 github_checks:
   annotations: false
 
