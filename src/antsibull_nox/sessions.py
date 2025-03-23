@@ -11,21 +11,25 @@ Create nox sessions.
 from __future__ import annotations
 
 import contextlib
+import functools
 import os
 import shlex
 import subprocess
+import sys
 import typing as t
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
 
 import nox
+from antsibull_fileutils.vcs import detect_vcs, list_git_files
 
 from .collection import (
     CollectionData,
     setup_collections,
     setup_current_tree,
 )
+from .data_util import prepare_data_script
 
 IN_CI = "GITHUB_ACTIONS" in os.environ
 ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not IN_CI)).lower() in (
@@ -46,6 +50,13 @@ MODULE_PATHS = [
     "tests/unit/plugins/modules/",
     "tests/unit/plugins/module_utils/",
 ]
+
+
+def find_data_directory() -> Path:
+    """
+    Retrieve the directory for antsibull_nox.data on disk.
+    """
+    return Path(__file__).parent / "data"
 
 
 def install(session: nox.Session, *args: str, editable: bool = False, **kwargs):
@@ -262,6 +273,25 @@ def filter_paths(
     if remove:
         paths = remove_paths(paths, remove, extensions)
     return [path for path in paths if os.path.exists(path)]
+
+
+@functools.cache
+def list_all_files() -> list[Path]:
+    """
+    List all files of interest in the repository.
+    """
+    directory = Path.cwd()
+    vcs = detect_vcs(directory)
+    if vcs == "git":
+        return [directory / path.decode("utf-8") for path in list_git_files(directory)]
+    result = []
+    for root, dirs, files in os.walk(directory, topdown=True):
+        root_path = Path(root)
+        for file in files:
+            result.append(root_path / file)
+        if root_path == directory and ".nox" in dirs:
+            dirs.remove(".nox")
+    return result
 
 
 def add_lint(has_formatters: bool, has_codeqa: bool, has_typing: bool) -> None:
@@ -650,4 +680,46 @@ def add_docs_check(
     nox.session(docs_check, name="docs-check", default=True)  # type: ignore
 
 
-__all__ = ["add_lint_sessions", "add_docs_check"]
+def add_license_check(
+    *,
+    run_reuse: bool = True,
+    reuse_package: str = "reuse",
+    run_license_check: bool = True,
+    license_check_extra_ignore_paths: list[str] | None = None,
+):
+    """
+    Add license-check session for license checks.
+    """
+
+    def compose_dependencies() -> list[str]:
+        deps = []
+        if run_reuse:
+            deps.append(reuse_package)
+        return deps
+
+    def license_check(session: nox.Session) -> None:
+        install(session, *compose_dependencies())
+        if run_reuse:
+            session.run("reuse", "lint")
+        if run_license_check:
+            files = list_all_files()
+            data = prepare_data_script(
+                session,
+                base_name="license-check",
+                paths=files,
+                extra_data={
+                    "extra_ignore_paths": license_check_extra_ignore_paths or [],
+                },
+            )
+            session.run(
+                sys.executable,
+                find_data_directory() / "license-check.py",
+                "--data",
+                data,
+                external=True,
+            )
+
+    nox.session(license_check, name="license-check", default=True)  # type: ignore
+
+
+__all__ = ["add_lint_sessions", "add_docs_check", "add_license_check"]
