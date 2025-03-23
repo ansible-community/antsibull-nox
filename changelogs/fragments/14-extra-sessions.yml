@@ -1,0 +1,2 @@
+minor_changes:
+  - "A ``docs-check`` session that runs ``antsibull-docs lint-collection-docs`` can be added with ``add_docs_check()`` (https://github.com/ansible-community/antsibull-nox/pull/14)."

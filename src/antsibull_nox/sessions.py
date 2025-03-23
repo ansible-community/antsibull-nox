@@ -109,7 +109,10 @@ def _run_subprocess(args: list[str]) -> tuple[bytes, bytes]:
 
 
 def prepare_collections(
-    session: nox.Session, *, extra_deps_files: list[str | os.PathLike] | None = None
+    session: nox.Session,
+    *,
+    extra_deps_files: list[str | os.PathLike] | None = None,
+    extra_collections: list[str] | None = None,
 ) -> CollectionSetup | None:
     """
     Install collections in site-packages.
@@ -120,7 +123,11 @@ def prepare_collections(
     place = Path(session.virtualenv.location) / "collection-root"
     place.mkdir(exist_ok=True)
     setup = setup_collections(
-        place, _run_subprocess, extra_deps_files=extra_deps_files, with_current=False
+        place,
+        _run_subprocess,
+        extra_deps_files=extra_deps_files,
+        extra_collections=extra_collections,
+        with_current=False,
     )
     current_setup = setup_current_tree(place, setup.current_collection)
     return CollectionSetup(
@@ -599,4 +606,48 @@ def add_lint_sessions(
         )
 
 
-__all__ = ["add_lint_sessions"]
+def add_docs_check(
+    *,
+    antsibull_docs_package: str = "antsibull-docs",
+    ansible_core_package: str = "ansible-core",
+    validate_collection_refs: t.Literal["self", "dependent", "all"] | None = None,
+    extra_collections: list[str] | None = None,
+):
+    """
+    Add docs-check session for linting.
+    """
+
+    def compose_dependencies() -> list[str]:
+        deps = [antsibull_docs_package, ansible_core_package]
+        return deps
+
+    def execute_antsibull_docs(
+        session: nox.Session, prepared_collections: CollectionSetup
+    ) -> None:
+        with session.chdir(prepared_collections.current_path):
+            collections_path = f"{prepared_collections.current_place}"
+            command = [
+                "antsibull-docs",
+                "lint-collection-docs",
+                "--plugin-docs",
+                "--skip-rstcheck",
+                ".",
+            ]
+            if validate_collection_refs:
+                command.extend(["--validate-collection-refs", validate_collection_refs])
+            session.run(*command, env={"ANSIBLE_COLLECTIONS_PATH": collections_path})
+
+    def docs_check(session: nox.Session) -> None:
+        install(session, *compose_dependencies())
+        prepared_collections = prepare_collections(
+            session, extra_collections=extra_collections
+        )
+        if not prepared_collections:
+            session.warn("Skipping antsibull-docs...")
+        if prepared_collections:
+            execute_antsibull_docs(session, prepared_collections)
+
+    nox.session(docs_check, name="docs-check", default=True)  # type: ignore
+
+
+__all__ = ["add_lint_sessions", "add_docs_check"]

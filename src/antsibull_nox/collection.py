@@ -375,6 +375,7 @@ def setup_collections(
     destination: str | os.PathLike,
     runner: Runner,
     *,
+    extra_collections: list[str] | None = None,
     extra_deps_files: list[str | os.PathLike] | None = None,
     with_current: bool = True,
 ) -> SetupResult:
@@ -386,6 +387,14 @@ def setup_collections(
     destination_root.mkdir(exist_ok=True)
     current = all_collections.current
     collections_to_install = {current.full_name: current}
+    if extra_collections:
+        for collection in extra_collections:
+            collection_data = all_collections.find(collection)
+            if collection_data is None:
+                raise ValueError(
+                    f"Cannot find collection {collection} required by the noxfile!"
+                )
+            collections_to_install[collection_data.full_name] = collection_data
     if extra_deps_files is not None:
         for extra_deps_file in extra_deps_files:
             for collection in _extract_collections_from_extra_deps_file(
