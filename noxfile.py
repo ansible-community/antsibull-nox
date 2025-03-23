@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import contextlib
 import os
+import shlex
 import tempfile
 from functools import partial
 from pathlib import Path
@@ -68,6 +69,47 @@ def other_antsibull(
         else:
             raise ValueError(f"install_other_antsibull: invalid argument mode={mode!r}")
     return to_install
+
+
+@nox.session
+def integration(session: nox.Session):
+    install(session, ".[coverage]", *other_antsibull(), editable=True)
+    tmp = Path(session.create_tmp())
+    covfile = tmp / ".coverage"
+    env = {"COVERAGE_FILE": f"{covfile.absolute()}", **session.env}
+
+    def cov_run(*args, cwd: str):
+        cwd_path = Path.cwd() / cwd
+        full_command = [
+            "coverage",
+            "run",
+            "--branch",
+            "--parallel-mode",
+            "--source",
+            "antsibull_nox",
+            "-m",
+            "noxfile",
+            *args,
+        ]
+        full_command_str = shlex.join([str(part) for part in full_command])
+        print(f"\n============ START COMMAND: {full_command_str}")
+        try:
+            with session.chdir(cwd_path):
+                session.run(*full_command, env=env)
+        finally:
+            print(f"============ END COMMAND: {full_command_str}\n")
+
+    cov_run(
+        "--reuse-existing-virtualenvs",
+        "--no-install",
+        "--session",
+        "lint",
+        cwd="tests/test-collection",
+    )
+
+    combined = [str(file) for file in tmp.glob(".coverage.*")]
+    session.run("coverage", "combine", *combined, env=env)
+    session.run("coverage", "report", env=env)
 
 
 @nox.session(python=["3.9", "3.10", "3.11", "3.12", "3.13"])
