@@ -77,5 +77,5 @@ General Public License v3 or, at your option, later. See
 [LICENSES/GPL-3.0-or-later.txt](https://github.com/ansible-community/antsibull-nox/tree/main/LICENSE)
 for a copy of the license.
 
-The repository follows the [REUSE Specification](https://reuse.software/spec/) for declaring copyright and
-licensing information. The only exception are changelog fragments in ``changelog/fragments/``.
+The repository follows the [REUSE Specification](https://reuse.software/spec/)
+for declaring copyright and licensing information.
