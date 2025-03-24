@@ -10,19 +10,15 @@ Create nox sessions.
 
 from __future__ import annotations
 
-import contextlib
-import functools
 import os
 import shlex
 import subprocess
 import sys
 import typing as t
-from collections.abc import Generator
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import nox
-from antsibull_fileutils.vcs import detect_vcs, list_git_files
 
 from .collection import (
     CollectionData,
@@ -30,6 +26,7 @@ from .collection import (
     setup_current_tree,
 )
 from .data_util import prepare_data_script
+from .paths import filter_paths, find_data_directory, list_all_files
 
 IN_CI = "GITHUB_ACTIONS" in os.environ
 ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not IN_CI)).lower() in (
@@ -50,13 +47,6 @@ MODULE_PATHS = [
     "tests/unit/plugins/modules/",
     "tests/unit/plugins/module_utils/",
 ]
-
-
-def find_data_directory() -> Path:
-    """
-    Retrieve the directory for antsibull_nox.data on disk.
-    """
-    return Path(__file__).parent / "data"
 
 
 def install(session: nox.Session, *args: str, editable: bool = False, **kwargs):
@@ -122,6 +112,7 @@ def _run_subprocess(args: list[str]) -> tuple[bytes, bytes]:
 def prepare_collections(
     session: nox.Session,
     *,
+    install_in_site_packages: bool,
     extra_deps_files: list[str | os.PathLike] | None = None,
     extra_collections: list[str] | None = None,
 ) -> CollectionSetup | None:
@@ -131,7 +122,25 @@ def prepare_collections(
     if isinstance(session.virtualenv, nox.virtualenv.PassthroughEnv):
         session.warn("No venv. Skip preparing collections...")
         return None
-    place = Path(session.virtualenv.location) / "collection-root"
+    if install_in_site_packages:
+        purelib = (
+            session.run(
+                "python",
+                "-c",
+                "import sysconfig; print(sysconfig.get_path('purelib'))",
+                silent=True,
+            )
+            or ""
+        ).strip()
+        if not purelib:
+            session.warn(
+                "Cannot find site-packages (probably due to install-only run)."
+                " Skip preparing collections..."
+            )
+            return None
+        place = Path(purelib)
+    else:
+        place = Path(session.virtualenv.location) / "collection-root"
     place.mkdir(exist_ok=True)
     setup = setup_collections(
         place,
@@ -150,148 +159,23 @@ def prepare_collections(
     )
 
 
-@contextlib.contextmanager
-def ansible_collection_root() -> Generator[tuple[str, str]]:
-    """
-    Context manager that changes to the root directory and yields the path of
-    the root directory and the prefix to the current working directory from the root.
-    """
-    cwd = os.getcwd()
-    root = os.path.normpath(os.path.join(cwd, "..", "..", ".."))
-    try:
-        os.chdir(root)
-        yield root, os.path.relpath(cwd, root)
-    finally:
-        os.chdir(cwd)
-
-
-def prefix_paths(paths: list[str], /, prefix: str) -> list[str]:
-    """
-    Prefix paths with the given prefix.
-    """
-    return [os.path.join(prefix, path) for path in paths]
-
-
-def match_path(path: str, is_file: bool, paths: list[str]) -> bool:
-    """
-    Check whether a path (that is a file or not) matches a given list of paths.
-    """
-    for check in paths:
-        if check == path:
-            return True
-        if not is_file:
-            if not check.endswith("/"):
-                check += "/"
-            if path.startswith(check):
-                return True
-    return False
-
-
-def restrict_paths(paths: list[str], restrict: list[str]) -> list[str]:
-    """
-    Restrict a list of paths with a given set of restrictions.
-    """
-    result = []
-    for path in paths:
-        is_file = os.path.isfile(path)
-        if not is_file and not path.endswith("/"):
-            path += "/"
-        if not match_path(path, is_file, restrict):
-            if not is_file:
-                for check in restrict:
-                    if check.startswith(path) and os.path.exists(check):
-                        result.append(check)
-            continue
-        result.append(path)
-    return result
-
-
-def _scan_remove_paths(
-    path: str, remove: list[str], extensions: list[str] | None
-) -> list[str]:
-    result = []
-    for root, dirs, files in os.walk(path, topdown=True):
-        if not root.endswith("/"):
-            root += "/"
-        if match_path(root, False, remove):
-            continue
-        if all(not check.startswith(root) for check in remove):
-            dirs[:] = []
-            result.append(root)
-            continue
-        for file in files:
-            if extensions and os.path.splitext(file)[1] not in extensions:
-                continue
-            filepath = os.path.normpath(os.path.join(root, file))
-            if not match_path(filepath, True, remove):
-                result.append(filepath)
-        for directory in list(dirs):
-            if directory == "__pycache__":
-                continue
-            dirpath = os.path.normpath(os.path.join(root, directory))
-            if match_path(dirpath, False, remove):
-                dirs.remove(directory)
-                continue
-    return result
-
-
-def remove_paths(
-    paths: list[str], remove: list[str], extensions: list[str] | None
-) -> list[str]:
-    """
-    Restrict a list of paths by removing paths.
-
-    If ``extensions`` is specified, only files matching this extension
-    will be considered when files need to be explicitly enumerated.
-    """
-    result = []
-    for path in paths:
-        is_file = os.path.isfile(path)
-        if not is_file and not path.endswith("/"):
-            path += "/"
-        if match_path(path, is_file, remove):
-            continue
-        if not is_file and any(check.startswith(path) for check in remove):
-            result.extend(_scan_remove_paths(path, remove, extensions))
-            continue
-        result.append(path)
-    return result
-
-
-def filter_paths(
-    paths: list[str],
-    /,
-    remove: list[str] | None = None,
-    restrict: list[str] | None = None,
-    extensions: list[str] | None = None,
-) -> list[str]:
-    """
-    Modifies a list of paths by restricting to and/or removing paths.
-    """
-    if restrict:
-        paths = restrict_paths(paths, restrict)
-    if remove:
-        paths = remove_paths(paths, remove, extensions)
-    return [path for path in paths if os.path.exists(path)]
-
-
-@functools.cache
-def list_all_files() -> list[Path]:
-    """
-    List all files of interest in the repository.
-    """
-    directory = Path.cwd()
-    vcs = detect_vcs(directory)
-    if vcs == "git":
-        return [directory / path.decode("utf-8") for path in list_git_files(directory)]
-    result = []
-    for root, dirs, files in os.walk(directory, topdown=True):
-        root_path = Path(root)
-        for file in files:
-            result.append(root_path / file)
-        if root_path == directory and ".nox" in dirs:
-            dirs.remove(".nox")
-    return result
+def _run_bare_script(
+    session: nox.Session, /, name: str, *, extra_data: dict[str, t.Any] | None = None
+) -> None:
+    files = list_all_files()
+    data = prepare_data_script(
+        session,
+        base_name=name,
+        paths=files,
+        extra_data=extra_data,
+    )
+    session.run(
+        sys.executable,
+        find_data_directory() / f"{name}.py",
+        "--data",
+        data,
+        external=True,
+    )
 
 
 def add_lint(has_formatters: bool, has_codeqa: bool, has_typing: bool) -> None:
@@ -488,7 +372,9 @@ def add_codeqa(  # noqa: C901
         prepared_collections: CollectionSetup | None = None
         if run_pylint:
             prepared_collections = prepare_collections(
-                session, extra_deps_files=["tests/unit/requirements.yml"]
+                session,
+                install_in_site_packages=False,
+                extra_deps_files=["tests/unit/requirements.yml"],
             )
             if not prepared_collections:
                 session.warn("Skipping pylint...")
@@ -552,7 +438,9 @@ def add_typing(
     def typing(session: nox.Session) -> None:
         install(session, *compose_dependencies())
         prepared_collections = prepare_collections(
-            session, extra_deps_files=["tests/unit/requirements.yml"]
+            session,
+            install_in_site_packages=False,
+            extra_deps_files=["tests/unit/requirements.yml"],
         )
         if not prepared_collections:
             session.warn("Skipping mypy...")
@@ -670,7 +558,7 @@ def add_docs_check(
     def docs_check(session: nox.Session) -> None:
         install(session, *compose_dependencies())
         prepared_collections = prepare_collections(
-            session, extra_collections=extra_collections
+            session, install_in_site_packages=False, extra_collections=extra_collections
         )
         if not prepared_collections:
             session.warn("Skipping antsibull-docs...")
@@ -678,25 +566,6 @@ def add_docs_check(
             execute_antsibull_docs(session, prepared_collections)
 
     nox.session(docs_check, name="docs-check", default=True)  # type: ignore
-
-
-def _run_bare_script(
-    session: nox.Session, /, name: str, *, extra_data: dict[str, t.Any] | None = None
-) -> None:
-    files = list_all_files()
-    data = prepare_data_script(
-        session,
-        base_name=name,
-        paths=files,
-        extra_data=extra_data,
-    )
-    session.run(
-        sys.executable,
-        find_data_directory() / f"{name}.py",
-        "--data",
-        data,
-        external=True,
-    )
 
 
 def add_license_check(
@@ -814,4 +683,12 @@ def add_extra_checks(
     nox.session(extra_checks, name="extra-checks", python=False, default=True)  # type: ignore
 
 
-__all__ = ["add_lint_sessions", "add_docs_check", "add_license_check"]
+__all__ = [
+    "ActionGroup",
+    "add_docs_check",
+    "add_extra_checks",
+    "add_license_check",
+    "add_lint_sessions",
+    "install",
+    "prepare_collections",
+]
