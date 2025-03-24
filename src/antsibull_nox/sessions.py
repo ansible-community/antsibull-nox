@@ -198,6 +198,7 @@ def add_lint(has_formatters: bool, has_codeqa: bool, has_typing: bool) -> None:
 
 def add_formatters(
     *,
+    extra_code_files: list[str],
     # isort:
     run_isort: bool,
     isort_config: str | os.PathLike | None,
@@ -232,7 +233,7 @@ def add_formatters(
         if isort_config is not None:
             command.extend(["--settings-file", str(isort_config)])
         command.extend(session.posargs)
-        command.extend(filter_paths(CODE_FILES + ["noxfile.py"]))
+        command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
         session.run(*command)
 
     def execute_black_for(session: nox.Session, paths: list[str]) -> None:
@@ -249,7 +250,9 @@ def add_formatters(
 
     def execute_black(session: nox.Session) -> None:
         if run_black and run_black_modules:
-            execute_black_for(session, filter_paths(CODE_FILES + ["noxfile.py"]))
+            execute_black_for(
+                session, filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files)
+            )
             return
         if run_black:
             paths = filter_paths(
@@ -278,6 +281,7 @@ def add_formatters(
 
 def add_codeqa(  # noqa: C901
     *,
+    extra_code_files: list[str],
     # flake8:
     run_flake8: bool,
     flake8_config: str | os.PathLike | None,
@@ -317,7 +321,7 @@ def add_codeqa(  # noqa: C901
         if flake8_config is not None:
             command.extend(["--config", str(flake8_config)])
         command.extend(session.posargs)
-        command.extend(filter_paths(CODE_FILES + ["noxfile.py"]))
+        command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
         session.run(*command)
 
     def execute_pylint_impl(
@@ -390,6 +394,7 @@ def add_codeqa(  # noqa: C901
 
 def add_typing(
     *,
+    extra_code_files: list[str],
     run_mypy: bool,
     mypy_config: str | os.PathLike | None,
     mypy_package: str,
@@ -432,7 +437,9 @@ def add_typing(
             command.append("--namespace-packages")
             command.append("--explicit-package-bases")
             command.extend(session.posargs)
-            command.extend(prepared_collections.prefix_current_paths(CODE_FILES))
+            command.extend(
+                prepared_collections.prefix_current_paths(CODE_FILES + extra_code_files)
+            )
             session.run(
                 *command, env={"MYPYPATH": str(prepared_collections.current_place)}
             )
@@ -454,6 +461,7 @@ def add_typing(
 
 def add_lint_sessions(
     *,
+    extra_code_files: list[str] | None = None,
     # isort:
     run_isort: bool = True,
     isort_config: str | os.PathLike | None = None,
@@ -494,6 +502,7 @@ def add_lint_sessions(
 
     if has_formatters:
         add_formatters(
+            extra_code_files=extra_code_files or [],
             run_isort=run_isort,
             isort_config=isort_config,
             isort_package=isort_package,
@@ -505,6 +514,7 @@ def add_lint_sessions(
 
     if has_codeqa:
         add_codeqa(
+            extra_code_files=extra_code_files or [],
             run_flake8=run_flake8,
             flake8_config=flake8_config,
             flake8_package=flake8_package,
@@ -518,6 +528,7 @@ def add_lint_sessions(
 
     if has_typing:
         add_typing(
+            extra_code_files=extra_code_files or [],
             run_mypy=run_mypy,
             mypy_config=mypy_config,
             mypy_package=mypy_package,
