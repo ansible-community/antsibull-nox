@@ -16,9 +16,9 @@ inputs:
     default: "3.13"
   sessions:
     description: |-
-      Nox sessions to run. We recommend to stick to the default.
+      Nox sessions to run. By default, all sessions are run.
     required: false
-    default: lint
+    default: ""
   working-directory:
     description: |-
       The directory where to run the nox sessions in.
@@ -45,7 +45,7 @@ runs:
     - name: "Set up nox environments"
       run: |
         echo "::group::Set up nox environments"
-        nox --verbose --install-only --sessions ${{ inputs.sessions }}
+        nox --verbose --install-only ${{ inputs.sessions && '--sessions' || '' }} ${{ inputs.sessions }}
         echo "::endgroup::"
       env:
         FORCE_COLOR: "1"
@@ -54,7 +54,7 @@ runs:
 
     - name: "Run nox"
       run: |
-        nox --verbose --reuse-existing-virtualenvs --no-install --sessions ${{ inputs.sessions }}
+        nox --verbose --reuse-existing-virtualenvs --no-install ${{ inputs.sessions && '--sessions' || '' }} ${{ inputs.sessions }}
       env:
         FORCE_COLOR: "1"
       shell: bash
