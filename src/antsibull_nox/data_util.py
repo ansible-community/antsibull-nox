@@ -49,22 +49,49 @@ def setup() -> tuple[list[str], dict[str, t.Any]]:
 
 
 def get_list_of_strings(
-    data: dict[str, t.Any], key: str, *, missing_means_empty: bool = False
+    data: dict[str, t.Any],
+    key: str,
+    *,
+    default: list[str] | None = None,
 ) -> list[str]:
     """
     Retrieves a list of strings from key ``key`` of the JSON object ``data``.
 
-    ``missing_means_empty`` returns ``[]`` if the key is not present, instead
-    of failing.
+    If ``default`` is set to a list, a missing key results in this value being returned.
     """
-    value = data.get(key)
-    if value is None and missing_means_empty:
-        return []
+    sentinel = object()
+    value = data.get(key, sentinel)
+    if value is sentinel:
+        if default is not None:
+            return default
+        raise ValueError(f"{key!r} is not a present")
     if not isinstance(value, list):
         raise ValueError(f"{key!r} is not a list, but {type(key)}")
     if not all(isinstance(entry, str) for entry in value):
         raise ValueError(f"{key!r} is not a list of strings")
     return t.cast(list[str], value)
+
+
+def get_bool(
+    data: dict[str, t.Any],
+    key: str,
+    *,
+    default: bool | None = None,
+) -> bool:
+    """
+    Retrieves a boolean from key ``key`` of the JSON object ``data``.
+
+    If ``default`` is set to a boolean, a missing key results in this value being returned.
+    """
+    sentinel = object()
+    value = data.get(key, sentinel)
+    if value is sentinel:
+        if default is not None:
+            return default
+        raise ValueError(f"{key!r} is not a present")
+    if not isinstance(value, bool):
+        raise ValueError(f"{key!r} is not a bool, but {type(key)}")
+    return value
 
 
 def prepare_data_script(

@@ -680,6 +680,25 @@ def add_docs_check(
     nox.session(docs_check, name="docs-check", default=True)  # type: ignore
 
 
+def _run_bare_script(
+    session: nox.Session, /, name: str, *, extra_data: dict[str, t.Any] | None = None
+) -> None:
+    files = list_all_files()
+    data = prepare_data_script(
+        session,
+        base_name=name,
+        paths=files,
+        extra_data=extra_data,
+    )
+    session.run(
+        sys.executable,
+        find_data_directory() / f"{name}.py",
+        "--data",
+        data,
+        external=True,
+    )
+
+
 def add_license_check(
     *,
     run_reuse: bool = True,
@@ -702,24 +721,61 @@ def add_license_check(
         if run_reuse:
             session.run("reuse", "lint")
         if run_license_check:
-            files = list_all_files()
-            data = prepare_data_script(
+            _run_bare_script(
                 session,
-                base_name="license-check",
-                paths=files,
+                "license-check",
                 extra_data={
                     "extra_ignore_paths": license_check_extra_ignore_paths or [],
                 },
             )
-            session.run(
-                sys.executable,
-                find_data_directory() / "license-check.py",
-                "--data",
-                data,
-                external=True,
-            )
 
     nox.session(license_check, name="license-check", default=True)  # type: ignore
+
+
+def add_extra_checks(
+    *,
+    # no-unwanted-files:
+    run_no_unwanted_files: bool = True,
+    no_unwanted_files_module_extensions: (
+        list[str] | None
+    ) = None,  # default: .cs, .ps1, .psm1, .py
+    no_unwanted_files_other_extensions: list[str] | None = None,  # default: .py, .pyi
+    no_unwanted_files_yaml_extensions: list[str] | None = None,  # default: .yml, .yaml
+    no_unwanted_files_skip_paths: list[str] | None = None,  # default: []
+    no_unwanted_files_skip_directories: list[str] | None = None,  # default: []
+    no_unwanted_files_yaml_directories: (
+        list[str] | None
+    ) = None,  # default: plugins/test/, plugins/filter/
+    no_unwanted_files_allow_symlinks: bool = False,
+):
+    """
+    Add extra-checks session for extra checks.
+    """
+
+    def no_unwanted_files(session: nox.Session) -> None:
+        _run_bare_script(
+            session,
+            "no-unwanted-files",
+            extra_data={
+                "module_extensions": no_unwanted_files_module_extensions
+                or [".cs", ".ps1", ".psm1", ".py"],
+                "other_extensions": no_unwanted_files_other_extensions
+                or [".py", ".pyi"],
+                "yaml_extensions": no_unwanted_files_yaml_extensions
+                or [".yml", ".yaml"],
+                "skip_paths": no_unwanted_files_skip_paths or [],
+                "skip_directories": no_unwanted_files_skip_directories or [],
+                "yaml_directories": no_unwanted_files_yaml_directories
+                or ["plugins/test/", "plugins/filter/"],
+                "allow_symlinks": no_unwanted_files_allow_symlinks,
+            },
+        )
+
+    def extra_checks(session: nox.Session) -> None:
+        if run_no_unwanted_files:
+            no_unwanted_files(session)
+
+    nox.session(extra_checks, name="extra-checks", python=False, default=True)  # type: ignore
 
 
 __all__ = ["add_lint_sessions", "add_docs_check", "add_license_check"]

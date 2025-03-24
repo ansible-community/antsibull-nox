@@ -89,7 +89,7 @@ def main() -> int:
         ".reuse/dep5",
         "LICENSES/*.txt",
         "COPYING",
-    ] + get_list_of_strings(extra_data, "extra_ignore_paths", missing_means_empty=True)
+    ] + get_list_of_strings(extra_data, "extra_ignore_paths", default=[])
 
     no_comments_allowed = [
         fn for pattern in no_comments_allowed for fn in glob.glob(pattern)
