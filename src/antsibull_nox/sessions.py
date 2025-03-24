@@ -239,6 +239,8 @@ def add_formatters(
         if not paths:
             return
         command = ["black"]
+        if run_check:
+            command.append("--check")
         if black_config is not None:
             command.extend(["--config", str(black_config)])
         command.extend(session.posargs)
