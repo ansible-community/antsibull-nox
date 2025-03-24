@@ -110,7 +110,7 @@ def main() -> int:
         if ext not in extensions:
             errors.append(f"{path}: extension must be one of: {', '.join(extensions)}")
 
-    for error in errors:
+    for error in sorted(errors):
         print(error)
     return len(errors) > 0
 

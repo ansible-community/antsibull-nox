@@ -18,7 +18,7 @@ import subprocess
 import sys
 import typing as t
 from collections.abc import Generator
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import nox
@@ -732,6 +732,25 @@ def add_license_check(
     nox.session(license_check, name="license-check", default=True)  # type: ignore
 
 
+@dataclass
+class ActionGroup:
+    """
+    Defines an action group.
+    """
+
+    # Name of the action group.
+    name: str
+    # Regex pattern to match modules that could belong to this action group.
+    pattern: str
+    # Doc fragment that members of the action group must have, but no other module
+    # must have
+    doc_fragment: str
+    # Exclusion list of modules that match the regex, but should not be part of the
+    # action group. All other modules matching the regex are assumed to be part of
+    # the action group.
+    exclusions: list[str] | None = None
+
+
 def add_extra_checks(
     *,
     # no-unwanted-files:
@@ -747,12 +766,15 @@ def add_extra_checks(
         list[str] | None
     ) = None,  # default: plugins/test/, plugins/filter/
     no_unwanted_files_allow_symlinks: bool = False,
+    # action-groups:
+    run_action_groups: bool = False,
+    action_groups_config: list[ActionGroup] | None = None,
 ):
     """
     Add extra-checks session for extra checks.
     """
 
-    def no_unwanted_files(session: nox.Session) -> None:
+    def execute_no_unwanted_files(session: nox.Session) -> None:
         _run_bare_script(
             session,
             "no-unwanted-files",
@@ -771,9 +793,23 @@ def add_extra_checks(
             },
         )
 
+    def execute_action_groups(session: nox.Session) -> None:
+        if action_groups_config is None:
+            session.warn("Skipping action-groups since config is not provided...")
+            return
+        _run_bare_script(
+            session,
+            "action-groups",
+            extra_data={
+                "config": [asdict(cfg) for cfg in action_groups_config],
+            },
+        )
+
     def extra_checks(session: nox.Session) -> None:
         if run_no_unwanted_files:
-            no_unwanted_files(session)
+            execute_no_unwanted_files(session)
+        if run_action_groups:
+            execute_action_groups(session)
 
     nox.session(extra_checks, name="extra-checks", python=False, default=True)  # type: ignore
 
