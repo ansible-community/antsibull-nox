@@ -22,11 +22,19 @@ import nox
 
 from .collection import (
     CollectionData,
+    force_collection_version,
+    load_collection_data_from_disk,
     setup_collections,
     setup_current_tree,
 )
 from .data_util import prepare_data_script
-from .paths import filter_paths, find_data_directory, list_all_files
+from .paths import (
+    copy_collection,
+    filter_paths,
+    find_data_directory,
+    list_all_files,
+    remove_path,
+)
 
 IN_CI = "GITHUB_ACTIONS" in os.environ
 ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not IN_CI)).lower() in (
@@ -696,8 +704,94 @@ def add_extra_checks(
     nox.session(extra_checks, name="extra-checks", python=False, default=True)  # type: ignore
 
 
+def add_build_import_check(
+    *,
+    ansible_core_package: str = "ansible-core",
+    run_galaxy_importer: bool = True,
+    galaxy_importer_package: str = "galaxy-importer",
+    galaxy_importer_config_path: (
+        str | None
+    ) = None,  # https://github.com/ansible/galaxy-importer#configuration
+):
+    """
+    Add license-check session for license checks.
+    """
+
+    def compose_dependencies() -> list[str]:
+        deps = [ansible_core_package]
+        if run_galaxy_importer:
+            deps.append(galaxy_importer_package)
+        return deps
+
+    def build_import_check(session: nox.Session) -> None:
+        install(session, *compose_dependencies())
+
+        tmp = Path(session.create_tmp())
+        collection_dir = tmp / "collection"
+        remove_path(collection_dir)
+        copy_collection(Path.cwd(), collection_dir)
+
+        collection = load_collection_data_from_disk(
+            collection_dir, accept_manifest=False
+        )
+        version = collection.version
+        if not version:
+            version = "0.0.1"
+            force_collection_version(collection_dir, version=version)
+
+        with session.chdir(collection_dir):
+            session.run("ansible-galaxy", "collection", "build")
+
+        tarball = (
+            collection_dir
+            / f"{collection.namespace}-{collection.name}-{version}.tar.gz"
+        )
+        if not tarball.is_file():
+            files = "\n".join(
+                f"* {path.name}"
+                for path in collection_dir.iterdir()
+                if not path.is_dir()
+            )
+            session.error(f"Cannot find file {tarball}! List of all files:\n{files}")
+
+        if run_galaxy_importer:
+            env = {}
+            if galaxy_importer_config_path:
+                env["GALAXY_IMPORTER_CONFIG"] = str(
+                    Path.cwd() / galaxy_importer_config_path
+                )
+            with session.chdir(collection_dir):
+                import_log = (
+                    session.run(
+                        "python",
+                        "-m",
+                        "galaxy_importer.main",
+                        tarball.name,
+                        env=env,
+                        silent=True,
+                    )
+                    or ""
+                )
+            if import_log:
+                print(import_log)
+                error_prefix = "ERROR:"
+                errors = []
+                for line in import_log.splitlines():
+                    if line.startswith(error_prefix):
+                        errors.append(line[len(error_prefix) :].strip())
+                if errors:
+                    messages = "\n".join(f"* {error}" for error in errors)
+                    session.warn(
+                        "Galaxy importer emitted the following non-fatal"
+                        f" error{'' if len(errors) == 1 else 's'}:\n{messages}"
+                    )
+
+    nox.session(build_import_check, name="build-import-check", default=True)  # type: ignore
+
+
 __all__ = [
     "ActionGroup",
+    "add_build_import_check",
     "add_docs_check",
     "add_extra_checks",
     "add_license_check",
