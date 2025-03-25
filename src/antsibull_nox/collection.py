@@ -13,15 +13,15 @@ from __future__ import annotations
 import functools
 import json
 import os
-import shutil
 import typing as t
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from antsibull_fileutils.copier import Copier, GitCopier
-from antsibull_fileutils.vcs import detect_vcs
-from antsibull_fileutils.yaml import load_yaml_file
+from antsibull_fileutils.yaml import load_yaml_file, store_yaml_file
+
+from .paths import copy_collection as _paths_copy_collection
+from .paths import remove_path as _remove
 
 # Function that runs a command (and fails on non-zero return code)
 # and returns a tuple (stdout, stderr)
@@ -70,51 +70,64 @@ class CollectionData:  # pylint: disable=too-many-instance-attributes
         )
 
 
-def _load_collection_data_from_disk(
+def _load_galaxy_yml(galaxy_yml: Path) -> dict[str, t.Any]:
+    try:
+        data = load_yaml_file(galaxy_yml)
+    except Exception as exc:
+        raise ValueError(f"Cannot parse {galaxy_yml}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"{galaxy_yml} is not a dictionary")
+    return data
+
+
+def _load_manifest_json_collection_info(manifest_json: Path) -> dict[str, t.Any]:
+    try:
+        with open(manifest_json, "br") as f:
+            data = json.load(f)
+    except Exception as exc:
+        raise ValueError(f"Cannot parse {manifest_json}: {exc}") from exc
+    ci = data.get("collection_info")
+    if not isinstance(ci, dict):
+        raise ValueError(f"{manifest_json} does not contain collection_info")
+    return ci
+
+
+def load_collection_data_from_disk(
     path: Path,
     *,
     namespace: str | None = None,
     name: str | None = None,
     root: Path | None = None,
     current: bool = False,
+    accept_manifest: bool = True,
 ) -> CollectionData:
+    """
+    Load collection data from disk.
+    """
     galaxy_yml = path / "galaxy.yml"
     manifest_json = path / "MANIFEST.json"
     found: Path
     if galaxy_yml.is_file():
         found = galaxy_yml
-        try:
-            data = load_yaml_file(galaxy_yml)
-        except Exception as exc:
-            raise ValueError(f"Cannot parse {found}: {exc}") from exc
-        ns = data.get("namespace")
-        n = data.get("name")
-        v = data.get("version")
-        d = data.get("dependencies")
+        data = _load_galaxy_yml(galaxy_yml)
+    elif not accept_manifest:
+        raise ValueError(f"Cannot find galaxy.yml in {path}")
     elif manifest_json.is_file():
         found = manifest_json
-        try:
-            with open(manifest_json, "br") as f:
-                data = json.load(f)
-        except Exception as exc:
-            raise ValueError(f"Cannot parse {found}: {exc}") from exc
-        ci = data.get("collection_info")
-        if not isinstance(ci, dict):
-            raise ValueError(f"{found} does not contain collection_info")
-        ns = ci.get("namespace")
-        n = ci.get("name")
-        v = ci.get("version")
-        d = ci.get("dependencies")
+        data = _load_manifest_json_collection_info(manifest_json)
     else:
         raise ValueError(f"Cannot find galaxy.yml or MANIFEST.json in {path}")
 
+    ns = data.get("namespace")
     if not isinstance(ns, str):
         raise ValueError(f"{found} does not contain a namespace")
+    n = data.get("name")
     if not isinstance(n, str):
         raise ValueError(f"{found} does not contain a name")
+    v = data.get("version")
     if not isinstance(v, str):
         v = None
-    d = d or {}
+    d = data.get("dependencies") or {}
     if not isinstance(d, dict):
         raise ValueError(f"{found}'s dependencies is not a mapping")
 
@@ -136,6 +149,25 @@ def _load_collection_data_from_disk(
     )
 
 
+def force_collection_version(path: Path, *, version: str) -> bool:
+    """
+    Make sure galaxy.yml contains this version.
+
+    Returns ``True`` if the version was changed, and ``False`` if the version
+    was already set to this value.
+    """
+    galaxy_yml = path / "galaxy.yml"
+    try:
+        data = load_yaml_file(galaxy_yml)
+    except Exception as exc:
+        raise ValueError(f"Cannot parse {galaxy_yml}: {exc}") from exc
+    if data.get("version") == version:
+        return False
+    data["version"] = version
+    store_yaml_file(galaxy_yml, data)
+    return True
+
+
 def _fs_list_local_collections() -> Iterator[CollectionData]:
     root: Path | None = None
 
@@ -147,12 +179,12 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
 
     # Current collection
     try:
-        current = _load_collection_data_from_disk(cwd, root=root, current=True)
+        current = load_collection_data_from_disk(cwd, root=root, current=True)
         if root and current.namespace == parents[0].name and current.name == cwd.name:
             yield current
         else:
             root = None
-            current = _load_collection_data_from_disk(cwd, current=True)
+            current = load_collection_data_from_disk(cwd, current=True)
             yield current
     except Exception as exc:
         raise ValueError(
@@ -169,7 +201,7 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
                             continue
                         try:
                             if name.is_dir() or name.is_symlink():
-                                yield _load_collection_data_from_disk(
+                                yield load_collection_data_from_disk(
                                     name,
                                     namespace=namespace.name,
                                     name=name.name,
@@ -192,7 +224,7 @@ def _galaxy_list_collections(runner: Runner) -> Iterator[CollectionData]:
             for collection in collections:
                 namespace, name = collection.split(".", 1)
                 try:
-                    yield _load_collection_data_from_disk(
+                    yield load_collection_data_from_disk(
                         root / namespace / name,
                         namespace=namespace,
                         name=name,
@@ -276,13 +308,6 @@ def _add_all_dependencies(
                     )
                 collections[dependency_name] = dependency_data
                 to_process.append(dependency_data)
-
-
-def _remove(path: Path) -> None:
-    if not path.is_symlink() and path.is_dir():
-        shutil.rmtree(path)
-    elif path.exists():
-        path.unlink()
 
 
 def _install_collection(collection: CollectionData, path: Path) -> None:
@@ -422,14 +447,7 @@ def setup_collections(
 
 
 def _copy_collection(collection: CollectionData, path: Path) -> None:
-    if path.exists():
-        _remove(path)
-    vcs = detect_vcs(collection.path)
-    copier = {
-        "none": Copier,
-        "git": GitCopier,
-    }.get(vcs, Copier)()
-    copier.copy(collection.path, path, exclude_root=[".nox", ".tox"])
+    _paths_copy_collection(collection.path, path)
 
 
 def _copy_collection_rsync_hard_links(
@@ -478,6 +496,7 @@ __all__ = [
     "CollectionList",
     "SetupResult",
     "get_collection_list",
+    "load_collection_data_from_disk",
     "setup_collections",
     "setup_current_tree",
 ]

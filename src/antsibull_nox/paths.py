@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import functools
 import os
+import shutil
 from pathlib import Path
 
+from antsibull_fileutils.copier import Copier, GitCopier
 from antsibull_fileutils.vcs import detect_vcs, list_git_files
 
 
@@ -146,4 +148,37 @@ def list_all_files() -> list[Path]:
     return result
 
 
-__all__ = ["filter_paths", "find_data_directory", "list_all_files"]
+def remove_path(path: Path) -> None:
+    """
+    Delete a path.
+    """
+    if not path.is_symlink() and path.is_dir():
+        shutil.rmtree(path)
+    elif path.exists():
+        path.unlink()
+
+
+def copy_collection(source: Path, destination: Path) -> None:
+    """
+    Copy a collection from source to destination.
+
+    Automatically detect supported VCSs and use their information to avoid
+    copying ignored files.
+    """
+    if destination.exists():
+        remove_path(destination)
+    vcs = detect_vcs(source)
+    copier = {
+        "none": Copier,
+        "git": GitCopier,
+    }.get(vcs, Copier)()
+    copier.copy(source, destination, exclude_root=[".nox", ".tox"])
+
+
+__all__ = [
+    "copy_collection",
+    "filter_paths",
+    "find_data_directory",
+    "list_all_files",
+    "remove_path",
+]
