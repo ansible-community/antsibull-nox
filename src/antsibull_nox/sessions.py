@@ -740,13 +740,13 @@ def add_build_import_check(
             force_collection_version(collection_dir, version=version)
 
         with session.chdir(collection_dir):
-            session.run("ansible-galaxy", "collection", "build")
+            build_ran = session.run("ansible-galaxy", "collection", "build") is not None
 
         tarball = (
             collection_dir
             / f"{collection.namespace}-{collection.name}-{version}.tar.gz"
         )
-        if not tarball.is_file():
+        if build_ran and not tarball.is_file():
             files = "\n".join(
                 f"* {path.name}"
                 for path in collection_dir.iterdir()
@@ -754,7 +754,7 @@ def add_build_import_check(
             )
             session.error(f"Cannot find file {tarball}! List of all files:\n{files}")
 
-        if run_galaxy_importer:
+        if run_galaxy_importer and tarball.is_file():
             env = {}
             if galaxy_importer_config_path:
                 env["GALAXY_IMPORTER_CONFIG"] = str(
