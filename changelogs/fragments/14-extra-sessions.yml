@@ -1,0 +1,8 @@
+minor_changes:
+  - "A ``docs-check`` session that runs ``antsibull-docs lint-collection-docs`` can be added with ``add_docs_check()`` (https://github.com/ansible-community/antsibull-nox/pull/14)."
+  - "A ``license-check`` session that runs ``reuse`` and checks for bad licenses can be added with ``add_license_check()`` (https://github.com/ansible-community/antsibull-nox/pull/14)."
+  - "A ``extra-checks`` session that runs extra checks such as ``no-unwanted-files`` or ``action-groups`` can be added with ``add_extra_checks()`` (https://github.com/ansible-community/antsibull-nox/pull/14)."
+  - "The nox workflow now by default runs all sessions, unless restricted with the ``sessions`` parameter (https://github.com/ansible-community/antsibull-nox/pull/14)."
+  - "Allow to provide ``extra_code_files`` to ``add_lint_sessions()`` (https://github.com/ansible-community/antsibull-nox/pull/14)."
+bugfixes:
+  - "Make sure that black in CI checks formatting instead of just reformatting (https://github.com/ansible-community/antsibull-nox/pull/14)."

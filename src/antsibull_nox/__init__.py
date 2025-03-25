@@ -10,7 +10,13 @@ Antsibull Nox Helper.
 
 from __future__ import annotations
 
-from .sessions import add_lint_sessions  # noqa: F401
+from .sessions import (  # noqa: F401
+    ActionGroup,
+    add_docs_check,
+    add_extra_checks,
+    add_license_check,
+    add_lint_sessions,
+)
 
 __version__ = "0.0.1.post0"
 
