@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from .sessions import (  # noqa: F401
     ActionGroup,
+    add_build_import_check,
     add_docs_check,
     add_extra_checks,
     add_license_check,

@@ -27,8 +27,8 @@ from antsibull_nox.collection import (
     _extract_collections_from_extra_deps_file,
     _fs_list_local_collections,
     _galaxy_list_collections,
-    _load_collection_data_from_disk,
     get_collection_list,
+    load_collection_data_from_disk,
 )
 
 
@@ -638,7 +638,7 @@ dependencies:
     "filename, content, paras, expected_result",
     LOAD_COLLECTION_DATA_FROM_DISK_DATA,
 )
-def test__load_collection_data_from_disk(
+def test_load_collection_data_from_disk(
     filename: str,
     content: str,
     paras: dict[str, t.Any],
@@ -646,7 +646,7 @@ def test__load_collection_data_from_disk(
     tmp_path: Path,
 ) -> None:
     (tmp_path / filename).write_text(content)
-    res = _load_collection_data_from_disk(tmp_path, **paras)
+    res = load_collection_data_from_disk(tmp_path, **paras)
     expected_res = CollectionData.create(path=tmp_path, **expected_result)
     assert res == expected_res
 
@@ -695,7 +695,7 @@ version: null
     "filename, content, paras, expected_match",
     LOAD_COLLECTION_DATA_FROM_DISK_FAIL_DATA,
 )
-def test__load_collection_data_from_disk_fail(
+def test_load_collection_data_from_disk_fail(
     filename: str,
     content: str,
     paras: dict[str, t.Any],
@@ -704,7 +704,7 @@ def test__load_collection_data_from_disk_fail(
 ) -> None:
     (tmp_path / filename).write_text(content)
     with pytest.raises(ValueError, match=expected_match):
-        _load_collection_data_from_disk(tmp_path, **paras)
+        load_collection_data_from_disk(tmp_path, **paras)
 
 
 def test_get_collection_list(tmp_path) -> None:
