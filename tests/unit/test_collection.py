@@ -281,12 +281,13 @@ def create_collection_w_dir(
 def create_collection_w_shallow_dir(
     root: Path,
     *,
+    directory_override: str | None = None,
     namespace: str,
     name: str,
     version: str | None = None,
     dependencies: dict[str, str] | None = None,
 ) -> Path:
-    path = root / f"{namespace}.{name}"
+    path = root / (directory_override or f"{namespace}.{name}")
     create_collection(
         path=path,
         namespace=namespace,
@@ -347,6 +348,9 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
         name="bam",
         dependencies={"foo.bar": ">= 1.0.0", "community.baz": "*"},
     )
+    bar_baz = create_collection_w_shallow_dir(
+        root, namespace="bar", name="baz", directory_override="bar.bar"
+    )
     community_baz = create_collection_w_shallow_dir(
         root, namespace="community", name="baz", dependencies={"community.foo": "*"}
     )
@@ -356,6 +360,16 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
     with chdir(foo_bar):
         result = sorted(_fs_list_local_collections(), key=lambda c: c.full_name)
     assert result == [
+        CollectionData.create(
+            path=community_baz,
+            full_name="community.baz",
+            dependencies={"community.foo": "*"},
+        ),
+        CollectionData.create(
+            path=foo_bam,
+            full_name="foo.bam",
+            dependencies={"foo.bar": ">= 1.0.0", "community.baz": "*"},
+        ),
         CollectionData.create(path=foo_bar, full_name="foo.bar", current=True),
     ]
 
@@ -369,6 +383,9 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
         name="bam",
         dependencies={"foo.bar": ">= 1.0.0", "community.baz": "*"},
     )
+    bar_baz = create_collection_w_shallow_dir(
+        root, namespace="bar", name="baz", directory_override="bar.bar"
+    )
     (root / "foo.baz").mkdir()
     with chdir(foo_bam):
         result = sorted(_fs_list_local_collections(), key=lambda c: c.full_name)
@@ -378,6 +395,10 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
             full_name="foo.bam",
             dependencies={"foo.bar": ">= 1.0.0", "community.baz": "*"},
             current=True,
+        ),
+        CollectionData.create(
+            path=foo_bar,
+            full_name="foo.bar",
         ),
     ]
 

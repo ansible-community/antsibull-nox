@@ -196,6 +196,34 @@ def _list_adjacent_collections_ansible_collections_tree(
             pass
 
 
+def _list_adjacent_collections_outside_tree(
+    directory: Path,
+    *,
+    directories_to_ignore: Collection[Path] | None = None,
+) -> Iterator[CollectionData]:
+    directories_to_ignore = directories_to_ignore or ()
+    for collection_dir in directory.iterdir():
+        if collection_dir in directories_to_ignore:
+            continue
+        if not collection_dir.is_dir() and not collection_dir.is_symlink():
+            continue
+        parts = collection_dir.name.split(".")
+        if len(parts) != 2:
+            continue
+        namespace, name = parts
+        if not namespace.isidentifier() or not name.isidentifier():
+            continue
+        try:
+            yield load_collection_data_from_disk(
+                collection_dir,
+                namespace=namespace,
+                name=name,
+            )
+        except Exception:  # pylint: disable=broad-exception-caught
+            # If collection_dir doesn't happen to be a (symlink to a) directory, ...
+            pass
+
+
 def _fs_list_local_collections() -> Iterator[CollectionData]:
     root: Path | None = None
 
@@ -223,6 +251,10 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
     if root:
         yield from _list_adjacent_collections_ansible_collections_tree(
             root, directories_to_ignore=(cwd,)
+        )
+    elif len(parents) > 0:
+        yield from _list_adjacent_collections_outside_tree(
+            parents[0], directories_to_ignore=(cwd,)
         )
 
 
