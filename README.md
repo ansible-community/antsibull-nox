@@ -11,6 +11,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 [![REUSE status](https://api.reuse.software/badge/github.com/ansible-community/antsibull-nox)](https://api.reuse.software/info/github.com/ansible-community/antsibull-nox)
 
 A [nox](https://nox.thea.codes/en/stable/) helper for Ansible collections.
+Please check out the [documentation](https://ansible.readthedocs.io/projects/antsibull-nox/) for more information.
 
 antsibull-nox is covered by the [Ansible Code of Conduct](https://docs.ansible.com/ansible/latest/community/code_of_conduct.html).
 
