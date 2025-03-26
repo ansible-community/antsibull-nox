@@ -186,7 +186,9 @@ def _run_bare_script(
     )
 
 
-def add_lint(has_formatters: bool, has_codeqa: bool, has_typing: bool) -> None:
+def add_lint(
+    *, make_lint_default: bool, has_formatters: bool, has_codeqa: bool, has_typing: bool
+) -> None:
     """
     Add nox meta session for linting.
     """
@@ -201,7 +203,9 @@ def add_lint(has_formatters: bool, has_codeqa: bool, has_typing: bool) -> None:
         dependent_sessions.append("codeqa")
     if has_typing:
         dependent_sessions.append("typing")
-    nox.session(lint, name="lint", default=True, requires=dependent_sessions)  # type: ignore
+    nox.session(  # type: ignore
+        lint, name="lint", default=make_lint_default, requires=dependent_sessions
+    )
 
 
 def add_formatters(
@@ -469,6 +473,7 @@ def add_typing(
 
 def add_lint_sessions(
     *,
+    make_lint_default: bool = True,
     extra_code_files: list[str] | None = None,
     # isort:
     run_isort: bool = True,
@@ -505,7 +510,10 @@ def add_lint_sessions(
     has_typing = run_mypy
 
     add_lint(
-        has_formatters=has_formatters, has_codeqa=has_codeqa, has_typing=has_typing
+        has_formatters=has_formatters,
+        has_codeqa=has_codeqa,
+        has_typing=has_typing,
+        make_lint_default=make_lint_default,
     )
 
     if has_formatters:
@@ -547,6 +555,7 @@ def add_lint_sessions(
 
 def add_docs_check(
     *,
+    make_docs_check_default: bool = True,
     antsibull_docs_package: str = "antsibull-docs",
     ansible_core_package: str = "ansible-core",
     validate_collection_refs: t.Literal["self", "dependent", "all"] | None = None,
@@ -586,11 +595,14 @@ def add_docs_check(
         if prepared_collections:
             execute_antsibull_docs(session, prepared_collections)
 
-    nox.session(docs_check, name="docs-check", default=True)  # type: ignore
+    nox.session(  # type: ignore
+        docs_check, name="docs-check", default=make_docs_check_default
+    )
 
 
 def add_license_check(
     *,
+    make_license_check_default: bool = True,
     run_reuse: bool = True,
     reuse_package: str = "reuse",
     run_license_check: bool = True,
@@ -619,7 +631,9 @@ def add_license_check(
                 },
             )
 
-    nox.session(license_check, name="license-check", default=True)  # type: ignore
+    nox.session(  # type: ignore
+        license_check, name="license-check", default=make_license_check_default
+    )
 
 
 @dataclass
@@ -643,6 +657,7 @@ class ActionGroup:
 
 def add_extra_checks(
     *,
+    make_extra_checks_default: bool = True,
     # no-unwanted-files:
     run_no_unwanted_files: bool = True,
     no_unwanted_files_module_extensions: (
@@ -701,11 +716,17 @@ def add_extra_checks(
         if run_action_groups:
             execute_action_groups(session)
 
-    nox.session(extra_checks, name="extra-checks", python=False, default=True)  # type: ignore
+    nox.session(  # type: ignore
+        extra_checks,
+        name="extra-checks",
+        python=False,
+        default=make_extra_checks_default,
+    )
 
 
 def add_build_import_check(
     *,
+    make_build_import_check_default: bool = True,
     ansible_core_package: str = "ansible-core",
     run_galaxy_importer: bool = True,
     galaxy_importer_package: str = "galaxy-importer",
@@ -786,7 +807,11 @@ def add_build_import_check(
                         f" error{'' if len(errors) == 1 else 's'}:\n{messages}"
                     )
 
-    nox.session(build_import_check, name="build-import-check", default=True)  # type: ignore
+    nox.session(  # type: ignore
+        build_import_check,
+        name="build-import-check",
+        default=make_build_import_check_default,
+    )
 
 
 __all__ = [
