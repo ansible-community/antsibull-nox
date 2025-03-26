@@ -1,0 +1,4 @@
+minor_changes:
+  - "When a collection checkout is not part of an ``ansible_collections`` tree,
+     look for collections in adjacent directories of the form ``<namespace>.<name>`` that match the containing collection's FQCN
+     (https://github.com/ansible-community/antsibull-nox/issues/6, https://github.com/ansible-community/antsibull-nox/pull/22)."

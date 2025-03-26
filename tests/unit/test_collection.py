@@ -17,7 +17,7 @@ import os
 from pathlib import Path
 
 import pytest
-from antsibull_fileutils.yaml import store_yaml_file
+from antsibull_fileutils.yaml import load_yaml_file, store_yaml_file
 
 from antsibull_nox.collection import (
     CollectionData,
@@ -27,6 +27,7 @@ from antsibull_nox.collection import (
     _extract_collections_from_extra_deps_file,
     _fs_list_local_collections,
     _galaxy_list_collections,
+    force_collection_version,
     get_collection_list,
     load_collection_data_from_disk,
 )
@@ -281,12 +282,13 @@ def create_collection_w_dir(
 def create_collection_w_shallow_dir(
     root: Path,
     *,
+    directory_override: str | None = None,
     namespace: str,
     name: str,
     version: str | None = None,
     dependencies: dict[str, str] | None = None,
 ) -> Path:
-    path = root / f"{namespace}.{name}"
+    path = root / (directory_override or f"{namespace}.{name}")
     create_collection(
         path=path,
         namespace=namespace,
@@ -347,15 +349,29 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
         name="bam",
         dependencies={"foo.bar": ">= 1.0.0", "community.baz": "*"},
     )
+    bar_baz = create_collection_w_shallow_dir(
+        root, namespace="bar", name="baz", directory_override="bar.bar"
+    )
     community_baz = create_collection_w_shallow_dir(
         root, namespace="community", name="baz", dependencies={"community.foo": "*"}
     )
     (root / "blah").write_text("nothing")
     (root / "empty").mkdir()
     (root / "foo.baz").mkdir()
+    (root / "1.2").mkdir()
     with chdir(foo_bar):
         result = sorted(_fs_list_local_collections(), key=lambda c: c.full_name)
     assert result == [
+        CollectionData.create(
+            path=community_baz,
+            full_name="community.baz",
+            dependencies={"community.foo": "*"},
+        ),
+        CollectionData.create(
+            path=foo_bam,
+            full_name="foo.bam",
+            dependencies={"foo.bar": ">= 1.0.0", "community.baz": "*"},
+        ),
         CollectionData.create(path=foo_bar, full_name="foo.bar", current=True),
     ]
 
@@ -369,6 +385,9 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
         name="bam",
         dependencies={"foo.bar": ">= 1.0.0", "community.baz": "*"},
     )
+    bar_baz = create_collection_w_shallow_dir(
+        root, namespace="bar", name="baz", directory_override="bar.bar"
+    )
     (root / "foo.baz").mkdir()
     with chdir(foo_bam):
         result = sorted(_fs_list_local_collections(), key=lambda c: c.full_name)
@@ -378,6 +397,10 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
             full_name="foo.bam",
             dependencies={"foo.bar": ">= 1.0.0", "community.baz": "*"},
             current=True,
+        ),
+        CollectionData.create(
+            path=foo_bar,
+            full_name="foo.bar",
         ),
     ]
 
@@ -425,6 +448,13 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
         with pytest.raises(
             ValueError,
             match="^Cannot load current collection's info from.*/something: Cannot parse .*something/galaxy.yml: ",
+        ):
+            list(_fs_list_local_collections())
+
+        (cwd / "galaxy.yml").write_text("[]")
+        with pytest.raises(
+            ValueError,
+            match="^Cannot load current collection's info from.*/something: .*something/galaxy.yml is not a dictionary",
         ):
             list(_fs_list_local_collections())
 
@@ -688,6 +718,12 @@ version: null
         },
         "/galaxy.yml contains namespace 'foo', but was hoping for 'fuu'$",
     ),
+    (
+        "MANIFEST.json",
+        "{}",
+        {"accept_manifest": False},
+        "^Cannot find galaxy.yml in ",
+    ),
 ]
 
 
@@ -767,3 +803,93 @@ def test_get_collection_list(tmp_path) -> None:
         ],
         key=lambda c: c.full_name,
     )
+
+
+FORCE_COLLECTION_VERSION_DATA: list[tuple[str, str, bool, dict[str, t.Any]]] = [
+    (
+        r"""name: foo""",
+        "1.2.3",
+        True,
+        {
+            "name": "foo",
+            "version": "1.2.3",
+        },
+    ),
+    (
+        r"""version: []""",
+        "1.2.3",
+        True,
+        {
+            "version": "1.2.3",
+        },
+    ),
+    (
+        r"""version: 1.2.2""",
+        "1.2.3",
+        True,
+        {
+            "version": "1.2.3",
+        },
+    ),
+    (
+        r"""version: 1.2.3""",
+        "1.2.3",
+        False,
+        {
+            "version": "1.2.3",
+        },
+    ),
+    (
+        r"""
+name: boo
+namespace: foo
+version: null""",
+        "1.2.3",
+        True,
+        {
+            "name": "boo",
+            "namespace": "foo",
+            "version": "1.2.3",
+        },
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "content, version, expected_result, expected_content",
+    FORCE_COLLECTION_VERSION_DATA,
+)
+def test_force_collection_version(
+    content: str,
+    version: str,
+    expected_result: bool,
+    expected_content: dict[str, t.Any],
+    tmp_path: Path,
+) -> None:
+    file = tmp_path / "galaxy.yml"
+    file.write_text(content)
+    result = force_collection_version(tmp_path, version=version)
+    assert result == expected_result
+    assert load_yaml_file(file) == expected_content
+
+
+FORCE_COLLECTION_VERSION_FAIL_DATA: list[tuple[str, str, str]] = [
+    (
+        r"""{""",
+        "1.2.3",
+        "^Cannot parse .*/galaxy.yml: ",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "content, version, expected_match",
+    FORCE_COLLECTION_VERSION_FAIL_DATA,
+)
+def test_force_collection_version_fail(
+    content: str, version: str, expected_match: str, tmp_path: Path
+) -> None:
+    file = tmp_path / "galaxy.yml"
+    file.write_text(content)
+    with pytest.raises(ValueError, match=expected_match):
+        force_collection_version(tmp_path, version=version)

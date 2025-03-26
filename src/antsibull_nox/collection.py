@@ -14,7 +14,7 @@ import functools
 import json
 import os
 import typing as t
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Collection, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -168,6 +168,62 @@ def force_collection_version(path: Path, *, version: str) -> bool:
     return True
 
 
+def _list_adjacent_collections_ansible_collections_tree(
+    root: Path,
+    *,
+    directories_to_ignore: Collection[Path] | None = None,
+) -> Iterator[CollectionData]:
+    directories_to_ignore = directories_to_ignore or ()
+    for namespace in root.iterdir():  # pylint: disable=too-many-nested-blocks
+        try:
+            if namespace.is_dir() or namespace.is_symlink():
+                for name in namespace.iterdir():
+                    if name in directories_to_ignore:
+                        continue
+                    try:
+                        if name.is_dir() or name.is_symlink():
+                            yield load_collection_data_from_disk(
+                                name,
+                                namespace=namespace.name,
+                                name=name.name,
+                                root=root,
+                            )
+                    except Exception:  # pylint: disable=broad-exception-caught
+                        # If name doesn't happen to be a (symlink to a) directory, ...
+                        pass
+        except Exception:  # pylint: disable=broad-exception-caught
+            # If namespace doesn't happen to be a (symlink to a) directory, ...
+            pass
+
+
+def _list_adjacent_collections_outside_tree(
+    directory: Path,
+    *,
+    directories_to_ignore: Collection[Path] | None = None,
+) -> Iterator[CollectionData]:
+    directories_to_ignore = directories_to_ignore or ()
+    for collection_dir in directory.iterdir():
+        if collection_dir in directories_to_ignore:
+            continue
+        if not collection_dir.is_dir() and not collection_dir.is_symlink():
+            continue
+        parts = collection_dir.name.split(".")
+        if len(parts) != 2:
+            continue
+        namespace, name = parts
+        if not namespace.isidentifier() or not name.isidentifier():
+            continue
+        try:
+            yield load_collection_data_from_disk(
+                collection_dir,
+                namespace=namespace,
+                name=name,
+            )
+        except Exception:  # pylint: disable=broad-exception-caught
+            # If collection_dir doesn't happen to be a (symlink to a) directory, ...
+            pass
+
+
 def _fs_list_local_collections() -> Iterator[CollectionData]:
     root: Path | None = None
 
@@ -192,27 +248,14 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
         ) from exc
 
     # Search tree
-    if root:  # pylint: disable=too-many-nested-blocks
-        for namespace in root.iterdir():
-            try:
-                if namespace.is_dir() or namespace.is_symlink():
-                    for name in namespace.iterdir():
-                        if name == cwd:
-                            continue
-                        try:
-                            if name.is_dir() or name.is_symlink():
-                                yield load_collection_data_from_disk(
-                                    name,
-                                    namespace=namespace.name,
-                                    name=name.name,
-                                    root=root,
-                                )
-                        except Exception:  # pylint: disable=broad-exception-caught
-                            # If name doesn't happen to be a (symlink to a) directory, ...
-                            pass
-            except Exception:  # pylint: disable=broad-exception-caught
-                # If namespace doesn't happen to be a (symlink to a) directory, ...
-                pass
+    if root:
+        yield from _list_adjacent_collections_ansible_collections_tree(
+            root, directories_to_ignore=(cwd,)
+        )
+    elif len(parents) > 0:
+        yield from _list_adjacent_collections_outside_tree(
+            parents[0], directories_to_ignore=(cwd,)
+        )
 
 
 def _galaxy_list_collections(runner: Runner) -> Iterator[CollectionData]:
