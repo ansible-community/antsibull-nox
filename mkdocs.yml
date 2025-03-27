@@ -31,4 +31,5 @@ markdown_extensions:
 nav:
   - index.md
   - community.md
+  - reference.md
   - antsibull-nox Release Notes: changelog.md
