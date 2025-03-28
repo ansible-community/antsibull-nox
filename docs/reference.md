@@ -321,9 +321,130 @@ This example is from `community.dns`:
 antsibull_nox.add_license_check()
 ```
 
-## Action groups and unwanted files checks
+## Extra checks: action groups and unwanted files
 
-TODO
+The extra checks session `extra-checks` runs various extra checks.
+Right now it can run the following checks:
+
+* No unwanted files:
+  This check makes sure that no unwanted files are in `plugins/`.
+  Which file extensions are wanted and which are not can be configured.
+
+* Action groups:
+  This check makes sure that the modules you want are part of an action group,
+  and that all modules in an action group use the corresponding docs fragment.
+
+The `antsibull_nox.add_extra_checks()` function that adds this session accepts the following options:
+
+* `make_extra_checks_default: bool` (default `True`):
+  Whether the `license-check` session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* No unwanted files:
+
+    * `run_no_unwanted_files: bool` (default `True`):
+      Whether the check should be run.
+
+    * `no_unwanted_files_module_extensions: list[str] | None` (default `None`):
+      Which file extensions to accept in `plugins/modules/`.
+      The default accepts `.cs`, `.ps1`, `.psm1`, and `.py`.
+
+    * `no_unwanted_files_other_extensions: list[str] | None` (default `None`):
+      Which file extensions to accept in `plugins/` outside `plugins/modules/`.
+      The default accepts `.py` and `.pyi`.
+      Note that YAML files can also be accepted, see the `no_unwanted_files_yaml_extensions`
+      and `no_unwanted_files_yaml_directories` options.
+
+    * `no_unwanted_files_yaml_extensions: list[str] | None` (default `None`):
+      Which file extensions to accept for YAML files.
+      The default accepts `.yml` and `.yaml`.
+      This is only used in directories specified by `no_unwanted_files_yaml_directories`.
+
+    * `no_unwanted_files_skip_paths: list[str] | None` (default `None`):
+      Which files to ignore.
+      The default is that no file is ignored.
+
+    * `no_unwanted_files_skip_directories: list[str] | None` (default `None`):
+      Which directories to ignore.
+      The default is that no directory is ignored.
+
+    * `no_unwanted_files_yaml_directories: list[str] | None` (default `None`):
+      In which directories YAML files should be accepted.
+      The default is `plugins/test/` and `plugins/filter/`.
+
+    * `no_unwanted_files_allow_symlinks: bool` (default `False`):
+      Whether symbolic links should be accepted.
+
+* Action groups:
+
+    * `run_action_groups: bool` (default `False`):
+      Whether the check should be run.
+
+    * `action_groups_config: list[antsibull_nox.ActionGroup] | None` (default `None`):
+      The action groups to check for.
+      If set to `None`, the test is skipped.
+      If set to a list, the test makes sure that exactly these groups exist.
+
+      Every group is an object with the following properties:
+
+      * `name: str` (**required**):
+        The name of the action group.
+        Must be equal to the name used in `meta/runtime.yml`.
+
+      * `pattern: str` (**required**):
+        A [Python regular expression](https://docs.python.org/3/library/re.html) matching
+        modules that usually are part of this action group.
+        Every module that is part of this action group must match this regular expression,
+        otherwise the test will fail.
+        If a module matching this regular expression is not part of the action group,
+        it must be explicitly listed in `exclusions` (see below).
+
+      * `doc_fragment: str` (**required**):
+        The name of the documentation fragment that must be included
+        exactly for all modules that are part of this action group.
+
+      * `exclusions: list[str] | None` (default `None`):
+        This must list all modules whose names match `pattern`,
+        but that are not part of the action group.
+
+### Example code
+
+This example is from `community.dns`.
+
+The collection contains a data file, `plugins/public_suffix_list.dat`, that does not match any known extension.
+Since this file is vendored without modifications,
+and the collection conforms to the REUSE specifiation,
+license information is added in another file `plugins/public_suffix_list.dat.license`.
+
+The collection has two action groups, one for Hetzner DNS modules,
+and one for Hosttech DNS modules.
+
+```python
+antsibull_nox.add_extra_checks(
+    run_no_unwanted_files=True,
+    no_unwanted_files_module_extensions=[".py"],
+    no_unwanted_files_skip_paths=[
+        "plugins/public_suffix_list.dat",
+        "plugins/public_suffix_list.dat.license",
+    ],
+    no_unwanted_files_yaml_extensions=[".yml"],
+    run_action_groups=True,
+    action_groups_config=[
+        antsibull_nox.ActionGroup(
+            name="hetzner",
+            pattern="^hetzner_.*$",
+            exclusions=[],
+            doc_fragment="community.dns.attributes.actiongroup_hetzner",
+        ),
+        antsibull_nox.ActionGroup(
+            name="hosttech",
+            pattern="^hosttech_.*$",
+            exclusions=[],
+            doc_fragment="community.dns.attributes.actiongroup_hosttech",
+        ),
+    ],
+)
+```
 
 ## Collection build and Galaxy import test
 
