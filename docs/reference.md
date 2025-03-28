@@ -33,16 +33,9 @@ import nox
 # error message to the user.
 try:
     import antsibull_nox
-    import antsibull_nox.sessions
 except ImportError:
     print("You need to install antsibull-nox in the same Python environment as nox.")
     sys.exit(1)
-
-
-# Always install latest pip version.
-# (This isn't strictly necessary, but something all antsibull projects do as well
-# in their noxfile.py files.)
-os.environ["VIRTUALENV_DOWNLOAD"] = "1"
 
 
 ... here you can call antsibull_nox functions to define sessions, or define your own ...
