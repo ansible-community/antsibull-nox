@@ -491,5 +491,126 @@ antsibull_nox.add_build_import_check(
 
 ## Adding own tests that need to import from the collection structure
 
-TODO
+Some collections need additional, specific tests for collection-specific properties.
+These can usually be added as regular Nox sessions
+by defining a function and decorating it with `@nox.session()`.
 
+In some cases, though, these tests need to be able to import code from the collection,
+or need to be able to run `ansible-doc` or other tools on the collection
+that expect the collection to be part of an `ansible_collections` tree structure.
+
+For this, antsibull-nox provides a powerful helper function `antsibull_nox.sessions.prepare_collections()`
+which prepares an `ansible_collections` tree structure in the session's temporary directory.
+The tree structure can optionally also be part of `site-packages`,
+to make it importable in Python code.
+
+The function `antsibull_nox.sessions.prepare_collections()` accepts the following parameters:
+
+* `session: nox.Session` (positional argument, **required**):
+  The Nox session object.
+
+* `install_in_site_packages: bool` (keyword argument, **required**):
+  Whether to install the `ansible_collections` tree in `site-packages`.
+  If set to `True`, Python code can import code from the collections.
+  If set to `False`, Python code can **not** import code.
+
+* `extra_deps_files: list[str | os.PathLike] | None` (default `None`):
+  Paths to [collection requirements files](https://docs.ansible.com/ansible/devel/collections_guide/collections_installing.html#install-multiple-collections-with-a-requirements-file)
+  whose collections should be copied into the tree structure.
+
+* `extra_collections: list[str] | None` (default `None`):
+  An explicit list of collections (form `<namespace>.<name>`)
+  that should be copied into the tree structure.
+
+The function returns `antsibull_nox.sessions.CollectionSetup | None`.
+If the return value is `None`, the `ansible_collections` tree was not created for some reason.
+Otherwise, an `antsibull_nox.sessions.CollectionSetup` object is returned,
+which has the following properties:
+
+* `collections_root: Path`:
+  The path of the `ansible_collections` directory where all dependent collections are installed.
+  Is currently identical to `current_root`, but that might change or depend on options in the future.
+
+* `current_place: Path`:
+  The directory in which the `ansible_collections` directory can be found,
+  as well as in which `ansible_collections/<namespace>/<name>` points to a copy of the current collection.
+
+* `current_root: Path`:
+  The path of the ansible_collections directory that contains the current collection.
+  The following is always true:
+  ```python
+  current_root == current_place / "ansible_collections"
+  ```
+
+* `current_collection: antsibull_nox.collection.CollectionData`:
+  Data on the current collection (as in the repository).
+
+    The object contains the following properties:
+
+    * `collections_root_path: Path | None`:
+      Identical to `current_root` above.
+
+    * `path: Path`:
+      The path where the collection repository is.
+
+    * `namespace: str`:
+      The collection's namespace, as found in `galaxy.yml`.
+
+    * `name: str`:
+      The collection's name, as found in `galaxy.yml`.
+
+    * `full_name: str`:
+      The collection's full name.
+      The following is always true:
+      ```python
+      full_name = namespace + "." + name
+      ```
+
+    * `version: str | None`:
+      The collection's version, as found in `galaxy.yml`.
+      If not present in `galaxy.yml`, will be `None`.
+
+    * `dependencies: dict[str, str]`:
+      The collection's dependencies, as found in `galaxy.yml`.
+
+    * `current: bool`:
+      Always `true`.
+
+* `current_path: Path`:
+  The path of the current collection inside the collection tree below `current_root`.
+  The following is always true:
+  ```python
+  current_path == current_root / current_collection.namespace / current_collection.name
+  ```
+
+### Example code
+
+This example is from `community.dns`.
+The `update-docs-fragments.py` script updates some docs fragments
+with information from module utils to ensure that both data sources are in sync.
+
+To be able to do this, the script needs to import the module utils.
+Because of that, we set `install_in_site_packages=True`.
+
+```python
+# Put this in the try/except at the top of the noxfile.py:
+import antsibull_nox.sessions
+
+
+# Whether the noxfile is running in CI (which for community.dns is GitHub Actions)
+IN_CI = "GITHUB_ACTIONS" in os.environ
+
+
+@nox.session(name="update-docs-fragments")
+def update_docs_fragments(session: nox.Session) -> None:
+    antsibull_nox.sessions.install(session, "ansible-core")
+    prepare = antsibull_nox.sessions.prepare_collections(
+        session, install_in_site_packages=True
+    )
+    if not prepare:
+        return
+    data = ["python", "update-docs-fragments.py"]
+    if IN_CI:
+        data.append("--lint")
+    session.run(*data)
+```
