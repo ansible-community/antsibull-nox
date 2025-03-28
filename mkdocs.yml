@@ -30,6 +30,6 @@ markdown_extensions:
   - pymdownx.superfences
 nav:
   - index.md
-  - community.md
   - reference.md
+  - community.md
   - antsibull-nox Release Notes: changelog.md
