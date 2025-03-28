@@ -284,7 +284,42 @@ antsibull_nox.add_docs_check(
 
 ## REUSE and license checks
 
-TODO
+If the collection conforms to the [REUSE specification](https://reuse.software/),
+you can add a `license-check` session to verify conformance.
+
+The `antsibull_nox.add_license_check()` function that adds this session accepts the following options:
+
+* `make_license_check_default: bool` (default `True`):
+  Whether the `license-check` session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* `run_reuse: bool` (default `True`):
+  Whether to run `reuse lint`.
+
+* `reuse_package: str` (default `"reuse"`):
+  The package to install for `reuse` in this session.
+  You can specify a value here to add restrictions to the `reuse` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
+* `run_license_check: bool` (default `True`):
+  Whether a custom check script should be run that validates the following conditions:
+
+  1. All Python code in `plugins/` except module utils, modules, and docs fragments must be `GPL-3.0-or-later` licensed.
+
+  2. Every non-empty file has an allowed license. (This is similar to what `reuse lint` checks.)
+
+* `license_check_extra_ignore_paths: list[str] | None` (default `None`):
+  Allows to specify more paths that are ignored.
+  You can use glob patterns.
+
+### Example code
+
+This example is from `community.dns`:
+
+```python
+antsibull_nox.add_license_check()
+```
 
 ## Action groups and unwanted files checks
 
