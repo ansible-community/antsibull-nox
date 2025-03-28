@@ -327,7 +327,46 @@ TODO
 
 ## Collection build and Galaxy import test
 
-TODO
+The build and import test allows to test whether a collection can be built with `ansible-galaxy collection build`,
+and whether the resulting artefact can be imported by the Galaxy importer.
+
+The `antsibull_nox.add_build_import_check()` function adds the `build-import-check` session accepts the following options:
+
+* `make_build_import_check_default: bool` (default `True`):
+  Whether the `build-import-check` session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* `ansible_core_package: str` (default `"ansible-core"`):
+  The package to install for `ansible-core` in this session.
+  You can specify a value here to add restrictions to the `ansible-core` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
+* `run_galaxy_importer: bool` (default `True`):
+  Whether the Galaxy importer should be run on the built collection artefact.
+
+* `galaxy_importer_package: str` (default `"galaxy-importer"`):
+  The package to install for `galaxy-importer` in this session.
+  You can specify a value here to add restrictions to the `galaxy-importer` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
+* `galaxy_importer_config_path: str | None` (default `None`):
+  Allows to specify a path to a [Galaxy importer configuration file](https://github.com/ansible/galaxy-importer#configuration).
+  This allows to configure which aspects to check.
+  Which settings are enabled depends on the Galaxy server the collection should be imported to.
+  [Ansible Automation Hub](https://www.redhat.com/en/technologies/management/ansible/automation-hub)
+  is using different settings than [Ansible Galaxy](https://galaxy.ansible.com/), for example.
+
+### Example code
+
+This example is from `community.dns`:
+
+```python
+antsibull_nox.add_build_import_check(
+    run_galaxy_importer=True,
+)
+```
 
 ## Adding own tests that need to import from the collection structure
 
