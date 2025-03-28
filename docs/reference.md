@@ -205,6 +205,10 @@ This example is from `community.dns`,
 which uses explicit config files for the formatters and linters,
 and does not format modules and module utils since it relies on the `u` string prefix:
 
+It also uses a different `pylint` config for modules and module utils,
+to be able to have stricter rules for the remaining code,
+which is Python 3 only.
+
 ```python
 antsibull_nox.add_lint_sessions(
     extra_code_files=["update-docs-fragments.py"],
@@ -226,7 +230,57 @@ antsibull_nox.add_lint_sessions(
 
 ## Collection documentation check
 
-TODO
+The collection documentation check allows to use antsibull-docs' `antsibull-docs lint-collection-docs` command to validate various documentation-related things:
+
+* extra documentation (`docs/docsite/extra-docs.yml`, RST files in `docs/docsite/rst/`);
+* links for docsite (`docs/docsite/links.yml`);
+* documentation of modules, plugins, and roles.
+
+The latter validation of modules and plugins is more strict and validates more (and for modules, also different) aspects than the `validate-modules` test of `ansible-test sanity`. Also `validate-modules` currently does not validate test and filter plugins, and role argument specs are not validated by it either.
+
+The test is added with `antsibull_nox.add_docs_check()`, and the session is called `docs-check`. The function has the following configuration settings:
+
+* `make_docs_check_default: bool` (default `True`):
+  Whether the `docs-check` session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* `antsibull_docs_package: str` (default `"antsibull-docs"`):
+  The package to install for `antsibull-docs` in this session.
+  You can specify a value here to add restrictions to the `antsibull-docs` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
+* `ansible_core_package: str` (default `"ansible-core"`):
+  The package to install for `ansible-core` in this session.
+  You can specify a value here to add restrictions to the `ansible-core` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
+* `validate_collection_refs: t.Literal["self", "dependent", "all"] | None` (default `None`):
+  This allows to configure whether references to content (modules/plugins/roles, their options, and return values) in module, plugins, and roles documentation should be validated.
+
+    * If set to `self`, only references to the own collection will be checked.
+
+    * If set to `dependent`, only references to the own collection and collections it (transitively) depends on will be checked.
+
+    * If set to `all`, all references will be checked.
+      Use `extra_collections` to specify other collections that are referenced and that are not dependencies.
+
+    Refer to the [documentation of antsibull-docs](https://ansible.readthedocs.io/projects/antsibull-docs/collection-docs/) for more information.
+
+* `extra_collections: list[str] | None` (default `None`):
+  Allows to ensure that further collections will be added to the search path.
+  This is important when setting `validate_collection_refs="all"`.
+
+### Example code
+
+This example is from `community.dns`:
+
+```python
+antsibull_nox.add_docs_check(
+    validate_collection_refs="all",
+)
+```
 
 ## REUSE and license checks
 
