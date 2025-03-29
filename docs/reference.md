@@ -508,6 +508,15 @@ The function `antsibull_nox.sessions.prepare_collections()` accepts the followin
   If set to `True`, Python code can import code from the collections.
   If set to `False`, Python code can **not** import code.
 
+* `install_out_of_tree: bool` (keyword argument, default `False`):
+  Whether to install the `ansible_collections` tree in `$TEMP`
+  instead of the nox session directory.
+  Setting this to `True` is not allowed if `install_in_site_packages=True`.
+  This is necessary when running tools like `ansible-doc` against the tree
+  that do not accept nested `ansible_collections` directory structures,
+  where `ansible_collections` is found below `ansible_collections/<namespace>/<name>`
+  for a collection `<namespace>.<name>`.
+
 * `extra_deps_files: list[str | os.PathLike] | None` (default `None`):
   Paths to [collection requirements files](https://docs.ansible.com/ansible/devel/collections_guide/collections_installing.html#install-multiple-collections-with-a-requirements-file)
   whose collections should be copied into the tree structure.

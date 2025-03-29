@@ -30,6 +30,7 @@ from .collection import (
 from .data_util import prepare_data_script
 from .paths import (
     copy_collection,
+    create_temp_directory,
     filter_paths,
     find_data_directory,
     list_all_files,
@@ -123,10 +124,15 @@ def prepare_collections(
     install_in_site_packages: bool,
     extra_deps_files: list[str | os.PathLike] | None = None,
     extra_collections: list[str] | None = None,
+    install_out_of_tree: bool = False,  # can not be used with install_in_site_packages=True
 ) -> CollectionSetup | None:
     """
     Install collections in site-packages.
     """
+    if install_out_of_tree and install_in_site_packages:
+        raise ValueError(
+            "install_out_of_tree=True cannot be combined with install_in_site_packages=True"
+        )
     if isinstance(session.virtualenv, nox.virtualenv.PassthroughEnv):
         session.warn("No venv. Skip preparing collections...")
         return None
@@ -147,6 +153,8 @@ def prepare_collections(
             )
             return None
         place = Path(purelib)
+    elif install_out_of_tree:
+        place = create_temp_directory(f"antsibull-nox-{session.name}-collection-root-")
     else:
         place = Path(session.virtualenv.location) / "collection-root"
     place.mkdir(exist_ok=True)
@@ -588,7 +596,10 @@ def add_docs_check(
     def docs_check(session: nox.Session) -> None:
         install(session, *compose_dependencies())
         prepared_collections = prepare_collections(
-            session, install_in_site_packages=False, extra_collections=extra_collections
+            session,
+            install_in_site_packages=False,
+            extra_collections=extra_collections,
+            install_out_of_tree=True,
         )
         if not prepared_collections:
             session.warn("Skipping antsibull-docs...")
