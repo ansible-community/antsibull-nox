@@ -29,7 +29,8 @@ markdown_extensions:
       anchor_linenums: true
   - pymdownx.superfences
 nav:
-  - index.md
-  - reference.md
-  - community.md
+  - Overview: index.md
+  - Getting Started: getting-started.md
+  - noxfile Reference: reference.md
+  - Community: community.md
   - antsibull-nox Release Notes: changelog.md
