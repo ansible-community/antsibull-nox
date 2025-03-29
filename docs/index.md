@@ -15,18 +15,17 @@ A nox helper library for Ansible collections.
 antsibull-nox is covered by the [Ansible Code of Conduct](https://docs.ansible.com/ansible/latest/community/code_of_conduct.html).
 
 To see how antsibull-nox changes, please look at the
-[antsibull-onx changelog](https://github.com/ansible-community/antsibull-nox/blob/main/CHANGELOG.md).
+[antsibull-nox changelog](https://github.com/ansible-community/antsibull-nox/blob/main/CHANGELOG.md).
 
 !!! note
     Need help or want to discuss the project? See our [Community guide](community.md) to learn how to join the conversation!
 
-## Installation
+## Usage
 
-It can be installed with pip:
+Check out the following pages for more information:
 
-```console
-pip install antsibull-nox
-```
+* [Getting Started](getting-started.md)
+* [noxfile Reference](reference.md)
 
 ## License
 

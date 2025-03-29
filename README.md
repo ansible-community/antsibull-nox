@@ -5,6 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
 # antsibull-nox -- Antsibull Nox Helper
+[![Documentation](https://img.shields.io/badge/docs-brightgreen.svg)](https://ansible.readthedocs.io/projects/antsibull-nox/)
 [![Discuss on Matrix at #antsibull:ansible.com](https://img.shields.io/matrix/antsibull:ansible.com.svg?server_fqdn=ansible-accounts.ems.host&label=Discuss%20on%20Matrix%20at%20%23antsibull:ansible.com&logo=matrix)](https://matrix.to/#/#antsibull:ansible.com)
 [![Nox badge](https://github.com/ansible-community/antsibull-nox/actions/workflows/nox.yml/badge.svg)](https://github.com/ansible-community/antsibull-nox/actions?query=workflow%3A%22nox%22+branch%3Amain)
 [![Codecov badge](https://img.shields.io/codecov/c/github/ansible-community/antsibull-nox)](https://codecov.io/gh/ansible-community/antsibull-nox)
@@ -24,6 +25,12 @@ Need help or want to discuss the project? See our [Community guide](https://ansi
 It can be installed with pip:
 
     pip install antsibull-nox
+
+## Versioning and compatibility
+
+From version 1.0.0 on, antsibull-nox sticks to semantic versioning and aims at providing no backwards compatibility breaking changes [**to the documented API**](https://ansible.readthedocs.io/projects/antsibull-nox/reference/) during a major release cycle. We might make exceptions from this in case of security fixes for vulnerabilities that are severe enough.
+
+Interfaces and functions that are not [documented in the API reference](https://ansible.readthedocs.io/projects/antsibull-nox/reference/) are exempt from this and might break even in bugfix releases!
 
 ## Development
 
