@@ -23,7 +23,6 @@ A basic `noxfile.py` using antsibull-nox looks as follows:
 # dependencies = ["nox>=2025.02.09", "antsibull-nox"]
 # ///
 
-import os
 import sys
 
 import nox
@@ -586,6 +585,8 @@ To be able to do this, the script needs to import the module utils.
 Because of that, we set `install_in_site_packages=True`.
 
 ```python
+import os
+
 # Put this in the try/except at the top of the noxfile.py:
 import antsibull_nox.sessions
 
