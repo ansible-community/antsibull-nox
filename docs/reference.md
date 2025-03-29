@@ -11,6 +11,8 @@ This document assumes some basic familiarity with Nox and `noxfile.py` files. If
 * [Nox tutorial](https://nox.thea.codes/en/stable/tutorial.html);
 * [Nox configuration and API](https://nox.thea.codes/en/stable/config.html).
 
+You might also want to read [Getting Started](getting-started.md) first if you haven't already done so.
+
 ## Basic noxfile structure
 
 A basic `noxfile.py` using antsibull-nox looks as follows:
