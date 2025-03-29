@@ -25,6 +25,7 @@ To see how antsibull-nox changes, please look at the
 Check out the following pages for more information:
 
 * [Getting Started](getting-started.md)
+* [Running nox in CI](nox-in-ci.md)
 * [noxfile Reference](reference.md)
 
 ## License

@@ -31,6 +31,7 @@ markdown_extensions:
 nav:
   - Overview: index.md
   - Getting Started: getting-started.md
+  - Running nox in CI: nox-in-ci.md
   - noxfile Reference: reference.md
   - Community: community.md
   - antsibull-nox Release Notes: changelog.md
