@@ -10,9 +10,11 @@ Path utilities.
 
 from __future__ import annotations
 
+import atexit
 import functools
 import os
 import shutil
+import tempfile
 from pathlib import Path
 
 from antsibull_fileutils.copier import Copier, GitCopier
@@ -175,8 +177,23 @@ def copy_collection(source: Path, destination: Path) -> None:
     copier.copy(source, destination, exclude_root=[".nox", ".tox"])
 
 
+def create_temp_directory(basename: str) -> Path:
+    """
+    Create a temporary directory outside the nox tree.
+    """
+    directory = tempfile.mkdtemp(prefix=basename)
+    path = Path(directory)
+
+    def cleanup() -> None:
+        remove_path(path)
+
+    atexit.register(cleanup)
+    return path
+
+
 __all__ = [
     "copy_collection",
+    "create_temp_directory",
     "filter_paths",
     "find_data_directory",
     "list_all_files",
