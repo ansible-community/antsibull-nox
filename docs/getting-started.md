@@ -167,6 +167,8 @@ uv run noxfile.py -Re lint
     antsibull-nox will then not add the `formatters` session
     (because it would do nothing useful as it would be empty).
 
+If you want to run nox in CI, please read [Running nox in CI](nox-in-ci.md).
+
 ## Basic troubleshooting
 
 ### General problems
