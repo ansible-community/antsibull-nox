@@ -37,7 +37,10 @@ from .paths import (
     remove_path,
 )
 
-IN_CI = "GITHUB_ACTIONS" in os.environ
+# https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+# https://docs.gitlab.com/ci/variables/predefined_variables/#predefined-variables
+# https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+IN_CI = os.environ.get("CI") == "true"
 ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not IN_CI)).lower() in (
     "1",
     "true",

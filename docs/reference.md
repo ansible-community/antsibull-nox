@@ -61,9 +61,8 @@ The basic linting session, `lint`, comes with three sessions it depends on:
 * `typing`: runs `mypy`.
 
 !!! note
-    CI is currently detected by checking for the `GITHUB_ACTIONS` environment variable.
-    This might change in the future to support other CI systems.
-    If your CI system is not supported, you can simply set `GITHUB_ACTIONS` to an arbitrary value before running `nox` in CI.
+    CI is currently detected by checking for the `CI` environment variable.
+    If your CI system is not supported, you can simply set `CI=true` before running `nox` in CI.
 
 These sessions can be added with `antsibull_nox.add_lint_sessions()`.
 

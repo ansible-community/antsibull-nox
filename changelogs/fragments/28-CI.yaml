@@ -1,0 +1,6 @@
+---
+minor_changes:
+  - Check whether we're running in CI using the generic ``$CI`` enviornment
+    variable instead of ``$GITHUB_ACTIONS``.
+    ``$CI`` is set to ``true`` on Github Actions, Gitlab CI, and other CI systems.
+    (https://github.com/ansible-community/antsibull-nox/pull/28).
