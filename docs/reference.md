@@ -587,7 +587,8 @@ which has the following properties:
 
 ### Example code
 
-This example is from `community.dns`.
+This example is from `community.dns`
+and slightly adjusted to use the `CI` environment variable instead of `GITHUB_ACTIONS`.
 The `update-docs-fragments.py` script updates some docs fragments
 with information from module utils to ensure that both data sources are in sync.
 
@@ -601,8 +602,11 @@ import os
 import antsibull_nox.sessions
 
 
-# Whether the noxfile is running in CI (which for community.dns is GitHub Actions)
-IN_CI = "GITHUB_ACTIONS" in os.environ
+# Whether the noxfile is running in CI:
+# https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+# https://docs.gitlab.com/ci/variables/predefined_variables/#predefined-variables
+# https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+IN_CI = os.environ.get("CI") == "true"
 
 
 @nox.session(name="update-docs-fragments")
