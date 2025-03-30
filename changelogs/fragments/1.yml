@@ -1,7 +1,0 @@
-minor_changes:
-  - "For running pylint and mypy, copy the collection and dependent collections into a new tree.
-     This allows the collection repository to be checked out outside an approriate tree structure,
-     and it also allows the dependent collections to live in another tree structure,
-     as long as ``ansible-galaxy collection list`` can find them
-     (https://github.com/ansible-community/antsibull-nox/pull/1)."
-  - "antsibull-nox now depends on antsibull-fileutils >= 1.2.0 (https://github.com/ansible-community/antsibull-nox/pull/1)."

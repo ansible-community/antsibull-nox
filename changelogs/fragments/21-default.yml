@@ -1,2 +1,0 @@
-minor_changes:
-  - "Allow to decide which sessions should be marked as default and which not (https://github.com/ansible-community/antsibull-nox/issues/18, https://github.com/ansible-community/antsibull-nox/pull/20)."
