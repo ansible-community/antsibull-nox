@@ -19,7 +19,7 @@ from .sessions import (
     add_lint_sessions,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.1.0.post0"
 
 # pylint:disable=duplicate-code
 __all__ = (
