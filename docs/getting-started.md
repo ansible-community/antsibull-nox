@@ -18,7 +18,7 @@ Before you get started, ensure that you:
 
 1. Add the following `noxfile.py` file to the root of your collection.
    The root is the directory that contains `galaxy.yml`.
-2. Ensure your `galaxy.yml` file contains values for the `name` and `namespace` fields at a minimum.
+1. Ensure your `galaxy.yml` file contains values for the `name` and `namespace` fields at a minimum.
 
 ```python
 # The following metadata allows Python runners and nox to install the required
