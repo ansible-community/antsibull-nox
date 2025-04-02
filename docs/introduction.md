@@ -9,7 +9,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 `antsibull-nox` is designed to simplify the process of testing Ansible collections through a common interface for various tools.
 
 The CLI tool `ansible-test`, which is part of ansible-core, is the main way to [test collections](https://docs.ansible.com/ansible/devel/dev_guide/developing_collections_testing.html).
-It is included in the `ansible-core` package (and unrelated to the PyPI package called `ansible-test`).
+(Note that `ansible-test` is included in the `ansible-core` package, and unrelated to the PyPI package called `ansible-test`.)
 Many collections also run [`ansible-lint`](https://ansible.readthedocs.io/projects/lint/) to check roles and integration tests.
 [`molecule`](https://ansible.readthedocs.io/projects/molecule/) is another tool that collections run to test roles or even modules and plugins.
 
