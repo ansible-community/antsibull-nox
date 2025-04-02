@@ -70,7 +70,7 @@ After you add the `noxfile.py` file to your collection root, you can run the tes
     pip install antsibull-nox
     ```
 
-2. Run `nox` in the collection root to run all tests.
+1. Run `nox` in the collection root to run all tests.
 
 Alternatively, you do not have to install `antsibull-nox` and can run either of the following commands in the collection root:
 
@@ -83,7 +83,7 @@ By default, nox runs all tests that you add to the `noxfile.py` file.
 However, the more sessions a `nox` test suite contains, the more useful it is to run only some of the test sessions.
 
 1. Run `nox --list` to list all available test sessions.
-2. Run `nox -e <session>` to run a specific test session:
+1. Run `nox -e <session>` to run a specific test session:
 
 ```bash
 # List all test sessions
@@ -96,23 +96,6 @@ nox -e lint
 pipx run noxfile.py -e lint
 uv run noxfile.py -e lint
 ```
-
-## Formatting code before commits
-
-If present, the `formatters` session reformats Python code and should be run before a commit is made.
-This session is included with the `lint` session, which takes longer because it does additional linting.
-
-```bash
-# Reformat code
-nox -Re formatters
-pipx run noxfile.py -Re formatters
-uv run noxfile.py -Re formatters
-```
-
-!!! note
-    Whether or not a collection has a `formatters` section depends on the parameters passed to `antsibull_nox.add_lint_sessions()` in the `noxfile.py` file.
-    In the example in the previous section, `run_isort=False` and `run_black=False` disable both currently supported formatters.
-    In this case, `antsibull-nox` does not add the `formatters` session because it would be empty.
 
 ## Reusing virtual environments
 
@@ -134,3 +117,20 @@ nox -Re lint
 pipx run noxfile.py -Re lint
 uv run noxfile.py -Re lint
 ```
+
+## Formatting code before commits
+
+If present, the `formatters` session reformats Python code and should be run before a commit is made.
+This session is included with the `lint` session, which takes longer because it does additional linting.
+
+```bash
+# Reformat code
+nox -Re formatters
+pipx run noxfile.py -Re formatters
+uv run noxfile.py -Re formatters
+```
+
+!!! note
+    Whether or not a collection has a `formatters` section depends on the parameters passed to `antsibull_nox.add_lint_sessions()` in the `noxfile.py` file.
+    In the example in the previous section, `run_isort=False` and `run_black=False` disable both currently supported formatters.
+    In this case, `antsibull-nox` does not add the `formatters` session because it would be empty.

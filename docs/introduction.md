@@ -19,8 +19,7 @@ In addition these tools, there are many other tools that can test collections.
 For example, [`antsibull-docs` includes a collection documentation linter](https://ansible.readthedocs.io/projects/antsibull-docs/collection-docs/#linting-collection-docs).
 Many collections also have stricter Python linting than the `pylint` and `pep8` checks that `ansible-test` offers.
 Likewise, tools such as `black` are often used with collections to format code.
-Some other collections use [license checkers such as `reuse`](https://pypi.org/project/reuse/),
-or [spell checkers such as `codespell`](https://pypi.org/project/codespell/).
+Some other collections use [license checkers such as `reuse`](https://pypi.org/project/reuse/) or [spell checkers such as `codespell`](https://pypi.org/project/codespell/).
 
 Running all these tools on collections can be non-trivial because collections do not contain Python packages directly.
 Instead, at runtime, Ansible dynamically makes collections available as a Python package named `ansible_collections` that is outside the root directory of each collection.
