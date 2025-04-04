@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import contextlib
 import os
+import typing as t
 from pathlib import Path
 
 import pytest
@@ -349,7 +350,7 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
         name="bam",
         dependencies={"foo.bar": ">= 1.0.0", "community.baz": "*"},
     )
-    bar_baz = create_collection_w_shallow_dir(
+    create_collection_w_shallow_dir(
         root, namespace="bar", name="baz", directory_override="bar.bar"
     )
     community_baz = create_collection_w_shallow_dir(
@@ -385,7 +386,7 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
         name="bam",
         dependencies={"foo.bar": ">= 1.0.0", "community.baz": "*"},
     )
-    bar_baz = create_collection_w_shallow_dir(
+    create_collection_w_shallow_dir(
         root, namespace="bar", name="baz", directory_override="bar.bar"
     )
     (root / "foo.baz").mkdir()
@@ -412,63 +413,90 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
     with chdir(cwd):
         with pytest.raises(
             ValueError,
-            match="^Cannot load current collection's info from.*: Cannot find galaxy.yml or MANIFEST.json in ",
+            match=(
+                "^Cannot load current collection's info from.*:"
+                " Cannot find galaxy.yml or MANIFEST.json in "
+            ),
         ):
             list(_fs_list_local_collections())
 
         (cwd / "MANIFEST.json").write_text("foo")
         with pytest.raises(
             ValueError,
-            match="^Cannot load current collection's info from.*/something: Cannot parse .*something/MANIFEST.json: ",
+            match=(
+                "^Cannot load current collection's info from.*"
+                "/something: Cannot parse .*something/MANIFEST.json: "
+            ),
         ):
             list(_fs_list_local_collections())
 
         (cwd / "MANIFEST.json").write_text("{}")
         with pytest.raises(
             ValueError,
-            match="^Cannot load current collection's info from.*/something/MANIFEST.json does not contain collection_info$",
+            match=(
+                "^Cannot load current collection's info from.*"
+                "/something/MANIFEST.json does not contain collection_info$"
+            ),
         ):
             list(_fs_list_local_collections())
 
         (cwd / "MANIFEST.json").write_text('{"collection_info": "meh"}')
         with pytest.raises(
             ValueError,
-            match="^Cannot load current collection's info from.*/something/MANIFEST.json does not contain collection_info$",
+            match=(
+                "^Cannot load current collection's info from.*"
+                "/something/MANIFEST.json does not contain collection_info$"
+            ),
         ):
             list(_fs_list_local_collections())
 
         (cwd / "MANIFEST.json").write_text('{"collection_info": {}}')
         with pytest.raises(
             ValueError,
-            match="^Cannot load current collection's info from.*/something/MANIFEST.json does not contain a namespace$",
+            match=(
+                "^Cannot load current collection's info from.*"
+                "/something/MANIFEST.json does not contain a namespace$"
+            ),
         ):
             list(_fs_list_local_collections())
 
         (cwd / "galaxy.yml").write_text("{")
         with pytest.raises(
             ValueError,
-            match="^Cannot load current collection's info from.*/something: Cannot parse .*something/galaxy.yml: ",
+            match=(
+                "^Cannot load current collection's info from.*"
+                "/something: Cannot parse .*something/galaxy.yml: "
+            ),
         ):
             list(_fs_list_local_collections())
 
         (cwd / "galaxy.yml").write_text("[]")
         with pytest.raises(
             ValueError,
-            match="^Cannot load current collection's info from.*/something: .*something/galaxy.yml is not a dictionary",
+            match=(
+                "^Cannot load current collection's info from.*"
+                "/something: .*something/galaxy.yml is not a dictionary"
+            ),
         ):
             list(_fs_list_local_collections())
 
         (cwd / "galaxy.yml").write_text("namespace: whatever")
         with pytest.raises(
             ValueError,
-            match="^Cannot load current collection's info from.*something/galaxy.yml does not contain a name$",
+            match=(
+                "^Cannot load current collection's info from.*"
+                "something/galaxy.yml does not contain a name$"
+            ),
         ):
             list(_fs_list_local_collections())
 
         (cwd / "galaxy.yml").write_text("namespace: 42")
         with pytest.raises(
             ValueError,
-            match="^Cannot load current collection's info from.*something/galaxy.yml does not contain a namespace$",
+            match=(
+                "^Cannot load current collection's info from.*"
+                "something/galaxy.yml does not contain a namespace$"
+            ),
         ):
             list(_fs_list_local_collections())
 
@@ -477,7 +505,10 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
         )
         with pytest.raises(
             ValueError,
-            match="^Cannot load current collection's info from.*something/galaxy.yml's dependencies is not a mapping$",
+            match=(
+                "^Cannot load current collection's info from.*"
+                "something/galaxy.yml's dependencies is not a mapping$"
+            ),
         ):
             list(_fs_list_local_collections())
 
@@ -609,7 +640,10 @@ def test__galaxy_list_collections(
 def test__galaxy_list_collections_fail() -> None:
     with pytest.raises(
         ValueError,
-        match="^Error while loading collection list: Expecting property name enclosed in double quotes: ",
+        match=(
+            "^Error while loading collection list: "
+            "Expecting property name enclosed in double quotes: "
+        ),
     ):
         list(
             _galaxy_list_collections(
@@ -748,15 +782,11 @@ def test_get_collection_list(tmp_path) -> None:
     root2 = tmp_path / "root-2" / "ansible_collections"
     root3 = tmp_path / "root-3" / "ansible_collections"
 
-    root1_foo_bar = create_collection_w_dir(
-        root1, namespace="foo", name="bar", version="1.0.0"
-    )
+    create_collection_w_dir(root1, namespace="foo", name="bar", version="1.0.0")
     root1_foo_bam = create_collection_w_dir(
         root1, namespace="foo", name="bam", dependencies={"foo.bar": ">= 1.0.0"}
     )
-    root2_foo_bam = create_collection_w_dir(
-        root2, namespace="foo", name="bam", version="0.1.0"
-    )
+    create_collection_w_dir(root2, namespace="foo", name="bam", version="0.1.0")
     root3_foo_bar = create_collection_w_dir(root3, namespace="foo", name="bar")
 
     content = r"""
