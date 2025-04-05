@@ -197,6 +197,46 @@ def _run_bare_script(
     )
 
 
+def _compose_description(
+    *,
+    prefix: str | dict[t.Literal["one", "other"], str] | None = None,
+    programs: dict[str, str | bool | None],
+) -> str:
+    parts: list[str] = []
+
+    def add(text: str, *, comma: bool = False) -> None:
+        if parts:
+            if comma:
+                parts.append(", ")
+            else:
+                parts.append(" ")
+        parts.append(text)
+
+    active_programs = [
+        (program, value if isinstance(value, str) else None)
+        for program, value in programs.items()
+        if value not in (False, None)
+    ]
+
+    if prefix:
+        if isinstance(prefix, dict):
+            if len(active_programs) == 1 and "one" in prefix:
+                add(prefix["one"])
+            else:
+                add(prefix["other"])
+        else:
+            add(prefix)
+
+    for index, (program, value) in enumerate(active_programs):
+        if index + 1 == len(active_programs) and index > 0:
+            add("and", comma=index > 1)
+        add(program, comma=index > 0 and index + 1 < len(active_programs))
+        if value is not None:
+            add(f"({value})")
+
+    return "".join(parts)
+
+
 def add_lint(
     *, make_lint_default: bool, has_formatters: bool, has_codeqa: bool, has_typing: bool
 ) -> None:
@@ -214,6 +254,18 @@ def add_lint(
         dependent_sessions.append("codeqa")
     if has_typing:
         dependent_sessions.append("typing")
+
+    lint.__doc__ = _compose_description(
+        prefix={
+            "one": "Meta session for triggering the following session:",
+            "other": "Meta session for triggering the following sessions:",
+        },
+        programs={
+            "formatters": has_formatters,
+            "codeqa": has_codeqa,
+            "typing": has_typing,
+        },
+    )
     nox.session(  # type: ignore
         lint, name="lint", default=make_lint_default, requires=dependent_sessions
     )
@@ -299,6 +351,16 @@ def add_formatters(
         if run_black or run_black_modules:
             execute_black(session)
 
+    formatters.__doc__ = _compose_description(
+        prefix={
+            "one": "Run code formatter:",
+            "other": "Run code formatters:",
+        },
+        programs={
+            "isort": run_isort,
+            "black": run_black,
+        },
+    )
     nox.session(formatters, name="formatters", default=False)  # type: ignore
 
 
@@ -412,6 +474,15 @@ def add_codeqa(  # noqa: C901
         if run_pylint and prepared_collections:
             execute_pylint(session, prepared_collections)
 
+    codeqa.__doc__ = _compose_description(
+        prefix={
+            "other": "Run code QA:",
+        },
+        programs={
+            "flake8": run_flake8,
+            "pylint": run_pylint,
+        },
+    )
     nox.session(codeqa, name="codeqa", default=False)  # type: ignore
 
 
@@ -479,6 +550,15 @@ def add_typing(
         if run_mypy and prepared_collections:
             execute_mypy(session, prepared_collections)
 
+    typing.__doc__ = _compose_description(
+        prefix={
+            "one": "Run type checker:",
+            "other": "Run type checkers:",
+        },
+        programs={
+            "mypy": run_mypy,
+        },
+    )
     nox.session(typing, name="typing", default=False)  # type: ignore
 
 
@@ -609,6 +689,7 @@ def add_docs_check(
         if prepared_collections:
             execute_antsibull_docs(session, prepared_collections)
 
+    docs_check.__doc__ = "Run 'antsibull-docs lint-collection-docs'"
     nox.session(  # type: ignore
         docs_check, name="docs-check", default=make_docs_check_default
     )
@@ -645,6 +726,18 @@ def add_license_check(
                 },
             )
 
+    license_check.__doc__ = _compose_description(
+        prefix={
+            "one": "Run license checker:",
+            "other": "Run license checkers:",
+        },
+        programs={
+            "reuse": run_reuse,
+            "license-check": (
+                "ensure GPLv3+ for plugins" if run_license_check else False
+            ),
+        },
+    )
     nox.session(  # type: ignore
         license_check, name="license-check", default=make_license_check_default
     )
@@ -730,6 +823,20 @@ def add_extra_checks(
         if run_action_groups:
             execute_action_groups(session)
 
+    extra_checks.__doc__ = _compose_description(
+        prefix={
+            "one": "Run extra checker:",
+            "other": "Run extra checkers:",
+        },
+        programs={
+            "no-unwanted-files": (
+                "checks for unwanted files in plugins/"
+                if run_no_unwanted_files
+                else False
+            ),
+            "action-groups": "validate action groups" if run_action_groups else False,
+        },
+    )
     nox.session(  # type: ignore
         extra_checks,
         name="extra-checks",
@@ -821,6 +928,20 @@ def add_build_import_check(
                         f" error{'' if len(errors) == 1 else 's'}:\n{messages}"
                     )
 
+    build_import_check.__doc__ = _compose_description(
+        prefix={
+            "one": "Run build and import checker:",
+            "other": "Run build and import checkers:",
+        },
+        programs={
+            "build-collection": True,
+            "galaxy-importer": (
+                "test whether Galaxy will import built collection"
+                if run_galaxy_importer
+                else False
+            ),
+        },
+    )
     nox.session(  # type: ignore
         build_import_check,
         name="build-import-check",
