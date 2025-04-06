@@ -41,6 +41,14 @@ def test_version_next() -> None:
     assert Version(1, 9).next_minor_version() == Version(1, 10)
 
 
+def test_version_prev() -> None:
+    assert Version(2, 4).previous_minor_version() == Version(2, 3)
+    assert Version(1, 10).previous_minor_version() == Version(1, 9)
+
+    with pytest.raises(ValueError, match="^No previous minor version exists$"):
+        Version(1, 0).previous_minor_version()
+
+
 VERSION_RANGE_DATA: list[tuple[str, str, bool, list[str]]] = [
     (
         "1.2",
