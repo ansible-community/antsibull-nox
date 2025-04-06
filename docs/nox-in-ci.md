@@ -71,7 +71,7 @@ then you can use the shared workflow
 to generate a CI matrix and run the `ansible-test` jobs:
 
 The following example is taken from community.dns:
-```
+```yaml
 ---
 name: nox
 'on':
