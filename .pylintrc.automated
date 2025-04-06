@@ -67,6 +67,7 @@ confidence=
 disable=
     locally-disabled,
     too-many-arguments,
+    too-many-lines,
     too-many-locals,
     too-many-positional-arguments,
 

@@ -14,6 +14,17 @@ inputs:
       Python-version to use. We recommend to stick to the default.
     required: false
     default: "3.13"
+  extra-python-versions:
+    description: |-
+      Newline-separated list of Python versions to install as well.
+      Should be used if other Python versions are needed.
+    required: false
+    default: ""
+  extra-args:
+    description: |-
+      Additional arguments to pass to the nox run after `--`.
+    required: false
+    default: ""
   sessions:
     description: |-
       Nox sessions to run. By default, all sessions are run.
@@ -25,6 +36,10 @@ inputs:
       Should be the directory where the collection's `galaxy.yml` is in, and where the `noxfile.py` is in.
     required: false
     default: .
+outputs:
+  run-nox:
+    description: Output of the 'run nox' step.
+    value: ${{ toJSON(steps.run-nox.outputs) }}
 
 runs:
   using: composite
@@ -33,7 +48,9 @@ runs:
       uses: actions/setup-python@v5
       id: python
       with:
-        python-version: "${{ inputs.python-version }}"
+        python-version: |-
+          ${{ inputs.extra-python-versions }}
+          ${{ inputs.python-version }}
 
     - name: "Install nox and antsibull-nox"
       run: |
@@ -45,7 +62,7 @@ runs:
     - name: "Set up nox environments"
       run: |
         echo "::group::Set up nox environments"
-        nox --verbose --install-only ${{ inputs.sessions && '--sessions ' || '' }}${{ inputs.sessions }}
+        nox --verbose --install-only${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }}
         echo "::endgroup::"
       env:
         FORCE_COLOR: "1"
@@ -53,8 +70,9 @@ runs:
       working-directory: "${{ inputs.working-directory }}"
 
     - name: "Run nox"
+      id: run-nox
       run: |
-        nox --verbose --reuse-existing-virtualenvs --no-install ${{ inputs.sessions && '--sessions ' || '' }}${{ inputs.sessions }}
+        nox --verbose --reuse-existing-virtualenvs --no-install${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }}${{ inputs.extra-args && ' -- ' || '' }}${{ inputs.extra-args }}
       env:
         FORCE_COLOR: "1"
       shell: bash

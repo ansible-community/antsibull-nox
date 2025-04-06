@@ -5,15 +5,21 @@
 # SPDX-FileCopyrightText: 2025, Ansible Project
 
 import re
+import urllib.error
 import urllib.request
 
-from antsibull_nox.ansible import _CURRENT_DEVEL_VERSION as CURRENT_DEVEL_VERSION
 from antsibull_nox.ansible import (
-    _CURRENT_MILESTONE_VERSION as CURRENT_MILESTONE_VERSION,
+    _ANSIBLE_EOL_MAX_VERSION,
+    _ANSIBLE_EOL_REPO,
+    _CURRENT_DEVEL_VERSION,
+    _CURRENT_MILESTONE_VERSION,
 )
 from antsibull_nox.utils import Version
 
 _ANSIBLE_CORE_VERSION_REGEX = re.compile(r"""__version__ = (?:'([^']+)'|"([^"]+)")""")
+_EOL_ANSIBLE_BRANCH_TEST_URL = (
+    "https://raw.githubusercontent.com/{repo}/refs/heads/stable-{version}/README.md"
+)
 
 
 def get_branch_version(branch_name: str) -> Version:
@@ -29,8 +35,32 @@ def get_branch_version(branch_name: str) -> Version:
 
 
 def test_check_devel_version() -> None:
-    assert get_branch_version("devel") == CURRENT_DEVEL_VERSION
+    assert get_branch_version("devel") == _CURRENT_DEVEL_VERSION
 
 
 def test_check_milestone_version() -> None:
-    assert get_branch_version("milestone") == CURRENT_MILESTONE_VERSION
+    assert get_branch_version("milestone") == _CURRENT_MILESTONE_VERSION
+
+
+def does_exist(url: str) -> int:
+    try:
+        request = urllib.request.urlopen(urllib.request.Request(url, method="HEAD"))
+        request.close()
+        return 200 <= request.status < 300
+    except urllib.error.HTTPError as exc:
+        if exc.status == 404:
+            return False
+        raise
+
+
+def test_check_eol_ansible() -> None:
+    max_url = _EOL_ANSIBLE_BRANCH_TEST_URL.format(
+        repo=_ANSIBLE_EOL_REPO, version=_ANSIBLE_EOL_MAX_VERSION
+    )
+    assert does_exist(max_url) is True
+
+    next_version = _ANSIBLE_EOL_MAX_VERSION.next_minor_version()
+    next_max_url = _EOL_ANSIBLE_BRANCH_TEST_URL.format(
+        repo=_ANSIBLE_EOL_REPO, version=next_version
+    )
+    assert does_exist(next_max_url) is False
