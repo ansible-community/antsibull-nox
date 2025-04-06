@@ -36,6 +36,11 @@ def test_verison_parse_fail() -> None:
         Version.parse("1.a")
 
 
+def test_version_next() -> None:
+    assert Version(2, 3).next_minor_version() == Version(2, 4)
+    assert Version(1, 9).next_minor_version() == Version(1, 10)
+
+
 VERSION_RANGE_DATA: list[tuple[str, str, bool, list[str]]] = [
     (
         "1.2",

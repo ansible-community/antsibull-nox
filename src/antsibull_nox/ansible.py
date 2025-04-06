@@ -15,6 +15,8 @@ from dataclasses import dataclass
 
 from .utils import Version
 
+AnsibleCoreVersion = t.Union[Version, t.Literal["milestone", "devel"]]
+
 
 @dataclass(frozen=True)
 class AnsibleCoreInfo:
@@ -115,7 +117,7 @@ _CURRENT_MILESTONE_VERSION = Version.parse("2.19")
 
 
 def get_ansible_core_info(
-    core_version: Version | t.Literal["devel", "milestone"],
+    core_version: AnsibleCoreVersion,
 ) -> AnsibleCoreInfo:
     """
     Retrieve information on an ansible-core version.
@@ -132,7 +134,55 @@ def get_ansible_core_info(
     raise ValueError(f"Unknown ansible-core version {version}")
 
 
+_ANSIBLE_REPO = "ansible/ansible"
+_ANSIBLE_EOL_REPO = "ansible-community/eol-ansible"
+_ANSIBLE_EOL_MAX_VERSION = Version(2, 14)
+
+
+def get_ansible_core_package_name(
+    core_version: AnsibleCoreVersion,
+    *,
+    source: t.Literal["git", "pypi"] = "git",
+    ansible_repo: str | None = None,
+    branch_name: str | None = None,
+) -> str:
+    """
+    Return the package name for a specific ansible-core version.
+
+    The result can be passed to pip to install that version of ansible-core.
+    """
+    if not isinstance(core_version, Version):
+        # milestone and devel are not available from PyPI
+        source = "git"
+
+    if source == "git":
+        if branch_name is None:
+            if isinstance(core_version, str):
+                branch_name = core_version
+            else:
+                branch_name = f"stable-{core_version}"
+        if ansible_repo is None:
+            if (
+                isinstance(core_version, Version)
+                and core_version <= _ANSIBLE_EOL_MAX_VERSION
+            ):
+                ansible_repo = _ANSIBLE_EOL_REPO
+            else:
+                ansible_repo = _ANSIBLE_REPO
+        return f"https://github.com/{ansible_repo}/archive/{branch_name}.tar.gz"
+
+    assert isinstance(core_version, Version)
+    next_core_version = core_version.next_minor_version()
+    base = "ansible-core"
+    if core_version == Version(2, 9):
+        base = "ansible"
+    elif core_version == Version(2, 10):
+        base = "ansible-base"
+    return f"{base}>={core_version},<{next_core_version}"
+
+
 __all__ = [
     "AnsibleCoreInfo",
     "get_ansible_core_info",
+    "get_ansible_core_package_name",
 ]

@@ -40,6 +40,14 @@ class Version:
     def __str__(self) -> str:
         return f"{self.major}.{self.minor}"
 
+    def next_minor_version(self) -> Version:
+        """
+        Returns the next minor version.
+
+        The major version stays the same, and the minor version is increased by 1.
+        """
+        return Version(self.major, self.minor + 1)
+
 
 def version_range(
     start: Version, end: Version, *, inclusive: bool
