@@ -1,0 +1,193 @@
+---
+name: Run sanity, unit, and integration tests
+
+"on":
+  workflow_call:
+    inputs:
+      collection-namespace:
+        description: >-
+          The collection's namespace.
+        type: string
+        required: required
+      collection-name:
+        description: >-
+          The collection's name.
+        type: string
+        required: true
+      upload-codecov:
+        type: bool
+        description: >-
+          Whether code coverage should be collected and uploaded to codecov.io.
+        required: false
+        default: false
+      extra-collections-sanity:
+        type: string
+        description: >-
+          Additional collections to install for sanity tests.
+        required: false
+        default: ""
+      extra-collections-unit:
+        type: string
+        description: >-
+          Additional collections to install for unit tests.
+        required: false
+        default: ""
+      extra-collections-integration:
+        type: string
+        description: >-
+          Additional collections to install for integration tests.
+        required: false
+        default: ""
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+
+jobs:
+  create-matrixes:
+    runs-on: ubuntu-latest
+    name: "Create matrixes"
+    outputs:
+      sanity-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).sanity }}
+      units-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).units }}
+      integration-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).integration }}
+    steps:
+      - name: Check out collection
+        uses: actions/checkout@v4
+        with:
+          path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
+          persist-credentials: false
+      - name: Run nox
+        uses: ansible-community/antsibull-nox@main
+        id: generate-matrix
+        with:
+          working-directory: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
+          sessions: matrix-generator
+
+  sanity:
+    name: Sanity (Ⓐ${{ matrix.ansible-core }})
+    needs:
+      - create-matrixes
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.create-matrixes.outputs.sanity-matrix) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out collection
+        uses: actions/checkout@v4
+        with:
+          path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
+          persist-credentials: false
+      - name: Check out dependent collections
+        if: extra-collections-sanity
+        run: >-
+          ansible-galaxy collection install -p .
+          ${{ extra-collections-sanity }}
+          git+https://github.com/ansible-collections/community.library_inventory_filtering.git,stable-1
+      - name: Run nox
+        uses: ansible-community/antsibull-nox@main
+        with:
+          working-directory: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
+          extra-python-versions: ${{ matrix.python }}
+          extra-args: ${{ inputs.upload-codecov && '--coverage' || '' }}
+          sessions: ${{ matrix.name }}
+      - name: Upload coverage for final step
+        if: inputs.upload-codecov
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-sanity-${{ matrix.name }}
+          path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}/tests/output/reports/coverage=sanity=*.xml
+
+  units:
+    name: Units (Ⓐ${{ matrix.ansible-core }})
+    needs:
+      - create-matrixes
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.create-matrixes.outputs.units-matrix) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out collection
+        uses: actions/checkout@v4
+        with:
+          path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
+          persist-credentials: false
+      - name: Check out dependent collections
+        if: extra-collections-unit
+        run: >-
+          ansible-galaxy collection install -p .
+          ${{ extra-collections-unit }}
+      - name: Run nox
+        uses: ansible-community/antsibull-nox@main
+        with:
+          working-directory: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
+          extra-python-versions: ${{ matrix.python }}
+          extra-args: ${{ inputs.upload-codecov && '--coverage' || '' }}
+          sessions: ${{ matrix.name }}
+      - name: Upload coverage for final step
+        if: inputs.upload-codecov
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-units-${{ matrix.name }}
+          path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}/tests/output/reports/coverage=units=*.xml
+
+  integration:
+    name: I (Ⓐ${{ matrix.ansible-core }}+py${{ matrix.test-python }}+${{ matrix.test-container }})
+    needs:
+      - create-matrixes
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.create-matrixes.outputs.integration-matrix) }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out collection
+        uses: actions/checkout@v4
+        with:
+          path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
+          persist-credentials: false
+      - name: Check out dependent collections
+        if: extra-collections-integration
+        run: >-
+          ansible-galaxy collection install -p .
+          ${{ extra-collections-integration }}
+      - name: Run nox
+        uses: ansible-community/antsibull-nox@main
+        with:
+          working-directory: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
+          extra-python-versions: ${{ matrix.python }}
+          extra-args: ${{ inputs.upload-codecov && '--coverage' || '' }}
+          sessions: ${{ matrix.name }}
+      - name: Upload coverage for final step
+        if: inputs.upload-codecov
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-integration-${{ matrix.name }}
+          path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}/tests/output/reports/coverage=integration=*.xml
+
+  upload-coverage:
+    runs-on: ubuntu-latest
+    if: inputs.upload-codecov
+    needs:
+      - sanity
+      - units
+      - integration
+    steps:
+      - name: Check out collection
+        uses: actions/checkout@v4
+        with:
+          path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
+          persist-credentials: false
+      - name: Download coverage from previous steps
+        uses: actions/download-artifact@v4
+        with:
+          path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}/
+          pattern: code-coverage-*
+      - name: List all files
+        run: find ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}/ -name 'coverage=*.xml'
+        shell: bash
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}/coverage=*.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
