@@ -20,6 +20,11 @@ inputs:
       Should be used if other Python versions are needed.
     required: false
     default: ""
+  extra-args:
+    description: |-
+      Additional arguments to pass to the nox run after `--`.
+    required: false
+    default: ""
   sessions:
     description: |-
       Nox sessions to run. By default, all sessions are run.
@@ -53,7 +58,7 @@ runs:
     - name: "Set up nox environments"
       run: |
         echo "::group::Set up nox environments"
-        nox --verbose --install-only ${{ inputs.sessions && '--sessions ' || '' }}${{ inputs.sessions }}
+        nox --verbose --install-only${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }}
         echo "::endgroup::"
       env:
         FORCE_COLOR: "1"
@@ -62,7 +67,7 @@ runs:
 
     - name: "Run nox"
       run: |
-        nox --verbose --reuse-existing-virtualenvs --no-install ${{ inputs.sessions && '--sessions ' || '' }}${{ inputs.sessions }}
+        nox --verbose --reuse-existing-virtualenvs --no-install${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }}${{ inputs.extra-args && ' -- ' || '' }}${{ inputs.extra-args }}
       env:
         FORCE_COLOR: "1"
       shell: bash

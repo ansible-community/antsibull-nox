@@ -3,3 +3,5 @@ minor_changes:
      (https://github.com/ansible-community/antsibull-nox/issues/5, https://github.com/ansible-community/antsibull-nox/pull/32)."
   - "The action allows to install additional Python versions with the new ``extra-python-versions`` option
      (https://github.com/ansible-community/antsibull-nox/pull/32)."
+  - "The action allows to pass extra commands after ``--`` with the new ``extra-args`` option
+     (https://github.com/ansible-community/antsibull-nox/pull/32)."
