@@ -191,8 +191,27 @@ def create_temp_directory(basename: str) -> Path:
     return path
 
 
+def copy_directory_tree_into(source: Path, destination: Path) -> None:
+    """
+    Copy the directory tree from ``source`` into the tree at ``destination``.
+
+    If ``destination`` does not yet exist, it will be created first.
+    """
+    if not source.is_dir():
+        return
+    destination.mkdir(parents=True, exist_ok=True)
+    for root, _, files in source.walk():
+        path = destination / root.relative_to(source)
+        path.mkdir(exist_ok=True)
+        for file in files:
+            dest = path / file
+            remove_path(dest)
+            shutil.copy2(root / file, dest, follow_symlinks=False)
+
+
 __all__ = [
     "copy_collection",
+    "copy_directory_tree_into",
     "create_temp_directory",
     "filter_paths",
     "find_data_directory",

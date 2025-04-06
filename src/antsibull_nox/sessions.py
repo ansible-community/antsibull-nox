@@ -36,6 +36,7 @@ from .collection import (
 from .data_util import prepare_data_script
 from .paths import (
     copy_collection,
+    copy_directory_tree_into,
     create_temp_directory,
     filter_paths,
     find_data_directory,
@@ -1010,6 +1011,7 @@ def add_ansible_test_session(
         if not prepared_collections:
             session.warn("Skipping ansible-test...")
             return
+        cwd = Path.cwd()
         with session.chdir(prepared_collections.current_path):
             command = ["ansible-test"] + ansible_test_params
             if add_posargs and session.posargs:
@@ -1032,6 +1034,11 @@ def add_ansible_test_session(
                     "--group-by",
                     "version",
                 )
+
+            copy_directory_tree_into(
+                prepared_collections.current_path / "tests" / "output",
+                cwd / "tests" / "output",
+            )
 
     # Determine Python version(s)
     core_info = get_ansible_core_info(parsed_ansible_core_version)
