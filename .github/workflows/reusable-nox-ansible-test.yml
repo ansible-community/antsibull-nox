@@ -70,12 +70,11 @@ jobs:
 
   sanity:
     name: Sanity (Ⓐ${{ matrix.ansible-core }})
-    if: needs.create-matrixes.outputs.sanity-matrix != ''
     needs:
       - create-matrixes
     strategy:
       matrix:
-        include: ${{ fromJson(needs.create-matrixes.outputs.sanity-matrix) }}
+        include: ${{ fromJson(needs.create-matrixes.outputs.sanity-matrix || '[]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
@@ -105,12 +104,11 @@ jobs:
 
   units:
     name: Units (Ⓐ${{ matrix.ansible-core }})
-    if: needs.create-matrixes.outputs.units-matrix != ''
     needs:
       - create-matrixes
     strategy:
       matrix:
-        include: ${{ fromJson(needs.create-matrixes.outputs.units-matrix) }}
+        include: ${{ fromJson(needs.create-matrixes.outputs.units-matrix || '[]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
@@ -139,13 +137,12 @@ jobs:
 
   integration:
     name: I (Ⓐ${{ matrix.ansible-core }}+py${{ matrix.test-python }}+${{ matrix.test-container }})
-    if: needs.create-matrixes.outputs.integration-matrix != ''
     needs:
       - create-matrixes
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.create-matrixes.outputs.integration-matrix) }}
+        include: ${{ fromJson(needs.create-matrixes.outputs.integration-matrix || '[]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
