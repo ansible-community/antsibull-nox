@@ -36,6 +36,10 @@ inputs:
       Should be the directory where the collection's `galaxy.yml` is in, and where the `noxfile.py` is in.
     required: false
     default: .
+outputs:
+  run-nox:
+    description: Output of the 'run nox' step.
+    value: ${{ toJSON(steps.run-nox.outputs) }}
 
 runs:
   using: composite
@@ -66,6 +70,7 @@ runs:
       working-directory: "${{ inputs.working-directory }}"
 
     - name: "Run nox"
+      id: run-nox
       run: |
         nox --verbose --reuse-existing-virtualenvs --no-install${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }}${{ inputs.extra-args && ' -- ' || '' }}${{ inputs.extra-args }}
       env:
