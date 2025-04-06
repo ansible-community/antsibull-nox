@@ -81,7 +81,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   By default the formatters and linters run on code files in `plugins/`, `tests/unit/`, and on `noxfile.py`.
   If you have other scripts in your collection that should be checked, you can add them with this option.
 
-### `isort` (part of the `formatters` session):
+### `isort` (part of the `formatters` session)
 
 * `run_isort: bool` (default `True`):
   Whether to run `isort`.
@@ -98,7 +98,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to pin the version,
   or to install the package from a local repository.
 
-### `black` (part of the `formatters` session):
+### `black` (part of the `formatters` session)
 
 * `run_black: bool` (default `True`):
   Whether to run `black`.
@@ -121,7 +121,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to pin the version,
   or to install the package from a local repository.
 
-### `flake8` (part of the `codeqa` session):
+### `flake8` (part of the `codeqa` session)
 
 * `run_flake8: bool` (default `True`):
   Whether to run `flake8`.
@@ -138,7 +138,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to pin the version,
   or to install the package from a local repository.
 
-### `pylint` (part of the `codeqa` session):
+### `pylint` (part of the `codeqa` session)
 
 * `run_pylint: bool` (default `True`):
   Whether to run `pylint`.
@@ -165,7 +165,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 * `pylint_extra_deps: list[str] | None` (default `None`):
   Allows to specify further packages to install in this session.
 
-### `mypy` (part of the `typing` session):
+### `mypy` (part of the `typing` session)
 
 * `run_mypy: bool` (default `True`):
   Whether to run `mypy`.
