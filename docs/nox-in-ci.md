@@ -61,3 +61,45 @@ jobs:
     This is generally not a good idea, since there can be breaking changes any time.
     Once antsibull-nox stabilizes we will provide stable branches that you can use
     that should not introduce breaking changes.
+
+### Running ansible-test CI matrix from nox
+
+If you use the `antsibull_nox.add*_ansible_test_*_session*()` functions to `noxfile.py` to allow running `ansible-test` from nox,
+and also use `antsibull_nox.add_matrix_generator()` to add a `matrix-generator` session,
+then you can use the shared workflow
+[ansible-community/antsibull-nox/.github/workflows/reusable-nox-ansible-test.yml@main](https://github.com/ansible-community/antsibull-nox/blob/main/.github/workflows/reusable-nox-ansible-test.yml)
+to generate a CI matrix and run the `ansible-test` jobs:
+
+The following example is taken from community.dns:
+```
+---
+name: nox
+'on':
+  push:
+    branches:
+      - main
+      - stable-*
+  pull_request:
+  # Run CI once per day (at 04:30 UTC)
+  schedule:
+    - cron: '30 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  ansible-test:
+    uses: ansible-community/antsibull-nox/.github/workflows/reusable-nox-ansible-test.yml@main
+    with:
+      collection-namespace: community
+      collection-name: dns
+      upload-codecov: true
+      extra-collections-sanity: >-
+        git+https://github.com/ansible-collections/community.library_inventory_filtering.git,stable-1
+      extra-collections-unit: >-
+        git+https://github.com/ansible-collections/community.internal_test_tools.git,main
+        git+https://github.com/ansible-collections/community.library_inventory_filtering.git,stable-1
+      extra-collections-integration: >-
+        git+https://github.com/ansible-collections/community.general.git,main
+        git+https://github.com/ansible-collections/community.library_inventory_filtering.git,stable-1
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+```
