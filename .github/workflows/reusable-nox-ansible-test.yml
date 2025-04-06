@@ -74,7 +74,8 @@ jobs:
       - create-matrixes
     strategy:
       matrix:
-        include: ${{ fromJson(needs.create-matrixes.outputs.sanity-matrix || '[{"skip": true}]') }}
+        include: >-
+          ${{ fromJson(needs.create-matrixes.outputs.sanity-matrix || '[{"skip": true}]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
@@ -114,7 +115,8 @@ jobs:
       - create-matrixes
     strategy:
       matrix:
-        include: ${{ fromJson(needs.create-matrixes.outputs.units-matrix || '[{"skip": true}]') }}
+        include: >-
+          ${{ fromJson(needs.create-matrixes.outputs.units-matrix || '[{"skip": true}]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
@@ -154,7 +156,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.create-matrixes.outputs.integration-matrix || '[{"skip": true}]') }}
+        include: >-
+          ${{ fromJson(needs.create-matrixes.outputs.integration-matrix || '[{"skip": true}]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
