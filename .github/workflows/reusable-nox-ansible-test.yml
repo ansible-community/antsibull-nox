@@ -8,14 +8,14 @@ name: Run sanity, unit, and integration tests
         description: >-
           The collection's namespace.
         type: string
-        required: required
+        required: true
       collection-name:
         description: >-
           The collection's name.
         type: string
         required: true
       upload-codecov:
-        type: bool
+        type: boolean
         description: >-
           Whether code coverage should be collected and uploaded to codecov.io.
         required: false
@@ -44,8 +44,8 @@ name: Run sanity, unit, and integration tests
 
 jobs:
   create-matrixes:
-    runs-on: ubuntu-latest
     name: "Create matrixes"
+    runs-on: ubuntu-latest
     outputs:
       sanity-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).sanity }}
       units-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).units }}
@@ -78,10 +78,10 @@ jobs:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
           persist-credentials: false
       - name: Check out dependent collections
-        if: extra-collections-sanity
+        if: inputs.extra-collections-sanity
         run: >-
           ansible-galaxy collection install -p .
-          ${{ extra-collections-sanity }}
+          ${{ inputs.extra-collections-sanity }}
           git+https://github.com/ansible-collections/community.library_inventory_filtering.git,stable-1
       - name: Run nox
         uses: ansible-community/antsibull-nox@main
@@ -112,10 +112,10 @@ jobs:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
           persist-credentials: false
       - name: Check out dependent collections
-        if: extra-collections-unit
+        if: inputs.extra-collections-unit
         run: >-
           ansible-galaxy collection install -p .
-          ${{ extra-collections-unit }}
+          ${{ inputs.extra-collections-unit }}
       - name: Run nox
         uses: ansible-community/antsibull-nox@main
         with:
@@ -138,7 +138,6 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.create-matrixes.outputs.integration-matrix) }}
-
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
@@ -147,10 +146,10 @@ jobs:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
           persist-credentials: false
       - name: Check out dependent collections
-        if: extra-collections-integration
+        if: inputs.extra-collections-integration
         run: >-
           ansible-galaxy collection install -p .
-          ${{ extra-collections-integration }}
+          ${{ inputs.extra-collections-integration }}
       - name: Run nox
         uses: ansible-community/antsibull-nox@main
         with:
@@ -166,12 +165,13 @@ jobs:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}/tests/output/reports/coverage=integration=*.xml
 
   upload-coverage:
-    runs-on: ubuntu-latest
+    name: Upload coverage
     if: inputs.upload-codecov
     needs:
       - sanity
       - units
       - integration
+    runs-on: ubuntu-latest
     steps:
       - name: Check out collection
         uses: actions/checkout@v4
