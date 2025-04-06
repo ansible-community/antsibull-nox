@@ -213,10 +213,6 @@ def get_supported_core_versions(
         ) from exc
 
     result: list[AnsibleCoreVersion] = []
-    if include_devel:
-        result.append("devel")
-    if include_milestone:
-        result.append("milestone")
     for version in version_range(
         _MIN_SUPPORTED_VERSION, _CURRENT_DEVEL_VERSION, inclusive=False
     ):
@@ -227,6 +223,10 @@ def get_supported_core_versions(
         v = PckgVersion(f"{version.major}.{version.minor}.999")
         if v in ra_specifier:
             result.append(version)
+    if include_milestone:
+        result.append("milestone")
+    if include_devel:
+        result.append("devel")
     return result
 
 
