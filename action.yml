@@ -14,6 +14,12 @@ inputs:
       Python-version to use. We recommend to stick to the default.
     required: false
     default: "3.13"
+  extra-python-versions:
+    description: |-
+      Newline-separated list of Python versions to install as well.
+      Should be used if other Python versions are needed.
+    required: false
+    default: ""
   sessions:
     description: |-
       Nox sessions to run. By default, all sessions are run.
@@ -33,7 +39,9 @@ runs:
       uses: actions/setup-python@v5
       id: python
       with:
-        python-version: "${{ inputs.python-version }}"
+        python-version: |-
+          ${{ inputs.extra-python-versions }}
+          ${{ inputs.python-version }}
 
     - name: "Install nox and antsibull-nox"
       run: |
