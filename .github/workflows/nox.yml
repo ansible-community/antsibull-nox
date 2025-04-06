@@ -2,7 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or
 # https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2023 Maxwell G <maxwell@gtmx.me
+# SPDX-FileCopyrightText: 2023 Maxwell G <maxwell@gtmx.me>
 
 name: nox
 'on':
@@ -64,9 +64,10 @@ jobs:
           PYTHON_VERSIONS: "${{ matrix.python-versions }}"
         id: python-versions
         run: |
-          echo "versions<<EOF" >> ${GITHUB_OUTPUT}
-          echo "${PYTHON_VERSIONS}" | sed -e 's/, */\n/g' >> ${GITHUB_OUTPUT}
-          echo "EOF" >> ${GITHUB_OUTPUT}
+          echo "versions<<EOF" >> "${GITHUB_OUTPUT}"
+          echo "${PYTHON_VERSIONS//, /
+          }" >> "${GITHUB_OUTPUT}"
+          echo "EOF" >> "${GITHUB_OUTPUT}"
       - name: Setup Python
         uses: actions/setup-python@v5
         id: python
@@ -114,6 +115,5 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           working-directory: antsibull-nox
-          name: "${{ matrix.session }}"
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
