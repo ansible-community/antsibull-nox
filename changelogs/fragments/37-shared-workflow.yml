@@ -1,0 +1,5 @@
+minor_changes:
+  - "Add shared workflow for running ansible-test from nox and generating the CI matrix from nox as well
+     (https://github.com/ansible-community/antsibull-nox/issues/35,
+      https://github.com/ansible-community/antsibull-nox/pull/37,
+      https://github.com/ansible-community/antsibull-nox/pull/38)."
