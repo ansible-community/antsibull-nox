@@ -982,6 +982,7 @@ def add_ansible_test_session(
     ansible_core_version: str | AnsibleCoreVersion,
     ansible_core_source: t.Literal["git", "pypi"] = "git",
     ansible_core_branch_name: str | None = None,
+    handle_coverage: t.Literal["never", "always", "auto"] = "auto",
 ) -> None:
     """
     Add generic ansible-test session.
@@ -1014,6 +1015,23 @@ def add_ansible_test_session(
             if add_posargs and session.posargs:
                 command.extend(session.posargs)
             session.run(*command)
+
+            coverage = (handle_coverage == "auto" and "--coverage" in command) or (
+                handle_coverage == "always"
+            )
+            if coverage:
+                session.run(
+                    "ansible-test",
+                    "coverage",
+                    "xml",
+                    "--color",
+                    "-v",
+                    "--requirements",
+                    "--group-by",
+                    "command",
+                    "--group-by",
+                    "version",
+                )
 
     # Determine Python version(s)
     core_info = get_ansible_core_info(parsed_ansible_core_version)

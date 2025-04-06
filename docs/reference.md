@@ -667,6 +667,10 @@ It accepts the following parameters:
 * `ansible_core_branch_name: str | None` (default `None`):
   Allows to override the branch name when `ansible_core_source == "git"`.
 
+* `handle_coverage: t.Literal["never", "always", "auto"]` (default: `"auto"`):
+  Whether to run `ansible-test coverage xml` after running the `ansible-test` command.
+  If set to `"auto"`, will check whether `--coverage` was passed to `ansible-test`.
+
 #### Example code
 
 This adds a session called `ansible-test-integration-devel-ubuntu2404` that runs integration tests with ansible-core's development branch using its Ubuntu 24.04 container.
