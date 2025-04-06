@@ -861,7 +861,7 @@ antsibull_nox.add_ansible_test_integration_sessions_default_container(
 
 ### Generate matrixes for CI systems
 
-The function `antsibull_nox.add_matrix_generator()` allows to add a session that generates matrixes for CI systems.
+The function `antsibull_nox.add_matrix_generator()` allows to add a `matrix-generator` session that generates matrixes for CI systems.
 
 * The output is written as a JSON file to `$ANTSIBULL_NOX_MATRIX_JSON` if that environment variable is set.
 * The output is written as GitHub Actions output to `$GITHUB_OUTPUT` if that environment variable is set.

@@ -69,27 +69,32 @@ jobs:
           sessions: matrix-generator
 
   sanity:
-    name: Sanity (Ⓐ${{ matrix.ansible-core }})
-    if: needs.create-matrixes.outputs.sanity-matrix != ''
+    name: ${{ matrix.skip && 'Skipping ' || '' }}Sanity (Ⓐ${{ matrix.ansible-core }})
     needs:
       - create-matrixes
     strategy:
       matrix:
-        include: ${{ fromJson(needs.create-matrixes.outputs.sanity-matrix) }}
+        include: >-
+          ${{ fromJson(needs.create-matrixes.outputs.sanity-matrix || '[{"skip": true}]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
+        if: >-
+          !matrix.skip
         uses: actions/checkout@v4
         with:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
           persist-credentials: false
       - name: Check out dependent collections
-        if: inputs.extra-collections-sanity
+        if: >-
+          !matrix.skip && inputs.extra-collections-sanity
         run: >-
           ansible-galaxy collection install -p .
           ${{ inputs.extra-collections-sanity }}
           git+https://github.com/ansible-collections/community.library_inventory_filtering.git,stable-1
       - name: Run nox
+        if: >-
+          !matrix.skip
         uses: ansible-community/antsibull-nox@main
         with:
           working-directory: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
@@ -97,33 +102,39 @@ jobs:
           extra-args: ${{ inputs.upload-codecov && '--coverage' || '' }}
           sessions: ${{ matrix.name }}
       - name: Upload coverage for final step
-        if: inputs.upload-codecov
+        if: >-
+          !matrix.skip && inputs.upload-codecov
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-sanity-${{ matrix.name }}
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}/tests/output/reports/coverage=sanity=*.xml
 
   units:
-    name: Units (Ⓐ${{ matrix.ansible-core }})
-    if: needs.create-matrixes.outputs.units-matrix != ''
+    name: ${{ matrix.skip && 'Skipping ' || '' }}Units (Ⓐ${{ matrix.ansible-core }})
     needs:
       - create-matrixes
     strategy:
       matrix:
-        include: ${{ fromJson(needs.create-matrixes.outputs.units-matrix) }}
+        include: >-
+          ${{ fromJson(needs.create-matrixes.outputs.units-matrix || '[{"skip": true}]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
+        if: >-
+          !matrix.skip
         uses: actions/checkout@v4
         with:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
           persist-credentials: false
       - name: Check out dependent collections
-        if: inputs.extra-collections-unit
+        if: >-
+          !matrix.skip && inputs.extra-collections-unit
         run: >-
           ansible-galaxy collection install -p .
           ${{ inputs.extra-collections-unit }}
       - name: Run nox
+        if: >-
+          !matrix.skip
         uses: ansible-community/antsibull-nox@main
         with:
           working-directory: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
@@ -131,34 +142,40 @@ jobs:
           extra-args: ${{ inputs.upload-codecov && '--coverage' || '' }}
           sessions: ${{ matrix.name }}
       - name: Upload coverage for final step
-        if: inputs.upload-codecov
+        if: >-
+          !matrix.skip && inputs.upload-codecov
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-units-${{ matrix.name }}
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}/tests/output/reports/coverage=units=*.xml
 
   integration:
-    name: I (Ⓐ${{ matrix.ansible-core }}+py${{ matrix.test-python }}+${{ matrix.test-container }})
-    if: needs.create-matrixes.outputs.integration-matrix != ''
+    name: ${{ matrix.skip && 'Skipping ' || '' }}I (Ⓐ${{ matrix.ansible-core }}+py${{ matrix.test-python }}+${{ matrix.test-container }})
     needs:
       - create-matrixes
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.create-matrixes.outputs.integration-matrix) }}
+        include: >-
+          ${{ fromJson(needs.create-matrixes.outputs.integration-matrix || '[{"skip": true}]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
+        if: >-
+          !matrix.skip
         uses: actions/checkout@v4
         with:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
           persist-credentials: false
       - name: Check out dependent collections
-        if: inputs.extra-collections-integration
+        if: >-
+          !matrix.skip && inputs.extra-collections-integration
         run: >-
           ansible-galaxy collection install -p .
           ${{ inputs.extra-collections-integration }}
       - name: Run nox
+        if: >-
+          !matrix.skip
         uses: ansible-community/antsibull-nox@main
         with:
           working-directory: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
@@ -166,7 +183,8 @@ jobs:
           extra-args: ${{ inputs.upload-codecov && '--coverage' || '' }}
           sessions: ${{ matrix.name }}
       - name: Upload coverage for final step
-        if: inputs.upload-codecov
+        if: >-
+          !matrix.skip && inputs.upload-codecov
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-integration-${{ matrix.name }}
