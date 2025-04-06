@@ -994,6 +994,7 @@ def add_ansible_test_session(
     ansible_core_branch_name: str | None = None,
     handle_coverage: t.Literal["never", "always", "auto"] = "auto",
     register_name: str | None = None,
+    register_extra_data: dict[str, t.Any] | None = None,
 ) -> None:
     """
     Add generic ansible-test session.
@@ -1073,13 +1074,13 @@ def add_ansible_test_session(
     )
 
     if register_name:
-        _register(
-            register_name,
-            {
-                "name": name,
-                "python": " ".join(str(python) for python in python_versions),
-            },
-        )
+        data = {
+            "name": name,
+            "python": " ".join(str(python) for python in python_versions),
+        }
+        if register_extra_data:
+            data.update(register_extra_data)
+        _register(register_name, data)
 
 
 def add_ansible_test_sanity_test_session(
@@ -1270,6 +1271,10 @@ def add_ansible_test_integration_sessions_default_container(
                 ansible_core_version=ansible_core_version,
                 default=False,
                 register_name="integration",
+                register_extra_data={
+                    "test-container": "default",
+                    "test-python": str(py_version),
+                },
             )
             integration_sessions_core.append(name)
         return integration_sessions_core
