@@ -70,7 +70,7 @@ jobs:
 
   sanity:
     name: Sanity (Ⓐ${{ matrix.ansible-core }})
-    if: needs.create-matrixes.outputs.sanity-matrix != '[]'
+    if: needs.create-matrixes.outputs.sanity-matrix != ''
     needs:
       - create-matrixes
     strategy:
@@ -105,7 +105,7 @@ jobs:
 
   units:
     name: Units (Ⓐ${{ matrix.ansible-core }})
-    if: needs.create-matrixes.outputs.units-matrix != '[]'
+    if: needs.create-matrixes.outputs.units-matrix != ''
     needs:
       - create-matrixes
     strategy:
@@ -139,7 +139,7 @@ jobs:
 
   integration:
     name: I (Ⓐ${{ matrix.ansible-core }}+py${{ matrix.test-python }}+${{ matrix.test-container }})
-    if: needs.create-matrixes.outputs.integration-matrix != '[]'
+    if: needs.create-matrixes.outputs.integration-matrix != ''
     needs:
       - create-matrixes
     strategy:
