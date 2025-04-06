@@ -1051,7 +1051,7 @@ def add_ansible_test_sanity_test_session(
     add_ansible_test_session(
         name=name,
         description=description,
-        ansible_test_params=["sanity", "--docker", "-v"],
+        ansible_test_params=["sanity", "--docker", "-v", "--color"],
         default=default,
         ansible_core_version=ansible_core_version,
         ansible_core_source=ansible_core_source,
@@ -1114,7 +1114,7 @@ def add_ansible_test_unit_test_session(
     add_ansible_test_session(
         name=name,
         description=description,
-        ansible_test_params=["units", "--docker", "-v"],
+        ansible_test_params=["units", "--docker", "-v", "--color"],
         extra_deps_files=["tests/unit/requirements.yml"],
         default=default,
         ansible_core_version=ansible_core_version,
@@ -1214,6 +1214,7 @@ def add_ansible_test_integration_sessions_default_container(
                     "--docker",
                     "default",
                     "-v",
+                    "--color",
                     "--python",
                     str(py_version),
                 ],

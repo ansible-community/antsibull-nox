@@ -648,7 +648,7 @@ It accepts the following parameters:
 
 * `ansible_test_params: list[str]` (**required**):
   The parameters to pass to `ansible-test`.
-  For example, `["integration", "--docker", "ubuntu2404", "-v"]`.
+  For example, `["integration", "--docker", "ubuntu2404", "-v", "--color"]`.
 
 * `add_posargs: bool` (default `True`):
   Whether to append positional arguments provided to `nox` to the `ansible-test` command.
@@ -676,7 +676,7 @@ antsibull_nox.add_ansible_test_session(
     name="ansible-test-integration-devel-ubuntu2404",
     description="Run Ubuntu 24.04 integration tests with ansible-core devel",
     extra_deps_files=["tests/integration/requirements.yml"],
-    ansible_test_params=["integration", "--docker", "ubuntu2404", "-v"],
+    ansible_test_params=["integration", "--docker", "ubuntu2404", "-v", "--color"],
     default=False,
     ansible_core_version="devel",
 )
