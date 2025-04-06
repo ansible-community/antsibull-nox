@@ -23,6 +23,7 @@ from .sessions import (
     add_extra_checks,
     add_license_check,
     add_lint_sessions,
+    add_matrix_generator,
 )
 
 __version__ = "0.1.0.post0"
@@ -42,4 +43,5 @@ __all__ = (
     "add_ansible_test_unit_test_session",
     "add_all_ansible_test_unit_test_sessions",
     "add_ansible_test_integration_sessions_default_container",
+    "add_matrix_generator",
 )

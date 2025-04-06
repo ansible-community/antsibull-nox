@@ -671,6 +671,10 @@ It accepts the following parameters:
   Whether to run `ansible-test coverage xml` after running the `ansible-test` command.
   If set to `"auto"`, will check whether `--coverage` was passed to `ansible-test`.
 
+* `register_name: str | None` (default: `None`):
+  Register session under this name.
+  It will then appear under that name for `antsibull_nox.add_matrix_generator()`.
+
 #### Example code
 
 This adds a session called `ansible-test-integration-devel-ubuntu2404` that runs integration tests with ansible-core's development branch using its Ubuntu 24.04 container.
@@ -683,6 +687,7 @@ antsibull_nox.add_ansible_test_session(
     ansible_test_params=["integration", "--docker", "ubuntu2404", "-v", "--color"],
     default=False,
     ansible_core_version="devel",
+    register_name="integration",
 )
 ```
 
@@ -853,3 +858,26 @@ antsibull_nox.add_ansible_test_integration_sessions_default_container(
     include_devel=True,
 )
 ```
+
+### Generate matrixes for CI systems
+
+The function `antsibull_nox.add_matrix_generator()` allows to add a session that generates matrixes for CI systems.
+
+* The output is written as a JSON file to `$ANTSIBULL_NOX_MATRIX_JSON` if that environment variable is set.
+* The output is written as GitHub Actions output to `$GITHUB_OUTPUT` if that environment variable is set.
+* A text version is always shown.
+
+The top-level variables are as following:
+
+* `sanity`: a list of sessions for ansible-test sanity test runs added with
+  `antsibull_nox.add_ansible_test_sanity_test_session()` or
+  `antsibull_nox.add_all_ansible_test_sanity_test_sessions()`.
+
+* `units`: a list of sessions for ansible-test unit test runs added with
+  `antsibull_nox.add_ansible_test_unit_test_session()` or
+  `antsibull_nox.add_all_ansible_test_unit_test_sessions()`.
+
+* `integration`: a list of sessions for ansible-test integration test runs added with
+  `antsibull_nox.add_ansible_test_integration_sessions_default_container()`.
+
+There might be more top-level variables if `antsibull_nox.add_ansible_test_session()`'s `register_name` parameter is used.

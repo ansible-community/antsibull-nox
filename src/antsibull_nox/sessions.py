@@ -10,6 +10,7 @@ Create nox sessions.
 
 from __future__ import annotations
 
+import json
 import os
 import shlex
 import subprocess
@@ -68,6 +69,14 @@ MODULE_PATHS = [
     "tests/unit/plugins/modules/",
     "tests/unit/plugins/module_utils/",
 ]
+
+_SESSIONS: dict[str, list[dict[str, t.Any]]] = {}
+
+
+def _register(name: str, data: dict[str, t.Any]) -> None:
+    if name not in _SESSIONS:
+        _SESSIONS[name] = []
+    _SESSIONS[name].append(data)
 
 
 def install(session: nox.Session, *args: str, editable: bool = False, **kwargs):
@@ -984,9 +993,12 @@ def add_ansible_test_session(
     ansible_core_source: t.Literal["git", "pypi"] = "git",
     ansible_core_branch_name: str | None = None,
     handle_coverage: t.Literal["never", "always", "auto"] = "auto",
+    register_name: str | None = None,
 ) -> None:
     """
     Add generic ansible-test session.
+
+    Returns a list of Python versions set for this session.
     """
     parsed_ansible_core_version = _parse_ansible_core_version(ansible_core_version)
 
@@ -1050,15 +1062,24 @@ def add_ansible_test_session(
         if version in all_versions
     ]
     python = max(installed_versions or core_info.controller_python_versions)
-    python_versions = [f"{python}"]
+    python_versions = [python]
 
     run_ansible_test.__doc__ = description
     nox.session(  # type: ignore
         run_ansible_test,
         name=name,
         default=default,
-        python=python_versions,
+        python=[str(python_version) for python_version in python_versions],
     )
+
+    if register_name:
+        _register(
+            register_name,
+            {
+                "name": name,
+                "python": " ".join(str(python) for python in python_versions),
+            },
+        )
 
 
 def add_ansible_test_sanity_test_session(
@@ -1081,6 +1102,7 @@ def add_ansible_test_sanity_test_session(
         ansible_core_version=ansible_core_version,
         ansible_core_source=ansible_core_source,
         ansible_core_branch_name=ansible_core_branch_name,
+        register_name="sanity",
     )
 
 
@@ -1145,6 +1167,7 @@ def add_ansible_test_unit_test_session(
         ansible_core_version=ansible_core_version,
         ansible_core_source=ansible_core_source,
         ansible_core_branch_name=ansible_core_branch_name,
+        register_name="units",
     )
 
 
@@ -1246,6 +1269,7 @@ def add_ansible_test_integration_sessions_default_container(
                 extra_deps_files=["tests/integration/requirements.yml"],
                 ansible_core_version=ansible_core_version,
                 default=False,
+                register_name="integration",
             )
             integration_sessions_core.append(name)
         return integration_sessions_core
@@ -1291,6 +1315,43 @@ def add_ansible_test_integration_sessions_default_container(
     )
 
 
+def add_matrix_generator() -> None:
+    """
+    Add a session that generates matrixes for CI systems.
+    """
+
+    def matrix_generator(
+        session: nox.Session,  # pylint: disable=unused-argument
+    ) -> None:
+        json_output = os.environ.get("ANTSIBULL_NOX_MATRIX_JSON")
+        if json_output:
+            print(f"Writing JSON output to {json_output}...")
+            with open(json_output, "wt", encoding="utf-8") as f:
+                f.write(json.dumps(_SESSIONS))
+
+        github_output = os.environ.get("GITHUB_OUTPUT")
+        if github_output:
+            print(f"Writing GitHub output to {github_output}...")
+            with open(github_output, "at", encoding="utf-8") as f:
+                for name, sessions in _SESSIONS.items():
+                    f.write(f"{name}={json.dumps(sessions)}\n")
+
+        for name, sessions in sorted(_SESSIONS.items()):
+            print(f"{name} ({len(sessions)}):")
+            for session_data in sessions:
+                data = session_data.copy()
+                session_name = data.pop("name")
+                print(f"  {session_name}: {data}")
+
+    matrix_generator.__doc__ = "Generate matrix for CI systems."
+    nox.session(  # type: ignore
+        matrix_generator,
+        name="matrix-generator",
+        python=False,
+        default=False,
+    )
+
+
 __all__ = [
     "ActionGroup",
     "add_build_import_check",
@@ -1304,6 +1365,7 @@ __all__ = [
     "add_ansible_test_unit_test_session",
     "add_all_ansible_test_unit_test_sessions",
     "add_ansible_test_integration_sessions_default_container",
+    "add_matrix_generator",
     "install",
     "prepare_collections",
 ]
