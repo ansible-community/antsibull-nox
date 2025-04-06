@@ -21,7 +21,7 @@ env:
 jobs:
   test-gh-action:
     runs-on: ubuntu-latest
-    name: "Run nox ${{ matrix.session }} session"
+    name: "Run nox"
     steps:
       - name: Check out antsibull-nox
         uses: actions/checkout@v4
