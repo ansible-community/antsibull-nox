@@ -20,6 +20,12 @@ from pathlib import Path
 
 import nox
 
+from .ansible import (
+    AnsibleCoreVersion,
+    get_ansible_core_info,
+    get_ansible_core_package_name,
+    get_supported_core_versions,
+)
 from .collection import (
     CollectionData,
     force_collection_version,
@@ -36,6 +42,8 @@ from .paths import (
     list_all_files,
     remove_path,
 )
+from .python import get_installed_python_versions
+from .utils import Version
 
 # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
 # https://docs.gitlab.com/ci/variables/predefined_variables/#predefined-variables
@@ -267,7 +275,10 @@ def add_lint(
         },
     )
     nox.session(  # type: ignore
-        lint, name="lint", default=make_lint_default, requires=dependent_sessions
+        lint,
+        name="lint",
+        default=make_lint_default,
+        requires=dependent_sessions,
     )
 
 
@@ -651,7 +662,7 @@ def add_docs_check(
     ansible_core_package: str = "ansible-core",
     validate_collection_refs: t.Literal["self", "dependent", "all"] | None = None,
     extra_collections: list[str] | None = None,
-):
+) -> None:
     """
     Add docs-check session for linting.
     """
@@ -702,7 +713,7 @@ def add_license_check(
     reuse_package: str = "reuse",
     run_license_check: bool = True,
     license_check_extra_ignore_paths: list[str] | None = None,
-):
+) -> None:
     """
     Add license-check session for license checks.
     """
@@ -781,7 +792,7 @@ def add_extra_checks(
     # action-groups:
     run_action_groups: bool = False,
     action_groups_config: list[ActionGroup] | None = None,
-):
+) -> None:
     """
     Add extra-checks session for extra checks.
     """
@@ -854,7 +865,7 @@ def add_build_import_check(
     galaxy_importer_config_path: (
         str | None
     ) = None,  # https://github.com/ansible/galaxy-importer#configuration
-):
+) -> None:
     """
     Add license-check session for license checks.
     """
@@ -949,6 +960,311 @@ def add_build_import_check(
     )
 
 
+def _parse_ansible_core_version(
+    version: str | AnsibleCoreVersion,
+) -> AnsibleCoreVersion:
+    if version in ("devel", "milestone"):
+        # For some reason mypy doesn't notice that
+        return t.cast(AnsibleCoreVersion, version)
+    if isinstance(version, Version):
+        return version
+    return Version.parse(version)
+
+
+def add_ansible_test_session(
+    *,
+    name: str,
+    description: str | None,
+    extra_deps_files: list[str | os.PathLike] | None = None,
+    ansible_test_params: list[str],
+    add_posargs: bool = True,
+    default: bool,
+    ansible_core_version: str | AnsibleCoreVersion,
+    ansible_core_source: t.Literal["git", "pypi"] = "git",
+    ansible_core_branch_name: str | None = None,
+) -> None:
+    """
+    Add generic ansible-test session.
+    """
+    parsed_ansible_core_version = _parse_ansible_core_version(ansible_core_version)
+
+    def compose_dependencies() -> list[str]:
+        deps = [
+            get_ansible_core_package_name(
+                parsed_ansible_core_version,
+                source=ansible_core_source,
+                branch_name=ansible_core_branch_name,
+            )
+        ]
+        return deps
+
+    def run_ansible_test(session: nox.Session) -> None:
+        install(session, *compose_dependencies())
+        prepared_collections = prepare_collections(
+            session,
+            install_in_site_packages=False,
+            extra_deps_files=extra_deps_files,
+            install_out_of_tree=True,
+        )
+        if not prepared_collections:
+            session.warn("Skipping ansible-test...")
+            return
+        with session.chdir(prepared_collections.current_path):
+            command = ["ansible-test"] + ansible_test_params
+            if add_posargs and session.posargs:
+                command.extend(session.posargs)
+            session.run(*command)
+
+    # Determine Python version(s)
+    core_info = get_ansible_core_info(parsed_ansible_core_version)
+    all_versions = get_installed_python_versions()
+
+    installed_versions = [
+        version
+        for version in core_info.controller_python_versions
+        if version in all_versions
+    ]
+    python = max(installed_versions or core_info.controller_python_versions)
+    python_versions = [f"{python}"]
+
+    run_ansible_test.__doc__ = description
+    nox.session(  # type: ignore
+        run_ansible_test,
+        name=name,
+        default=default,
+        python=python_versions,
+    )
+
+
+def add_ansible_test_sanity_test_session(
+    *,
+    name: str,
+    description: str | None,
+    default: bool,
+    ansible_core_version: str | AnsibleCoreVersion,
+    ansible_core_source: t.Literal["git", "pypi"] = "git",
+    ansible_core_branch_name: str | None = None,
+) -> None:
+    """
+    Add generic ansible-test sanity test session.
+    """
+    add_ansible_test_session(
+        name=name,
+        description=description,
+        ansible_test_params=["sanity", "--docker", "-v"],
+        default=default,
+        ansible_core_version=ansible_core_version,
+        ansible_core_source=ansible_core_source,
+        ansible_core_branch_name=ansible_core_branch_name,
+    )
+
+
+def add_all_ansible_test_sanity_test_sessions(
+    *,
+    default: bool = False,
+    include_devel: bool = False,
+    include_milestone: bool = False,
+) -> None:
+    """
+    Add ansible-test sanity test meta session that runs ansible-test sanity
+    for all supported ansible-core versions.
+    """
+
+    sanity_sessions = []
+    for ansible_core_version in get_supported_core_versions(
+        include_devel=include_devel, include_milestone=include_milestone
+    ):
+        name = f"ansible-test-sanity-{ansible_core_version}"
+        add_ansible_test_sanity_test_session(
+            name=name,
+            description=f"Run sanity tests from ansible-core {ansible_core_version}'s ansible-test",
+            ansible_core_version=ansible_core_version,
+            default=False,
+        )
+        sanity_sessions.append(name)
+
+    def run_all_sanity_tests(
+        session: nox.Session,  # pylint: disable=unused-argument
+    ) -> None:
+        pass
+
+    run_all_sanity_tests.__doc__ = (
+        "Meta session for running all ansible-test-sanity-* sessions."
+    )
+    nox.session(  # type: ignore
+        run_all_sanity_tests,
+        name="ansible-test-sanity",
+        default=default,
+        requires=sanity_sessions,
+    )
+
+
+def add_ansible_test_unit_test_session(
+    *,
+    name: str,
+    description: str | None,
+    default: bool,
+    ansible_core_version: str | AnsibleCoreVersion,
+    ansible_core_source: t.Literal["git", "pypi"] = "git",
+    ansible_core_branch_name: str | None = None,
+) -> None:
+    """
+    Add generic ansible-test unit test session.
+    """
+    add_ansible_test_session(
+        name=name,
+        description=description,
+        ansible_test_params=["units", "--docker", "-v"],
+        extra_deps_files=["tests/unit/requirements.yml"],
+        default=default,
+        ansible_core_version=ansible_core_version,
+        ansible_core_source=ansible_core_source,
+        ansible_core_branch_name=ansible_core_branch_name,
+    )
+
+
+def add_all_ansible_test_unit_test_sessions(
+    *,
+    default: bool = False,
+    include_devel: bool = False,
+    include_milestone: bool = False,
+) -> None:
+    """
+    Add ansible-test unit test meta session that runs ansible-test units
+    for all supported ansible-core versions.
+    """
+
+    units_sessions = []
+    for ansible_core_version in get_supported_core_versions(
+        include_devel=include_devel, include_milestone=include_milestone
+    ):
+        name = f"ansible-test-units-{ansible_core_version}"
+        add_ansible_test_unit_test_session(
+            name=name,
+            description=f"Run unit tests with ansible-core {ansible_core_version}'s ansible-test",
+            ansible_core_version=ansible_core_version,
+            default=False,
+        )
+        units_sessions.append(name)
+
+    def run_all_unit_tests(
+        session: nox.Session,  # pylint: disable=unused-argument
+    ) -> None:
+        pass
+
+    run_all_unit_tests.__doc__ = (
+        "Meta session for running all ansible-test-units-* sessions."
+    )
+    nox.session(  # type: ignore
+        run_all_unit_tests,
+        name="ansible-test-units",
+        default=default,
+        requires=units_sessions,
+    )
+
+
+def add_ansible_test_integration_sessions_default_container(
+    *,
+    include_devel: bool = False,
+    include_milestone: bool = False,
+    core_python_versions: (
+        dict[str | AnsibleCoreVersion, list[str | Version]] | None
+    ) = None,
+    controller_python_versions_only: bool = False,
+    default: bool = False,
+) -> None:
+    """
+    Add ansible-test integration tests using the default Docker container.
+
+    ``core_python_versions`` can be used to restrict the Python versions
+    to be used for a specific ansible-core version.
+
+    ``controller_python_versions_only`` can be used to only run against
+    controller Python versions.
+    """
+
+    def add_integration_tests(ansible_core_version: AnsibleCoreVersion) -> list[str]:
+        # Determine Python versions to run tests for
+        py_versions = (
+            core_python_versions.get(ansible_core_version)
+            or core_python_versions.get(str(ansible_core_version))
+            if core_python_versions
+            else None
+        )
+        if py_versions is None:
+            core_info = get_ansible_core_info(ansible_core_version)
+            py_versions = list(
+                core_info.controller_python_versions
+                if controller_python_versions_only
+                else core_info.remote_python_versions
+            )
+
+        # Add sessions
+        integration_sessions_core: list[str] = []
+        for py_version in py_versions:
+            name = f"ansible-test-integration-{ansible_core_version}-{py_version}"
+            add_ansible_test_session(
+                name=name,
+                description=(
+                    f"Run integration tests from ansible-core {ansible_core_version}'s"
+                    f" ansible-test with Python {py_version}"
+                ),
+                ansible_test_params=[
+                    "integration",
+                    "--docker",
+                    "default",
+                    "-v",
+                    "--python",
+                    str(py_version),
+                ],
+                extra_deps_files=["tests/integration/requirements.yml"],
+                ansible_core_version=ansible_core_version,
+                default=False,
+            )
+            integration_sessions_core.append(name)
+        return integration_sessions_core
+
+    integration_sessions: list[str] = []
+    for ansible_core_version in get_supported_core_versions(
+        include_devel=include_devel, include_milestone=include_milestone
+    ):
+        integration_sessions_core = add_integration_tests(ansible_core_version)
+        if integration_sessions_core:
+            name = f"ansible-test-integration-{ansible_core_version}"
+            integration_sessions.append(name)
+
+            def run_integration_tests(
+                session: nox.Session,  # pylint: disable=unused-argument
+            ) -> None:
+                pass
+
+            run_integration_tests.__doc__ = (
+                "Meta session for running all"
+                f" ansible-test-integration-{ansible_core_version}-* sessions."
+            )
+            nox.session(  # type: ignore
+                run_integration_tests,
+                name=name,
+                requires=integration_sessions_core,
+                default=False,
+            )
+
+    def ansible_test_integration(
+        session: nox.Session,  # pylint: disable=unused-argument
+    ) -> None:
+        pass
+
+    ansible_test_integration.__doc__ = (
+        "Meta session for running all ansible-test-integration-* sessions."
+    )
+    nox.session(  # type: ignore
+        ansible_test_integration,
+        name="ansible-test-integration",
+        requires=integration_sessions,
+        default=default,
+    )
+
+
 __all__ = [
     "ActionGroup",
     "add_build_import_check",
@@ -956,6 +1272,12 @@ __all__ = [
     "add_extra_checks",
     "add_license_check",
     "add_lint_sessions",
+    "add_ansible_test_session",
+    "add_ansible_test_sanity_test_session",
+    "add_all_ansible_test_sanity_test_sessions",
+    "add_ansible_test_unit_test_session",
+    "add_all_ansible_test_unit_test_sessions",
+    "add_ansible_test_integration_sessions_default_container",
     "install",
     "prepare_collections",
 ]

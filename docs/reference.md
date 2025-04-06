@@ -587,8 +587,7 @@ which has the following properties:
 
 ### Example code
 
-This example is from `community.dns`
-and slightly adjusted to use the `CI` environment variable instead of `GITHUB_ACTIONS`.
+This example is from `community.dns`.
 The `update-docs-fragments.py` script updates some docs fragments
 with information from module utils to ensure that both data sources are in sync.
 
@@ -621,4 +620,232 @@ def update_docs_fragments(session: nox.Session) -> None:
     if IN_CI:
         data.append("--lint")
     session.run(*data)
+```
+
+## Run ansible-test
+
+antsibull-nox provides several ways to run ansible-core's testing tool `ansible-test` directly from nox.
+It knows which Python versions every ansible-core release supports and picks an installed version of Python for every ansible-test session if possible,
+or picks the highest supported Python version for the ansible-core release is no installed Python is found.
+
+### Add a generic ansible-test session
+
+`antsibull_nox.add_ansible_test_session()` is a low-level function used by all other functions in this section to add a session running ansible-test.
+It assumes that the command run uses Docker isolation, and thus only needs one Python version - preferably one available locally - to run.
+
+It accepts the following parameters:
+
+* `name: str` (**required**):
+  The name of the session.
+
+* `description: str | None` (**required**):
+  The session's description.
+  Will be shown when running `nox --list`.
+
+* `extra_deps_files: list[str | os.PathLike] | None` (default: `None`):
+  Additional collection dependency files to read and ensure that these collections (and their dependencies) are present.
+  For example, `["tests/integration/requirements.yml"]`.
+
+* `ansible_test_params: list[str]` (**required**):
+  The parameters to pass to `ansible-test`.
+  For example, `["integration", "--docker", "ubuntu2404", "-v"]`.
+
+* `add_posargs: bool` (default `True`):
+  Whether to append positional arguments provided to `nox` to the `ansible-test` command.
+
+* `default: bool` (**required**):
+  Whether the session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* `ansible_core_version: str | AnsibleCoreVersion` (**required**):
+  The ansible-core version to install. Can be a version string like `"2.18"`, or one of the special identifiers `"devel"` and `"milestone"`.
+
+* `ansible_core_source: t.Literal["git", "pypi"]` (default `"git"`):
+  The source where to install ansible-core from.
+  For `"devel"` and `"milestone"`, always `git` will be used.
+
+* `ansible_core_branch_name: str | None` (default `None`):
+  Allows to override the branch name when `ansible_core_source == "git"`.
+
+#### Example code
+
+This adds a session called `ansible-test-integration-devel-ubuntu2404` that runs integration tests with ansible-core's development branch using its Ubuntu 24.04 container.
+
+```python
+antsibull_nox.add_ansible_test_session(
+    name="ansible-test-integration-devel-ubuntu2404",
+    description="Run Ubuntu 24.04 integration tests with ansible-core devel",
+    extra_deps_files=["tests/integration/requirements.yml"],
+    ansible_test_params=["integration", "--docker", "ubuntu2404", "-v"],
+    default=False,
+    ansible_core_version="devel",
+)
+```
+
+### Add one or all sanity test sessions
+
+The `antsibull_nox.add_ansible_test_sanity_test_session()` function can be used to add a specific ansible-core sanity test run.
+Sanity tests will always be run using ansible-test's `default` container.
+The function supports the following parameters:
+
+* `name: str` (**required**):
+  The name of the session.
+
+* `description: str | None` (**required**):
+  The session's description.
+  Will be shown when running `nox --list`.
+
+* `default: bool` (**required**):
+  Whether the session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* `ansible_core_version: str | AnsibleCoreVersion` (**required**):
+  The ansible-core version to install. Can be a version string like `"2.18"`, or one of the special identifiers `"devel"` and `"milestone"`.
+
+* `ansible_core_source: t.Literal["git", "pypi"]` (default `"git"`):
+  The source where to install ansible-core from.
+  For `"devel"` and `"milestone"`, always `git` will be used.
+
+* `ansible_core_branch_name: str | None` (default `None`):
+  Allows to override the branch name when `ansible_core_source == "git"`.
+
+The `antsibull_nox.add_all_ansible_test_sanity_test_sessions()` function can be used to run sanity tests for all supported ansible-core versions.
+Sanity tests will always be run using ansible-test's `default` container.
+The function supports the following parameters:
+
+* `default: bool` (default `False`):
+  Whether the session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* `include_devel: bool` (default `False`):
+  Whether ansible-core's `devel` branch should also be used.
+  This is the development version of ansible-core and can break at any moment.
+  This can be very helpful to prepare your collection against breaking changes in upcoming ansible-core versions early on.
+  You should only run against it if you are ready for this.
+
+* `include_milestone: bool` (default `False`):
+  Whether ansible-core's `milestone` branch should also be used.
+  Note that the milestone branch is from the latest development version,
+  but is updated only once for every ansible-core development phase
+  at specific dates published in advance.
+
+#### Example code
+
+This example is from `community.dns`.
+It runs all sanity tests for all supported ansible-core versions,
+including ansible-core's development branch.
+
+```python
+antsibull_nox.add_all_ansible_test_sanity_test_sessions(include_devel=True)
+```
+
+### Add one or all unit test sessions
+
+The `antsibull_nox.add_ansible_test_unit_test_session()` function can be used to add a specific ansible-core unit tests run.
+Unit tests will always be run for all supported Python versions of the ansible-core version,
+using ansible-test's `default` container.
+The function supports the following parameters:
+
+* `name: str` (**required**):
+  The name of the session.
+
+* `description: str | None` (**required**):
+  The session's description.
+  Will be shown when running `nox --list`.
+
+* `default: bool` (**required**):
+  Whether the session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* `ansible_core_version: str | AnsibleCoreVersion` (**required**):
+  The ansible-core version to install. Can be a version string like `"2.18"`, or one of the special identifiers `"devel"` and `"milestone"`.
+
+* `ansible_core_source: t.Literal["git", "pypi"]` (default `"git"`):
+  The source where to install ansible-core from.
+  For `"devel"` and `"milestone"`, always `git` will be used.
+
+* `ansible_core_branch_name: str | None` (default `None`):
+  Allows to override the branch name when `ansible_core_source == "git"`.
+
+The `antsibull_nox.add_all_ansible_test_unit_test_sessions()` function can be used to run unit tests for all supported ansible-core versions.
+Unit tests will always be run for all supported Python versions of the ansible-core version,
+using ansible-test's `default` container.
+The function supports the following parameters:
+
+* `default: bool` (default `False`):
+  Whether the session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* `include_devel: bool` (default `False`):
+  Whether ansible-core's `devel` branch should also be used.
+  This is the development version of ansible-core and can break at any moment.
+  This can be very helpful to prepare your collection against breaking changes in upcoming ansible-core versions early on.
+  You should only run against it if you are ready for this.
+
+* `include_milestone: bool` (default `False`):
+  Whether ansible-core's `milestone` branch should also be used.
+  Note that the milestone branch is from the latest development version,
+  but is updated only once for every ansible-core development phase
+  at specific dates published in advance.
+
+#### Example code
+
+This example is from `community.dns`.
+It runs all unit tests for all supported ansible-core versions,
+including ansible-core's development branch.
+
+```python
+antsibull_nox.add_all_ansible_test_unit_test_sessions(include_devel=True)
+```
+
+### Add integration test sessions with the `default` container
+
+The `antsibull_nox.add_ansible_test_integration_sessions_default_container()` function can be used to run integration tests for all supported ansible-core versions.
+The tests will all be run using ansible-test's `default` container.
+It is possible to restrict the Python versions used to run the tests per ansible-core version.
+
+* `default: bool` (default `False`):
+  Whether the session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* `include_devel: bool` (default `False`):
+  Whether ansible-core's `devel` branch should also be used.
+  This is the development version of ansible-core and can break at any moment.
+  This can be very helpful to prepare your collection against breaking changes in upcoming ansible-core versions early on.
+  You should only run against it if you are ready for this.
+
+* `include_milestone: bool` (default `False`):
+  Whether ansible-core's `milestone` branch should also be used.
+  Note that the milestone branch is from the latest development version,
+  but is updated only once for every ansible-core development phase
+  at specific dates published in advance.
+
+* `core_python_versions: dict[str | AnsibleCoreVersion, list[str | Version]] | None` (default `None`):
+  Allows to restrict the number of Python versions per ansible-core release.
+  An empty list means that the ansible-core version will be skipped completely.
+  If no restrictions are provided, all Python versions supported by this version of ansible-core are used;
+  see `controller_python_versions_only` below for more details.
+
+* `controller_python_versions_only: bool` (default `False`):
+  For ansible-core versions where `core_python_versions` does not provide a list of Python versions,
+  usually all Python versions supported on the remote side are used.
+  If this is set to `True`, only all Python versions uspported on the controller side are used.
+
+#### Example code
+
+This example is from `community.dns`.
+
+```python
+antsibull_nox.add_all_ansible_test_sanity_test_sessions(include_devel=True)
+antsibull_nox.add_all_ansible_test_unit_test_sessions(include_devel=True)
+antsibull_nox.add_ansible_test_integration_sessions_default_container(
+    core_python_versions={
+        "2.14": ["2.7", "3.5", "3.9"],
+        "2.15": ["3.7"],
+        "2.16": ["2.7", "3.6", "3.11"],
+        "2.17": ["3.7", "3.12"],
+        "2.18": ["3.8", "3.13"],
+    },
+    include_devel=True,
+)
 ```

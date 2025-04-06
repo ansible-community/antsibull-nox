@@ -12,6 +12,12 @@ from __future__ import annotations
 
 from .sessions import (
     ActionGroup,
+    add_all_ansible_test_sanity_test_sessions,
+    add_all_ansible_test_unit_test_sessions,
+    add_ansible_test_integration_sessions_default_container,
+    add_ansible_test_sanity_test_session,
+    add_ansible_test_session,
+    add_ansible_test_unit_test_session,
     add_build_import_check,
     add_docs_check,
     add_extra_checks,
@@ -30,4 +36,10 @@ __all__ = (
     "add_extra_checks",
     "add_license_check",
     "add_lint_sessions",
+    "add_ansible_test_session",
+    "add_ansible_test_sanity_test_session",
+    "add_all_ansible_test_sanity_test_sessions",
+    "add_ansible_test_unit_test_session",
+    "add_all_ansible_test_unit_test_sessions",
+    "add_ansible_test_integration_sessions_default_container",
 )
