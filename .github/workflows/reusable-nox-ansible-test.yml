@@ -69,7 +69,7 @@ jobs:
           sessions: matrix-generator
 
   sanity:
-    name: Sanity (Ⓐ${{ matrix.ansible-core }})
+    name: ${{ matrix.skip && 'Skipping ' || '' }}Sanity (Ⓐ${{ matrix.ansible-core }})
     needs:
       - create-matrixes
     strategy:
@@ -110,7 +110,7 @@ jobs:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}/tests/output/reports/coverage=sanity=*.xml
 
   units:
-    name: Units (Ⓐ${{ matrix.ansible-core }})
+    name: ${{ matrix.skip && 'Skipping ' || '' }}Units (Ⓐ${{ matrix.ansible-core }})
     needs:
       - create-matrixes
     strategy:
@@ -150,7 +150,7 @@ jobs:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}/tests/output/reports/coverage=units=*.xml
 
   integration:
-    name: I (Ⓐ${{ matrix.ansible-core }}+py${{ matrix.test-python }}+${{ matrix.test-container }})
+    name: ${{ matrix.skip && 'Skipping ' || '' }}I (Ⓐ${{ matrix.ansible-core }}+py${{ matrix.test-python }}+${{ matrix.test-container }})
     needs:
       - create-matrixes
     strategy:
