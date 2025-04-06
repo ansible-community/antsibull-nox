@@ -1076,6 +1076,7 @@ def add_ansible_test_session(
     if register_name:
         data = {
             "name": name,
+            "ansible-core": str(parsed_ansible_core_version),
             "python": " ".join(str(python) for python in python_versions),
         }
         if register_extra_data:
