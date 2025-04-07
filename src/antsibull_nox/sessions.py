@@ -284,12 +284,11 @@ def add_lint(
             "typing": has_typing,
         },
     )
-    nox.session(  # type: ignore
-        lint,
+    nox.session(
         name="lint",
         default=make_lint_default,
         requires=dependent_sessions,
-    )
+    )(lint)
 
 
 def add_formatters(
@@ -382,7 +381,7 @@ def add_formatters(
             "black": run_black,
         },
     )
-    nox.session(formatters, name="formatters", default=False)  # type: ignore
+    nox.session(name="formatters", default=False)(formatters)
 
 
 def add_codeqa(  # noqa: C901
@@ -504,7 +503,7 @@ def add_codeqa(  # noqa: C901
             "pylint": run_pylint,
         },
     )
-    nox.session(codeqa, name="codeqa", default=False)  # type: ignore
+    nox.session(name="codeqa", default=False)(codeqa)
 
 
 def add_typing(
@@ -580,7 +579,7 @@ def add_typing(
             "mypy": run_mypy,
         },
     )
-    nox.session(typing, name="typing", default=False)  # type: ignore
+    nox.session(name="typing", default=False)(typing)
 
 
 def add_lint_sessions(
@@ -711,9 +710,10 @@ def add_docs_check(
             execute_antsibull_docs(session, prepared_collections)
 
     docs_check.__doc__ = "Run 'antsibull-docs lint-collection-docs'"
-    nox.session(  # type: ignore
-        docs_check, name="docs-check", default=make_docs_check_default
-    )
+    nox.session(
+        name="docs-check",
+        default=make_docs_check_default,
+    )(docs_check)
 
 
 def add_license_check(
@@ -759,9 +759,10 @@ def add_license_check(
             ),
         },
     )
-    nox.session(  # type: ignore
-        license_check, name="license-check", default=make_license_check_default
-    )
+    nox.session(
+        name="license-check",
+        default=make_license_check_default,
+    )(license_check)
 
 
 @dataclass
@@ -858,12 +859,11 @@ def add_extra_checks(
             "action-groups": "validate action groups" if run_action_groups else False,
         },
     )
-    nox.session(  # type: ignore
-        extra_checks,
+    nox.session(
         name="extra-checks",
         python=False,
         default=make_extra_checks_default,
-    )
+    )(extra_checks)
 
 
 def add_build_import_check(
@@ -963,11 +963,10 @@ def add_build_import_check(
             ),
         },
     )
-    nox.session(  # type: ignore
-        build_import_check,
+    nox.session(
         name="build-import-check",
         default=make_build_import_check_default,
-    )
+    )(build_import_check)
 
 
 def _parse_ansible_core_version(
@@ -1066,12 +1065,11 @@ def add_ansible_test_session(
     python_versions = [python]
 
     run_ansible_test.__doc__ = description
-    nox.session(  # type: ignore
-        run_ansible_test,
+    nox.session(
         name=name,
         default=default,
         python=[str(python_version) for python_version in python_versions],
-    )
+    )(run_ansible_test)
 
     if register_name:
         data = {
@@ -1140,12 +1138,11 @@ def add_all_ansible_test_sanity_test_sessions(
     run_all_sanity_tests.__doc__ = (
         "Meta session for running all ansible-test-sanity-* sessions."
     )
-    nox.session(  # type: ignore
-        run_all_sanity_tests,
+    nox.session(
         name="ansible-test-sanity",
         default=default,
         requires=sanity_sessions,
-    )
+    )(run_all_sanity_tests)
 
 
 def add_ansible_test_unit_test_session(
@@ -1205,12 +1202,11 @@ def add_all_ansible_test_unit_test_sessions(
     run_all_unit_tests.__doc__ = (
         "Meta session for running all ansible-test-units-* sessions."
     )
-    nox.session(  # type: ignore
-        run_all_unit_tests,
+    nox.session(
         name="ansible-test-units",
         default=default,
         requires=units_sessions,
-    )
+    )(run_all_unit_tests)
 
 
 def add_ansible_test_integration_sessions_default_container(
@@ -1298,12 +1294,11 @@ def add_ansible_test_integration_sessions_default_container(
                 "Meta session for running all"
                 f" ansible-test-integration-{ansible_core_version}-* sessions."
             )
-            nox.session(  # type: ignore
-                run_integration_tests,
+            nox.session(
                 name=name,
                 requires=integration_sessions_core,
                 default=False,
-            )
+            )(run_integration_tests)
 
     def ansible_test_integration(
         session: nox.Session,  # pylint: disable=unused-argument
@@ -1313,12 +1308,11 @@ def add_ansible_test_integration_sessions_default_container(
     ansible_test_integration.__doc__ = (
         "Meta session for running all ansible-test-integration-* sessions."
     )
-    nox.session(  # type: ignore
-        ansible_test_integration,
+    nox.session(
         name="ansible-test-integration",
         requires=integration_sessions,
         default=default,
-    )
+    )(ansible_test_integration)
 
 
 def add_matrix_generator() -> None:
@@ -1350,12 +1344,11 @@ def add_matrix_generator() -> None:
                 print(f"  {session_name}: {data}")
 
     matrix_generator.__doc__ = "Generate matrix for CI systems."
-    nox.session(  # type: ignore
-        matrix_generator,
+    nox.session(
         name="matrix-generator",
         python=False,
         default=False,
-    )
+    )(matrix_generator)
 
 
 __all__ = [
