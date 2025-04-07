@@ -197,9 +197,15 @@ def prepare_collections(
 
 
 def _run_bare_script(
-    session: nox.Session, /, name: str, *, extra_data: dict[str, t.Any] | None = None
+    session: nox.Session,
+    /,
+    name: str,
+    *,
+    files: list[Path] | None = None,
+    extra_data: dict[str, t.Any] | None = None,
 ) -> None:
-    files = list_all_files()
+    if files is None:
+        files = list_all_files()
     data = prepare_data_script(
         session,
         base_name=name,
@@ -557,10 +563,43 @@ def add_yamllint(
         command.extend(session.posargs)
         session.run(*command)
 
+    def execute_plugin_yamllint(session: nox.Session) -> None:
+        # Run yamllint
+        all_files = list_all_files()
+        cwd = Path.cwd()
+        plugins_dir = cwd / "plugins"
+        ignore_dirs = [
+            plugins_dir / "action",
+            plugins_dir / "module_utils",
+            plugins_dir / "plugin_utils",
+        ]
+        all_plugin_files = [
+            file
+            for file in all_files
+            if file.is_relative_to(plugins_dir)
+            and file.name.lower().endswith(".py")
+            and not any(file.is_relative_to(dir) for dir in ignore_dirs)
+        ]
+        if not all_plugin_files:
+            session.warn(
+                "Skipping yamllint for modules/plugins since"
+                " no appropriate Python file was found..."
+            )
+            return
+        _run_bare_script(
+            session,
+            "plugin-yamllint",
+            files=all_plugin_files,
+            extra_data={
+                "config": str(yamllint_config) if yamllint_config else None,
+            },
+        )
+
     def yamllint(session: nox.Session) -> None:
         install(session, *compose_dependencies())
         if run_yamllint:
             execute_yamllint(session)
+            execute_plugin_yamllint(session)
 
     yamllint.__doc__ = _compose_description(
         prefix={
