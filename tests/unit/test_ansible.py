@@ -6,19 +6,25 @@
 
 import re
 import typing as t
+from pathlib import Path
 
 import pytest
+from antsibull_fileutils.yaml import store_yaml_file
 
 from antsibull_nox.ansible import (
     _CURRENT_DEVEL_VERSION,
     _CURRENT_MILESTONE_VERSION,
     _MIN_SUPPORTED_VERSION,
     AnsibleCoreVersion,
+    _read_requires_ansible,
     get_ansible_core_info,
     get_ansible_core_package_name,
+    get_supported_core_versions,
 )
 from antsibull_nox.python import _PYTHON_VERSIONS_TO_TRY
 from antsibull_nox.utils import Version, version_range
+
+from .utils import chdir
 
 
 def test_check_devel_version() -> None:
@@ -134,6 +140,14 @@ GET_ANSIBLE_CORE_PAGAGE_NAME_DATA: list[
         {"source": "pypi"},
         "https://github.com/ansible/ansible/archive/milestone.tar.gz",
     ),
+    (
+        "milestone",
+        {
+            "branch_name": "refs/pull/84621/head",
+            "ansible_repo": "ansible-community/eol-ansible",
+        },
+        "https://github.com/ansible-community/eol-ansible/archive/refs/pull/84621/head.tar.gz",
+    ),
 ]
 
 
@@ -145,3 +159,151 @@ def test_get_ansible_core_package_name(
     version: AnsibleCoreVersion, kwargs: dict[str, t.Any], expected_package_name: str
 ) -> None:
     assert get_ansible_core_package_name(version, **kwargs) == expected_package_name
+
+
+GET_SUPPORTED_CORE_VERSIONS_DATA: list[
+    tuple[str, dict[str, t.Any], list[AnsibleCoreVersion]]
+] = [
+    (
+        ">= 2.9.10",
+        {},
+        [
+            Version.parse("2.9"),
+            Version.parse("2.10"),
+            Version.parse("2.11"),
+            Version.parse("2.12"),
+            Version.parse("2.13"),
+            Version.parse("2.14"),
+            Version.parse("2.15"),
+            Version.parse("2.16"),
+            Version.parse("2.17"),
+            Version.parse("2.18"),
+        ],
+    ),
+    (
+        ">= 2.9.10, < 2.13",
+        {"include_devel": True},
+        [
+            Version.parse("2.9"),
+            Version.parse("2.10"),
+            Version.parse("2.11"),
+            Version.parse("2.12"),
+            "devel",
+        ],
+    ),
+    (
+        ">= 2.9.10, < 2.16",
+        {
+            "min_version": Version.parse("2.11"),
+            "max_version": Version.parse("2.14"),
+            "except_versions": (Version.parse("2.13"),),
+            "include_milestone": True,
+            "include_devel": True,
+        },
+        [
+            Version.parse("2.11"),
+            Version.parse("2.12"),
+            Version.parse("2.14"),
+            "milestone",
+            "devel",
+        ],
+    ),
+    (
+        ">= 2.9.10, < 2.11",
+        {
+            "except_versions": (Version.parse("2.9"), "milestone", "devel"),
+            "include_milestone": True,
+            "include_devel": True,
+        },
+        [
+            Version.parse("2.10"),
+        ],
+    ),
+]
+
+
+def test__read_requires_ansible_fail(tmp_path: Path) -> None:
+    meta = tmp_path / "meta"
+    meta.mkdir()
+    runtime_yml = meta / "runtime.yml"
+    with chdir(tmp_path):
+        _read_requires_ansible.cache_clear()  # added by @functools.cache
+        with pytest.raises(ValueError, match="^Cannot open meta/runtime.yml$"):
+            _read_requires_ansible()
+
+        _read_requires_ansible.cache_clear()  # added by @functools.cache
+        runtime_yml.mkdir()
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"^Cannot parse meta/runtime.yml: \[Errno 21\]"
+                " Is a directory: 'meta/runtime.yml'$"
+            ),
+        ):
+            _read_requires_ansible()
+        runtime_yml.rmdir()
+
+        runtime_yml.write_text("{")
+        _read_requires_ansible.cache_clear()  # added by @functools.cache
+        with pytest.raises(
+            ValueError,
+            match="^Cannot parse meta/runtime.yml: while parsing a flow node",
+        ):
+            _read_requires_ansible()
+
+        store_yaml_file(runtime_yml, {"requires_ansible": 123})
+        _read_requires_ansible.cache_clear()  # added by @functools.cache
+        with pytest.raises(
+            ValueError,
+            match="^meta/runtime.yml does not contain an 'requires_ansible' string$",
+        ):
+            _read_requires_ansible()
+
+        store_yaml_file(runtime_yml, {"requires_ansible": []})
+        _read_requires_ansible.cache_clear()  # added by @functools.cache
+        with pytest.raises(
+            ValueError,
+            match="^meta/runtime.yml does not contain an 'requires_ansible' string$",
+        ):
+            _read_requires_ansible()
+
+        store_yaml_file(runtime_yml, {})
+        _read_requires_ansible.cache_clear()  # added by @functools.cache
+        with pytest.raises(
+            ValueError,
+            match="^meta/runtime.yml does not contain an 'requires_ansible' string$",
+        ):
+            _read_requires_ansible()
+
+        store_yaml_file(runtime_yml, {"requires_ansible": "<>"})
+        _read_requires_ansible.cache_clear()  # added by @functools.cache
+        with pytest.raises(
+            ValueError,
+            match=(
+                "^meta/runtime.yml contains an invalid"
+                " 'requires_ansible' string: Invalid specifier: '<>'$"
+            ),
+        ):
+            _read_requires_ansible()
+
+
+@pytest.mark.parametrize(
+    "requires_ansible, kwargs, expected_version_list",
+    GET_SUPPORTED_CORE_VERSIONS_DATA,
+)
+def test_get_supported_core_versions(
+    requires_ansible: str,
+    kwargs: dict[str, t.Any],
+    expected_version_list: list[AnsibleCoreVersion],
+    tmp_path: Path,
+) -> None:
+    meta = tmp_path / "meta"
+    meta.mkdir()
+    runtime_yml = meta / "runtime.yml"
+    store_yaml_file(runtime_yml, {"requires_ansible": requires_ansible})
+    with chdir(tmp_path):
+        _read_requires_ansible.cache_clear()  # added by @functools.cache
+        get_supported_core_versions.cache_clear()  # added by @functools.cache
+        print(kwargs)
+        version_list = get_supported_core_versions(**kwargs)
+    assert version_list == expected_version_list

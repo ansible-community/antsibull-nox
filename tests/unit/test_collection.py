@@ -12,8 +12,6 @@ Tests for the collection module
 
 from __future__ import annotations
 
-import contextlib
-import os
 import typing as t
 from pathlib import Path
 
@@ -33,15 +31,7 @@ from antsibull_nox.collection import (
     load_collection_data_from_disk,
 )
 
-
-@contextlib.contextmanager
-def chdir(dir: Path):
-    current = Path.cwd()
-    try:
-        os.chdir(dir)
-        yield
-    finally:
-        os.chdir(current)
+from .utils import chdir
 
 
 def create_once_runner(args: list[str], stdout: bytes, stderr: bytes = b"") -> Runner:

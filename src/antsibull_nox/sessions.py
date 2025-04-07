@@ -1106,20 +1106,45 @@ def add_ansible_test_sanity_test_session(
     )
 
 
+def _parse_min_max_except(
+    min_version: Version | str | None,
+    max_version: Version | str | None,
+    except_versions: list[AnsibleCoreVersion | str] | None,
+) -> tuple[Version | None, Version | None, tuple[AnsibleCoreVersion, ...] | None]:
+    if isinstance(min_version, str):
+        min_version = Version.parse(min_version)
+    if isinstance(max_version, str):
+        max_version = Version.parse(max_version)
+    if except_versions is None:
+        return min_version, max_version, None
+    evs = tuple(_parse_ansible_core_version(version) for version in except_versions)
+    return min_version, max_version, evs
+
+
 def add_all_ansible_test_sanity_test_sessions(
     *,
     default: bool = False,
     include_devel: bool = False,
     include_milestone: bool = False,
+    min_version: Version | str | None = None,
+    max_version: Version | str | None = None,
+    except_versions: list[AnsibleCoreVersion | str] | None = None,
 ) -> None:
     """
     Add ansible-test sanity test meta session that runs ansible-test sanity
     for all supported ansible-core versions.
     """
+    parsed_min_version, parsed_max_version, parsed_except_versions = (
+        _parse_min_max_except(min_version, max_version, except_versions)
+    )
 
     sanity_sessions = []
     for ansible_core_version in get_supported_core_versions(
-        include_devel=include_devel, include_milestone=include_milestone
+        include_devel=include_devel,
+        include_milestone=include_milestone,
+        min_version=parsed_min_version,
+        max_version=parsed_max_version,
+        except_versions=parsed_except_versions,
     ):
         name = f"ansible-test-sanity-{ansible_core_version}"
         add_ansible_test_sanity_test_session(
@@ -1175,15 +1200,25 @@ def add_all_ansible_test_unit_test_sessions(
     default: bool = False,
     include_devel: bool = False,
     include_milestone: bool = False,
+    min_version: Version | str | None = None,
+    max_version: Version | str | None = None,
+    except_versions: list[AnsibleCoreVersion | str] | None = None,
 ) -> None:
     """
     Add ansible-test unit test meta session that runs ansible-test units
     for all supported ansible-core versions.
     """
+    parsed_min_version, parsed_max_version, parsed_except_versions = (
+        _parse_min_max_except(min_version, max_version, except_versions)
+    )
 
     units_sessions = []
     for ansible_core_version in get_supported_core_versions(
-        include_devel=include_devel, include_milestone=include_milestone
+        include_devel=include_devel,
+        include_milestone=include_milestone,
+        min_version=parsed_min_version,
+        max_version=parsed_max_version,
+        except_versions=parsed_except_versions,
     ):
         name = f"ansible-test-units-{ansible_core_version}"
         add_ansible_test_unit_test_session(
@@ -1213,6 +1248,9 @@ def add_ansible_test_integration_sessions_default_container(
     *,
     include_devel: bool = False,
     include_milestone: bool = False,
+    min_version: Version | str | None = None,
+    max_version: Version | str | None = None,
+    except_versions: list[AnsibleCoreVersion | str] | None = None,
     core_python_versions: (
         dict[str | AnsibleCoreVersion, list[str | Version]] | None
     ) = None,
@@ -1276,9 +1314,16 @@ def add_ansible_test_integration_sessions_default_container(
             integration_sessions_core.append(name)
         return integration_sessions_core
 
+    parsed_min_version, parsed_max_version, parsed_except_versions = (
+        _parse_min_max_except(min_version, max_version, except_versions)
+    )
     integration_sessions: list[str] = []
     for ansible_core_version in get_supported_core_versions(
-        include_devel=include_devel, include_milestone=include_milestone
+        include_devel=include_devel,
+        include_milestone=include_milestone,
+        min_version=parsed_min_version,
+        max_version=parsed_max_version,
+        except_versions=parsed_except_versions,
     ):
         integration_sessions_core = add_integration_tests(ansible_core_version)
         if integration_sessions_core:
