@@ -67,7 +67,7 @@ jobs:
 If you use the `antsibull_nox.add*_ansible_test_*_session*()` functions to `noxfile.py` to allow running `ansible-test` from nox,
 and also use `antsibull_nox.add_matrix_generator()` to add a `matrix-generator` session,
 then you can use the shared workflow
-[ansible-community/antsibull-nox/.github/workflows/reusable-nox-ansible-test.yml@main](https://github.com/ansible-community/antsibull-nox/blob/main/.github/workflows/reusable-nox-ansible-test.yml)
+[ansible-community/antsibull-nox/.github/workflows/reusable-nox-matrix.yml@main](https://github.com/ansible-community/antsibull-nox/blob/main/.github/workflows/reusable-nox-matrix.yml)
 to generate a CI matrix and run the `ansible-test` jobs:
 
 The following example is taken from community.dns:
@@ -87,7 +87,7 @@ name: nox
 
 jobs:
   ansible-test:
-    uses: ansible-community/antsibull-nox/.github/workflows/reusable-nox-ansible-test.yml@main
+    uses: ansible-community/antsibull-nox/.github/workflows/reusable-nox-matrix.yml@main
     with:
       collection-namespace: community
       collection-name: dns
