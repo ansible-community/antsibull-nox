@@ -738,6 +738,15 @@ The function supports the following parameters:
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
 
+* `min_version: Version | str | None` (default `None`):
+  If specified, will only consider ansible-core versions with that version or higher.
+
+* `max_version: Version | str | None` (default `None`):
+  If specified, will only consider ansible-core versions with that version or lower.
+
+* `except_versions: list[AnsibleCoreVersion | str] | None` (default `None`):
+  If specified, will ignore ansible-core versions in this list.
+
 #### Example code
 
 This example is from `community.dns`.
@@ -797,6 +806,15 @@ The function supports the following parameters:
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
 
+* `min_version: Version | str | None` (default `None`):
+  If specified, will only consider ansible-core versions with that version or higher.
+
+* `max_version: Version | str | None` (default `None`):
+  If specified, will only consider ansible-core versions with that version or lower.
+
+* `except_versions: list[AnsibleCoreVersion | str] | None` (default `None`):
+  If specified, will ignore ansible-core versions in this list.
+
 #### Example code
 
 This example is from `community.dns`.
@@ -828,6 +846,15 @@ It is possible to restrict the Python versions used to run the tests per ansible
   Note that the milestone branch is from the latest development version,
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
+
+* `min_version: Version | str | None` (default `None`):
+  If specified, will only consider ansible-core versions with that version or higher.
+
+* `max_version: Version | str | None` (default `None`):
+  If specified, will only consider ansible-core versions with that version or lower.
+
+* `except_versions: list[AnsibleCoreVersion | str] | None` (default `None`):
+  If specified, will ignore ansible-core versions in this list.
 
 * `core_python_versions: dict[str | AnsibleCoreVersion, list[str | Version]] | None` (default `None`):
   Allows to restrict the number of Python versions per ansible-core release.
