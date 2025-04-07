@@ -256,7 +256,12 @@ def _compose_description(
 
 
 def add_lint(
-    *, make_lint_default: bool, has_formatters: bool, has_codeqa: bool, has_typing: bool
+    *,
+    make_lint_default: bool,
+    has_formatters: bool,
+    has_codeqa: bool,
+    has_yamllint: bool,
+    has_typing: bool,
 ) -> None:
     """
     Add nox meta session for linting.
@@ -270,6 +275,8 @@ def add_lint(
         dependent_sessions.append("formatters")
     if has_codeqa:
         dependent_sessions.append("codeqa")
+    if has_yamllint:
+        dependent_sessions.append("yamllint")
     if has_typing:
         dependent_sessions.append("typing")
 
@@ -281,6 +288,7 @@ def add_lint(
         programs={
             "formatters": has_formatters,
             "codeqa": has_codeqa,
+            "yamllint": has_yamllint,
             "typing": has_typing,
         },
     )
@@ -506,6 +514,66 @@ def add_codeqa(  # noqa: C901
     nox.session(name="codeqa", default=False)(codeqa)
 
 
+def add_yamllint(
+    *,
+    run_yamllint: bool,
+    yamllint_config: str | os.PathLike | None,
+    yamllint_package: str,
+) -> None:
+    """
+    Add yamllint session for linting YAML files and plugin/module docs.
+    """
+
+    def compose_dependencies() -> list[str]:
+        deps = []
+        if run_yamllint:
+            deps.append(yamllint_package)
+        return deps
+
+    def execute_yamllint(session: nox.Session) -> None:
+        # Run yamllint
+        all_files = list_all_files()
+        cwd = Path.cwd()
+        all_yaml_filenames = [
+            str(file.relative_to(cwd))
+            for file in all_files
+            if file.name.lower().endswith((".yml", ".yaml"))
+        ]
+        if not all_yaml_filenames:
+            session.warn("Skipping yamllint since no YAML file was found...")
+            return
+
+        command = ["yamllint"]
+        if yamllint_config is not None:
+            command.extend(
+                [
+                    "-c",
+                    str(yamllint_config),
+                ]
+            )
+        command.append("--strict")
+        command.append("--")
+        command.extend(all_yaml_filenames)
+        command.extend(session.posargs)
+        session.run(*command)
+
+    def yamllint(session: nox.Session) -> None:
+        install(session, *compose_dependencies())
+        if run_yamllint:
+            execute_yamllint(session)
+
+    yamllint.__doc__ = _compose_description(
+        prefix={
+            "one": "Run YAML checker:",
+            "other": "Run YAML checkers:",
+        },
+        programs={
+            "yamllint": run_yamllint,
+        },
+    )
+    nox.session(name="yamllint", default=False)(yamllint)
+
+
 def add_typing(
     *,
     extra_code_files: list[str],
@@ -606,6 +674,10 @@ def add_lint_sessions(
     pylint_package: str = "pylint",
     pylint_ansible_core_package: str | None = "ansible-core",
     pylint_extra_deps: list[str] | None = None,
+    # yamllint:
+    run_yamllint: bool = False,
+    yamllint_config: str | os.PathLike | None = None,
+    yamllint_package: str = "yamllint",
     # mypy:
     run_mypy: bool = True,
     mypy_config: str | os.PathLike | None = None,
@@ -618,11 +690,13 @@ def add_lint_sessions(
     """
     has_formatters = run_isort or run_black or run_black_modules or False
     has_codeqa = run_flake8 or run_pylint
+    has_yamllint = run_yamllint
     has_typing = run_mypy
 
     add_lint(
         has_formatters=has_formatters,
         has_codeqa=has_codeqa,
+        has_yamllint=has_yamllint,
         has_typing=has_typing,
         make_lint_default=make_lint_default,
     )
@@ -651,6 +725,13 @@ def add_lint_sessions(
             pylint_package=pylint_package,
             pylint_ansible_core_package=pylint_ansible_core_package,
             pylint_extra_deps=pylint_extra_deps or [],
+        )
+
+    if has_yamllint:
+        add_yamllint(
+            run_yamllint=run_yamllint,
+            yamllint_config=yamllint_config,
+            yamllint_package=yamllint_package,
         )
 
     if has_typing:
