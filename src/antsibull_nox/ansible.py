@@ -188,34 +188,57 @@ def get_ansible_core_package_name(
 
 
 @functools.cache
-def get_supported_core_versions(
-    *, include_devel: bool = False, include_milestone: bool = False
-) -> list[AnsibleCoreVersion]:
-    """
-    Extracts a list of supported ansible-core versions from meta/runtime.yml.
-    """
+def _read_requires_ansible() -> PckgSpecifierSet:
     path = "meta/runtime.yml"
     try:
         runtime_data = load_yaml_file(path)
     except FileNotFoundError as exc:
         raise ValueError(f"Cannot open {path}") from exc
     except Exception as exc:
-        raise ValueError(f"Cannot parse {path}") from exc
+        raise ValueError(f"Cannot parse {path}: {exc}") from exc
 
-    requires_ansible = runtime_data["requires_ansible"]
+    requires_ansible = runtime_data.get("requires_ansible")
     if not isinstance(requires_ansible, str):
         raise ValueError(f"{path} does not contain an 'requires_ansible' string")
     try:
-        ra_specifier = PckgSpecifierSet(requires_ansible)
+        return PckgSpecifierSet(requires_ansible)
     except Exception as exc:
         raise ValueError(
             f"{path} contains an invalid 'requires_ansible' string: {exc}"
         ) from exc
 
+
+@functools.cache
+def get_supported_core_versions(
+    *,
+    include_devel: bool = False,
+    include_milestone: bool = False,
+    min_version: Version | None = None,
+    max_version: Version | None = None,
+    except_versions: tuple[AnsibleCoreVersion, ...] | None = None,
+) -> list[AnsibleCoreVersion]:
+    """
+    Extracts a list of supported ansible-core versions from meta/runtime.yml.
+
+    If ``min_version`` is specified, no version below that version will be returned.
+    If ``max_version`` is specified, no version above that version will be returned.
+    If ``except_versions`` is specified, no version in that tuple will be returned.
+    """
+    if except_versions is None:
+        except_versions = ()
+
+    ra_specifier = _read_requires_ansible()
+
     result: list[AnsibleCoreVersion] = []
     for version in version_range(
         _MIN_SUPPORTED_VERSION, _CURRENT_DEVEL_VERSION, inclusive=False
     ):
+        if version in except_versions:
+            continue
+        if min_version is not None and version < min_version:
+            continue
+        if max_version is not None and version > max_version:
+            continue
         # We're using x.y.999 to check whether *some* ansible-core x.y version is supported.
         # This is not entirely correct, since collections might specfiy that only certain older x.y
         # versions are OK, but I'd consider such behavior a bug of the collection and something
@@ -223,9 +246,9 @@ def get_supported_core_versions(
         v = PckgVersion(f"{version.major}.{version.minor}.999")
         if v in ra_specifier:
             result.append(version)
-    if include_milestone:
+    if include_milestone and "milestone" not in except_versions:
         result.append("milestone")
-    if include_devel:
+    if include_devel and "devel" not in except_versions:
         result.append("devel")
     return result
 
