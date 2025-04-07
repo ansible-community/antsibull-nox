@@ -1308,7 +1308,7 @@ def add_ansible_test_integration_sessions_default_container(
     ansible_test_integration.__doc__ = (
         "Meta session for running all ansible-test-integration-* sessions."
     )
-    nox.session(  # type: ignore
+    nox.session(
         name="ansible-test-integration",
         requires=integration_sessions,
         default=default,
