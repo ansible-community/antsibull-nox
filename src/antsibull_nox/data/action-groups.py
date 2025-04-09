@@ -16,7 +16,7 @@ import typing as t
 
 import yaml
 
-from antsibull_nox.data_util import setup
+from antsibull_nox.data.antsibull_nox_data_util import setup
 from antsibull_nox.sessions import ActionGroup
 
 

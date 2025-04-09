@@ -201,6 +201,7 @@ def _run_bare_script(
     /,
     name: str,
     *,
+    use_session_python: bool = False,
     files: list[Path] | None = None,
     extra_data: dict[str, t.Any] | None = None,
 ) -> None:
@@ -212,12 +213,18 @@ def _run_bare_script(
         paths=files,
         extra_data=extra_data,
     )
+    python = sys.executable
+    env = {}
+    if use_session_python:
+        python = "python"
+        env["PYTHONPATH"] = str(find_data_directory())
     session.run(
-        sys.executable,
+        python,
         find_data_directory() / f"{name}.py",
         "--data",
         data,
         external=True,
+        env=env,
     )
 
 
@@ -594,6 +601,7 @@ def add_yamllint(
         _run_bare_script(
             session,
             "plugin-yamllint",
+            use_session_python=True,
             files=all_plugin_files,
             extra_data={
                 "config": to_str(yamllint_config_plugins or yamllint_config),

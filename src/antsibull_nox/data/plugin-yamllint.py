@@ -17,11 +17,10 @@ import traceback
 import typing as t
 
 import yaml
+from antsibull_nox_data_util import setup  # type: ignore
 from yamllint import linter
 from yamllint.config import YamlLintConfig
 from yamllint.linter import PROBLEM_LEVELS
-
-from antsibull_nox.data_util import setup
 
 REPORT_LEVELS: set[PROBLEM_LEVELS] = {
     "warning",

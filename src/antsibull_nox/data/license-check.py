@@ -13,7 +13,7 @@ import glob
 import os
 import sys
 
-from antsibull_nox.data_util import get_list_of_strings, setup
+from antsibull_nox.data.antsibull_nox_data_util import get_list_of_strings, setup
 
 
 def format_license_list(licenses: list[str]) -> str:
