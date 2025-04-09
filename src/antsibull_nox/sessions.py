@@ -524,6 +524,8 @@ def add_yamllint(
     *,
     run_yamllint: bool,
     yamllint_config: str | os.PathLike | None,
+    yamllint_config_plugins: str | os.PathLike | None,
+    yamllint_config_plugins_examples: str | os.PathLike | None,
     yamllint_package: str,
 ) -> None:
     """
@@ -535,6 +537,9 @@ def add_yamllint(
         if run_yamllint:
             deps.append(yamllint_package)
         return deps
+
+    def to_str(config: str | os.PathLike | None) -> str | None:
+        return str(config) if config else None
 
     def execute_yamllint(session: nox.Session) -> None:
         # Run yamllint
@@ -591,7 +596,12 @@ def add_yamllint(
             "plugin-yamllint",
             files=all_plugin_files,
             extra_data={
-                "config": str(yamllint_config) if yamllint_config else None,
+                "config": to_str(yamllint_config_plugins or yamllint_config),
+                "config_examples": to_str(
+                    yamllint_config_plugins_examples
+                    or yamllint_config_plugins
+                    or yamllint_config
+                ),
             },
         )
 
@@ -716,6 +726,8 @@ def add_lint_sessions(
     # yamllint:
     run_yamllint: bool = False,
     yamllint_config: str | os.PathLike | None = None,
+    yamllint_config_plugins: str | os.PathLike | None = None,
+    yamllint_config_plugins_examples: str | os.PathLike | None = None,
     yamllint_package: str = "yamllint",
     # mypy:
     run_mypy: bool = True,
@@ -770,6 +782,8 @@ def add_lint_sessions(
         add_yamllint(
             run_yamllint=run_yamllint,
             yamllint_config=yamllint_config,
+            yamllint_config_plugins=yamllint_config_plugins,
+            yamllint_config_plugins_examples=yamllint_config_plugins_examples,
             yamllint_package=yamllint_package,
         )
 

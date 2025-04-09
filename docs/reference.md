@@ -184,6 +184,19 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that right now antsibull-nox will not supply any default config file,
   but this might change in the future.
 
+* `yamllint_config_plugins: str | os.PathLike | None` (default `None`):
+  Allows to specify a config file for YAML content embedded in plugins.
+  Use a relative path to `noxfile.py`.
+
+    If not provided, the same config will be used as for standalone YAML files (`yamllint_config`).
+
+* `yamllint_config_plugins_examples: str | os.PathLike | None` (default `None`):
+  Allows to specify a config file for YAML examples embedded in plugins and sidecar docs.
+  Use a relative path to `noxfile.py`.
+
+    If not provided, the same config will be used as for YAML content embedded in plugins (`yamllint_config_plugins`),
+    which falls back to the config used for standalone YAML files (`yamllint_config`).
+
 * `yamllint_package: str` (default `"yamllint"`):
   The package to install for `yamllint` in this session.
   You can specify a value here to add restrictions to the `yamllint` version,

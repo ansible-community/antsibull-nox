@@ -77,7 +77,10 @@ def lint(
 
 
 def process_python_file(
-    errors: list[dict[str, t.Any]], path: str, config: YamlLintConfig
+    errors: list[dict[str, t.Any]],
+    path: str,
+    config: YamlLintConfig,
+    config_examples: YamlLintConfig,
 ) -> None:
     try:
         with open(path, "rt", encoding="utf-8") as f:
@@ -138,7 +141,7 @@ def process_python_file(
                 row_offset=row_offset,
                 col_offset=col_offset,
                 section=section,
-                config=config,
+                config=config_examples if section == "EXAMPLES" else config,
             )
 
 
@@ -146,16 +149,21 @@ def main() -> int:
     """Main entry point."""
     paths, extra_data = setup()
     config: str | None = extra_data.get("config")
+    config_examples: str | None = extra_data.get("config_examples")
 
     if config:
-        with open(config, encoding="utf-8") as f:
-            yamllint_config = YamlLintConfig(f.read())
+        yamllint_config = YamlLintConfig(file=config)
     else:
         yamllint_config = YamlLintConfig(content="extends: default")
 
+    if config_examples:
+        yamllint_config_examples = YamlLintConfig(file=config_examples)
+    else:
+        yamllint_config_examples = yamllint_config
+
     errors: list[dict[str, t.Any]] = []
     for path in paths:
-        process_python_file(errors, path, yamllint_config)
+        process_python_file(errors, path, yamllint_config, yamllint_config_examples)
 
     errors.sort(
         key=lambda error: (error["path"], error["line"], error["col"], error["message"])
