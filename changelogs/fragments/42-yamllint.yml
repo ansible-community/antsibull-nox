@@ -1,0 +1,3 @@
+minor_changes:
+  - "Allow to add ``yamllint`` session to ``lint`` meta-session that checks YAML files,
+     and YAML content embedded in plugins and sidecar docs (https://github.com/ansible-community/antsibull-nox/pull/42)."
