@@ -58,6 +58,8 @@ The basic linting session, `lint`, comes with three sessions it depends on:
 
 * `codeqa`: runs `flake8` and `pylint`.
 
+* `yamllint`: runs `yamllint` on all `.yml` and `.yaml` files, and on the documentation included in Ansible modules and plugins.
+
 * `typing`: runs `mypy`.
 
 !!! note
@@ -156,6 +158,12 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that right now antsibull-nox will not supply any default config file,
   but this might change in the future.
 
+* `pylint_package: str` (default `"pylint"`):
+  The package to install for `pylint` in this session.
+  You can specify a value here to add restrictions to the `pylint` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
 * `pylint_ansible_core_package: str` (default `"ansible-core"`):
   The package to install for `ansible-core` in this session.
   You can specify a value here to add restrictions to the `ansible-core` version,
@@ -164,6 +172,36 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 
 * `pylint_extra_deps: list[str] | None` (default `None`):
   Allows to specify further packages to install in this session.
+
+### `yamllint` (part of the `yamllint` session)
+
+* `run_yamllint: bool` (default `False`):
+  Whether to run `yamllint`.
+
+* `yamllint_config: str | os.PathLike | None` (default `None`):
+  Allows to specify a config file.
+  Use a relative path to `noxfile.py`.
+  Note that right now antsibull-nox will not supply any default config file,
+  but this might change in the future.
+
+* `yamllint_config_plugins: str | os.PathLike | None` (default `None`):
+  Allows to specify a config file for YAML content embedded in plugins.
+  Use a relative path to `noxfile.py`.
+
+    If not provided, the same config will be used as for standalone YAML files (`yamllint_config`).
+
+* `yamllint_config_plugins_examples: str | os.PathLike | None` (default `None`):
+  Allows to specify a config file for YAML examples embedded in plugins and sidecar docs.
+  Use a relative path to `noxfile.py`.
+
+    If not provided, the same config will be used as for YAML content embedded in plugins (`yamllint_config_plugins`),
+    which falls back to the config used for standalone YAML files (`yamllint_config`).
+
+* `yamllint_package: str` (default `"yamllint"`):
+  The package to install for `yamllint` in this session.
+  You can specify a value here to add restrictions to the `yamllint` version,
+  or to pin the version,
+  or to install the package from a local repository.
 
 ### `mypy` (part of the `typing` session)
 

@@ -103,5 +103,10 @@ source = [
 ]
 
 [[tool.mypy.overrides]]
-module = "semantic_version"
+module = [
+    "semantic_version",
+    "yamllint",
+    "yamllint.config",
+    "yamllint.linter",
+]
 ignore_missing_imports = true
