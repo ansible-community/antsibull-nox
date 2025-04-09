@@ -16,6 +16,7 @@ import sys
 import traceback
 import typing as t
 
+import yaml
 from yamllint import linter
 from yamllint.config import YamlLintConfig
 from yamllint.linter import PROBLEM_LEVELS
@@ -29,6 +30,8 @@ REPORT_LEVELS: set[PROBLEM_LEVELS] = {
 
 EXAMPLES_FMT_RE = re.compile(r"^# fmt:\s+(\S+)")
 
+EXAMPLES_SECTION = "EXAMPLES"
+
 
 def lint(
     *,
@@ -39,6 +42,7 @@ def lint(
     col_offset: int,
     section: str,
     config: YamlLintConfig,
+    extra_for_errors: dict[str, t.Any] | None = None,
 ) -> None:
     try:
         problems = linter.run(
@@ -61,6 +65,8 @@ def lint(
                     "message": msg,
                 }
             )
+            if extra_for_errors:
+                errors[-1].update(extra_for_errors)
     except Exception as exc:
         error = str(exc).replace("\n", " / ")
         errors.append(
@@ -74,6 +80,8 @@ def lint(
                 ),
             }
         )
+        if extra_for_errors:
+            errors[-1].update(extra_for_errors)
 
 
 def process_python_file(
@@ -128,7 +136,7 @@ def process_python_file(
                 col_offset = 0
 
             # Check for non-YAML examples
-            if section == "EXAMPLES":
+            if section == EXAMPLES_SECTION:
                 fmt_match = EXAMPLES_FMT_RE.match(data.lstrip())
                 if fmt_match and fmt_match.group(1) != "yaml":
                     continue
@@ -141,8 +149,57 @@ def process_python_file(
                 row_offset=row_offset,
                 col_offset=col_offset,
                 section=section,
-                config=config_examples if section == "EXAMPLES" else config,
+                config=config_examples if section == EXAMPLES_SECTION else config,
             )
+
+
+def process_sidecar_docs_file(
+    errors: list[dict[str, t.Any]],
+    path: str,
+    config_examples: YamlLintConfig,
+) -> None:
+    try:
+        # TODO: get hold of YAML structure so we also get correct line/col numbers
+        #       inside EXAMPLES!
+        with open(path, "rb") as stream:
+            root = yaml.load(stream, Loader=yaml.SafeLoader)
+    except Exception as exc:
+        errors.append(
+            {
+                "path": path,
+                "line": 1,
+                "col": 1,
+                "message": (
+                    f"Error while parsing Python code: exception {type(exc)}:"
+                    f" {exc}; traceback: {traceback.format_exc()!r}"
+                ),
+            }
+        )
+        return
+
+    if not isinstance(root, dict):
+        return
+    examples = root.get(EXAMPLES_SECTION)
+    if not isinstance(examples, str):
+        return
+
+    # Check for non-YAML examples
+    fmt_match = EXAMPLES_FMT_RE.match(examples.lstrip())
+    if fmt_match and fmt_match.group(1) != "yaml":
+        return
+
+    lint(
+        errors=errors,
+        path=path,
+        data=examples,
+        row_offset=0,  # TODO
+        col_offset=0,  # TODO
+        section=EXAMPLES_SECTION,
+        config=config_examples,
+        extra_for_errors={
+            "note": "Line/column are relative to EXAMPLES string contents"
+        },
+    )
 
 
 def main() -> int:
@@ -163,7 +220,10 @@ def main() -> int:
 
     errors: list[dict[str, t.Any]] = []
     for path in paths:
-        process_python_file(errors, path, yamllint_config, yamllint_config_examples)
+        if path.endswith(".py"):
+            process_python_file(errors, path, yamllint_config, yamllint_config_examples)
+        if path.endswith((".yml", ".yaml")):
+            process_sidecar_docs_file(errors, path, yamllint_config_examples)
 
     errors.sort(
         key=lambda error: (error["path"], error["line"], error["col"], error["message"])
@@ -171,6 +231,8 @@ def main() -> int:
     for error in errors:
         prefix = f"{error['path']}:{error['line']}:{error['col']}: "
         msg = error["message"]
+        if "note" in error:
+            msg = f"{msg}\nNote: {error['note']}"
         for i, line in enumerate(msg.splitlines()):
             print(f"{prefix}{line}")
             if i == 0:

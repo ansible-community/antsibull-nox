@@ -582,7 +582,7 @@ def add_yamllint(
             file
             for file in all_files
             if file.is_relative_to(plugins_dir)
-            and file.name.lower().endswith(".py")
+            and file.name.lower().endswith((".py", ".yml", ".yaml"))
             and not any(file.is_relative_to(dir) for dir in ignore_dirs)
         ]
         if not all_plugin_files:
