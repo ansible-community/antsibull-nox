@@ -20,8 +20,8 @@ from pathlib import Path
 
 from antsibull_fileutils.yaml import load_yaml_file, store_yaml_file
 
-from .paths import copy_collection as _paths_copy_collection
-from .paths import remove_path as _remove
+from ..paths import copy_collection as _paths_copy_collection
+from ..paths import remove_path as _remove
 
 # Function that runs a command (and fails on non-zero return code)
 # and returns a tuple (stdout, stderr)
