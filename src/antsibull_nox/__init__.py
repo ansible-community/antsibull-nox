@@ -10,6 +10,7 @@ Antsibull Nox Helper.
 
 from __future__ import annotations
 
+from .collection import CollectionSource, setup_collection_sources
 from .sessions import (
     ActionGroup,
     add_all_ansible_test_sanity_test_sessions,
@@ -44,4 +45,22 @@ __all__ = (
     "add_all_ansible_test_unit_test_sessions",
     "add_ansible_test_integration_sessions_default_container",
     "add_matrix_generator",
+    "CollectionSource",
+    "setup",
 )
+
+
+def setup(
+    *,
+    collection_sources: dict[str, str | CollectionSource] | None = None,
+) -> None:
+    """
+    Set-up antsibull-nox.
+    """
+    if collection_sources:
+        setup_collection_sources(
+            {
+                name: CollectionSource.parse(name, source)
+                for name, source in collection_sources.items()
+            }
+        )

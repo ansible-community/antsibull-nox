@@ -534,6 +534,66 @@ def setup_current_tree(
     )
 
 
+@dataclass
+class CollectionSource:
+    """
+    Collection installation source.
+    """
+
+    # The collection's name
+    name: str
+
+    # The collection's installation source (can be passed to 'ansible-galaxy collection install')
+    source: str
+
+    @staticmethod
+    def parse(collection_name: str, source: str | CollectionSource) -> CollectionSource:
+        """
+        Parse a CollectionSource object.
+        """
+        if isinstance(source, str):
+            return CollectionSource(name=collection_name, source=source)
+
+        if source.name != collection_name:
+            raise ValueError(
+                f"Collection name should be {collection_name!r}, but is {source.name!r}"
+            )
+        return source
+
+
+class _CollectionSources:
+    sources: dict[str, CollectionSource]
+
+    def __init__(self):
+        self.sources = {}
+
+    def set_source(self, name: str, source: CollectionSource) -> None:
+        """
+        Set source for collection.
+        """
+        self.sources[name] = source
+
+    def get_source(self, name: str) -> CollectionSource:
+        """
+        Get source for collection.
+        """
+        source = self.sources.get(name)
+        if source is None:
+            source = CollectionSource(name, name)
+        return source
+
+
+_COLLECTION_SOURCES = _CollectionSources()
+
+
+def setup_collection_sources(collection_sources: dict[str, CollectionSource]) -> None:
+    """
+    Setup collection sources.
+    """
+    for name, source in collection_sources.items():
+        _COLLECTION_SOURCES.set_source(name, source)
+
+
 __all__ = [
     "CollectionData",
     "CollectionList",
@@ -542,4 +602,5 @@ __all__ = [
     "load_collection_data_from_disk",
     "setup_collections",
     "setup_current_tree",
+    "setup_collection_sources",
 ]
