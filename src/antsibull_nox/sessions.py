@@ -175,9 +175,7 @@ def prepare_collections(
             return None
         place = Path(purelib)
     elif install_out_of_tree:
-        place = create_temp_directory(
-            f"antsibull-nox-{session.name.replace('/', '-')}-collection-root-"
-        )
+        place = create_temp_directory(f"antsibull-nox-{session.name}-collection-root-")
     else:
         place = Path(session.virtualenv.location) / "collection-root"
     place.mkdir(exist_ok=True)
@@ -1220,7 +1218,11 @@ def add_ansible_test_session(
     if register_name:
         data = {
             "name": name,
-            "ansible-core": str(parsed_ansible_core_version),
+            "ansible-core": (
+                str(ansible_core_branch_name)
+                if ansible_core_branch_name is not None
+                else str(parsed_ansible_core_version)
+            ),
             "python": " ".join(str(python) for python in python_versions),
         }
         if register_extra_data:
@@ -1305,9 +1307,11 @@ def add_all_ansible_test_sanity_test_sessions(
         sanity_sessions.append(name)
     if add_devel_like_branches:
         for repo_name, branch_name in add_devel_like_branches:
-            repo_prefix = f"{repo_name}-" if repo_name is not None else ""
+            repo_prefix = (
+                f"{repo_name.replace('/', '-')}-" if repo_name is not None else ""
+            )
             repo_postfix = f", {repo_name} repository" if repo_name is not None else ""
-            name = f"ansible-test-sanity-{repo_prefix}{branch_name}"
+            name = f"ansible-test-sanity-{repo_prefix}{branch_name.replace('/', '-')}"
             add_ansible_test_sanity_test_session(
                 name=name,
                 description=(
@@ -1399,9 +1403,11 @@ def add_all_ansible_test_unit_test_sessions(
         units_sessions.append(name)
     if add_devel_like_branches:
         for repo_name, branch_name in add_devel_like_branches:
-            repo_prefix = f"{repo_name}-" if repo_name is not None else ""
+            repo_prefix = (
+                f"{repo_name.replace('/', '-')}-" if repo_name is not None else ""
+            )
             repo_postfix = f", {repo_name} repository" if repo_name is not None else ""
-            name = f"ansible-test-units-{repo_prefix}{branch_name}"
+            name = f"ansible-test-units-{repo_prefix}{branch_name.replace('/', '-')}"
             add_ansible_test_unit_test_session(
                 name=name,
                 description=(
@@ -1480,8 +1486,10 @@ def add_ansible_test_integration_sessions_default_container(
         if branch_name is None:
             base_name = f"ansible-test-integration-{ansible_core_version}-"
         else:
-            repo_prefix = f"{repo_name}-" if repo_name is not None else ""
-            base_name = f"ansible-test-integration-{repo_prefix}{branch_name}-"
+            repo_prefix = (
+                f"{repo_name.replace('/', '-')}-" if repo_name is not None else ""
+            )
+            base_name = f"ansible-test-integration-{repo_prefix}{branch_name.replace('/', '-')}-"
         for py_version in py_versions:
             name = f"{base_name}{py_version}"
             if branch_name is None:
@@ -1558,8 +1566,10 @@ def add_ansible_test_integration_sessions_default_container(
                 "devel", repo_name=repo_name, branch_name=branch_name
             )
             if integration_sessions_core:
-                repo_prefix = f"{repo_name}-" if repo_name is not None else ""
-                name = f"ansible-test-integration-{repo_prefix}{branch_name}"
+                repo_prefix = (
+                    f"{repo_name.replace('/', '-')}-" if repo_name is not None else ""
+                )
+                name = f"ansible-test-integration-{repo_prefix}{branch_name.replace('/', '-')}"
                 integration_sessions.append(name)
 
                 def run_integration_tests_for_branch(
