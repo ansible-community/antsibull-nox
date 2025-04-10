@@ -702,6 +702,10 @@ It accepts the following parameters:
   The source where to install ansible-core from.
   For `"devel"` and `"milestone"`, always `git` will be used.
 
+* `ansible_core_repo_name: str | None` (default `None`):
+  Allows to override the repository name when `ansible_core_source == "git"`.
+  By default `"ansible/ansible"` or `"ansible-community/eol-ansible"` are used, depending on `ansible_core_version`.
+
 * `ansible_core_branch_name: str | None` (default `None`):
   Allows to override the branch name when `ansible_core_source == "git"`.
 
@@ -753,6 +757,10 @@ The function supports the following parameters:
   The source where to install ansible-core from.
   For `"devel"` and `"milestone"`, always `git` will be used.
 
+* `ansible_core_repo_name: str | None` (default `None`):
+  Allows to override the repository name when `ansible_core_source == "git"`.
+  By default `"ansible/ansible"` or `"ansible-community/eol-ansible"` are used, depending on `ansible_core_version`.
+
 * `ansible_core_branch_name: str | None` (default `None`):
   Allows to override the branch name when `ansible_core_source == "git"`.
 
@@ -775,6 +783,14 @@ The function supports the following parameters:
   Note that the milestone branch is from the latest development version,
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
+
+* `add_devel_like_branches: list[tuple[str | None, str]] | None` (default `None`):
+  Allows to add a list of optional repositories and branches for ansible-core
+  that will be treated similar to `devel`.
+  This can be used for testing ansible-core features or bugfixes
+  that are still under development.
+  Please note that branches are usually deleted upon merging,
+  so you have to remove them again from your `noxfile.py` to avoid CI breaking.
 
 * `min_version: Version | str | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or higher.
@@ -820,6 +836,10 @@ The function supports the following parameters:
   The source where to install ansible-core from.
   For `"devel"` and `"milestone"`, always `git` will be used.
 
+* `ansible_core_repo_name: str | None` (default `None`):
+  Allows to override the repository name when `ansible_core_source == "git"`.
+  By default `"ansible/ansible"` or `"ansible-community/eol-ansible"` are used, depending on `ansible_core_version`.
+
 * `ansible_core_branch_name: str | None` (default `None`):
   Allows to override the branch name when `ansible_core_source == "git"`.
 
@@ -843,6 +863,14 @@ The function supports the following parameters:
   Note that the milestone branch is from the latest development version,
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
+
+* `add_devel_like_branches: list[tuple[str | None, str]] | None` (default `None`):
+  Allows to add a list of optional repositories and branches for ansible-core
+  that will be treated similar to `devel`.
+  This can be used for testing ansible-core features or bugfixes
+  that are still under development.
+  Please note that branches are usually deleted upon merging,
+  so you have to remove them again from your `noxfile.py` to avoid CI breaking.
 
 * `min_version: Version | str | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or higher.
@@ -884,6 +912,14 @@ It is possible to restrict the Python versions used to run the tests per ansible
   Note that the milestone branch is from the latest development version,
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
+
+* `add_devel_like_branches: list[tuple[str | None, str]] | None` (default `None`):
+  Allows to add a list of optional repositories and branches for ansible-core
+  that will be treated similar to `devel`.
+  This can be used for testing ansible-core features or bugfixes
+  that are still under development.
+  Please note that branches are usually deleted upon merging,
+  so you have to remove them again from your `noxfile.py` to avoid CI breaking.
 
 * `min_version: Version | str | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or higher.

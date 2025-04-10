@@ -1132,6 +1132,7 @@ def add_ansible_test_session(
     default: bool,
     ansible_core_version: str | AnsibleCoreVersion,
     ansible_core_source: t.Literal["git", "pypi"] = "git",
+    ansible_core_repo_name: str | None = None,
     ansible_core_branch_name: str | None = None,
     handle_coverage: t.Literal["never", "always", "auto"] = "auto",
     register_name: str | None = None,
@@ -1149,6 +1150,7 @@ def add_ansible_test_session(
             get_ansible_core_package_name(
                 parsed_ansible_core_version,
                 source=ansible_core_source,
+                ansible_repo=ansible_core_repo_name,
                 branch_name=ansible_core_branch_name,
             )
         ]
@@ -1216,7 +1218,11 @@ def add_ansible_test_session(
     if register_name:
         data = {
             "name": name,
-            "ansible-core": str(parsed_ansible_core_version),
+            "ansible-core": (
+                str(ansible_core_branch_name)
+                if ansible_core_branch_name is not None
+                else str(parsed_ansible_core_version)
+            ),
             "python": " ".join(str(python) for python in python_versions),
         }
         if register_extra_data:
@@ -1231,6 +1237,7 @@ def add_ansible_test_sanity_test_session(
     default: bool,
     ansible_core_version: str | AnsibleCoreVersion,
     ansible_core_source: t.Literal["git", "pypi"] = "git",
+    ansible_core_repo_name: str | None = None,
     ansible_core_branch_name: str | None = None,
 ) -> None:
     """
@@ -1243,6 +1250,7 @@ def add_ansible_test_sanity_test_session(
         default=default,
         ansible_core_version=ansible_core_version,
         ansible_core_source=ansible_core_source,
+        ansible_core_repo_name=ansible_core_repo_name,
         ansible_core_branch_name=ansible_core_branch_name,
         register_name="sanity",
     )
@@ -1268,6 +1276,7 @@ def add_all_ansible_test_sanity_test_sessions(
     default: bool = False,
     include_devel: bool = False,
     include_milestone: bool = False,
+    add_devel_like_branches: list[tuple[str | None, str]] | None = None,
     min_version: Version | str | None = None,
     max_version: Version | str | None = None,
     except_versions: list[AnsibleCoreVersion | str] | None = None,
@@ -1296,6 +1305,25 @@ def add_all_ansible_test_sanity_test_sessions(
             default=False,
         )
         sanity_sessions.append(name)
+    if add_devel_like_branches:
+        for repo_name, branch_name in add_devel_like_branches:
+            repo_prefix = (
+                f"{repo_name.replace('/', '-')}-" if repo_name is not None else ""
+            )
+            repo_postfix = f", {repo_name} repository" if repo_name is not None else ""
+            name = f"ansible-test-sanity-{repo_prefix}{branch_name.replace('/', '-')}"
+            add_ansible_test_sanity_test_session(
+                name=name,
+                description=(
+                    "Run sanity tests from ansible-test in ansible-core's"
+                    f" {branch_name} branch{repo_postfix}"
+                ),
+                ansible_core_version="devel",
+                ansible_core_repo_name=repo_name,
+                ansible_core_branch_name=branch_name,
+                default=False,
+            )
+            sanity_sessions.append(name)
 
     def run_all_sanity_tests(
         session: nox.Session,  # pylint: disable=unused-argument
@@ -1319,6 +1347,7 @@ def add_ansible_test_unit_test_session(
     default: bool,
     ansible_core_version: str | AnsibleCoreVersion,
     ansible_core_source: t.Literal["git", "pypi"] = "git",
+    ansible_core_repo_name: str | None = None,
     ansible_core_branch_name: str | None = None,
 ) -> None:
     """
@@ -1332,6 +1361,7 @@ def add_ansible_test_unit_test_session(
         default=default,
         ansible_core_version=ansible_core_version,
         ansible_core_source=ansible_core_source,
+        ansible_core_repo_name=ansible_core_repo_name,
         ansible_core_branch_name=ansible_core_branch_name,
         register_name="units",
     )
@@ -1342,6 +1372,7 @@ def add_all_ansible_test_unit_test_sessions(
     default: bool = False,
     include_devel: bool = False,
     include_milestone: bool = False,
+    add_devel_like_branches: list[tuple[str | None, str]] | None = None,
     min_version: Version | str | None = None,
     max_version: Version | str | None = None,
     except_versions: list[AnsibleCoreVersion | str] | None = None,
@@ -1370,6 +1401,25 @@ def add_all_ansible_test_unit_test_sessions(
             default=False,
         )
         units_sessions.append(name)
+    if add_devel_like_branches:
+        for repo_name, branch_name in add_devel_like_branches:
+            repo_prefix = (
+                f"{repo_name.replace('/', '-')}-" if repo_name is not None else ""
+            )
+            repo_postfix = f", {repo_name} repository" if repo_name is not None else ""
+            name = f"ansible-test-units-{repo_prefix}{branch_name.replace('/', '-')}"
+            add_ansible_test_unit_test_session(
+                name=name,
+                description=(
+                    "Run unit tests from ansible-test in ansible-core's"
+                    f" {branch_name} branch{repo_postfix}"
+                ),
+                ansible_core_version="devel",
+                ansible_core_repo_name=repo_name,
+                ansible_core_branch_name=branch_name,
+                default=False,
+            )
+            units_sessions.append(name)
 
     def run_all_unit_tests(
         session: nox.Session,  # pylint: disable=unused-argument
@@ -1390,6 +1440,7 @@ def add_ansible_test_integration_sessions_default_container(
     *,
     include_devel: bool = False,
     include_milestone: bool = False,
+    add_devel_like_branches: list[tuple[str | None, str]] | None = None,
     min_version: Version | str | None = None,
     max_version: Version | str | None = None,
     except_versions: list[AnsibleCoreVersion | str] | None = None,
@@ -1409,10 +1460,15 @@ def add_ansible_test_integration_sessions_default_container(
     controller Python versions.
     """
 
-    def add_integration_tests(ansible_core_version: AnsibleCoreVersion) -> list[str]:
+    def add_integration_tests(
+        ansible_core_version: AnsibleCoreVersion,
+        repo_name: str | None = None,
+        branch_name: str | None = None,
+    ) -> list[str]:
         # Determine Python versions to run tests for
         py_versions = (
-            core_python_versions.get(ansible_core_version)
+            (core_python_versions.get(branch_name) if branch_name is not None else None)
+            or core_python_versions.get(ansible_core_version)
             or core_python_versions.get(str(ansible_core_version))
             if core_python_versions
             else None
@@ -1427,14 +1483,31 @@ def add_ansible_test_integration_sessions_default_container(
 
         # Add sessions
         integration_sessions_core: list[str] = []
+        if branch_name is None:
+            base_name = f"ansible-test-integration-{ansible_core_version}-"
+        else:
+            repo_prefix = (
+                f"{repo_name.replace('/', '-')}-" if repo_name is not None else ""
+            )
+            base_name = f"ansible-test-integration-{repo_prefix}{branch_name.replace('/', '-')}-"
         for py_version in py_versions:
-            name = f"ansible-test-integration-{ansible_core_version}-{py_version}"
-            add_ansible_test_session(
-                name=name,
-                description=(
+            name = f"{base_name}{py_version}"
+            if branch_name is None:
+                description = (
                     f"Run integration tests from ansible-core {ansible_core_version}'s"
                     f" ansible-test with Python {py_version}"
-                ),
+                )
+            else:
+                repo_postfix = (
+                    f", {repo_name} repository" if repo_name is not None else ""
+                )
+                description = (
+                    f"Run integration tests from ansible-test in ansible-core's {branch_name}"
+                    f" branch{repo_postfix} with Python {py_version}"
+                )
+            add_ansible_test_session(
+                name=name,
+                description=description,
                 ansible_test_params=[
                     "integration",
                     "--docker",
@@ -1446,6 +1519,8 @@ def add_ansible_test_integration_sessions_default_container(
                 ],
                 extra_deps_files=["tests/integration/requirements.yml"],
                 ansible_core_version=ansible_core_version,
+                ansible_core_repo_name=repo_name,
+                ansible_core_branch_name=branch_name,
                 default=False,
                 register_name="integration",
                 register_extra_data={
@@ -1478,14 +1553,38 @@ def add_ansible_test_integration_sessions_default_container(
                 pass
 
             run_integration_tests.__doc__ = (
-                "Meta session for running all"
-                f" ansible-test-integration-{ansible_core_version}-* sessions."
+                f"Meta session for running all {name}-* sessions."
             )
             nox.session(
                 name=name,
                 requires=integration_sessions_core,
                 default=False,
             )(run_integration_tests)
+    if add_devel_like_branches:
+        for repo_name, branch_name in add_devel_like_branches:
+            integration_sessions_core = add_integration_tests(
+                "devel", repo_name=repo_name, branch_name=branch_name
+            )
+            if integration_sessions_core:
+                repo_prefix = (
+                    f"{repo_name.replace('/', '-')}-" if repo_name is not None else ""
+                )
+                name = f"ansible-test-integration-{repo_prefix}{branch_name.replace('/', '-')}"
+                integration_sessions.append(name)
+
+                def run_integration_tests_for_branch(
+                    session: nox.Session,  # pylint: disable=unused-argument
+                ) -> None:
+                    pass
+
+                run_integration_tests_for_branch.__doc__ = (
+                    f"Meta session for running all {name}-* sessions."
+                )
+                nox.session(
+                    name=name,
+                    requires=integration_sessions_core,
+                    default=False,
+                )(run_integration_tests_for_branch)
 
     def ansible_test_integration(
         session: nox.Session,  # pylint: disable=unused-argument

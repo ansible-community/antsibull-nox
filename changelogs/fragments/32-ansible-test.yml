@@ -1,6 +1,7 @@
 minor_changes:
   - "Add several new functions to add ansible-test runs
-     (https://github.com/ansible-community/antsibull-nox/issues/5, https://github.com/ansible-community/antsibull-nox/pull/32)."
+     (https://github.com/ansible-community/antsibull-nox/issues/5, https://github.com/ansible-community/antsibull-nox/pull/32,
+      https://github.com/ansible-community/antsibull-nox/pull/41, https://github.com/ansible-community/antsibull-nox/pull/45)."
   - "Add function ``add_matrix_generator`` which allows to generate matrixes for CI systems for ansible-test runs
      (https://github.com/ansible-community/antsibull-nox/pull/32)."
   - "The action allows to install additional Python versions with the new ``extra-python-versions`` option
