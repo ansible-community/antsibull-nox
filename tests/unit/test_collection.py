@@ -20,15 +20,19 @@ from antsibull_fileutils.yaml import load_yaml_file, store_yaml_file
 
 from antsibull_nox.collection import (
     CollectionData,
-    CollectionList,
     Runner,
+    force_collection_version,
+    load_collection_data_from_disk,
+)
+from antsibull_nox.collection.install import (
     _add_all_dependencies,
     _extract_collections_from_extra_deps_file,
+)
+from antsibull_nox.collection.search import (
+    CollectionList,
     _fs_list_local_collections,
     _galaxy_list_collections,
-    force_collection_version,
     get_collection_list,
-    load_collection_data_from_disk,
 )
 
 from .utils import chdir
