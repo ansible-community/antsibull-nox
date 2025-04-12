@@ -10,8 +10,8 @@ Handle Ansible collections.
 
 from __future__ import annotations
 
-import functools
 import json
+import threading
 import typing as t
 from collections.abc import Collection, Iterator, Sequence
 from dataclasses import dataclass
@@ -126,10 +126,11 @@ def _list_adjacent_collections_ansible_collections_tree(
                                 root=root,
                             )
                     except Exception:  # pylint: disable=broad-exception-caught
-                        # If name doesn't happen to be a (symlink to a) directory, ...
+                        # If name doesn't happen to be a (symlink to a) directory,
+                        # is not readable, ...
                         pass
         except Exception:  # pylint: disable=broad-exception-caught
-            # If namespace doesn't happen to be a (symlink to a) directory, ...
+            # If namespace doesn't happen to be a (symlink to a) directory, is not readable, ...
             pass
 
 
@@ -193,6 +194,9 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
         yield from _list_adjacent_collections_outside_tree(
             parents[0], directories_to_ignore=(cwd,)
         )
+    else:
+        # Only happens if cwd == "/"
+        pass  # pragma: no cover
 
 
 def _galaxy_list_collections(runner: Runner) -> Iterator[CollectionData]:
@@ -263,13 +267,55 @@ class CollectionList:
         """
         return self.collection_map.get(name)
 
+    def clone(self) -> CollectionList:
+        """
+        Create a clone of this list.
+        """
+        return CollectionList(
+            collections=self.collections,
+            collection_map=self.collection_map,
+            current=self.current,
+        )
 
-@functools.cache
+
+class _CollectionListSingleton:
+    _collection_list: CollectionList | None = None
+    _lock = threading.Lock()
+
+    def clear(self) -> None:
+        """
+        Clear collection cache.
+        """
+        with self._lock:
+            self._collection_list = None
+
+    def get_cached(self) -> CollectionList | None:
+        """
+        Return cached list of collections, if present.
+        Do not modify the result!
+        """
+        return self._collection_list
+
+    def get(self, runner: Runner) -> CollectionList:
+        """
+        Search for a list of collections. The result is cached.
+        """
+        with self._lock:
+            result = self._collection_list
+            if result is None:
+                result = CollectionList.collect(runner)
+                self._collection_list = result
+        return result.clone()
+
+
+_COLLECTION_LIST = _CollectionListSingleton()
+
+
 def get_collection_list(runner: Runner) -> CollectionList:
     """
     Search for a list of collections. The result is cached.
     """
-    return CollectionList.collect(runner)
+    return _COLLECTION_LIST.get(runner)
 
 
 __all__ = [

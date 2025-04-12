@@ -29,6 +29,7 @@ from antsibull_nox.collection.install import (
     _extract_collections_from_extra_deps_file,
 )
 from antsibull_nox.collection.search import (
+    _COLLECTION_LIST,
     CollectionList,
     _fs_list_local_collections,
     _galaxy_list_collections,
@@ -309,9 +310,11 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
         root, namespace="community", name="baz", dependencies={"community.foo": "*"}
     )
     (root / "blah").write_text("nothing")
+    (root / "blahsym").symlink_to("blah")
     (root / "empty").mkdir()
     (root / "blubb").mkdir()
     (root / "blubb" / "foo").write_text("nothing")
+    (root / "blubb" / "foosym").symlink_to("foo")
     (root / "community" / "foo").write_text("nothing")
     (root / "community" / "bam").mkdir()
     with chdir(foo_bar):
@@ -807,8 +810,13 @@ def test_get_collection_list(tmp_path) -> None:
     )
 
     with chdir(root3 / "foo" / "bar"):
-        get_collection_list.cache_clear()  # added by @functools.cache
+        _COLLECTION_LIST.clear()
+        assert _COLLECTION_LIST.get_cached() is None
         result = get_collection_list(runner)
+        cl = _COLLECTION_LIST.get_cached()
+        assert cl is not None
+        result_2 = get_collection_list(runner)
+        assert _COLLECTION_LIST.get_cached() is cl
 
     assert result.collections == sorted(
         [
@@ -827,6 +835,9 @@ def test_get_collection_list(tmp_path) -> None:
         ],
         key=lambda c: c.full_name,
     )
+
+    assert result == cl
+    assert result == result_2
 
 
 FORCE_COLLECTION_VERSION_DATA: list[tuple[str, str, bool, dict[str, t.Any]]] = [
