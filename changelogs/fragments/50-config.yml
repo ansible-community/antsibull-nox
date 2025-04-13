@@ -1,0 +1,5 @@
+minor_changes:
+  - "pydantic is now a required Python dependency of antsibull-nox (https://github.com/ansible-community/antsibull-nox/pull/49)."
+  - "tomli is now a required Python dependency of antsibull-nox for Python versions 3.9 and 3.10
+     For Python 3.11+, the standard library tomllib will be used
+     (https://github.com/ansible-community/antsibull-nox/pull/50)."
