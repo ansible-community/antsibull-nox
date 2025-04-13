@@ -16,6 +16,7 @@ import shlex
 import subprocess
 import sys
 import typing as t
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -51,6 +52,7 @@ from .utils import Version
 # https://docs.gitlab.com/ci/variables/predefined_variables/#predefined-variables
 # https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
 IN_CI = os.environ.get("CI") == "true"
+IN_GITHUB_ACTIONS = bool(os.environ.get("GITHUB_ACTION"))
 ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not IN_CI)).lower() in (
     "1",
     "true",
@@ -71,6 +73,20 @@ MODULE_PATHS = [
 ]
 
 _SESSIONS: dict[str, list[dict[str, t.Any]]] = {}
+
+
+@contextmanager
+def _ci_group(name: str) -> t.Iterator[None]:
+    """
+    Try to ensure that the output inside the context is printed in a collapsable group.
+
+    This is highly CI system dependent, and currently only works for GitHub Actions.
+    """
+    if IN_GITHUB_ACTIONS:
+        print(f"::group::{name}")
+    yield
+    if IN_GITHUB_ACTIONS:
+        print("::endgroup::")
 
 
 def _register(name: str, data: dict[str, t.Any]) -> None:
@@ -1066,7 +1082,7 @@ def add_build_import_check(
                 env["GALAXY_IMPORTER_CONFIG"] = str(
                     Path.cwd() / galaxy_importer_config_path
                 )
-            with session.chdir(collection_dir):
+            with session.chdir(collection_dir), _ci_group("Run Galaxy importer"):
                 import_log = (
                     session.run(
                         "python",
