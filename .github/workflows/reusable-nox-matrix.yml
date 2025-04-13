@@ -25,24 +25,6 @@ name: Run sanity, unit, and integration tests
           Whether code coverage should be collected and uploaded to codecov.io.
         required: false
         default: false
-      extra-collections-sanity:
-        type: string
-        description: >-
-          Additional collections to install for sanity tests.
-        required: false
-        default: ""
-      extra-collections-unit:
-        type: string
-        description: >-
-          Additional collections to install for unit tests.
-        required: false
-        default: ""
-      extra-collections-integration:
-        type: string
-        description: >-
-          Additional collections to install for integration tests.
-        required: false
-        default: ""
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -85,13 +67,6 @@ jobs:
         with:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
           persist-credentials: false
-      - name: Check out dependent collections
-        if: >-
-          !matrix.skip && inputs.extra-collections-sanity
-        run: >-
-          ansible-galaxy collection install -p .
-          ${{ inputs.extra-collections-sanity }}
-          git+https://github.com/ansible-collections/community.library_inventory_filtering.git,stable-1
       - name: Run nox
         if: >-
           !matrix.skip
@@ -126,12 +101,6 @@ jobs:
         with:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
           persist-credentials: false
-      - name: Check out dependent collections
-        if: >-
-          !matrix.skip && inputs.extra-collections-unit
-        run: >-
-          ansible-galaxy collection install -p .
-          ${{ inputs.extra-collections-unit }}
       - name: Run nox
         if: >-
           !matrix.skip
@@ -167,12 +136,6 @@ jobs:
         with:
           path: ansible_collections/${{ inputs.collection-namespace }}/${{ inputs.collection-name }}
           persist-credentials: false
-      - name: Check out dependent collections
-        if: >-
-          !matrix.skip && inputs.extra-collections-integration
-        run: >-
-          ansible-galaxy collection install -p .
-          ${{ inputs.extra-collections-integration }}
       - name: Run nox
         if: >-
           !matrix.skip
