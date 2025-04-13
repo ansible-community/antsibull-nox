@@ -104,6 +104,8 @@ source = [
 
 [[tool.mypy.overrides]]
 module = [
+    "ansible.module_utils.basic",
+    "pytest",
     "semantic_version",
     "yamllint",
     "yamllint.config",

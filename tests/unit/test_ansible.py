@@ -50,7 +50,7 @@ def test_all_versions() -> None:
     # Make sure we have information on all ansible-core versions from 2.9 up to devel/milestone
     min_version = _MIN_SUPPORTED_VERSION
     max_version = max(_CURRENT_DEVEL_VERSION, _CURRENT_MILESTONE_VERSION)
-    python_versions = set()
+    python_versions: set[Version] = set()
     for version in version_range(min_version, max_version, inclusive=True):
         info = get_ansible_core_info(version)
         assert info.ansible_core_version == version

@@ -66,6 +66,7 @@ confidence=
 # --disable=W".
 disable=
     locally-disabled,
+    too-few-public-methods,
     too-many-arguments,
     too-many-lines,
     too-many-locals,

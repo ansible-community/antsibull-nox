@@ -185,6 +185,7 @@ def prepare_collections(
         extra_deps_files=extra_deps_files,
         extra_collections=extra_collections,
         with_current=False,
+        global_cache_dir=session.cache_dir,
     )
     current_setup = setup_current_tree(place, setup.current_collection)
     return CollectionSetup(

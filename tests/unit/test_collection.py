@@ -20,15 +20,21 @@ from antsibull_fileutils.yaml import load_yaml_file, store_yaml_file
 
 from antsibull_nox.collection import (
     CollectionData,
-    CollectionList,
     Runner,
+    force_collection_version,
+    load_collection_data_from_disk,
+)
+from antsibull_nox.collection.install import (
     _add_all_dependencies,
     _extract_collections_from_extra_deps_file,
+    _MissingDependencies,
+)
+from antsibull_nox.collection.search import (
+    _COLLECTION_LIST,
+    CollectionList,
     _fs_list_local_collections,
     _galaxy_list_collections,
-    force_collection_version,
     get_collection_list,
-    load_collection_data_from_disk,
 )
 
 from .utils import chdir
@@ -74,9 +80,11 @@ def test__add_all_dependencies() -> None:
     )
 
     # No deps
-    deps = {}
-    _add_all_dependencies(deps, all_collections)
+    deps: dict[str, CollectionData] = {}
+    missing = _MissingDependencies()
+    _add_all_dependencies(deps, missing, all_collections)
     assert deps == {}  # pylint: disable=use-implicit-booleaness-not-comparison
+    assert missing.is_empty()
 
     # Collection without deps
     deps = {
@@ -85,8 +93,10 @@ def test__add_all_dependencies() -> None:
             "foo.bar",
         ]
     }
-    _add_all_dependencies(deps, all_collections)
+    missing = _MissingDependencies()
+    _add_all_dependencies(deps, missing, all_collections)
     assert deps.keys() == {"foo.bar"}
+    assert missing.is_empty()
 
     # Collection with single dep
     deps = {
@@ -95,8 +105,10 @@ def test__add_all_dependencies() -> None:
             "foo.bam",
         ]
     }
-    _add_all_dependencies(deps, all_collections)
+    missing = _MissingDependencies()
+    _add_all_dependencies(deps, missing, all_collections)
     assert deps.keys() == {"foo.bar", "foo.bam"}
+    assert missing.is_empty()
 
     # Collection with two deps
     deps = {
@@ -105,8 +117,10 @@ def test__add_all_dependencies() -> None:
             "foo.baz",
         ]
     }
-    _add_all_dependencies(deps, all_collections)
+    missing = _MissingDependencies()
+    _add_all_dependencies(deps, missing, all_collections)
     assert deps.keys() == {"foo.bar", "foo.bam", "foo.baz"}
+    assert missing.is_empty()
 
     # Collection with dependency chain where leaf is already there
     deps = {
@@ -116,21 +130,22 @@ def test__add_all_dependencies() -> None:
             "foo.foo",
         ]
     }
-    _add_all_dependencies(deps, all_collections)
+    missing = _MissingDependencies()
+    _add_all_dependencies(deps, missing, all_collections)
     assert deps.keys() == {"foo.bar", "foo.bam", "foo.foo"}
+    assert missing.is_empty()
 
     # Missing collection
-    with pytest.raises(
-        ValueError,
-        match="^Cannot find collection foo.does_not_exist, a dependency of foo.error!$",
-    ):
-        deps = {
-            name: all_collections.find(name)
-            for name in [
-                "foo.error",
-            ]
-        }
-        _add_all_dependencies(deps, all_collections)
+    deps = {
+        name: all_collections.find(name)
+        for name in [
+            "foo.error",
+        ]
+    }
+    missing = _MissingDependencies()
+    _add_all_dependencies(deps, missing, all_collections)
+    assert not missing.is_empty()
+    assert missing.get_missing_names() == ["foo.does_not_exist"]
 
 
 def test__extract_collections_from_extra_deps_file_special(tmp_path: Path) -> None:
@@ -239,7 +254,7 @@ def create_collection(
     version: str | None = None,
     dependencies: dict[str, str] | None = None,
 ) -> None:
-    data = {
+    data: dict[str, t.Any] = {
         "namespace": namespace,
         "name": name,
     }
@@ -305,9 +320,11 @@ def test__fs_list_local_collections(tmp_path: Path) -> None:
         root, namespace="community", name="baz", dependencies={"community.foo": "*"}
     )
     (root / "blah").write_text("nothing")
+    (root / "blahsym").symlink_to("blah")
     (root / "empty").mkdir()
     (root / "blubb").mkdir()
     (root / "blubb" / "foo").write_text("nothing")
+    (root / "blubb" / "foosym").symlink_to("foo")
     (root / "community" / "foo").write_text("nothing")
     (root / "community" / "bam").mkdir()
     with chdir(foo_bar):
@@ -620,7 +637,8 @@ def test__galaxy_list_collections(
             ["ansible-galaxy", "collection", "list", "--format", "json"],
             stdout=content.replace("<ROOT1>", str(root1))
             .replace("<ROOT2>", str(root2))
-            .replace("<ROOT3>", str(root3)),
+            .replace("<ROOT3>", str(root3))
+            .encode("utf-8"),
         )
     )
     res = sorted(result, key=lambda c: c.full_name)
@@ -639,7 +657,7 @@ def test__galaxy_list_collections_fail() -> None:
             _galaxy_list_collections(
                 create_once_runner(
                     ["ansible-galaxy", "collection", "list", "--format", "json"],
-                    stdout="{",
+                    stdout=b"{",
                 )
             )
         )
@@ -771,6 +789,7 @@ def test_get_collection_list(tmp_path) -> None:
     root1 = tmp_path / "root-1" / "ansible_collections"
     root2 = tmp_path / "root-2" / "ansible_collections"
     root3 = tmp_path / "root-3" / "ansible_collections"
+    empty = tmp_path / "empty"
 
     create_collection_w_dir(root1, namespace="foo", name="bar", version="1.0.0")
     root1_foo_bam = create_collection_w_dir(
@@ -799,12 +818,23 @@ def test_get_collection_list(tmp_path) -> None:
         ["ansible-galaxy", "collection", "list", "--format", "json"],
         stdout=content.replace("<ROOT1>", str(root1))
         .replace("<ROOT2>", str(root2))
-        .replace("<ROOT3>", str(root3)),
+        .replace("<ROOT3>", str(root3))
+        .encode("utf-8"),
     )
 
     with chdir(root3 / "foo" / "bar"):
-        get_collection_list.cache_clear()  # added by @functools.cache
-        result = get_collection_list(runner)
+        _COLLECTION_LIST.clear()
+        assert _COLLECTION_LIST.get_cached() is None
+        result = get_collection_list(runner=runner, global_cache_dir=empty)
+        cl = _COLLECTION_LIST.get_cached()
+        assert cl is not None
+        result_2 = get_collection_list(runner=runner, global_cache_dir=empty)
+        assert _COLLECTION_LIST.get_cached() is cl
+
+        with pytest.raises(
+            ValueError, match="^Setup mismatch: global cache dir cannot be both "
+        ):
+            get_collection_list(runner=runner, global_cache_dir=tmp_path)
 
     assert result.collections == sorted(
         [
@@ -823,6 +853,9 @@ def test_get_collection_list(tmp_path) -> None:
         ],
         key=lambda c: c.full_name,
     )
+
+    assert result == cl
+    assert result == result_2
 
 
 FORCE_COLLECTION_VERSION_DATA: list[tuple[str, str, bool, dict[str, t.Any]]] = [
