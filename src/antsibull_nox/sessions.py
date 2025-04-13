@@ -1082,7 +1082,7 @@ def add_build_import_check(
                 env["GALAXY_IMPORTER_CONFIG"] = str(
                     Path.cwd() / galaxy_importer_config_path
                 )
-            with session.chdir(collection_dir), _ci_group("Run Galaxy importer"):
+            with session.chdir(collection_dir):
                 import_log = (
                     session.run(
                         "python",
@@ -1095,7 +1095,8 @@ def add_build_import_check(
                     or ""
                 )
             if import_log:
-                print(import_log)
+                with _ci_group("Run Galaxy importer"):
+                    print(import_log)
                 error_prefix = "ERROR:"
                 errors = []
                 for line in import_log.splitlines():
