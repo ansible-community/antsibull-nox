@@ -14,7 +14,7 @@ from antsibull_nox.utils import Version
 
 
 @contextlib.contextmanager
-def set_environ(env_var: str, value: str) -> t.Iterable[None]:
+def set_environ(env_var: str, value: str) -> t.Iterator[None]:
     old_value = os.environ.get(env_var)
     try:
         os.environ[env_var] = value

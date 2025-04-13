@@ -181,7 +181,7 @@ def typing(session: nox.Session):
     session.run(
         "mypy",
         "src/antsibull_nox",
-        # "tests",
+        "tests",
     )
 
 

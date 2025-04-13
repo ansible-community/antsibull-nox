@@ -244,7 +244,7 @@ def create_collection(
     version: str | None = None,
     dependencies: dict[str, str] | None = None,
 ) -> None:
-    data = {
+    data: dict[str, t.Any] = {
         "namespace": namespace,
         "name": name,
     }
@@ -627,7 +627,8 @@ def test__galaxy_list_collections(
             ["ansible-galaxy", "collection", "list", "--format", "json"],
             stdout=content.replace("<ROOT1>", str(root1))
             .replace("<ROOT2>", str(root2))
-            .replace("<ROOT3>", str(root3)),
+            .replace("<ROOT3>", str(root3))
+            .encode("utf-8"),
         )
     )
     res = sorted(result, key=lambda c: c.full_name)
@@ -646,7 +647,7 @@ def test__galaxy_list_collections_fail() -> None:
             _galaxy_list_collections(
                 create_once_runner(
                     ["ansible-galaxy", "collection", "list", "--format", "json"],
-                    stdout="{",
+                    stdout=b"{",
                 )
             )
         )
@@ -806,7 +807,8 @@ def test_get_collection_list(tmp_path) -> None:
         ["ansible-galaxy", "collection", "list", "--format", "json"],
         stdout=content.replace("<ROOT1>", str(root1))
         .replace("<ROOT2>", str(root2))
-        .replace("<ROOT3>", str(root3)),
+        .replace("<ROOT3>", str(root3))
+        .encode("utf-8"),
     )
 
     with chdir(root3 / "foo" / "bar"):
