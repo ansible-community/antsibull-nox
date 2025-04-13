@@ -335,13 +335,16 @@ def _add_all_dependencies(
 
 
 def _install_collection(collection: CollectionData, path: Path) -> None:
+    # Compute relative path
+    sym_path = collection.path.absolute().relative_to(path.parents[0], walk_up=True)
+    # Ensure that path is symlink with this relative path
     if path.is_symlink():
-        if path.readlink() == collection.path:
+        if path.readlink() == sym_path:
             return
         path.unlink()
     else:
         _remove(path)
-    path.symlink_to(collection.path)
+    path.symlink_to(sym_path)
 
 
 def _install_current_collection(collection: CollectionData, path: Path) -> None:
@@ -349,16 +352,19 @@ def _install_current_collection(collection: CollectionData, path: Path) -> None:
         path.unlink()
     path.mkdir(exist_ok=True)
     present = {p.name for p in path.iterdir()}
-    for source_entry in collection.path.iterdir():
+    for source_entry in collection.path.absolute().iterdir():
         if source_entry.name == ".nox":
             continue
         dest_entry = path / source_entry.name
+        # Compute relative path
+        sym_path = source_entry.relative_to(path, walk_up=True)
+        # Ensure that dest_entry is symlink with this relative path
         if source_entry.name in present:
             present.remove(source_entry.name)
-            if dest_entry.is_symlink() and dest_entry.readlink() == source_entry:
+            if dest_entry.is_symlink() and dest_entry.readlink() == sym_path:
                 continue
             _remove(dest_entry)
-        dest_entry.symlink_to(source_entry)
+        dest_entry.symlink_to(sym_path)
     for name in present:
         dest_entry = path / name
         _remove(dest_entry)
