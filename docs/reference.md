@@ -48,6 +48,27 @@ if __name__ == "__main__":
     nox.main()
 ```
 
+## Setup collection installation
+
+By default,
+antsibull-nox installs collection dependencies that are needed by using `ansible-galaxy collection download` to download them to a cache directory inside Nox's cache directory,
+which is usually `.nox` inside the directory which contains `noxfile.py`.
+If you prefer collections to be cloned from Git repositories instead,
+you have to tell antsibull-nox how to download collections.
+
+The function `antsibull_nox.setup()` allows to configure this:
+```python
+antsibull_nox.setup(
+    collection_sources={
+        # Install community.internal_test_tools from the Git repository
+        # https://github.com/ansible-collections/community.internal_test_tools.git
+        # from branch 'main':
+        "community.internal_test_tools": "git+https://github.com/ansible-collections/community.internal_test_tools.git,main",
+    },
+)
+```
+The syntax used is explained in [the Ansible documentation on installation of collections from Git repositories](https://docs.ansible.com/ansible-core/devel/collections_guide/collections_installing.html#installing-a-collection-from-a-git-repository-at-the-command-line).
+
 ## Basic linting sessions
 
 The basic linting session, `lint`, comes with three sessions it depends on:

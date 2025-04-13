@@ -29,6 +29,23 @@ from .sessions import (
 
 __version__ = "0.1.0.post0"
 
+
+def setup(
+    *,
+    collection_sources: dict[str, str | CollectionSource] | None = None,
+) -> None:
+    """
+    Set-up antsibull-nox.
+    """
+    if collection_sources:
+        setup_collection_sources(
+            {
+                name: CollectionSource.parse(name, source)
+                for name, source in collection_sources.items()
+            }
+        )
+
+
 # pylint:disable=duplicate-code
 __all__ = (
     "__version__",
@@ -48,19 +65,3 @@ __all__ = (
     "CollectionSource",
     "setup",
 )
-
-
-def setup(
-    *,
-    collection_sources: dict[str, str | CollectionSource] | None = None,
-) -> None:
-    """
-    Set-up antsibull-nox.
-    """
-    if collection_sources:
-        setup_collection_sources(
-            {
-                name: CollectionSource.parse(name, source)
-                for name, source in collection_sources.items()
-            }
-        )
