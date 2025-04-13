@@ -1,0 +1,2 @@
+minor_changes:
+  - "Allow to add ansible-lint session (https://github.com/ansible-community/antsibull-nox/issues/40, https://github.com/ansible-community/antsibull-nox/pull/49)."

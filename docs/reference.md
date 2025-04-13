@@ -981,6 +981,26 @@ antsibull_nox.add_ansible_test_integration_sessions_default_container(
 )
 ```
 
+### Run ansible-lint
+
+The function `antsibull_nox.add_ansible_lint()` allows to add a `ansible-lint` session that runs [ansible-lint](https://ansible.readthedocs.io/projects/lint/).
+This function accepts the following options:
+
+* `make_ansible_lint_default: bool` (default `True`):
+  Whether the `ansible-lint` session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* `ansible_lint_package: str` (default `"ansible-lint"`):
+  The package to install for `ansible-lint` in this session.
+  You can specify a value here to add restrictions to the `ansible-lint` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
+* `strict: bool` (default `False`):
+  Whether the `--strict` parameter should be passed to ansible-lint.
+  This treats warnings as errors.
+
+
 ### Generate matrixes for CI systems
 
 The function `antsibull_nox.add_matrix_generator()` allows to add a `matrix-generator` session that generates matrixes for CI systems.
