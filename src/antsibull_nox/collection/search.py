@@ -14,6 +14,7 @@ import json
 import threading
 import typing as t
 from collections.abc import Collection, Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,6 +25,24 @@ from .data import CollectionData
 # Function that runs a command (and fails on non-zero return code)
 # and returns a tuple (stdout, stderr)
 Runner = t.Callable[[list[str]], tuple[bytes, bytes]]
+
+
+@dataclass(frozen=True)
+class _GlobalCache:
+    root: Path
+    download_cache: Path
+    extracted_cache: Path
+
+    @classmethod
+    def create(cls, *, root: Path) -> _GlobalCache:
+        """
+        Create a global cache object.
+        """
+        return cls(
+            root=root,
+            download_cache=root / "downloaded",
+            extracted_cache=root / "extracted",
+        )
 
 
 def _load_galaxy_yml(galaxy_yml: Path) -> dict[str, t.Any]:
@@ -199,6 +218,13 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
         pass  # pragma: no cover
 
 
+def _fs_list_global_cache(global_cache_dir: Path) -> Iterator[CollectionData]:
+    if not global_cache_dir.is_dir():
+        return
+
+    yield from _list_adjacent_collections_outside_tree(global_cache_dir)
+
+
 def _galaxy_list_collections(runner: Runner) -> Iterator[CollectionData]:
     try:
         stdout, _ = runner(["ansible-galaxy", "collection", "list", "--format", "json"])
@@ -248,7 +274,7 @@ class CollectionList:
         )
 
     @classmethod
-    def collect(cls, runner: Runner) -> CollectionList:
+    def collect(cls, *, runner: Runner, global_cache: _GlobalCache) -> CollectionList:
         """
         Search for a list of collections. The result is not cached.
         """
@@ -256,6 +282,10 @@ class CollectionList:
         for collection_data in _fs_list_local_collections():
             found_collections[collection_data.full_name] = collection_data
         for collection_data in _galaxy_list_collections(runner):
+            # Similar to Ansible, we use the first match
+            if collection_data.full_name not in found_collections:
+                found_collections[collection_data.full_name] = collection_data
+        for collection_data in _fs_list_global_cache(global_cache.extracted_cache):
             # Similar to Ansible, we use the first match
             if collection_data.full_name not in found_collections:
                 found_collections[collection_data.full_name] = collection_data
@@ -272,15 +302,70 @@ class CollectionList:
         Create a clone of this list.
         """
         return CollectionList(
-            collections=self.collections,
-            collection_map=self.collection_map,
+            collections=list(self.collections),
+            collection_map=dict(self.collection_map),
             current=self.current,
         )
 
+    def _add(self, collection: CollectionData, *, force: bool = True) -> bool:
+        if not force and collection.full_name in self.collection_map:
+            return False
+        self.collections.append(collection)
+        self.collection_map[collection.full_name] = collection
+        return True
+
+
+class _CollectionListUpdater:
+    def __init__(
+        self, *, owner: "_CollectionListSingleton", collection_list: CollectionList
+    ) -> None:
+        self._owner = owner
+        self._collection_list = collection_list
+
+    def find(self, name: str) -> CollectionData | None:
+        """
+        Find a collection for a given name.
+        """
+        return self._collection_list.find(name)
+
+    def add_collection(
+        self, *, directory: Path, namespace: str, name: str
+    ) -> CollectionData:
+        """
+        Add a new collection to the cache.
+        """
+        # pylint: disable-next=protected-access
+        return self._owner._add_collection(
+            directory=directory, namespace=namespace, name=name
+        )
+
+    def get_global_cache(self) -> _GlobalCache:
+        """
+        Get the global cache object.
+        """
+        return self._owner._get_global_cache()  # pylint: disable=protected-access
+
 
 class _CollectionListSingleton:
-    _collection_list: CollectionList | None = None
     _lock = threading.Lock()
+
+    _global_cache_dir: Path | None = None
+    _collection_list: CollectionList | None = None
+
+    def setup(self, *, global_cache_dir: Path) -> None:
+        """
+        Setup data.
+        """
+        with self._lock:
+            if (
+                self._global_cache_dir is not None
+                and self._global_cache_dir != global_cache_dir
+            ):
+                raise ValueError(
+                    "Setup mismatch: global cache dir cannot be both"
+                    f" {self._global_cache_dir} and {global_cache_dir}"
+                )
+            self._global_cache_dir = global_cache_dir
 
     def clear(self) -> None:
         """
@@ -296,26 +381,70 @@ class _CollectionListSingleton:
         """
         return self._collection_list
 
-    def get(self, runner: Runner) -> CollectionList:
+    def get(self, *, runner: Runner) -> CollectionList:
         """
         Search for a list of collections. The result is cached.
         """
         with self._lock:
+            if self._global_cache_dir is None:
+                raise ValueError("Internal error: global cache dir not setup")
             result = self._collection_list
             if result is None:
-                result = CollectionList.collect(runner)
+                result = CollectionList.collect(
+                    runner=runner,
+                    global_cache=_GlobalCache.create(root=self._global_cache_dir),
+                )
                 self._collection_list = result
         return result.clone()
+
+    def _get_global_cache(self) -> _GlobalCache:
+        """
+        Returns the global cache dir.
+        """
+        if self._global_cache_dir is None:
+            raise ValueError("Internal error: global cache dir not setup")
+        return _GlobalCache.create(root=self._global_cache_dir)
+
+    def _add_collection(
+        self, *, directory: Path, namespace: str, name: str
+    ) -> CollectionData:
+        """
+        Add collection in directory if the collection list has been cached.
+        """
+        if not self._collection_list:
+            raise ValueError("Internal error: collections not listed")
+        data = load_collection_data_from_disk(directory, namespace=namespace, name=name)
+        self._collection_list._add(data)  # pylint: disable=protected-access
+        return data
+
+    @contextmanager
+    def _update_collection_list(self) -> t.Iterator[_CollectionListUpdater]:
+        with self._lock:
+            if not self._collection_list or self._global_cache_dir is None:
+                raise ValueError(
+                    "Internal error: collections not listed or global cache not setup"
+                )
+            yield _CollectionListUpdater(
+                owner=self, collection_list=self._collection_list
+            )
 
 
 _COLLECTION_LIST = _CollectionListSingleton()
 
 
-def get_collection_list(runner: Runner) -> CollectionList:
+@contextmanager
+def _update_collection_list() -> t.Iterator[_CollectionListUpdater]:
+    # pylint: disable-next=protected-access
+    with _COLLECTION_LIST._update_collection_list() as result:
+        yield result
+
+
+def get_collection_list(*, runner: Runner, global_cache_dir: Path) -> CollectionList:
     """
     Search for a list of collections. The result is cached.
     """
-    return _COLLECTION_LIST.get(runner)
+    _COLLECTION_LIST.setup(global_cache_dir=global_cache_dir)
+    return _COLLECTION_LIST.get(runner=runner)
 
 
 __all__ = [

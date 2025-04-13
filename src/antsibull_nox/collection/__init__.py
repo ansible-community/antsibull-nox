@@ -21,7 +21,7 @@ from .install import (
     setup_collections,
     setup_current_tree,
 )
-from .search import CollectionList, get_collection_list, load_collection_data_from_disk
+from .search import CollectionList, load_collection_data_from_disk
 
 
 def force_collection_version(path: Path, *, version: str) -> bool:
@@ -49,7 +49,6 @@ __all__ = [
     "CollectionSource",
     "SetupResult",
     "Runner",
-    "get_collection_list",
     "load_collection_data_from_disk",
     "setup_collections",
     "setup_current_tree",
