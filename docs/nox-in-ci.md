@@ -92,14 +92,6 @@ jobs:
       collection-namespace: community
       collection-name: dns
       upload-codecov: true
-      extra-collections-sanity: >-
-        git+https://github.com/ansible-collections/community.library_inventory_filtering.git,stable-1
-      extra-collections-unit: >-
-        git+https://github.com/ansible-collections/community.internal_test_tools.git,main
-        git+https://github.com/ansible-collections/community.library_inventory_filtering.git,stable-1
-      extra-collections-integration: >-
-        git+https://github.com/ansible-collections/community.general.git,main
-        git+https://github.com/ansible-collections/community.library_inventory_filtering.git,stable-1
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 ```
