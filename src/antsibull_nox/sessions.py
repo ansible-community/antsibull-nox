@@ -1619,6 +1619,43 @@ def add_ansible_test_integration_sessions_default_container(
     )(ansible_test_integration)
 
 
+def add_ansible_lint(
+    *,
+    make_ansible_lint_default: bool = True,
+    ansible_lint_package: str = "ansible-lint",
+    strict: bool = False,
+) -> None:
+    """
+    Add a session that runs ansible-lint.
+    """
+
+    def compose_dependencies() -> list[str]:
+        return [ansible_lint_package]
+
+    def ansible_lint(session: nox.Session) -> None:
+        install(session, *compose_dependencies())
+        prepared_collections = prepare_collections(
+            session,
+            install_in_site_packages=False,
+            install_out_of_tree=True,
+            extra_deps_files=["tests/integration/requirements.yml"],
+        )
+        if not prepared_collections:
+            session.warn("Skipping ansible-lint...")
+            return
+        env = {"ANSIBLE_COLLECTIONS_PATH": f"{prepared_collections.current_place}"}
+        command = ["ansible-lint", "--offline"]
+        if strict:
+            command.append("--strict")
+        session.run(*command, env=env)
+
+    ansible_lint.__doc__ = "Run ansible-lint."
+    nox.session(
+        name="ansible-lint",
+        default=make_ansible_lint_default,
+    )(ansible_lint)
+
+
 def add_matrix_generator() -> None:
     """
     Add a session that generates matrixes for CI systems.
@@ -1668,6 +1705,7 @@ __all__ = [
     "add_ansible_test_unit_test_session",
     "add_all_ansible_test_unit_test_sessions",
     "add_ansible_test_integration_sessions_default_container",
+    "add_ansible_lint",
     "add_matrix_generator",
     "install",
     "prepare_collections",
