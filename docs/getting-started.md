@@ -134,3 +134,27 @@ uv run noxfile.py -Re formatters
     Whether or not a collection has a `formatters` section depends on the parameters passed to `antsibull_nox.add_lint_sessions()` in the `noxfile.py` file.
     In the example in the previous section, `run_isort=False` and `run_black=False` disable both currently supported formatters.
     In this case, `antsibull-nox` does not add the `formatters` session because it would be empty.
+
+## Dependent collections
+
+By default, antsibull-nox will use `ansible-galaxy collection list` to find collections,
+will look in adjacent directories,
+and will download and install missing collections needed to run tests in the `.nox` cache directory.
+
+More precisely:
+
+1. If the current checked out collection is part of a tree structure `ansible_collections/<namespace>/<name>/`,
+   then antsibull-nox will inspect all collections that are part of that tree and use them.
+
+1. If the current checked out collection is not part of such a tree structure,
+   then antsibull-nox will look for adjacent directories of the form `<namespace>.<name>`.
+
+1. If the environment variable `ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS` is not set to `true`,
+   antibull-nox will call `ansible-galaxy collection list` to find all installed collections.
+
+1. If more collections are needed,
+   and `ANTSIBULL_NOX_INSTALL_COLLECTIONS` is not set to `never`,
+   antsibull-nox will download and install them into the `.nox` cache directory.
+
+In the included GitHub Action, `ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS` is always set to `true`.
+This avoids using collections from the Ansible community package that is installed in GitHub's default images.

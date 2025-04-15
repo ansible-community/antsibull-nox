@@ -11,6 +11,7 @@ Handle Ansible collections.
 from __future__ import annotations
 
 import json
+import os
 import threading
 import typing as t
 from collections.abc import Collection, Iterator, Sequence
@@ -281,10 +282,11 @@ class CollectionList:
         found_collections = {}
         for collection_data in _fs_list_local_collections():
             found_collections[collection_data.full_name] = collection_data
-        for collection_data in _galaxy_list_collections(runner):
-            # Similar to Ansible, we use the first match
-            if collection_data.full_name not in found_collections:
-                found_collections[collection_data.full_name] = collection_data
+        if os.environ.get("ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS") != "true":
+            for collection_data in _galaxy_list_collections(runner):
+                # Similar to Ansible, we use the first match
+                if collection_data.full_name not in found_collections:
+                    found_collections[collection_data.full_name] = collection_data
         for collection_data in _fs_list_global_cache(global_cache.extracted_cache):
             # Similar to Ansible, we use the first match
             if collection_data.full_name not in found_collections:

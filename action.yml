@@ -75,5 +75,6 @@ runs:
         nox --verbose --reuse-existing-virtualenvs --no-install${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }}${{ inputs.extra-args && ' -- ' || '' }}${{ inputs.extra-args }}
       env:
         FORCE_COLOR: "1"
+        ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS: "true"
       shell: bash
       working-directory: "${{ inputs.working-directory }}"
