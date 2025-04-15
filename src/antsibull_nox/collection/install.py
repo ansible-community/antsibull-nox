@@ -107,8 +107,8 @@ def _list_downloaded_dir(*, path: Path) -> dict[str, Path]:
         if not file.name.endswith(_TARBALL_EXTENSION) or not file.is_file():
             continue
         basename = file.name[: -len(_TARBALL_EXTENSION)]
-        # Format: community-internal_test_tools-0.15.0
-        parts = basename.split("-")
+        # Format: community-internal_test_tools-0.15.0, community-aws-10.0.0-dev0
+        parts = basename.split("-", 2)
         if len(parts) != 3:
             continue
         full_name = ".".join(parts[:2])
