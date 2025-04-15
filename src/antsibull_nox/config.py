@@ -51,11 +51,15 @@ PAnsibleCoreVersion = t.Annotated[
 ]
 
 
-class BaseModel(p.BaseModel):
+class _BaseModel(p.BaseModel):
     model_config = p.ConfigDict(frozen=True, extra="allow", validate_default=True)
 
 
-class SessionLint(BaseModel):
+class SessionLint(_BaseModel):
+    """
+    Lint session config.
+    """
+
     default: bool = True
     extra_code_files: t.Optional[list[str]] = None
 
@@ -98,7 +102,11 @@ class SessionLint(BaseModel):
     mypy_extra_deps: t.Optional[list[str]] = None
 
 
-class SessionDocsCheck(BaseModel):
+class SessionDocsCheck(_BaseModel):
+    """
+    Docs check session config.
+    """
+
     default: bool = True
 
     antsibull_docs_package: str = "antsibull-docs"
@@ -107,7 +115,11 @@ class SessionDocsCheck(BaseModel):
     extra_collections: t.Optional[list[str]] = None
 
 
-class SessionLicenseCheck(BaseModel):
+class SessionLicenseCheck(_BaseModel):
+    """
+    License check session config.
+    """
+
     default: bool = True
 
     run_reuse: bool = True
@@ -116,7 +128,11 @@ class SessionLicenseCheck(BaseModel):
     license_check_extra_ignore_paths: t.Optional[list[str]] = None
 
 
-class ActionGroup(BaseModel):
+class ActionGroup(_BaseModel):
+    """
+    Information about an action group.
+    """
+
     # Name of the action group.
     name: str
     # Regex pattern to match modules that could belong to this action group.
@@ -130,7 +146,11 @@ class ActionGroup(BaseModel):
     exclusions: t.Optional[list[str]] = None
 
 
-class SessionExtraChecks(BaseModel):
+class SessionExtraChecks(_BaseModel):
+    """
+    Extra checks session config.
+    """
+
     default: bool = True
 
     # no-unwanted-files:
@@ -156,7 +176,11 @@ class SessionExtraChecks(BaseModel):
     action_groups_config: t.Optional[list[ActionGroup]] = None
 
 
-class SessionBuildImportCheck(BaseModel):
+class SessionBuildImportCheck(_BaseModel):
+    """
+    Collection build and Galaxy import session config.
+    """
+
     default: bool = True
 
     ansible_core_package: str = "ansible-core"
@@ -166,13 +190,17 @@ class SessionBuildImportCheck(BaseModel):
     galaxy_importer_config_path: t.Optional[p.FilePath] = None
 
 
-class DevelLikeBranch(BaseModel):
+class DevelLikeBranch(_BaseModel):
+    """
+    A Git repository + branch for a devel-like branch of ansible-core.
+    """
+
     repository: t.Optional[str] = None
     branch: str
 
     @p.model_validator(mode="before")
     @classmethod
-    def pre_validate(cls, values):
+    def _pre_validate(cls, values):
         if isinstance(values, str):
             return {"branch": values}
         if (
@@ -184,7 +212,11 @@ class DevelLikeBranch(BaseModel):
         return values
 
 
-class SessionAnsibleTestSanity(BaseModel):
+class SessionAnsibleTestSanity(_BaseModel):
+    """
+    Ansible-test sanity tests session config.
+    """
+
     default: bool = False
 
     include_devel: bool = False
@@ -195,7 +227,11 @@ class SessionAnsibleTestSanity(BaseModel):
     except_versions: t.Optional[list[PAnsibleCoreVersion]] = None
 
 
-class SessionAnsibleTestUnits(BaseModel):
+class SessionAnsibleTestUnits(_BaseModel):
+    """
+    Ansible-test unit tests session config.
+    """
+
     default: bool = False
 
     include_devel: bool = False
@@ -206,7 +242,11 @@ class SessionAnsibleTestUnits(BaseModel):
     except_versions: t.Optional[list[PAnsibleCoreVersion]] = None
 
 
-class SessionAnsibleTestIntegrationWDefaultContainer(BaseModel):
+class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
+    """
+    Ansible-test integration tests with default container session config.
+    """
+
     default: bool = False
 
     include_devel: bool = False
@@ -219,19 +259,27 @@ class SessionAnsibleTestIntegrationWDefaultContainer(BaseModel):
     controller_python_versions_only: bool = False
 
 
-class SessionAnsibleLint(BaseModel):
+class SessionAnsibleLint(_BaseModel):
+    """
+    Ansible-lint session config.
+    """
+
     default: bool = True
 
     ansible_lint_package: str = "ansible-lint"
     strict: bool = False
 
 
-class Sessions(BaseModel):
+class Sessions(_BaseModel):
+    """
+    Configuration of nox sessions to add.
+    """
+
     lint: t.Optional[SessionLint] = None
     docs_check: t.Optional[SessionDocsCheck] = None
     license_check: t.Optional[SessionLicenseCheck] = None
     extra_checks: t.Optional[SessionExtraChecks] = None
-    import_check: t.Optional[SessionBuildImportCheck] = None
+    build_import_check: t.Optional[SessionBuildImportCheck] = None
     ansible_test_sanity: t.Optional[SessionAnsibleTestSanity] = None
     ansible_test_units: t.Optional[SessionAnsibleTestUnits] = None
     ansible_test_integration_w_default_container: t.Optional[
@@ -240,23 +288,34 @@ class Sessions(BaseModel):
     ansible_lint: t.Optional[SessionAnsibleLint] = None
 
 
-class CollectionSource(BaseModel):
+class CollectionSource(_BaseModel):
+    """
+    Source from which to install a collection.
+    """
+
     source: str
 
     @p.model_validator(mode="before")
     @classmethod
-    def pre_validate(cls, values):
+    def _pre_validate(cls, values):
         if isinstance(values, str):
             return {"source": values}
         return values
 
 
-class Config(BaseModel):
+class Config(_BaseModel):
+    """
+    The contents of a antsibull-nox config file.
+    """
+
     collection_sources: t.Optional[dict[str, CollectionSource]] = None
     sessions: Sessions = Sessions()
 
 
 def load_config_from_toml(path: str | os.PathLike) -> Config:
+    """
+    Load a config TOML file.
+    """
     with open(path, "rb") as f:
         try:
             data = _load_toml(f)
