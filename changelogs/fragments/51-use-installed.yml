@@ -1,0 +1,7 @@
+minor_changes:
+  - "In the GitHub Action, no longer use installed collections, but only ones that have been checked out next to the current one.
+     This avoids using collections that come with the Ansible community package installed in the default GHA image
+     (https://github.com/ansible-community/antsibull-nox/pull/51)."
+  - "Allow to disable using installed collections that are not checked out next to the current one
+     by setting the environment variable ``ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS`` to ``true``
+     (https://github.com/ansible-community/antsibull-nox/pull/51)."
