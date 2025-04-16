@@ -1,5 +1,17 @@
 minor_changes:
-  - "pydantic is now a required Python dependency of antsibull-nox (https://github.com/ansible-community/antsibull-nox/pull/49)."
+  - "pydantic is now a required Python dependency of antsibull-nox (https://github.com/ansible-community/antsibull-nox/pull/50)."
   - "tomli is now a required Python dependency of antsibull-nox for Python versions 3.9 and 3.10
      For Python 3.11+, the standard library tomllib will be used
+     (https://github.com/ansible-community/antsibull-nox/pull/50)."
+major_changes:
+  - "There is now a new function ``antsibull_nox.load_antsibull_nox_toml()`` which loads ``antsibull-nox.toml`` and creates
+     configuration and sessions from it. Calling other functionality from ``antsibull_nox`` in ``noxfile.py`` is only necessary
+     for creating own specialized sessions, or ansible-test sessions
+     that cannot be created with the ``antsibull_nox.add_all_ansible_test_*_test_sessions*()`` type functions
+     (https://github.com/ansible-community/antsibull-nox/pull/50, https://github.com/ansible-community/antsibull-nox/issues/34)."
+deprecated_features:
+  - "All functions in ``antsibull_nox.**`` are deprecated except ``antsibull_nox.load_antsibull_nox_toml()``,
+     ``antsibull_nox.add_ansible_test_session()``, and ``antsibull_nox.sessions.prepare_collections()``.
+     The other function will still work for the next minor release, but will then be removed.
+     Use ``antsibull-nox.toml`` and ``antsibull_nox.load_antsibull_nox_toml()`` instead
      (https://github.com/ansible-community/antsibull-nox/pull/50)."
