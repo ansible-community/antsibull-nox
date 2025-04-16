@@ -18,8 +18,10 @@ Before you get started, ensure that you:
 
 1. Add the following `noxfile.py` file to the root of your collection.
    The root is the directory that contains `galaxy.yml`.
+1. Add the following `antsibull-nox.toml` file to the root of your collection.
 1. Ensure your `galaxy.yml` file contains values for the `name` and `namespace` fields at a minimum.
 
+The **`noxfile.py`** file:
 ```python
 # The following metadata allows Python runners and nox to install the required
 # dependencies for running this Python script:
@@ -42,16 +44,7 @@ except ImportError:
     sys.exit(1)
 
 
-antsibull_nox.add_lint_sessions(
-    run_isort=False,  # disable reformatting for now
-    run_black=False,  # disable reformatting for now
-    # Add more configuration settings here to adjust to your collection;
-    # see https://ansible.readthedocs.io/projects/antsibull-nox/reference/#basic-linting-sessions
-)
-antsibull_nox.add_docs_check(
-    # Add configuration settings here to adjust to your collection;
-    # see https://ansible.readthedocs.io/projects/antsibull-nox/reference/#collection-documentation-check
-)
+antsibull_nox.load_antsibull_nox_toml()
 
 
 # Allow to run the noxfile with `python noxfile.py`, `pipx run noxfile.py`, or similar.
@@ -60,9 +53,28 @@ if __name__ == "__main__":
     nox.main()
 ```
 
+The **`antsibull-nox.toml`** file:
+```toml
+[sessions]
+
+[sessions.lint]
+# disable reformatting for now
+run_isort = false
+
+# disable reformatting for now
+run_black = false
+
+# Add more configuration settings here to adjust to your collection;
+# see https://ansible.readthedocs.io/projects/antsibull-nox/config-file/#basic-linting-sessions
+
+[sessions.docs_check]
+# Add configuration settings here to adjust to your collection;
+# see https://ansible.readthedocs.io/projects/antsibull-nox/config-file/#collection-documentation-check
+```
+
 ## Running all tests against your collection
 
-After you add the `noxfile.py` file to your collection root, you can run the tests as follows:
+After you add the `noxfile.py` and `antsibull-nox.toml` files to your collection root, you can run the tests as follows:
 
 1. Install `antsibull-nox`, which also installs `nox`.
 
