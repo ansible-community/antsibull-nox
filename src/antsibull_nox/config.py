@@ -195,7 +195,7 @@ class DevelLikeBranch(_BaseModel):
 
     @p.model_validator(mode="before")
     @classmethod
-    def _pre_validate(cls, values):
+    def _pre_validate(cls, values: t.Any) -> t.Any:
         if isinstance(values, str):
             return {"branch": values}
         if (
@@ -250,8 +250,21 @@ class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
     min_version: t.Optional[PVersion] = None
     max_version: t.Optional[PVersion] = None
     except_versions: list[PAnsibleCoreVersion] = []
-    core_python_versions: dict[PAnsibleCoreVersion, list[PVersion]] = {}
+    core_python_versions: dict[PAnsibleCoreVersion | str, list[PVersion]] = {}
     controller_python_versions_only: bool = False
+
+    @p.model_validator(mode="after")
+    def _validate_core_keys(self) -> t.Self:
+        branch_names = [dlb.branch for dlb in self.add_devel_like_branches]
+        for key in self.core_python_versions:
+            if isinstance(key, Version) or key in {"devel", "milestone"}:
+                continue
+            if key in branch_names:
+                continue
+            raise ValueError(
+                f"Unknown ansible-core version or branch name {key!r} in core_python_versions"
+            )
+        return self
 
 
 class SessionAnsibleLint(_BaseModel):

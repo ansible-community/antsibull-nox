@@ -783,14 +783,16 @@ It is possible to restrict the Python versions used to run the tests per ansible
   The list elements can be strings of the form `"devel"`, `"milestone"`,
   and `"x.y"` where `x` and `y` are integers that specify a minor ansible-core x.y release.
 
-* `core_python_versions: dict[str | AnsibleCoreVersion, list[str | Version]]` (default `{}`):
+* `core_python_versions: dict[AnsibleCoreVersion | str, list[Version]]` (default `{}`):
   Allows to restrict the number of Python versions per ansible-core release.
   An empty list means that the ansible-core version will be skipped completely.
   If no restrictions are provided, all Python versions supported by this version of ansible-core are used;
   see `controller_python_versions_only` below for more details.
 
     Note that this setting is a new session `[sessions.ansible_test_integration_w_default_container.core_python_versions]`.
-    The keys can be strings `"devel"`, `"milestone"`, and `"x.y"`, where ansible-core x.y is a minor ansible-core release.
+    The keys can be strings `"devel"`, `"milestone"`, and `"x.y"`, where ansible-core x.y is a minor ansible-core release;
+    if `add_devel_like_branches`, the branch names appearing in `add_devel_like_branches` can also be specified.
+    The values can be strings `"x.y"`, where Python x.y is a minor Python release.
 
 * `controller_python_versions_only: bool` (default `false`):
   For ansible-core versions where `core_python_versions` does not provide a list of Python versions,

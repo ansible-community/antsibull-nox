@@ -77,7 +77,7 @@ def _convert_except_versions(
 
 
 def _convert_core_python_versions(
-    core_python_versions: dict[AnsibleCoreVersion, list[Version]] | None,
+    core_python_versions: dict[AnsibleCoreVersion | str, list[Version]] | None,
 ) -> dict[str | AnsibleCoreVersion, list[str | Version]] | None:
     return t.cast(
         t.Optional[dict[str | AnsibleCoreVersion, list[str | Version]]],
