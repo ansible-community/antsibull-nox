@@ -1,2 +1,0 @@
-minor_changes:
-  - "Add descriptions to generated sessions that are shown when running ``nox --list`` (https://github.com/ansible-community/antsibull-nox/pull/31)."

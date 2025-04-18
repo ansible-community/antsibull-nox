@@ -1,3 +1,0 @@
-minor_changes:
-  - "antsibull-nox now automatically installs missing collections. It uses ``.nox/.cache`` to store the collection artifacts and the extracted collections
-     (https://github.com/ansible-community/antsibull-nox/pull/46, https://github.com/ansible-community/antsibull-nox/pull/52, https://github.com/ansible-community/antsibull-nox/issues/7)."

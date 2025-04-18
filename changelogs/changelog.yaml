@@ -54,3 +54,68 @@ releases:
       - 22-adjacent-collections.yml
       - 28-CI.yaml
     release_date: '2025-03-30'
+  0.2.0:
+    changes:
+      deprecated_features:
+        - All functions in ``antsibull_nox.**`` are deprecated except ``antsibull_nox.load_antsibull_nox_toml()``,
+          ``antsibull_nox.add_ansible_test_session()``, and ``antsibull_nox.sessions.prepare_collections()``.
+          The other function will still work for the next minor release, but will
+          then be removed. Use ``antsibull-nox.toml`` and ``antsibull_nox.load_antsibull_nox_toml()``
+          instead (https://github.com/ansible-community/antsibull-nox/pull/50).
+      major_changes:
+        - There is now a new function ``antsibull_nox.load_antsibull_nox_toml()``
+          which loads ``antsibull-nox.toml`` and creates configuration and sessions
+          from it. Calling other functionality from ``antsibull_nox`` in ``noxfile.py``
+          is only necessary for creating own specialized sessions, or ansible-test
+          sessions that cannot be created with the ``antsibull_nox.add_all_ansible_test_*_test_sessions*()``
+          type functions (https://github.com/ansible-community/antsibull-nox/pull/50,
+          https://github.com/ansible-community/antsibull-nox/issues/34).
+      minor_changes:
+        - Add descriptions to generated sessions that are shown when running ``nox
+          --list`` (https://github.com/ansible-community/antsibull-nox/pull/31).
+        - Add function ``add_matrix_generator`` which allows to generate matrixes
+          for CI systems for ansible-test runs (https://github.com/ansible-community/antsibull-nox/pull/32).
+        - Add several new functions to add ansible-test runs (https://github.com/ansible-community/antsibull-nox/issues/5,
+          https://github.com/ansible-community/antsibull-nox/pull/32, https://github.com/ansible-community/antsibull-nox/pull/41,
+          https://github.com/ansible-community/antsibull-nox/pull/45).
+        - Add shared workflow for running ansible-test from nox and generating the
+          CI matrix from nox as well (https://github.com/ansible-community/antsibull-nox/issues/35,
+          https://github.com/ansible-community/antsibull-nox/pull/37, https://github.com/ansible-community/antsibull-nox/pull/38,
+          https://github.com/ansible-community/antsibull-nox/pull/48, https://github.com/ansible-community/antsibull-nox/pull/53).
+        - Allow to add ``yamllint`` session to ``lint`` meta-session that checks YAML
+          files, and YAML content embedded in plugins and sidecar docs (https://github.com/ansible-community/antsibull-nox/pull/42).
+        - Allow to add ansible-lint session (https://github.com/ansible-community/antsibull-nox/issues/40,
+          https://github.com/ansible-community/antsibull-nox/pull/49).
+        - Allow to disable using installed collections that are not checked out next
+          to the current one by setting the environment variable ``ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS``
+          to ``true`` (https://github.com/ansible-community/antsibull-nox/pull/51).
+        - Collapse Galaxy importer's output in GitHub Actions (https://github.com/ansible-community/antsibull-nox/pull/46).
+        - In the GitHub Action, no longer use installed collections, but only ones
+          that have been checked out next to the current one. This avoids using collections
+          that come with the Ansible community package installed in the default GHA
+          image (https://github.com/ansible-community/antsibull-nox/pull/51).
+        - The action allows to install additional Python versions with the new ``extra-python-versions``
+          option (https://github.com/ansible-community/antsibull-nox/pull/32).
+        - The action allows to pass extra commands after ``--`` with the new ``extra-args``
+          option (https://github.com/ansible-community/antsibull-nox/pull/32).
+        - antsibull-nox now automatically installs missing collections. It uses ``.nox/.cache``
+          to store the collection artifacts and the extracted collections (https://github.com/ansible-community/antsibull-nox/pull/46,
+          https://github.com/ansible-community/antsibull-nox/pull/52, https://github.com/ansible-community/antsibull-nox/issues/7).
+        - pydantic is now a required Python dependency of antsibull-nox (https://github.com/ansible-community/antsibull-nox/pull/50).
+        - tomli is now a required Python dependency of antsibull-nox for Python versions
+          3.9 and 3.10 For Python 3.11+, the standard library tomllib will be used
+          (https://github.com/ansible-community/antsibull-nox/pull/50).
+      release_summary: Major extension and overhaul with many breaking changes. The
+        next minor release is expected to bring more stabilization.
+    fragments:
+      - 0.2.0.yml
+      - 31-descriptions.yml
+      - 32-ansible-test.yml
+      - 37-shared-workflow.yml
+      - 42-yamllint.yml
+      - 46-install-missing.yml
+      - 47-galax-importer-collapse.yml
+      - 49-ansible-lint.yml
+      - 50-config.yml
+      - 51-use-installed.yml
+    release_date: '2025-04-18'
