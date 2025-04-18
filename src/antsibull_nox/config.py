@@ -250,7 +250,7 @@ class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
     min_version: t.Optional[PVersion] = None
     max_version: t.Optional[PVersion] = None
     except_versions: list[PAnsibleCoreVersion] = []
-    core_python_versions: dict[PAnsibleCoreVersion | str, list[PVersion]] = {}
+    core_python_versions: dict[t.Union[PAnsibleCoreVersion, str], list[PVersion]] = {}
     controller_python_versions_only: bool = False
 
     @p.model_validator(mode="after")
