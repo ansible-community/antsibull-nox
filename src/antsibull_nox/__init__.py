@@ -30,7 +30,7 @@ from .sessions import (
     add_matrix_generator,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.2.0.post0"
 
 
 def setup(
