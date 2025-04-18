@@ -21,7 +21,7 @@ from .install import (
     setup_collections,
     setup_current_tree,
 )
-from .search import CollectionList, load_collection_data_from_disk
+from .search import GALAXY_YML, CollectionList, load_collection_data_from_disk
 
 
 def force_collection_version(path: Path, *, version: str) -> bool:
@@ -31,7 +31,7 @@ def force_collection_version(path: Path, *, version: str) -> bool:
     Returns ``True`` if the version was changed, and ``False`` if the version
     was already set to this value.
     """
-    galaxy_yml = path / "galaxy.yml"
+    galaxy_yml = path / GALAXY_YML
     try:
         data = load_yaml_file(galaxy_yml)
     except Exception as exc:

@@ -9,8 +9,12 @@
 from __future__ import annotations
 
 import ast
+from pathlib import Path
 
 from .config import lint_config_toml
+
+
+NOXFILE_PY = "noxfile.py"
 
 
 def _is_antsibull_nox_module(module_name: str) -> bool:
@@ -85,7 +89,7 @@ def lint_noxfile() -> list[str]:
     """
     Do basic validation for noxfile.py. Return a list of errors.
     """
-    path = "noxfile.py"
+    path = Path(NOXFILE_PY)
     try:
         with open(path, "rt", encoding="utf-8") as f:
             root = ast.parse(f.read(), filename=path)
