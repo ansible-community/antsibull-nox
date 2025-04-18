@@ -12,9 +12,7 @@ from __future__ import annotations
 
 from .config import load_config_from_toml
 from .interpret_config import interpret_config
-from .sessions import (
-    add_ansible_test_session,
-)
+from .sessions.ansible_test import add_ansible_test_session
 
 __version__ = "0.2.0.post0"
 
