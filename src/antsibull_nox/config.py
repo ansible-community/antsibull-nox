@@ -48,6 +48,18 @@ def _parse_ansible_core_version(value: t.Any) -> AnsibleCoreVersion:
     raise ValueError("Must be ansible-core version string")
 
 
+def _validate_collection_name(value: str) -> str:
+    parts = value.split(".")
+    if len(parts) != 2:
+        raise ValueError("Collection name must be of the form '<namespace>.<name>'")
+    if not parts[0].isidentifier():
+        raise ValueError("Collection namespace must be Python identifier")
+    if not parts[1].isidentifier():
+        raise ValueError("Collection name must be Python identifier")
+    return value
+
+
+CollectionName = t.Annotated[str, p.AfterValidator(_validate_collection_name)]
 PVersion = t.Annotated[Version, p.BeforeValidator(_parse_version)]
 PAnsibleCoreVersion = t.Annotated[
     AnsibleCoreVersion, p.BeforeValidator(_parse_ansible_core_version)
@@ -115,7 +127,7 @@ class SessionDocsCheck(_BaseModel):
     antsibull_docs_package: str = "antsibull-docs"
     ansible_core_package: str = "ansible-core"
     validate_collection_refs: t.Optional[t.Literal["self", "dependent", "all"]] = None
-    extra_collections: list[str] = []
+    extra_collections: list[CollectionName] = []
 
 
 class SessionLicenseCheck(_BaseModel):
@@ -319,7 +331,7 @@ class Config(_BaseModel):
     The contents of a antsibull-nox config file.
     """
 
-    collection_sources: dict[str, CollectionSource] = {}
+    collection_sources: dict[CollectionName, CollectionSource] = {}
     sessions: Sessions = Sessions()
 
 
