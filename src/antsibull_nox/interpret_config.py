@@ -30,9 +30,9 @@ from .sessions import (
     add_docs_check,
     add_extra_checks,
     add_license_check,
-    add_lint_sessions,
     add_matrix_generator,
 )
+from .sessions.lint import add_lint_sessions
 from .utils import Version
 
 
