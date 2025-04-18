@@ -22,21 +22,21 @@ from pathlib import Path
 
 import nox
 
-from .ansible import (
+from ..ansible import (
     AnsibleCoreVersion,
     get_ansible_core_info,
     get_ansible_core_package_name,
     get_supported_core_versions,
 )
-from .collection import (
+from ..collection import (
     CollectionData,
     force_collection_version,
     load_collection_data_from_disk,
     setup_collections,
     setup_current_tree,
 )
-from .data_util import prepare_data_script
-from .paths import (
+from ..data_util import prepare_data_script
+from ..paths import (
     copy_collection,
     copy_directory_tree_into,
     create_temp_directory,
@@ -45,8 +45,8 @@ from .paths import (
     list_all_files,
     remove_path,
 )
-from .python import get_installed_python_versions
-from .utils import Version
+from ..python import get_installed_python_versions
+from ..utils import Version
 
 # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
 # https://docs.gitlab.com/ci/variables/predefined_variables/#predefined-variables
