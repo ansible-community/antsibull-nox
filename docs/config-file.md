@@ -330,7 +330,7 @@ The function has the following configuration settings:
   or to pin the version,
   or to install the package from a local repository.
 
-* `validate_collection_refs: t.Literal["self", "dependent", "all"] | None` (default `None`):
+* `validate_collection_refs: "self" | "dependent" | "all" | None` (default `None`):
   This allows to configure whether references to content (modules/plugins/roles, their options, and return values) in module, plugins, and roles documentation should be validated.
 
     * If set to `self`, only references to the own collection will be checked.
@@ -454,7 +454,8 @@ It can be configured as follows:
       The test makes sure that exactly these groups exist.
 
       Every group is an object.
-      It needs to be defined in a new section `[[sessions.extra_checks.action_groups_config]]`.
+      It should be defined in a new section `[[sessions.extra_checks.action_groups_config]]`.
+      (See [Array of Tables](https://toml.io/en/v1.0.0#array-of-tables) in the TOML Specification.)
       Groups have the following properties:
 
       * `name: str` (**required**):
@@ -585,7 +586,7 @@ The function supports the following parameters:
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
 
-* `add_devel_like_branches: list[tuple[str | None, str]]` (default `[]`):
+* `add_devel_like_branches: list[DevelLikeBranch]` (default `[]`):
   Allows to add a list of optional repositories and branches for ansible-core
   that will be treated similar to `devel`.
   This can be used for testing ansible-core features or bugfixes
@@ -593,14 +594,40 @@ The function supports the following parameters:
   Please note that branches are usually deleted upon merging,
   so you have to remove them again from your `noxfile.py` to avoid CI breaking.
 
-* `min_version: Version | str | None` (default `None`):
+    This option can be specified as follows:
+    ```toml
+    [sessions.ansible_test_sanity]
+    add_devel_like_branches = [
+        # To add the Data Tagging PR (https://github.com/ansible/ansible/pull/84621)
+        # to CI, we can either use the special GitHub reference refs/pull/84621/head
+        # to refer to the PR's HEAD:
+        { branch = "refs/pull/84621/head" },
+
+        # We can also just specify a branch as a string:
+        "refs/pull/84621/head",
+
+        # Alternatively, we can specify a GitHub repository and a branch in that
+        # repository. The Data Tagging PR is based on a branch in nitzmahone's fork
+        # of ansible/ansible:
+        { repository = "nitzmahone/ansible", branch = "data_tagging_219" },
+
+        # We can also provide a two-element list with repository name and branch:
+        ["nitzmahone/ansible", "data_tagging_219"],
+    ]
+    ```
+
+* `min_version: Version | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or higher.
+  This can be a string of the form `"x.y"`, specifying a minor ansible-core x.y release.
 
-* `max_version: Version | str | None` (default `None`):
+* `max_version: Version | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or lower.
+  This can be a string of the form `"x.y"`, specifying a minor ansible-core x.y release.
 
-* `except_versions: list[AnsibleCoreVersion | str]` (default `[]`):
+* `except_versions: list[AnsibleCoreVersion]` (default `[]`):
   If specified, will ignore ansible-core versions in this list.
+  The list elements can be strings of the form `"devel"`, `"milestone"`,
+  and `"x.y"` where `x` and `y` are integers that specify a minor ansible-core x.y release.
 
 #### Example code
 
@@ -636,7 +663,7 @@ The function supports the following parameters:
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
 
-* `add_devel_like_branches: list[tuple[str | None, str]]` (default `[]`):
+* `add_devel_like_branches: list[DevelLikeBranch]` (default `[]`):
   Allows to add a list of optional repositories and branches for ansible-core
   that will be treated similar to `devel`.
   This can be used for testing ansible-core features or bugfixes
@@ -644,14 +671,40 @@ The function supports the following parameters:
   Please note that branches are usually deleted upon merging,
   so you have to remove them again from your `noxfile.py` to avoid CI breaking.
 
-* `min_version: Version | str | None` (default `None`):
+    This option can be specified as follows:
+    ```toml
+    [sessions.ansible_test_units]
+    add_devel_like_branches = [
+        # To add the Data Tagging PR (https://github.com/ansible/ansible/pull/84621)
+        # to CI, we can either use the special GitHub reference refs/pull/84621/head
+        # to refer to the PR's HEAD:
+        { branch = "refs/pull/84621/head" },
+
+        # We can also just specify a branch as a string:
+        "refs/pull/84621/head",
+
+        # Alternatively, we can specify a GitHub repository and a branch in that
+        # repository. The Data Tagging PR is based on a branch in nitzmahone's fork
+        # of ansible/ansible:
+        { repository = "nitzmahone/ansible", branch = "data_tagging_219" },
+
+        # We can also provide a two-element list with repository name and branch:
+        ["nitzmahone/ansible", "data_tagging_219"],
+    ]
+    ```
+
+* `min_version: Version | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or higher.
+  This can be a string of the form `"x.y"`, specifying a minor ansible-core x.y release.
 
-* `max_version: Version | str | None` (default `None`):
+* `max_version: Version | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or lower.
+  This can be a string of the form `"x.y"`, specifying a minor ansible-core x.y release.
 
-* `except_versions: list[AnsibleCoreVersion | str]` (default `[]`):
+* `except_versions: list[AnsibleCoreVersion]` (default `[]`):
   If specified, will ignore ansible-core versions in this list.
+  The list elements can be strings of the form `"devel"`, `"milestone"`,
+  and `"x.y"` where `x` and `y` are integers that specify a minor ansible-core x.y release.
 
 #### Example code
 
@@ -687,7 +740,7 @@ It is possible to restrict the Python versions used to run the tests per ansible
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
 
-* `add_devel_like_branches: list[tuple[str | None, str]]` (default `[]`):
+* `add_devel_like_branches: list[DevelLikeBranch]` (default `[]`):
   Allows to add a list of optional repositories and branches for ansible-core
   that will be treated similar to `devel`.
   This can be used for testing ansible-core features or bugfixes
@@ -695,14 +748,40 @@ It is possible to restrict the Python versions used to run the tests per ansible
   Please note that branches are usually deleted upon merging,
   so you have to remove them again from your `noxfile.py` to avoid CI breaking.
 
-* `min_version: Version | str | None` (default `None`):
+    This option can be specified as follows:
+    ```toml
+    [sessions.ansible_test_integration_w_default_container]
+    add_devel_like_branches = [
+        # To add the Data Tagging PR (https://github.com/ansible/ansible/pull/84621)
+        # to CI, we can either use the special GitHub reference refs/pull/84621/head
+        # to refer to the PR's HEAD:
+        { branch = "refs/pull/84621/head" },
+
+        # We can also just specify a branch as a string:
+        "refs/pull/84621/head",
+
+        # Alternatively, we can specify a GitHub repository and a branch in that
+        # repository. The Data Tagging PR is based on a branch in nitzmahone's fork
+        # of ansible/ansible:
+        { repository = "nitzmahone/ansible", branch = "data_tagging_219" },
+
+        # We can also provide a two-element list with repository name and branch:
+        ["nitzmahone/ansible", "data_tagging_219"],
+    ]
+    ```
+
+* `min_version: Version | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or higher.
+  This can be a string of the form `"x.y"`, specifying a minor ansible-core x.y release.
 
-* `max_version: Version | str | None` (default `None`):
+* `max_version: Version | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or lower.
+  This can be a string of the form `"x.y"`, specifying a minor ansible-core x.y release.
 
-* `except_versions: list[AnsibleCoreVersion | str]` (default `[]`):
+* `except_versions: list[AnsibleCoreVersion]` (default `[]`):
   If specified, will ignore ansible-core versions in this list.
+  The list elements can be strings of the form `"devel"`, `"milestone"`,
+  and `"x.y"` where `x` and `y` are integers that specify a minor ansible-core x.y release.
 
 * `core_python_versions: dict[str | AnsibleCoreVersion, list[str | Version]]` (default `{}`):
   Allows to restrict the number of Python versions per ansible-core release.
@@ -711,6 +790,7 @@ It is possible to restrict the Python versions used to run the tests per ansible
   see `controller_python_versions_only` below for more details.
 
     Note that this setting is a new session `[sessions.ansible_test_integration_w_default_container.core_python_versions]`.
+    The keys can be strings `"devel"`, `"milestone"`, and `"x.y"`, where ansible-core x.y is a minor ansible-core release.
 
 * `controller_python_versions_only: bool` (default `false`):
   For ansible-core versions where `core_python_versions` does not provide a list of Python versions,
