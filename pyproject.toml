@@ -53,6 +53,9 @@ dependencies = [
 "Bug tracker" = "https://github.com/ansible-community/antsibull-nox/issues"
 "Changelog" = "https://github.com/ansible-community/antsibull-nox/tree/main/CHANGELOG.md"
 
+[project.scripts]
+antsibull-nox = "antsibull_nox.cli:main"
+
 
 [project.optional-dependencies]
 #

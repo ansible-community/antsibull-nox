@@ -15,6 +15,7 @@ import typing as t
 
 import pydantic as p
 
+from ._pydantic import forbid_extras, get_formatted_error_messages
 from .ansible import AnsibleCoreVersion
 from .utils import Version
 
@@ -22,6 +23,9 @@ try:
     from tomllib import load as _load_toml
 except ImportError:
     from tomli import load as _load_toml  # type: ignore
+
+
+CONFIG_FILENAME = "antsibull-nox.toml"
 
 
 def _parse_version(value: t.Any) -> Version:
@@ -45,6 +49,18 @@ def _parse_ansible_core_version(value: t.Any) -> AnsibleCoreVersion:
     raise ValueError("Must be ansible-core version string")
 
 
+def _validate_collection_name(value: str) -> str:
+    parts = value.split(".")
+    if len(parts) != 2:
+        raise ValueError("Collection name must be of the form '<namespace>.<name>'")
+    if not parts[0].isidentifier():
+        raise ValueError("Collection namespace must be Python identifier")
+    if not parts[1].isidentifier():
+        raise ValueError("Collection name must be Python identifier")
+    return value
+
+
+CollectionName = t.Annotated[str, p.AfterValidator(_validate_collection_name)]
 PVersion = t.Annotated[Version, p.BeforeValidator(_parse_version)]
 PAnsibleCoreVersion = t.Annotated[
     AnsibleCoreVersion, p.BeforeValidator(_parse_ansible_core_version)
@@ -101,6 +117,9 @@ class SessionLint(_BaseModel):
     mypy_ansible_core_package: t.Optional[str] = "ansible-core"
     mypy_extra_deps: list[str] = []
 
+    # antsibull-nox config lint:
+    run_antsibullnox_config_lint: bool = True
+
 
 class SessionDocsCheck(_BaseModel):
     """
@@ -112,7 +131,7 @@ class SessionDocsCheck(_BaseModel):
     antsibull_docs_package: str = "antsibull-docs"
     ansible_core_package: str = "ansible-core"
     validate_collection_refs: t.Optional[t.Literal["self", "dependent", "all"]] = None
-    extra_collections: list[str] = []
+    extra_collections: list[CollectionName] = []
 
 
 class SessionLicenseCheck(_BaseModel):
@@ -316,7 +335,7 @@ class Config(_BaseModel):
     The contents of a antsibull-nox config file.
     """
 
-    collection_sources: dict[str, CollectionSource] = {}
+    collection_sources: dict[CollectionName, CollectionSource] = {}
     sessions: Sessions = Sessions()
 
 
@@ -330,3 +349,26 @@ def load_config_from_toml(path: str | os.PathLike) -> Config:
         except ValueError as exc:
             raise ValueError(f"Error while reading {path}: {exc}") from exc
     return Config.model_validate(data)
+
+
+def lint_config_toml() -> list[str]:
+    """
+    Lint config files
+    """
+    path = CONFIG_FILENAME
+    errors = []
+    forbid_extras(Config)
+    try:
+        with open(path, "rb") as f:
+            data = _load_toml(f)
+        Config.model_validate(data)
+    except p.ValidationError as exc:
+        for error in get_formatted_error_messages(exc):
+            errors.append(f"{path}:{error}")
+    except ValueError as exc:
+        errors.append(f"{path}:{exc}")
+    except FileNotFoundError:
+        errors.append(f"{path}: File does not exist")
+    except IOError as exc:
+        errors.append(f"{path}:{exc}")
+    return errors

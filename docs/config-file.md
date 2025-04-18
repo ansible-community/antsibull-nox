@@ -270,6 +270,11 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Allows to specify further packages to install in this session.
   This can be used for typing stubs like `types-PyYAML`, `types-mock`, and so on.
 
+### `antsibull-nox-config` (part of `lint` session)
+
+* `run_antsibullnox_config_lint: bool` (default: `true`):
+  Lints the antsibull-nox configuration.
+
 ### Example code
 
 This example is from `community.dns`,

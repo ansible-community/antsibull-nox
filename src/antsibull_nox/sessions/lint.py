@@ -51,6 +51,7 @@ def add_lint(
     has_codeqa: bool,
     has_yamllint: bool,
     has_typing: bool,
+    has_config_lint: bool,
 ) -> None:
     """
     Add nox meta session for linting.
@@ -68,6 +69,8 @@ def add_lint(
         dependent_sessions.append("yamllint")
     if has_typing:
         dependent_sessions.append("typing")
+    if has_config_lint:
+        dependent_sessions.append("antsibull-nox-config")
 
     lint.__doc__ = compose_description(
         prefix={
@@ -79,6 +82,7 @@ def add_lint(
             "codeqa": has_codeqa,
             "yamllint": has_yamllint,
             "typing": has_typing,
+            "antsibull-nox-config": has_config_lint,
         },
     )
     nox.session(
@@ -483,6 +487,29 @@ def add_typing(
     nox.session(name="typing", default=False)(typing)
 
 
+def add_config_lint(
+    *,
+    run_antsibullnox_config_lint: bool,
+):
+    """
+    Add nox session for antsibull-nox config linting.
+    """
+
+    def antsibull_nox_config(session: nox.Session) -> None:
+        if run_antsibullnox_config_lint:
+            run_bare_script(
+                session,
+                "antsibull-nox-lint-config",
+            )
+
+            session.run("antsibull-nox", "lint-config")
+
+    antsibull_nox_config.__doc__ = "Lint antsibull-nox config"
+    nox.session(name="antsibull-nox-config", python=False, default=False)(
+        antsibull_nox_config
+    )
+
+
 def add_lint_sessions(
     *,
     make_lint_default: bool = True,
@@ -519,6 +546,8 @@ def add_lint_sessions(
     mypy_package: str = "mypy",
     mypy_ansible_core_package: str | None = "ansible-core",
     mypy_extra_deps: list[str] | None = None,
+    # antsibull-nox config lint:
+    run_antsibullnox_config_lint: bool = True,
 ) -> None:
     """
     Add nox sessions for linting.
@@ -527,12 +556,14 @@ def add_lint_sessions(
     has_codeqa = run_flake8 or run_pylint
     has_yamllint = run_yamllint
     has_typing = run_mypy
+    has_config_lint = run_antsibullnox_config_lint
 
     add_lint(
         has_formatters=has_formatters,
         has_codeqa=has_codeqa,
         has_yamllint=has_yamllint,
         has_typing=has_typing,
+        has_config_lint=has_config_lint,
         make_lint_default=make_lint_default,
     )
 
@@ -579,6 +610,11 @@ def add_lint_sessions(
             mypy_package=mypy_package,
             mypy_ansible_core_package=mypy_ansible_core_package,
             mypy_extra_deps=mypy_extra_deps or [],
+        )
+
+    if has_config_lint:
+        add_config_lint(
+            run_antsibullnox_config_lint=run_antsibullnox_config_lint,
         )
 
 

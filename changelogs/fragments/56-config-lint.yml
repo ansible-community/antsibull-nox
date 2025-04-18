@@ -1,0 +1,3 @@
+minor_changes:
+  - "Add a ``antsibull-nox`` CLI tool with a subcommand ``lint-config`` that lints ``noxfile.py`` and the ``antsibull-nox.toml`` config file (https://github.com/ansible-community/antsibull-nox/pull/56)."
+  - "Add a session for linting the antsibull-nox configuration to ``lint`` (https://github.com/ansible-community/antsibull-nox/pull/56)."
