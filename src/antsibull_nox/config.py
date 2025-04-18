@@ -24,6 +24,9 @@ except ImportError:
     from tomli import load as _load_toml  # type: ignore
 
 
+CONFIG_FILENAME = "antsibull-nox.toml"
+
+
 def _parse_version(value: t.Any) -> Version:
     if isinstance(value, Version):
         return value
