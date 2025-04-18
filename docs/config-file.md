@@ -272,7 +272,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 
 ### `antsibull-nox-config` (part of `lint` session)
 
-* `run_antsibullnox_config_lint: bool` (default: `True`):
+* `run_antsibullnox_config_lint: bool` (default: `true`):
   Lints the antsibull-nox configuration.
 
 ### Example code
