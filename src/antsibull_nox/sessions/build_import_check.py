@@ -23,9 +23,9 @@ from ..paths import (
     copy_collection,
     remove_path,
 )
-from . import (
-    _ci_group,
-    _compose_description,
+from .utils import (
+    ci_group,
+    compose_description,
     install,
 )
 
@@ -100,7 +100,7 @@ def add_build_import_check(
                     or ""
                 )
             if import_log:
-                with _ci_group("Run Galaxy importer"):
+                with ci_group("Run Galaxy importer"):
                     print(import_log)
                 error_prefix = "ERROR:"
                 errors = []
@@ -114,7 +114,7 @@ def add_build_import_check(
                         f" error{'' if len(errors) == 1 else 's'}:\n{messages}"
                     )
 
-    build_import_check.__doc__ = _compose_description(
+    build_import_check.__doc__ = compose_description(
         prefix={
             "one": "Run build and import checker:",
             "other": "Run build and import checkers:",
