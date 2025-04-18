@@ -1,0 +1,2 @@
+minor_changes:
+  - "Add a ``antsibull-nox`` CLI tool with a subcommand ``lint-config`` that lints the config file (https://github.com/ansible-community/antsibull-nox/pull/56)."
