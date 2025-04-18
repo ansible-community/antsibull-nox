@@ -12,10 +12,10 @@ from __future__ import annotations
 
 import nox
 
-from . import (
-    _compose_description,
-    _run_bare_script,
+from .utils import (
+    compose_description,
     install,
+    run_bare_script,
 )
 
 
@@ -42,7 +42,7 @@ def add_license_check(
         if run_reuse:
             session.run("reuse", "lint")
         if run_license_check:
-            _run_bare_script(
+            run_bare_script(
                 session,
                 "license-check",
                 extra_data={
@@ -50,7 +50,7 @@ def add_license_check(
                 },
             )
 
-    license_check.__doc__ = _compose_description(
+    license_check.__doc__ = compose_description(
         prefix={
             "one": "Run license checker:",
             "other": "Run license checkers:",

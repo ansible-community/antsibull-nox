@@ -25,10 +25,10 @@ from ..ansible import (
 from ..paths import copy_directory_tree_into
 from ..python import get_installed_python_versions
 from ..utils import Version
-from . import (
-    _register,
+from .collections import prepare_collections
+from .utils import (
     install,
-    prepare_collections,
+    register,
 )
 
 
@@ -148,7 +148,7 @@ def add_ansible_test_session(
         }
         if register_extra_data:
             data.update(register_extra_data)
-        _register(register_name, data)
+        register(register_name, data)
 
 
 def add_ansible_test_sanity_test_session(

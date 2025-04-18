@@ -14,9 +14,9 @@ from dataclasses import asdict, dataclass
 
 import nox
 
-from . import (
-    _compose_description,
-    _run_bare_script,
+from .utils import (
+    compose_description,
+    run_bare_script,
 )
 
 
@@ -64,7 +64,7 @@ def add_extra_checks(
     """
 
     def execute_no_unwanted_files(session: nox.Session) -> None:
-        _run_bare_script(
+        run_bare_script(
             session,
             "no-unwanted-files",
             extra_data={
@@ -86,7 +86,7 @@ def add_extra_checks(
         if action_groups_config is None:
             session.warn("Skipping action-groups since config is not provided...")
             return
-        _run_bare_script(
+        run_bare_script(
             session,
             "action-groups",
             extra_data={
@@ -100,7 +100,7 @@ def add_extra_checks(
         if run_action_groups:
             execute_action_groups(session)
 
-    extra_checks.__doc__ = _compose_description(
+    extra_checks.__doc__ = compose_description(
         prefix={
             "one": "Run extra checker:",
             "other": "Run extra checkers:",

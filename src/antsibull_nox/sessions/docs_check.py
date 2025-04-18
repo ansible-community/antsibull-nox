@@ -14,11 +14,11 @@ import typing as t
 
 import nox
 
-from . import (
+from .collections import (
     CollectionSetup,
-    install,
     prepare_collections,
 )
+from .utils import install
 
 
 def add_docs_check(

@@ -20,13 +20,15 @@ from ..paths import (
     filter_paths,
     list_all_files,
 )
-from . import (
-    IN_CI,
+from .collections import (
     CollectionSetup,
-    _compose_description,
-    _run_bare_script,
-    install,
     prepare_collections,
+)
+from .utils import (
+    IN_CI,
+    compose_description,
+    install,
+    run_bare_script,
 )
 
 CODE_FILES = [
@@ -67,7 +69,7 @@ def add_lint(
     if has_typing:
         dependent_sessions.append("typing")
 
-    lint.__doc__ = _compose_description(
+    lint.__doc__ = compose_description(
         prefix={
             "one": "Meta session for triggering the following session:",
             "other": "Meta session for triggering the following sessions:",
@@ -166,7 +168,7 @@ def add_formatters(
         if run_black or run_black_modules:
             execute_black(session)
 
-    formatters.__doc__ = _compose_description(
+    formatters.__doc__ = compose_description(
         prefix={
             "one": "Run code formatter:",
             "other": "Run code formatters:",
@@ -289,7 +291,7 @@ def add_codeqa(  # noqa: C901
         if run_pylint and prepared_collections:
             execute_pylint(session, prepared_collections)
 
-    codeqa.__doc__ = _compose_description(
+    codeqa.__doc__ = compose_description(
         prefix={
             "other": "Run code QA:",
         },
@@ -372,7 +374,7 @@ def add_yamllint(
                 " no appropriate Python file was found..."
             )
             return
-        _run_bare_script(
+        run_bare_script(
             session,
             "plugin-yamllint",
             use_session_python=True,
@@ -393,7 +395,7 @@ def add_yamllint(
             execute_yamllint(session)
             execute_plugin_yamllint(session)
 
-    yamllint.__doc__ = _compose_description(
+    yamllint.__doc__ = compose_description(
         prefix={
             "one": "Run YAML checker:",
             "other": "Run YAML checkers:",
@@ -469,7 +471,7 @@ def add_typing(
         if run_mypy and prepared_collections:
             execute_mypy(session, prepared_collections)
 
-    typing.__doc__ = _compose_description(
+    typing.__doc__ = compose_description(
         prefix={
             "one": "Run type checker:",
             "other": "Run type checkers:",
