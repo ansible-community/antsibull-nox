@@ -118,6 +118,7 @@ def _add_sessions(sessions: Sessions) -> None:
             mypy_package=sessions.lint.mypy_package,
             mypy_ansible_core_package=sessions.lint.mypy_ansible_core_package,
             mypy_extra_deps=sessions.lint.mypy_extra_deps,
+            run_antsibullnox_config_lint=sessions.lint.run_antsibullnox_config_lint,
         )
     if sessions.docs_check:
         add_docs_check(

@@ -117,6 +117,9 @@ class SessionLint(_BaseModel):
     mypy_ansible_core_package: t.Optional[str] = "ansible-core"
     mypy_extra_deps: list[str] = []
 
+    # antsibull-nox config lint:
+    run_antsibullnox_config_lint: bool = True
+
 
 class SessionDocsCheck(_BaseModel):
     """
