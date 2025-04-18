@@ -497,6 +497,11 @@ def add_config_lint(
 
     def antsibull_nox_config(session: nox.Session) -> None:
         if run_antsibullnox_config_lint:
+            run_bare_script(
+                session,
+                "antsibull-nox-lint-config",
+            )
+
             session.run("antsibull-nox", "lint-config")
 
     antsibull_nox_config.__doc__ = "Lint antsibull-nox config"

@@ -367,6 +367,8 @@ def lint_config_toml() -> list[str]:
             errors.append(f"{path}:{error}")
     except ValueError as exc:
         errors.append(f"{path}:{exc}")
+    except FileNotFoundError:
+        errors.append(f"{path}: File does not exist")
     except IOError as exc:
         errors.append(f"{path}:{exc}")
     return errors

@@ -17,7 +17,7 @@ import sys
 from collections.abc import Callable
 
 from . import __version__
-from .config import lint_config_toml
+from .lint_config import lint_config as _lint_config
 
 try:
     import argcomplete
@@ -31,7 +31,7 @@ def lint_config(_: argparse.Namespace) -> int:
     """
     Lint antsibull-nox config file.
     """
-    errors = lint_config_toml()
+    errors = _lint_config()
     for error in errors:
         print(error)
     return 0 if len(errors) == 0 else 3
