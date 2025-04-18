@@ -20,18 +20,20 @@ from .config import (
     DevelLikeBranch,
     Sessions,
 )
-from .sessions import (
-    ActionGroup,
+from .sessions import add_matrix_generator
+from .sessions.ansible_lint import add_ansible_lint
+from .sessions.ansible_test import (
     add_all_ansible_test_sanity_test_sessions,
     add_all_ansible_test_unit_test_sessions,
-    add_ansible_lint,
     add_ansible_test_integration_sessions_default_container,
-    add_build_import_check,
-    add_docs_check,
-    add_extra_checks,
-    add_license_check,
-    add_matrix_generator,
 )
+from .sessions.build_import_check import add_build_import_check
+from .sessions.docs_check import add_docs_check
+from .sessions.extra_checks import (
+    ActionGroup,
+    add_extra_checks,
+)
+from .sessions.license_check import add_license_check
 from .sessions.lint import add_lint_sessions
 from .utils import Version
 

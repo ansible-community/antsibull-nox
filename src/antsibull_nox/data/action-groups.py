@@ -17,7 +17,7 @@ import typing as t
 import yaml
 
 from antsibull_nox.data.antsibull_nox_data_util import setup
-from antsibull_nox.sessions import ActionGroup
+from antsibull_nox.sessions.extra_checks import ActionGroup
 
 
 def compile_patterns(
