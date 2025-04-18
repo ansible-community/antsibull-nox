@@ -7,7 +7,6 @@
 # dependencies = ["nox>=2025.02.09", "antsibull-nox"]
 # ///
 
-import os
 import sys
 
 import nox
@@ -19,13 +18,7 @@ except ImportError:
     sys.exit(1)
 
 
-# Always install latest pip version
-os.environ["VIRTUALENV_DOWNLOAD"] = "1"
-
-
-antsibull_nox.add_lint_sessions(
-    run_mypy=False,
-)
+antsibull_nox.load_antsibull_nox_toml()
 
 
 # Allow to run the noxfile with `python noxfile.py`, `pipx run noxfile.py`, or similar.

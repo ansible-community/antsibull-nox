@@ -12,6 +12,7 @@ This is a test module.
 
 
 DOCUMENTATION = r"""
+---
 module: test
 short_description: Test module
 author:
