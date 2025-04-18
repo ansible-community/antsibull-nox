@@ -118,7 +118,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Whether the `lint` session should be made default.
   This means that when a user just runs `nox` without specifying sessions, this session will run.
 
-* `extra_code_files: list[str] | None` (default `None`):
+* `extra_code_files: list[str]` (default `[]`):
   An extra list of files to run the formatters and linters on.
   By default the formatters and linters run on code files in `plugins/`, `tests/unit/`, and on `noxfile.py`.
   If you have other scripts in your collection that should be checked, you can add them with this option.
@@ -210,7 +210,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to pin the version,
   or to install the package from a local repository.
 
-* `pylint_extra_deps: list[str] | None` (default `None`):
+* `pylint_extra_deps: list[str]` (default `[]`):
   Allows to specify further packages to install in this session.
 
 ### `yamllint` (part of the `yamllint` session)
@@ -266,7 +266,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to pin the version,
   or to install the package from a local repository.
 
-* `mypy_extra_deps: list[str] | None` (default `None`):
+* `mypy_extra_deps: list[str]` (default `[]`):
   Allows to specify further packages to install in this session.
   This can be used for typing stubs like `types-PyYAML`, `types-mock`, and so on.
 
@@ -342,7 +342,7 @@ The function has the following configuration settings:
 
     Refer to the [documentation of antsibull-docs](https://ansible.readthedocs.io/projects/antsibull-docs/collection-docs/) for more information.
 
-* `extra_collections: list[str] | None` (default `None`):
+* `extra_collections: list[str]` (default `[]`):
   Allows to ensure that further collections will be added to the search path.
   This is important when setting `validate_collection_refs="all"`.
 
@@ -383,9 +383,9 @@ It accepts the following options:
 
   2. Every non-empty file has an allowed license. (This is similar to what `reuse lint` checks.)
 
-* `license_check_extra_ignore_paths: list[str] | None` (default `None`):
+* `license_check_extra_ignore_paths: list[str]` (default `[]`):
   Allows to specify more paths that are ignored.
-  You can use glob patterns.
+  You can use [glob patterns](https://docs.python.org/3/library/glob.html).
 
 ### Example code
 
@@ -420,32 +420,26 @@ It can be configured as follows:
     * `run_no_unwanted_files: bool` (default `true`):
       Whether the check should be run.
 
-    * `no_unwanted_files_module_extensions: list[str] | None` (default `None`):
+    * `no_unwanted_files_module_extensions: list[str]` (default `[".cs", ".ps1", ".psm1", ".py"]`):
       Which file extensions to accept in `plugins/modules/`.
-      The default accepts `.cs`, `.ps1`, `.psm1`, and `.py`.
 
-    * `no_unwanted_files_other_extensions: list[str] | None` (default `None`):
+    * `no_unwanted_files_other_extensions: list[str]` (default `[".py", ".pyi"]`):
       Which file extensions to accept in `plugins/` outside `plugins/modules/`.
-      The default accepts `.py` and `.pyi`.
       Note that YAML files can also be accepted, see the `no_unwanted_files_yaml_extensions`
       and `no_unwanted_files_yaml_directories` options.
 
-    * `no_unwanted_files_yaml_extensions: list[str] | None` (default `None`):
+    * `no_unwanted_files_yaml_extensions: list[str]` (default `[".yml", ".yaml"]`):
       Which file extensions to accept for YAML files.
-      The default accepts `.yml` and `.yaml`.
       This is only used in directories specified by `no_unwanted_files_yaml_directories`.
 
-    * `no_unwanted_files_skip_paths: list[str] | None` (default `None`):
+    * `no_unwanted_files_skip_paths: list[str]` (default `[]`):
       Which files to ignore.
-      The default is that no file is ignored.
 
-    * `no_unwanted_files_skip_directories: list[str] | None` (default `None`):
+    * `no_unwanted_files_skip_directories: list[str]` (default `[]`):
       Which directories to ignore.
-      The default is that no directory is ignored.
 
-    * `no_unwanted_files_yaml_directories: list[str] | None` (default `None`):
+    * `no_unwanted_files_yaml_directories: list[str]` (default `["plugins/test/", "plugins/filter/"]`):
       In which directories YAML files should be accepted.
-      The default is `plugins/test/` and `plugins/filter/`.
 
     * `no_unwanted_files_allow_symlinks: bool` (default `false`):
       Whether symbolic links should be accepted.
@@ -455,10 +449,9 @@ It can be configured as follows:
     * `run_action_groups: bool` (default `false`):
       Whether the check should be run.
 
-    * `action_groups_config: list[antsibull_nox.ActionGroup] | None` (default `None`):
+    * `action_groups_config: list[antsibull_nox.ActionGroup]` (default `[]`):
       The action groups to check for.
-      If set to `None`, the test is skipped.
-      If set to a list, the test makes sure that exactly these groups exist.
+      The test makes sure that exactly these groups exist.
 
       Every group is an object.
       It needs to be defined in a new section `[[sessions.extra_checks.action_groups_config]]`.
@@ -480,7 +473,7 @@ It can be configured as follows:
         The name of the documentation fragment that must be included
         exactly for all modules that are part of this action group.
 
-      * `exclusions: list[str] | None` (default `None`):
+      * `exclusions: list[str]` (default `[]`):
         This must list all modules whose names match `pattern`,
         but that are not part of the action group.
 
@@ -592,7 +585,7 @@ The function supports the following parameters:
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
 
-* `add_devel_like_branches: list[tuple[str | None, str]] | None` (default `None`):
+* `add_devel_like_branches: list[tuple[str | None, str]]` (default `[]`):
   Allows to add a list of optional repositories and branches for ansible-core
   that will be treated similar to `devel`.
   This can be used for testing ansible-core features or bugfixes
@@ -606,7 +599,7 @@ The function supports the following parameters:
 * `max_version: Version | str | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or lower.
 
-* `except_versions: list[AnsibleCoreVersion | str] | None` (default `None`):
+* `except_versions: list[AnsibleCoreVersion | str]` (default `[]`):
   If specified, will ignore ansible-core versions in this list.
 
 #### Example code
@@ -643,7 +636,7 @@ The function supports the following parameters:
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
 
-* `add_devel_like_branches: list[tuple[str | None, str]] | None` (default `None`):
+* `add_devel_like_branches: list[tuple[str | None, str]]` (default `[]`):
   Allows to add a list of optional repositories and branches for ansible-core
   that will be treated similar to `devel`.
   This can be used for testing ansible-core features or bugfixes
@@ -657,7 +650,7 @@ The function supports the following parameters:
 * `max_version: Version | str | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or lower.
 
-* `except_versions: list[AnsibleCoreVersion | str] | None` (default `None`):
+* `except_versions: list[AnsibleCoreVersion | str]` (default `[]`):
   If specified, will ignore ansible-core versions in this list.
 
 #### Example code
@@ -694,7 +687,7 @@ It is possible to restrict the Python versions used to run the tests per ansible
   but is updated only once for every ansible-core development phase
   at specific dates published in advance.
 
-* `add_devel_like_branches: list[tuple[str | None, str]] | None` (default `None`):
+* `add_devel_like_branches: list[tuple[str | None, str]]` (default `[]`):
   Allows to add a list of optional repositories and branches for ansible-core
   that will be treated similar to `devel`.
   This can be used for testing ansible-core features or bugfixes
@@ -708,10 +701,10 @@ It is possible to restrict the Python versions used to run the tests per ansible
 * `max_version: Version | str | None` (default `None`):
   If specified, will only consider ansible-core versions with that version or lower.
 
-* `except_versions: list[AnsibleCoreVersion | str] | None` (default `None`):
+* `except_versions: list[AnsibleCoreVersion | str]` (default `[]`):
   If specified, will ignore ansible-core versions in this list.
 
-* `core_python_versions: dict[str | AnsibleCoreVersion, list[str | Version]] | None` (default `None`):
+* `core_python_versions: dict[str | AnsibleCoreVersion, list[str | Version]]` (default `{}`):
   Allows to restrict the number of Python versions per ansible-core release.
   An empty list means that the ansible-core version will be skipped completely.
   If no restrictions are provided, all Python versions supported by this version of ansible-core are used;

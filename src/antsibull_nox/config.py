@@ -61,7 +61,7 @@ class SessionLint(_BaseModel):
     """
 
     default: bool = True
-    extra_code_files: t.Optional[list[str]] = None
+    extra_code_files: list[str] = []
 
     # isort:
     run_isort: bool = True
@@ -85,7 +85,7 @@ class SessionLint(_BaseModel):
     pylint_modules_rcfile: t.Optional[p.FilePath] = None
     pylint_package: str = "pylint"
     pylint_ansible_core_package: t.Optional[str] = "ansible-core"
-    pylint_extra_deps: t.Optional[list[str]] = None
+    pylint_extra_deps: list[str] = []
 
     # yamllint:
     run_yamllint: bool = True
@@ -99,7 +99,7 @@ class SessionLint(_BaseModel):
     mypy_config: t.Optional[p.FilePath] = None
     mypy_package: str = "mypy"
     mypy_ansible_core_package: t.Optional[str] = "ansible-core"
-    mypy_extra_deps: t.Optional[list[str]] = None
+    mypy_extra_deps: list[str] = []
 
 
 class SessionDocsCheck(_BaseModel):
@@ -112,7 +112,7 @@ class SessionDocsCheck(_BaseModel):
     antsibull_docs_package: str = "antsibull-docs"
     ansible_core_package: str = "ansible-core"
     validate_collection_refs: t.Optional[t.Literal["self", "dependent", "all"]] = None
-    extra_collections: t.Optional[list[str]] = None
+    extra_collections: list[str] = []
 
 
 class SessionLicenseCheck(_BaseModel):
@@ -125,7 +125,7 @@ class SessionLicenseCheck(_BaseModel):
     run_reuse: bool = True
     reuse_package: str = "reuse"
     run_license_check: bool = True
-    license_check_extra_ignore_paths: t.Optional[list[str]] = None
+    license_check_extra_ignore_paths: list[str] = []
 
 
 class ActionGroup(_BaseModel):
@@ -143,7 +143,7 @@ class ActionGroup(_BaseModel):
     # Exclusion list of modules that match the regex, but should not be part of the
     # action group. All other modules matching the regex are assumed to be part of
     # the action group.
-    exclusions: t.Optional[list[str]] = None
+    exclusions: list[str] = []
 
 
 class SessionExtraChecks(_BaseModel):
@@ -155,25 +155,20 @@ class SessionExtraChecks(_BaseModel):
 
     # no-unwanted-files:
     run_no_unwanted_files: bool = True
-    no_unwanted_files_module_extensions: t.Optional[list[str]] = (
-        None  # default: .cs, .ps1, .psm1, .py
-    )
-    no_unwanted_files_other_extensions: t.Optional[list[str]] = (
-        None  # default: .py, .pyi
-    )
-    no_unwanted_files_yaml_extensions: t.Optional[list[str]] = (
-        None  # default: .yml, .yaml
-    )
-    no_unwanted_files_skip_paths: t.Optional[list[str]] = None  # default: []
-    no_unwanted_files_skip_directories: t.Optional[list[str]] = None  # default: []
-    no_unwanted_files_yaml_directories: t.Optional[list[str]] = (
-        None  # default: plugins/test/, plugins/filter/
-    )
+    no_unwanted_files_module_extensions: list[str] = [".cs", ".ps1", ".psm1", ".py"]
+    no_unwanted_files_other_extensions: list[str] = [".py", ".pyi"]
+    no_unwanted_files_yaml_extensions: list[str] = [".yml", ".yaml"]
+    no_unwanted_files_skip_paths: list[str] = []
+    no_unwanted_files_skip_directories: t.Optional[list[str]] = []
+    no_unwanted_files_yaml_directories: t.Optional[list[str]] = [
+        "plugins/test/",
+        "plugins/filter/",
+    ]
     no_unwanted_files_allow_symlinks: bool = False
 
     # action-groups:
     run_action_groups: bool = False
-    action_groups_config: t.Optional[list[ActionGroup]] = None
+    action_groups_config: list[ActionGroup] = []
 
 
 class SessionBuildImportCheck(_BaseModel):
@@ -221,10 +216,10 @@ class SessionAnsibleTestSanity(_BaseModel):
 
     include_devel: bool = False
     include_milestone: bool = False
-    add_devel_like_branches: t.Optional[list[DevelLikeBranch]] = None
+    add_devel_like_branches: list[DevelLikeBranch] = []
     min_version: t.Optional[PVersion] = None
     max_version: t.Optional[PVersion] = None
-    except_versions: t.Optional[list[PAnsibleCoreVersion]] = None
+    except_versions: list[PAnsibleCoreVersion] = []
 
 
 class SessionAnsibleTestUnits(_BaseModel):
@@ -236,10 +231,10 @@ class SessionAnsibleTestUnits(_BaseModel):
 
     include_devel: bool = False
     include_milestone: bool = False
-    add_devel_like_branches: t.Optional[list[DevelLikeBranch]] = None
+    add_devel_like_branches: list[DevelLikeBranch] = []
     min_version: t.Optional[PVersion] = None
     max_version: t.Optional[PVersion] = None
-    except_versions: t.Optional[list[PAnsibleCoreVersion]] = None
+    except_versions: list[PAnsibleCoreVersion] = []
 
 
 class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
@@ -251,11 +246,11 @@ class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
 
     include_devel: bool = False
     include_milestone: bool = False
-    add_devel_like_branches: t.Optional[list[DevelLikeBranch]] = None
+    add_devel_like_branches: list[DevelLikeBranch] = []
     min_version: t.Optional[PVersion] = None
     max_version: t.Optional[PVersion] = None
-    except_versions: t.Optional[list[PAnsibleCoreVersion]] = None
-    core_python_versions: t.Optional[dict[PAnsibleCoreVersion, list[PVersion]]] = None
+    except_versions: list[PAnsibleCoreVersion] = []
+    core_python_versions: dict[PAnsibleCoreVersion, list[PVersion]] = {}
     controller_python_versions_only: bool = False
 
 
@@ -308,7 +303,7 @@ class Config(_BaseModel):
     The contents of a antsibull-nox config file.
     """
 
-    collection_sources: t.Optional[dict[str, CollectionSource]] = None
+    collection_sources: dict[str, CollectionSource] = {}
     sessions: Sessions = Sessions()
 
 
