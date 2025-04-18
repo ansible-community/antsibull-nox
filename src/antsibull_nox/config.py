@@ -15,6 +15,7 @@ import typing as t
 
 import pydantic as p
 
+from ._pydantic import forbid_extras, get_formatted_error_messages
 from .ansible import AnsibleCoreVersion
 from .utils import Version
 
@@ -345,3 +346,24 @@ def load_config_from_toml(path: str | os.PathLike) -> Config:
         except ValueError as exc:
             raise ValueError(f"Error while reading {path}: {exc}") from exc
     return Config.model_validate(data)
+
+
+def lint_config_toml() -> list[str]:
+    """
+    Lint config files
+    """
+    path = CONFIG_FILENAME
+    errors = []
+    forbid_extras(Config)
+    try:
+        with open(path, "rb") as f:
+            data = _load_toml(f)
+        Config.model_validate(data)
+    except p.ValidationError as exc:
+        for error in get_formatted_error_messages(exc):
+            errors.append(f"{path}:{error}")
+    except ValueError as exc:
+        errors.append(f"{path}:{exc}")
+    except IOError as exc:
+        errors.append(f"{path}:{exc}")
+    return errors
