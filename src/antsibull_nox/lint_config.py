@@ -13,7 +13,6 @@ from pathlib import Path
 
 from .config import lint_config_toml
 
-
 NOXFILE_PY = "noxfile.py"
 
 
@@ -22,7 +21,7 @@ def _is_antsibull_nox_module(module_name: str) -> bool:
 
 
 class _Walker:
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: Path) -> None:
         self.path = path
         self.imports: dict[str, str] = {}
         self.has_config_load = False

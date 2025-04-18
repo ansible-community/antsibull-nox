@@ -39,9 +39,12 @@ def lint_config(_: argparse.Namespace) -> int:
 
 
 def create_initial_config(_: argparse.Namespace) -> int:
+    """
+    Create noxfile.py and antsibull-nox.toml.
+    """
     try:
         _create_initial_config()
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         print(f"Error: {exc}", file=sys.stderr)
         return 3
     return 0

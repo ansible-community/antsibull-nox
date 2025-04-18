@@ -12,7 +12,6 @@ from .collection.search import GALAXY_YML
 from .config import CONFIG_FILENAME
 from .lint_config import NOXFILE_PY
 
-
 NOXFILE_CONTENT = r"""
 # The following metadata allows Python runners and nox to install the required
 # dependencies for running this Python script:
