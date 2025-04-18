@@ -17,6 +17,7 @@ import sys
 from collections.abc import Callable
 
 from . import __version__
+from .init import create_initial_config as _create_initial_config
 from .lint_config import lint_config as _lint_config
 
 try:
@@ -37,10 +38,20 @@ def lint_config(_: argparse.Namespace) -> int:
     return 0 if len(errors) == 0 else 3
 
 
+def create_initial_config(_: argparse.Namespace) -> int:
+    try:
+        _create_initial_config()
+    except Exception as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 3
+    return 0
+
+
 # Mapping from command line subcommand names to functions which implement those.
 # The functions need to take a single argument, the processed list of args.
 ARGS_MAP: dict[str, Callable[[argparse.Namespace], int]] = {
     "lint-config": lint_config,
+    "init": create_initial_config,
 }
 
 
@@ -73,6 +84,11 @@ def parse_args(program_name: str, args: list[str]) -> argparse.Namespace:
     subparsers.add_parser(
         "lint-config",
         description="Lint antsibull-nox configuration file",
+    )
+
+    subparsers.add_parser(
+        "init",
+        description="Create noxfile and antsibull-nox configuration file",
     )
 
     # This must come after all parser setup
