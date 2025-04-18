@@ -39,7 +39,10 @@ except ImportError:
     sys.exit(1)
 
 
-... here you can call antsibull_nox functions to define sessions, or define your own ...
+antsibull_nox.load_antsibull_nox_toml()
+
+
+... here you can call antsibull_nox functions to define additional sessions ...
 
 
 # Allow to run the noxfile with `python noxfile.py`, `pipx run noxfile.py`, or similar.
@@ -47,6 +50,14 @@ except ImportError:
 if __name__ == "__main__":
     nox.main()
 ```
+
+## Loading the `antsibull-nox.toml` configuration
+
+You should always add the `antsibull_nox.load_antsibull_nox_toml()` function call
+as shown in the example above.
+It loads the `antsibull-nox.toml` configuration file,
+loads its configuration options,
+and adds all sessions configured in there.
 
 ## Setup collection installation
 
@@ -56,7 +67,8 @@ which is usually `.nox` inside the directory which contains `noxfile.py`.
 If you prefer collections to be cloned from Git repositories instead,
 you have to tell antsibull-nox how to download collections.
 
-The function `antsibull_nox.setup()` allows to configure this:
+The function `antsibull_nox.setup()` allows to configure this.
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 ```python
 antsibull_nox.setup(
     collection_sources={
@@ -87,7 +99,7 @@ The basic linting session, `lint`, comes with three sessions it depends on:
     CI is currently detected by checking for the `CI` environment variable.
     If your CI system is not supported, you can simply set `CI=true` before running `nox` in CI.
 
-These sessions can be added with `antsibull_nox.add_lint_sessions()`.
+These sessions can be added with `antsibull_nox.add_lint_sessions()`. **This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 
 Which of the linters should be run can be configured
 (the extra sessions are not added if they are empty),
@@ -290,7 +302,9 @@ The collection documentation check allows to use antsibull-docs' `antsibull-docs
 
 The latter validation of modules and plugins is more strict and validates more (and for modules, also different) aspects than the `validate-modules` test of `ansible-test sanity`. Also `validate-modules` currently does not validate test and filter plugins, and role argument specs are not validated by it either.
 
-The test is added with `antsibull_nox.add_docs_check()`, and the session is called `docs-check`. The function has the following configuration settings:
+The test is added with `antsibull_nox.add_docs_check()`, and the session is called `docs-check`.
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
+The function has the following configuration settings:
 
 * `make_docs_check_default: bool` (default `True`):
   Whether the `docs-check` session should be made default.
@@ -339,7 +353,8 @@ antsibull_nox.add_docs_check(
 If the collection conforms to the [REUSE specification](https://reuse.software/),
 you can add a `license-check` session to verify conformance.
 
-The `antsibull_nox.add_license_check()` function that adds this session accepts the following options:
+The `antsibull_nox.add_license_check()` function that adds this session accepts the following options.
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 
 * `make_license_check_default: bool` (default `True`):
   Whether the `license-check` session should be made default.
@@ -386,7 +401,8 @@ Right now it can run the following checks:
   This check makes sure that the modules you want are part of an action group,
   and that all modules in an action group use the corresponding docs fragment.
 
-The `antsibull_nox.add_extra_checks()` function that adds this session accepts the following options:
+The `antsibull_nox.add_extra_checks()` function that adds this session accepts the following options.
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 
 * `make_extra_checks_default: bool` (default `True`):
   Whether the `license-check` session should be made default.
@@ -503,7 +519,8 @@ antsibull_nox.add_extra_checks(
 The build and import test allows to test whether a collection can be built with `ansible-galaxy collection build`,
 and whether the resulting artefact can be imported by the Galaxy importer.
 
-The `antsibull_nox.add_build_import_check()` function adds the `build-import-check` session accepts the following options:
+The `antsibull_nox.add_build_import_check()` function adds the `build-import-check` session accepts the following options.
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 
 * `make_build_import_check_default: bool` (default `True`):
   Whether the `build-import-check` session should be made default.
@@ -758,6 +775,7 @@ antsibull_nox.add_ansible_test_session(
 
 The `antsibull_nox.add_ansible_test_sanity_test_session()` function can be used to add a specific ansible-core sanity test run.
 Sanity tests will always be run using ansible-test's `default` container.
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 The function supports the following parameters:
 
 * `name: str` (**required**):
@@ -787,6 +805,7 @@ The function supports the following parameters:
 
 The `antsibull_nox.add_all_ansible_test_sanity_test_sessions()` function can be used to run sanity tests for all supported ansible-core versions.
 Sanity tests will always be run using ansible-test's `default` container.
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 The function supports the following parameters:
 
 * `default: bool` (default `False`):
@@ -837,6 +856,7 @@ antsibull_nox.add_all_ansible_test_sanity_test_sessions(include_devel=True)
 The `antsibull_nox.add_ansible_test_unit_test_session()` function can be used to add a specific ansible-core unit tests run.
 Unit tests will always be run for all supported Python versions of the ansible-core version,
 using ansible-test's `default` container.
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 The function supports the following parameters:
 
 * `name: str` (**required**):
@@ -867,6 +887,7 @@ The function supports the following parameters:
 The `antsibull_nox.add_all_ansible_test_unit_test_sessions()` function can be used to run unit tests for all supported ansible-core versions.
 Unit tests will always be run for all supported Python versions of the ansible-core version,
 using ansible-test's `default` container.
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 The function supports the following parameters:
 
 * `default: bool` (default `False`):
@@ -916,6 +937,7 @@ antsibull_nox.add_all_ansible_test_unit_test_sessions(include_devel=True)
 
 The `antsibull_nox.add_ansible_test_integration_sessions_default_container()` function can be used to run integration tests for all supported ansible-core versions.
 The tests will all be run using ansible-test's `default` container.
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 It is possible to restrict the Python versions used to run the tests per ansible-core version.
 
 * `default: bool` (default `False`):
@@ -984,6 +1006,7 @@ antsibull_nox.add_ansible_test_integration_sessions_default_container(
 ### Run ansible-lint
 
 The function `antsibull_nox.add_ansible_lint()` allows to add a `ansible-lint` session that runs [ansible-lint](https://ansible.readthedocs.io/projects/lint/).
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 This function accepts the following options:
 
 * `make_ansible_lint_default: bool` (default `True`):
@@ -1004,6 +1027,7 @@ This function accepts the following options:
 ### Generate matrixes for CI systems
 
 The function `antsibull_nox.add_matrix_generator()` allows to add a `matrix-generator` session that generates matrixes for CI systems.
+**This function is deprecated, use the `antsibull-nox.toml` config file instead.**
 
 * The output is written as a JSON file to `$ANTSIBULL_NOX_MATRIX_JSON` if that environment variable is set.
 * The output is written as GitHub Actions output to `$GITHUB_OUTPUT` if that environment variable is set.

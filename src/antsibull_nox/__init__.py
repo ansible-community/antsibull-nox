@@ -11,6 +11,8 @@ Antsibull Nox Helper.
 from __future__ import annotations
 
 from .collection import CollectionSource, setup_collection_sources
+from .config import load_config_from_toml
+from .interpret_config import interpret_config
 from .sessions import (
     ActionGroup,
     add_all_ansible_test_sanity_test_sessions,
@@ -47,6 +49,14 @@ def setup(
         )
 
 
+def load_antsibull_nox_toml() -> None:
+    """
+    Load and interpret antsibull-nox.toml config file.
+    """
+    config = load_config_from_toml("antsibull-nox.toml")
+    interpret_config(config)
+
+
 # pylint:disable=duplicate-code
 __all__ = (
     "__version__",
@@ -66,4 +76,5 @@ __all__ = (
     "add_matrix_generator",
     "CollectionSource",
     "setup",
+    "load_antsibull_nox_toml",
 )

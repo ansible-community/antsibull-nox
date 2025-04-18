@@ -1032,7 +1032,7 @@ def add_build_import_check(
     run_galaxy_importer: bool = True,
     galaxy_importer_package: str = "galaxy-importer",
     galaxy_importer_config_path: (
-        str | None
+        str | os.PathLike | None
     ) = None,  # https://github.com/ansible/galaxy-importer#configuration
 ) -> None:
     """
@@ -1080,7 +1080,7 @@ def add_build_import_check(
             env = {}
             if galaxy_importer_config_path:
                 env["GALAXY_IMPORTER_CONFIG"] = str(
-                    Path.cwd() / galaxy_importer_config_path
+                    Path(galaxy_importer_config_path).absolute()
                 )
             with session.chdir(collection_dir):
                 import_log = (

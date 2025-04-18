@@ -27,6 +27,7 @@ Check out the following pages for more information:
 * [Introduction](introduction.md)
 * [Getting started](getting-started.md)
 * [Running nox in CI](nox-in-ci.md)
+* [Config file reference](config-file.md)
 * [noxfile reference](reference.md)
 * [Troubleshooting](troubleshooting.md)
 

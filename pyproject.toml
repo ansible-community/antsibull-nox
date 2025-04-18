@@ -39,9 +39,11 @@ classifiers = [
 dependencies = [
     "antsibull-fileutils >= 1.2.0, < 2.0.0",
     "nox >= 2025.2.9",
-    "pyyaml",
     "packaging",
+    "pydantic ~= 2.0",
+    "pyyaml",
     "semantic_version",
+    "tomli; python_version<'3.11'",
 ]
 
 [project.urls]
