@@ -1,8 +1,8 @@
-# Author: Toshio Kuratomi <tkuratom@redhat.com>
+# Author: Felix Fontein <felix@fontein.de>
 # GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or
 # https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2020, Ansible Project
+# SPDX-FileCopyrightText: 2025, Ansible Project
 
 # PYTHON_ARGCOMPLETE_OK
 
@@ -27,7 +27,7 @@ except ImportError:
     HAS_ARGCOMPLETE = False
 
 
-def lint_config() -> int:
+def lint_config(_: argparse.Namespace) -> int:
     """
     Lint antsibull-nox config file.
     """
@@ -37,9 +37,9 @@ def lint_config() -> int:
     return 0 if len(errors) == 0 else 3
 
 
-#: Mapping from command line subcommand names to functions which implement those
-#: The functions need to take a single argument, the processed list of args.
-ARGS_MAP: dict[str, Callable[[], int]] = {
+# Mapping from command line subcommand names to functions which implement those.
+# The functions need to take a single argument, the processed list of args.
+ARGS_MAP: dict[str, Callable[[argparse.Namespace], int]] = {
     "lint-config": lint_config,
 }
 
@@ -52,7 +52,7 @@ class InvalidArgumentError(Exception):
 
 def parse_args(program_name: str, args: list[str]) -> argparse.Namespace:
     """
-    Parse and coerce the command line arguments.
+    Parse the command line arguments.
     """
 
     toplevel_parser = argparse.ArgumentParser(
@@ -94,7 +94,7 @@ def run(args: list[str]) -> int:
         print(e, file=sys.stderr)
         return 2
 
-    return ARGS_MAP[parsed_args.command]()
+    return ARGS_MAP[parsed_args.command](parsed_args)
 
 
 def main() -> int:
