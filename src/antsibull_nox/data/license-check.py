@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import glob
 import os
+import stat
 import sys
 
 from antsibull_nox.data.antsibull_nox_data_util import get_list_of_strings, setup
@@ -108,7 +109,10 @@ def main() -> int:
             path = path[2:]
         if path in ignore_paths or path.startswith("tests/output/"):
             continue
-        if os.stat(path).st_size == 0:
+        sr = os.stat(path)
+        if not stat.S_ISREG(sr.st_mode):
+            continue
+        if sr.st_size == 0:
             continue
         if not path.endswith(".license") and os.path.exists(path + ".license"):
             path = path + ".license"

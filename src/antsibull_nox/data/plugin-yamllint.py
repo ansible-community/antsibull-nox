@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import ast
 import io
+import os
 import re
 import sys
 import traceback
@@ -219,6 +220,8 @@ def main() -> int:
 
     errors: list[dict[str, t.Any]] = []
     for path in paths:
+        if not os.path.isfile(path):
+            continue
         if path.endswith(".py"):
             process_python_file(errors, path, yamllint_config, yamllint_config_examples)
         if path.endswith((".yml", ".yaml")):
