@@ -160,14 +160,25 @@ def add_ansible_test_sanity_test_session(
     ansible_core_source: t.Literal["git", "pypi"] = "git",
     ansible_core_repo_name: str | None = None,
     ansible_core_branch_name: str | None = None,
+    skip_tests: list[str] | None = None,
+    allow_disabled: bool = False,
+    enable_optional_errors: bool = False,
 ) -> None:
     """
     Add generic ansible-test sanity test session.
     """
+    command = ["sanity", "--docker", "-v", "--color"]
+    if skip_tests:
+        for test in skip_tests:
+            command.extend(["--skip", test])
+    if allow_disabled:
+        command.append("--allow-disabled")
+    if enable_optional_errors:
+        command.append("--enable-optional-errors")
     add_ansible_test_session(
         name=name,
         description=description,
-        ansible_test_params=["sanity", "--docker", "-v", "--color"],
+        ansible_test_params=command,
         default=default,
         ansible_core_version=ansible_core_version,
         ansible_core_source=ansible_core_source,
@@ -201,6 +212,9 @@ def add_all_ansible_test_sanity_test_sessions(
     min_version: Version | str | None = None,
     max_version: Version | str | None = None,
     except_versions: list[AnsibleCoreVersion | str] | None = None,
+    skip_tests: list[str] | None = None,
+    allow_disabled: bool = False,
+    enable_optional_errors: bool = False,
 ) -> None:
     """
     Add ansible-test sanity test meta session that runs ansible-test sanity
@@ -242,6 +256,9 @@ def add_all_ansible_test_sanity_test_sessions(
                 ansible_core_version="devel",
                 ansible_core_repo_name=repo_name,
                 ansible_core_branch_name=branch_name,
+                skip_tests=skip_tests,
+                allow_disabled=allow_disabled,
+                enable_optional_errors=enable_optional_errors,
                 default=False,
             )
             sanity_sessions.append(name)
