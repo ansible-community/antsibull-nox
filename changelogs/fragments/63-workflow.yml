@@ -1,0 +1,5 @@
+minor_changes:
+  - "Update shared workflow to use a ``display-name`` and ``gha-container`` extra data
+     (https://github.com/ansible-community/antsibull-nox/pull/63)."
+  - "Add ``callback_before`` and ``callback_after`` parameters to ``antsibull_nox.add_ansible_test_session()``
+     (https://github.com/ansible-community/antsibull-nox/pull/63)."

@@ -259,7 +259,19 @@ It accepts the following parameters:
 
 * `register_name: str | None` (default: `None`):
   Register session under this name.
+  Should be one of `"sanity"`, `"units"`, and `"integration"`.
   It will then appear under that name for `antsibull_nox.add_matrix_generator()`.
+
+* `register_extra_data: dict[str, t.Any] | None` (default: `None`):
+  Supply additional data when registering a session.
+  Values that are used by the shared workflow are `display-name` (shown to the user) and `gha-container` (used for `runs-on`).
+
+* `callback_before: Callable[[], None] | None` (default `None`):
+  Callback that will be run before `ansible-test` is run in the temporary directory.
+  Can be used to set-up files like `tests/integration/integration_config.yml`.
+
+* `callback_after: Callable[[], None] | None` (default `None`):
+  Callback that will be run after `ansible-test` is run in the temporary directory.
 
 ### Example code
 
