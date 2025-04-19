@@ -1,0 +1,2 @@
+minor_changes:
+  - "Skip symlinks that do not point to files in ``license-check`` and ``yamllint`` sessions (https://github.com/ansible-community/antsibull-nox/pull/61)."
