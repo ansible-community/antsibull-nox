@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import typing as t
+from collections.abc import Callable
 from pathlib import Path
 
 import nox
@@ -58,6 +59,8 @@ def add_ansible_test_session(
     handle_coverage: t.Literal["never", "always", "auto"] = "auto",
     register_name: str | None = None,
     register_extra_data: dict[str, t.Any] | None = None,
+    callback_before: Callable[[], None] | None = None,
+    callback_after: Callable[[], None] | None = None,
 ) -> None:
     """
     Add generic ansible-test session.
@@ -90,6 +93,9 @@ def add_ansible_test_session(
             return
         cwd = Path.cwd()
         with session.chdir(prepared_collections.current_path):
+            if callback_before:
+                callback_before()
+
             command = ["ansible-test"] + ansible_test_params
             if add_posargs and session.posargs:
                 command.extend(session.posargs)
@@ -111,6 +117,9 @@ def add_ansible_test_session(
                     "--group-by",
                     "version",
                 )
+
+            if callback_after:
+                callback_after()
 
             copy_directory_tree_into(
                 prepared_collections.current_path / "tests" / "output",
@@ -163,6 +172,7 @@ def add_ansible_test_sanity_test_session(
     skip_tests: list[str] | None = None,
     allow_disabled: bool = False,
     enable_optional_errors: bool = False,
+    register_extra_data: dict[str, t.Any] | None = None,
 ) -> None:
     """
     Add generic ansible-test sanity test session.
@@ -185,6 +195,7 @@ def add_ansible_test_sanity_test_session(
         ansible_core_repo_name=ansible_core_repo_name,
         ansible_core_branch_name=ansible_core_branch_name,
         register_name="sanity",
+        register_extra_data=register_extra_data,
     )
 
 
@@ -240,6 +251,7 @@ def add_all_ansible_test_sanity_test_sessions(
             skip_tests=skip_tests,
             allow_disabled=allow_disabled,
             enable_optional_errors=enable_optional_errors,
+            register_extra_data={"display-name": f"Ⓐ{ansible_core_version}"},
             default=False,
         )
         sanity_sessions.append(name)
@@ -262,6 +274,7 @@ def add_all_ansible_test_sanity_test_sessions(
                 skip_tests=skip_tests,
                 allow_disabled=allow_disabled,
                 enable_optional_errors=enable_optional_errors,
+                register_extra_data={"display-name": f"Ⓐ{branch_name}"},
                 default=False,
             )
             sanity_sessions.append(name)
@@ -290,6 +303,7 @@ def add_ansible_test_unit_test_session(
     ansible_core_source: t.Literal["git", "pypi"] = "git",
     ansible_core_repo_name: str | None = None,
     ansible_core_branch_name: str | None = None,
+    register_extra_data: dict[str, t.Any] | None = None,
 ) -> None:
     """
     Add generic ansible-test unit test session.
@@ -305,6 +319,7 @@ def add_ansible_test_unit_test_session(
         ansible_core_repo_name=ansible_core_repo_name,
         ansible_core_branch_name=ansible_core_branch_name,
         register_name="units",
+        register_extra_data=register_extra_data,
     )
 
 
@@ -339,6 +354,7 @@ def add_all_ansible_test_unit_test_sessions(
             name=name,
             description=f"Run unit tests with ansible-core {ansible_core_version}'s ansible-test",
             ansible_core_version=ansible_core_version,
+            register_extra_data={"display-name": f"Ⓐ{ansible_core_version}"},
             default=False,
         )
         units_sessions.append(name)
@@ -358,6 +374,7 @@ def add_all_ansible_test_unit_test_sessions(
                 ansible_core_version="devel",
                 ansible_core_repo_name=repo_name,
                 ansible_core_branch_name=branch_name,
+                register_extra_data={"display-name": f"Ⓐ{branch_name}"},
                 default=False,
             )
             units_sessions.append(name)
@@ -465,8 +482,7 @@ def add_ansible_test_integration_sessions_default_container(
                 default=False,
                 register_name="integration",
                 register_extra_data={
-                    "test-container": "default",
-                    "test-python": str(py_version),
+                    "display-name": f"Ⓐ{ansible_core_version}+py{py_version}+default"
                 },
             )
             integration_sessions_core.append(name)

@@ -46,7 +46,7 @@ jobs:
       matrix:
         include: >-
           ${{ fromJson(needs.create-matrixes.outputs.sanity-matrix || '[{"skip": true}]') }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.gha-container || 'ubuntu-latest' }}
     steps:
       - name: Check out collection
         if: >-
@@ -71,14 +71,14 @@ jobs:
           path: tests/output/reports/coverage=sanity=*.xml
 
   units:
-    name: ${{ matrix.skip && 'Skipping ' || '' }}Units (Ⓐ${{ matrix.ansible-core }})
+    name: ${{ matrix.skip && 'Skipping ' || '' }}Units (${{ matrix.display-name }})
     needs:
       - create-matrixes
     strategy:
       matrix:
         include: >-
           ${{ fromJson(needs.create-matrixes.outputs.units-matrix || '[{"skip": true}]') }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.gha-container || 'ubuntu-latest' }}
     steps:
       - name: Check out collection
         if: >-
@@ -103,7 +103,7 @@ jobs:
           path: tests/output/reports/coverage=units=*.xml
 
   integration:
-    name: ${{ matrix.skip && 'Skipping ' || '' }}I (Ⓐ${{ matrix.ansible-core }}+py${{ matrix.test-python }}+${{ matrix.test-container }})
+    name: ${{ matrix.skip && 'Skipping ' || '' }}I (${{ matrix.display-name }})
     needs:
       - create-matrixes
     strategy:
@@ -111,7 +111,7 @@ jobs:
       matrix:
         include: >-
           ${{ fromJson(needs.create-matrixes.outputs.integration-matrix || '[{"skip": true}]') }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.gha-container || 'ubuntu-latest' }}
     steps:
       - name: Check out collection
         if: >-
