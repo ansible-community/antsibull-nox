@@ -41,7 +41,7 @@ def load_redirects(
     try:
         with open(meta_runtime, "rb") as f:
             data = yaml.safe_load(f)
-        action_groups = data["action_groups"]
+        action_groups = data.get("action_groups", {})
     except Exception as exc:
         errors.append(f"{meta_runtime}: cannot load action groups: {exc}")
         return {}
