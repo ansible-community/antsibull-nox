@@ -129,7 +129,7 @@ jobs:
           sessions: ${{ matrix.name }}
       - name: Upload coverage for final step
         if: >-
-          !matrix.skip && inputs.upload-codecov
+          !matrix.skip && inputs.upload-codecov && (matrix.has-coverage != 'false')
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-integration-${{ matrix.name }}
