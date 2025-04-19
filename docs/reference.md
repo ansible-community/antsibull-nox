@@ -187,7 +187,7 @@ IN_CI = os.environ.get("CI") == "true"
 
 @nox.session(name="update-docs-fragments")
 def update_docs_fragments(session: nox.Session) -> None:
-    antsibull_nox.sessions.install(session, "ansible-core")
+    session.install(session, "ansible-core")
     prepare = antsibull_nox.sessions.prepare_collections(
         session, install_in_site_packages=True
     )
