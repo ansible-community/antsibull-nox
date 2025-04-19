@@ -16,9 +16,11 @@ Before you get started, ensure that you:
 
 `antsibull-nox` defines collection tests in a `noxfile.py` file.
 
-1. Add the following `noxfile.py` file to the root of your collection.
+1. Run `antsibull-nox init` in the root of your collection.
    The root is the directory that contains `galaxy.yml`.
-1. Add the following `antsibull-nox.toml` file to the root of your collection.
+
+    That creates the `noxfile.py` and `antsibull-nox.toml` files shown below.
+
 1. Ensure your `galaxy.yml` file contains values for the `name` and `namespace` fields at a minimum.
 
 The **`noxfile.py`** file:

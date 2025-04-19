@@ -28,6 +28,10 @@ from .data import CollectionData
 Runner = t.Callable[[list[str]], tuple[bytes, bytes]]
 
 
+GALAXY_YML = "galaxy.yml"
+MANIFEST_JSON = "MANIFEST.json"
+
+
 @dataclass(frozen=True)
 class _GlobalCache:
     root: Path
@@ -80,19 +84,19 @@ def load_collection_data_from_disk(
     """
     Load collection data from disk.
     """
-    galaxy_yml = path / "galaxy.yml"
-    manifest_json = path / "MANIFEST.json"
+    galaxy_yml = path / GALAXY_YML
+    manifest_json = path / MANIFEST_JSON
     found: Path
     if galaxy_yml.is_file():
         found = galaxy_yml
         data = _load_galaxy_yml(galaxy_yml)
     elif not accept_manifest:
-        raise ValueError(f"Cannot find galaxy.yml in {path}")
+        raise ValueError(f"Cannot find {GALAXY_YML} in {path}")
     elif manifest_json.is_file():
         found = manifest_json
         data = _load_manifest_json_collection_info(manifest_json)
     else:
-        raise ValueError(f"Cannot find galaxy.yml or MANIFEST.json in {path}")
+        raise ValueError(f"Cannot find {GALAXY_YML} or {MANIFEST_JSON} in {path}")
 
     ns = data.get("namespace")
     if not isinstance(ns, str):

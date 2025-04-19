@@ -1,0 +1,3 @@
+minor_changes:
+  - "Add ``antsibull-nox init`` command that creates a ``noxfile.py`` and ``antsibull-nox.tomll`` to get started
+     (https://github.com/ansible-community/antsibull-nox/pull/58)."
