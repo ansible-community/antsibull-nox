@@ -634,6 +634,20 @@ The function supports the following parameters:
   The list elements can be strings of the form `"devel"`, `"milestone"`,
   and `"x.y"` where `x` and `y` are integers that specify a minor ansible-core x.y release.
 
+* `skip_tests: list[str]` (default `[]`):
+  A list of tests to skip.
+
+* `allow_disabled: bool` (default `false`):
+  Also run tests that are disabled by default.
+  Corresponds to `ansible-test sanity`'s `--allow-disabled` option.
+  Beware that these tests are disabled by default for a reason.
+
+* `enable_optional_errors: bool` (default `false`):
+  Enable optional errors.
+  Corresponds to `ansible-test sanity`'s `--enable-optional-errors` option.
+  Beware that these errors are disabled by default for a reason.
+
+
 #### Example code
 
 This example is from `community.dns`.

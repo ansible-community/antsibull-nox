@@ -1,0 +1,2 @@
+minor_changes:
+  - "Add new options ``skip_tests``, ``allow_disabled``, and ``enable_optional_errors`` for ansible-test sanity sessions (https://github.com/ansible-community/antsibull-nox/pull/61)."

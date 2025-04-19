@@ -189,6 +189,9 @@ def _add_sessions(sessions: Sessions) -> None:
             except_versions=_convert_except_versions(
                 sessions.ansible_test_sanity.except_versions
             ),
+            skip_tests=sessions.ansible_test_sanity.skip_tests,
+            allow_disabled=sessions.ansible_test_sanity.allow_disabled,
+            enable_optional_errors=sessions.ansible_test_sanity.enable_optional_errors,
         )
     if sessions.ansible_test_units:
         add_all_ansible_test_unit_test_sessions(

@@ -239,6 +239,9 @@ class SessionAnsibleTestSanity(_BaseModel):
     min_version: t.Optional[PVersion] = None
     max_version: t.Optional[PVersion] = None
     except_versions: list[PAnsibleCoreVersion] = []
+    skip_tests: list[str] = []
+    allow_disabled: bool = False
+    enable_optional_errors: bool = False
 
 
 class SessionAnsibleTestUnits(_BaseModel):
