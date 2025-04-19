@@ -151,11 +151,15 @@ def add_formatters(
             )
             return
         if run_black:
-            paths = filter_paths(
-                CODE_FILES,
-                remove=MODULE_PATHS,
-                extensions=[".py"],
-            ) + ["noxfile.py"]
+            paths = (
+                filter_paths(
+                    CODE_FILES,
+                    remove=MODULE_PATHS,
+                    extensions=[".py"],
+                )
+                + ["noxfile.py"]
+                + extra_code_files
+            )
             execute_black_for(session, paths)
         if run_black_modules:
             paths = filter_paths(
