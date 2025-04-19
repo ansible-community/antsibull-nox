@@ -74,6 +74,8 @@ def install(session: nox.Session, *args: str, editable: bool = False, **kwargs):
     """
     Install Python packages.
     """
+    if not args:
+        return
     # nox --no-venv
     if isinstance(session.virtualenv, nox.virtualenv.PassthroughEnv):
         session.warn(f"No venv. Skipping installation of {args}")
