@@ -237,6 +237,9 @@ def add_all_ansible_test_sanity_test_sessions(
             name=name,
             description=f"Run sanity tests from ansible-core {ansible_core_version}'s ansible-test",
             ansible_core_version=ansible_core_version,
+            skip_tests=skip_tests,
+            allow_disabled=allow_disabled,
+            enable_optional_errors=enable_optional_errors,
             default=False,
         )
         sanity_sessions.append(name)
