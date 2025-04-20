@@ -27,6 +27,7 @@ from .utils import (
     ci_group,
     compose_description,
     install,
+    silence_run_verbosity,
 )
 
 
@@ -87,7 +88,7 @@ def add_build_import_check(
                 env["GALAXY_IMPORTER_CONFIG"] = str(
                     Path(galaxy_importer_config_path).absolute()
                 )
-            with session.chdir(collection_dir):
+            with session.chdir(collection_dir), silence_run_verbosity():
                 import_log = session.run(
                     "python",
                     "-m",
@@ -97,7 +98,7 @@ def add_build_import_check(
                     silent=True,
                 )
             if import_log is not None:
-                with ci_group("Run Galaxy importer") as indent:
+                with ci_group("Run Galaxy importer") as (indent, _):
                     for line in import_log.splitlines():
                         print(f"{indent}{line}")
                 error_prefix = "ERROR:"

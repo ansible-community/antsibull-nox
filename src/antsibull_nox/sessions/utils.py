@@ -17,6 +17,8 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import nox
+from nox.logger import OUTPUT as nox_OUTPUT
+from nox.logger import logger as nox_logger
 
 from ..data_util import prepare_data_script
 from ..paths import (
@@ -38,15 +40,31 @@ _SESSIONS: dict[str, list[dict[str, t.Any]]] = {}
 
 
 @contextmanager
-def ci_group(name: str) -> t.Iterator[str]:
+def silence_run_verbosity() -> t.Iterator[None]:
+    """
+    When using session.run() with silent=True, nox will log the output
+    if -v is used. Using this context manager prevents printing the output.
+    """
+    original_level = nox_logger.level
+    try:
+        nox_logger.setLevel(max(nox_OUTPUT + 1, original_level))
+        yield
+    finally:
+        nox_logger.setLevel(original_level)
+
+
+@contextmanager
+def ci_group(name: str) -> t.Iterator[tuple[str, bool]]:
     """
     Try to ensure that the output inside the context is printed in a collapsable group.
 
     This is highly CI system dependent, and currently only works for GitHub Actions.
     """
+    is_collapsing = False
     if IN_GITHUB_ACTIONS:
         print(f"::group::{name}")
-    yield ("  " if IN_GITHUB_ACTIONS else "")
+        is_collapsing = True
+    yield ("  " if is_collapsing else "", is_collapsing)
     if IN_GITHUB_ACTIONS:
         print("::endgroup::")
 
@@ -172,4 +190,5 @@ __all__ = [
     "install",
     "register",
     "run_bare_script",
+    "silence_run_verbosity",
 ]
