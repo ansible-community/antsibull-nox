@@ -72,10 +72,12 @@ def ci_group(name: str) -> t.Iterator[tuple[str, bool]]:
     is_collapsing = False
     if IN_GITHUB_ACTIONS:
         print(f"::group::{name}")
+        sys.stdout.flush()
         is_collapsing = True
     yield ("  " if is_collapsing else "", is_collapsing)
     if IN_GITHUB_ACTIONS:
         print("::endgroup::")
+        sys.stdout.flush()
 
 
 def register(name: str, data: dict[str, t.Any]) -> None:

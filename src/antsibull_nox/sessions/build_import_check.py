@@ -11,6 +11,7 @@ Create nox build import check session.
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import nox
@@ -108,6 +109,7 @@ def add_build_import_check(
                     ):
                         for line in import_log.splitlines():
                             print(f"{indent}{line}")
+                        sys.stdout.flush()
                 error_prefix = "ERROR:"
                 errors = []
                 for line in import_log.splitlines():

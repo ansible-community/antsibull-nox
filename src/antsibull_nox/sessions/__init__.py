@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 
 import nox
 
@@ -51,6 +52,8 @@ def add_matrix_generator() -> None:
                 data = session_data.copy()
                 session_name = data.pop("name")
                 print(f"  {session_name}: {data}")
+
+        sys.stdout.flush()
 
     matrix_generator.__doc__ = "Generate matrix for CI systems."
     nox.session(
