@@ -88,20 +88,18 @@ def add_build_import_check(
                     Path(galaxy_importer_config_path).absolute()
                 )
             with session.chdir(collection_dir):
-                import_log = (
-                    session.run(
-                        "python",
-                        "-m",
-                        "galaxy_importer.main",
-                        tarball.name,
-                        env=env,
-                        silent=True,
-                    )
-                    or ""
+                import_log = session.run(
+                    "python",
+                    "-m",
+                    "galaxy_importer.main",
+                    tarball.name,
+                    env=env,
+                    silent=True,
                 )
-            if import_log:
-                with ci_group("Run Galaxy importer"):
-                    print(import_log)
+            if import_log is not None:
+                with ci_group("Run Galaxy importer") as indent:
+                    for line in import_log.splitlines():
+                        print(f"{indent}{line}")
                 error_prefix = "ERROR:"
                 errors = []
                 for line in import_log.splitlines():

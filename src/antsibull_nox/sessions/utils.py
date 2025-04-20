@@ -38,7 +38,7 @@ _SESSIONS: dict[str, list[dict[str, t.Any]]] = {}
 
 
 @contextmanager
-def ci_group(name: str) -> t.Iterator[None]:
+def ci_group(name: str) -> t.Iterator[str]:
     """
     Try to ensure that the output inside the context is printed in a collapsable group.
 
@@ -46,7 +46,7 @@ def ci_group(name: str) -> t.Iterator[None]:
     """
     if IN_GITHUB_ACTIONS:
         print(f"::group::{name}")
-    yield
+    yield ("  " if IN_GITHUB_ACTIONS else "")
     if IN_GITHUB_ACTIONS:
         print("::endgroup::")
 
