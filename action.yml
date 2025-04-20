@@ -62,7 +62,7 @@ runs:
     - name: "Set up nox environments"
       run: |
         echo "::group::Set up nox environments"
-        nox --verbose --install-only${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }}
+        nox --verbose --install-only${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }} 2>&1
         echo "::endgroup::"
       env:
         FORCE_COLOR: "1"
@@ -72,7 +72,7 @@ runs:
     - name: "Run nox"
       id: run-nox
       run: |
-        nox --verbose --reuse-existing-virtualenvs --no-install${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }}${{ inputs.extra-args && ' -- ' || '' }}${{ inputs.extra-args }}
+        nox --verbose --reuse-existing-virtualenvs --no-install${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }}${{ inputs.extra-args && ' -- ' || '' }}${{ inputs.extra-args }} 2>&1
       env:
         FORCE_COLOR: "1"
         ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS: "true"
