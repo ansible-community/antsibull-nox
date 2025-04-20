@@ -202,6 +202,7 @@ class SessionBuildImportCheck(_BaseModel):
     galaxy_importer_package: str = "galaxy-importer"
     # https://github.com/ansible/galaxy-importer#configuration
     galaxy_importer_config_path: t.Optional[p.FilePath] = None
+    galaxy_importer_always_show_logs: bool = False
 
 
 class DevelLikeBranch(_BaseModel):

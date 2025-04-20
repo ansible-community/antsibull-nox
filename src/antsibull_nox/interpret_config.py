@@ -175,6 +175,9 @@ def _add_sessions(sessions: Sessions) -> None:
             run_galaxy_importer=sessions.build_import_check.run_galaxy_importer,
             galaxy_importer_package=sessions.build_import_check.galaxy_importer_package,
             galaxy_importer_config_path=sessions.build_import_check.galaxy_importer_config_path,
+            galaxy_importer_always_show_logs=(
+                sessions.build_import_check.galaxy_importer_always_show_logs
+            ),
         )
     if sessions.ansible_test_sanity:
         add_all_ansible_test_sanity_test_sessions(

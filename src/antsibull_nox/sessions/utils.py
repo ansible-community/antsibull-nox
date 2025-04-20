@@ -10,6 +10,7 @@ Utils for creating nox sessions.
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import typing as t
@@ -17,6 +18,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import nox
+from nox.logger import OUTPUT as nox_OUTPUT
 
 from ..data_util import prepare_data_script
 from ..paths import (
@@ -37,18 +39,45 @@ ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not IN_CI)).lower() in (
 _SESSIONS: dict[str, list[dict[str, t.Any]]] = {}
 
 
+def nox_has_verbosity() -> bool:
+    """
+    Determine whether nox is run with verbosity enabled.
+    """
+    logger = logging.getLogger()
+    return logger.level <= nox_OUTPUT
+
+
 @contextmanager
-def ci_group(name: str) -> t.Iterator[None]:
+def silence_run_verbosity() -> t.Iterator[None]:
+    """
+    When using session.run() with silent=True, nox will log the output
+    if -v is used. Using this context manager prevents printing the output.
+    """
+    logger = logging.getLogger()
+    original_level = logger.level
+    try:
+        logger.setLevel(max(nox_OUTPUT + 1, original_level))
+        yield
+    finally:
+        logger.setLevel(original_level)
+
+
+@contextmanager
+def ci_group(name: str) -> t.Iterator[tuple[str, bool]]:
     """
     Try to ensure that the output inside the context is printed in a collapsable group.
 
     This is highly CI system dependent, and currently only works for GitHub Actions.
     """
+    is_collapsing = False
     if IN_GITHUB_ACTIONS:
         print(f"::group::{name}")
-    yield
+        sys.stdout.flush()
+        is_collapsing = True
+    yield ("  " if is_collapsing else "", is_collapsing)
     if IN_GITHUB_ACTIONS:
         print("::endgroup::")
+        sys.stdout.flush()
 
 
 def register(name: str, data: dict[str, t.Any]) -> None:
@@ -170,6 +199,8 @@ __all__ = [
     "compose_description",
     "get_registered_sessions",
     "install",
+    "nox_has_verbosity",
     "register",
     "run_bare_script",
+    "silence_run_verbosity",
 ]
