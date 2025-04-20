@@ -553,6 +553,14 @@ It accepts the following options:
   [Ansible Automation Hub](https://www.redhat.com/en/technologies/management/ansible/automation-hub)
   is using different settings than [Ansible Galaxy](https://galaxy.ansible.com/), for example.
 
+* `galaxy_importer_always_show_logs : bool` (default `False`):
+  Whether to always show the Galaxy importer logs.
+  By default they are only shown when nox is run with verbosity enabled (`-v`)
+  or when run in a CI system that supports collapsible groups,
+  like GitHub Actions.
+
+    In the latter case, the output is always shown in a collapsible group.
+
 ### Example code
 
 This example is from `community.dns`:

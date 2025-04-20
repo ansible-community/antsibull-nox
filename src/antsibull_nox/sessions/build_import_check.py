@@ -27,6 +27,7 @@ from .utils import (
     ci_group,
     compose_description,
     install,
+    nox_has_verbosity,
     silence_run_verbosity,
 )
 
@@ -40,6 +41,7 @@ def add_build_import_check(
     galaxy_importer_config_path: (
         str | os.PathLike | None
     ) = None,  # https://github.com/ansible/galaxy-importer#configuration
+    galaxy_importer_always_show_logs: bool = False,
 ) -> None:
     """
     Add license-check session for license checks.
@@ -98,9 +100,14 @@ def add_build_import_check(
                     silent=True,
                 )
             if import_log is not None:
-                with ci_group("Run Galaxy importer") as (indent, _):
-                    for line in import_log.splitlines():
-                        print(f"{indent}{line}")
+                with ci_group("Run Galaxy importer") as (indent, is_collapsed):
+                    if (
+                        is_collapsed
+                        or galaxy_importer_always_show_logs
+                        or nox_has_verbosity()
+                    ):
+                        for line in import_log.splitlines():
+                            print(f"{indent}{line}")
                 error_prefix = "ERROR:"
                 errors = []
                 for line in import_log.splitlines():

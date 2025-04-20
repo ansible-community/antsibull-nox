@@ -1,2 +1,4 @@
 minor_changes:
-  - "Try to ensure that Galaxy importer's output is actually collapsed on GHA (https://github.com/ansible-community/antsibull-nox/pull/67)."
+  - "Ensure that Galaxy importer's output is actually collapsed on GHA (https://github.com/ansible-community/antsibull-nox/pull/67)."
+  - "Never show Galaxy importer output unless it can be collapsed, verbosity is enabled,
+     or a new config option ``galaxy_importer_always_show_logs`` is set to ``true`` (https://github.com/ansible-community/antsibull-nox/pull/67)."

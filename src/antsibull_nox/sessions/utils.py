@@ -10,6 +10,7 @@ Utils for creating nox sessions.
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import typing as t
@@ -18,7 +19,6 @@ from pathlib import Path
 
 import nox
 from nox.logger import OUTPUT as nox_OUTPUT
-from nox.logger import logger as nox_logger
 
 from ..data_util import prepare_data_script
 from ..paths import (
@@ -39,18 +39,27 @@ ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not IN_CI)).lower() in (
 _SESSIONS: dict[str, list[dict[str, t.Any]]] = {}
 
 
+def nox_has_verbosity() -> bool:
+    """
+    Determine whether nox is run with verbosity enabled.
+    """
+    logger = logging.getLogger()
+    return logger.level <= nox_OUTPUT
+
+
 @contextmanager
 def silence_run_verbosity() -> t.Iterator[None]:
     """
     When using session.run() with silent=True, nox will log the output
     if -v is used. Using this context manager prevents printing the output.
     """
-    original_level = nox_logger.level
+    logger = logging.getLogger()
+    original_level = logger.level
     try:
-        nox_logger.setLevel(max(nox_OUTPUT + 1, original_level))
+        logger.setLevel(max(nox_OUTPUT + 1, original_level))
         yield
     finally:
-        nox_logger.setLevel(original_level)
+        logger.setLevel(original_level)
 
 
 @contextmanager
@@ -188,6 +197,7 @@ __all__ = [
     "compose_description",
     "get_registered_sessions",
     "install",
+    "nox_has_verbosity",
     "register",
     "run_bare_script",
     "silence_run_verbosity",
