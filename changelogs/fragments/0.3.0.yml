@@ -1,0 +1,7 @@
+release_summary: 'Feature release that is stabilizing the API.
+
+
+  All noxfiles and configs using this version should still work with antsibull-nox
+  1.0.0,
+
+  unless a critical problem is found that cannot be solved in any other way.'
