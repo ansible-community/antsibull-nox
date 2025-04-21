@@ -1,2 +1,0 @@
-bugfixes:
-  - "Do not fail when trying to install an empty list of packages when ``run_reuse=false`` (https://github.com/ansible-community/antsibull-nox/pull/65)."

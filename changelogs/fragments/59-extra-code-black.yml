@@ -1,2 +1,0 @@
-bugfixes:
-  - "Make sure that ``extra_code_files`` is considered for ``black`` when ``run_black_modules=false`` (https://github.com/ansible-community/antsibull-nox/pull/59)."

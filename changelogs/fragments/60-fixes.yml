@@ -1,4 +1,0 @@
-bugfixes:
-  - "Action groups extra test no longer fails if ``action_groups`` does not exist in ``meta/runtime.yml``.
-     It can now be used to ensure that there is no action group present in ``meta/runtime.yml``
-     (https://github.com/ansible-community/antsibull-nox/pull/60)."

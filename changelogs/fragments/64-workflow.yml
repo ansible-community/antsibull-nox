@@ -1,3 +1,0 @@
-minor_changes:
-  - "Allow to disable coverage upload for specific integration test jobs in shared workflow with ``has-coverage=false`` in extra data
-     (https://github.com/ansible-community/antsibull-nox/pull/64)."

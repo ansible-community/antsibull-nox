@@ -1,4 +1,0 @@
-removed_features:
-  - "Removed all deprecated functions from ``antsibull_nox.**`` that generate sessions. The only functions left that are public API are
-     ``antsibull_nox.load_antsibull_nox_toml()``, ``antsibull_nox.add_ansible_test_session()``, and ``antsibull_nox.sessions.prepare_collections()``
-     (https://github.com/ansible-community/antsibull-nox/pull/54)."

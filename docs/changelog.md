@@ -1,9 +1,47 @@
 # Antsibull Nox Helper Release Notes
 
+<a id="v0-3-0"></a>
+## v0\.3\.0
+
+<a id="release-summary"></a>
+### Release Summary
+
+Feature release that is stabilizing the API\.
+
+All noxfiles and configs using this version should still work with antsibull\-nox 1\.0\.0\,
+unless a critical problem is found that cannot be solved in any other way\.
+
+<a id="minor-changes"></a>
+### Minor Changes
+
+* Add <code>antsibull\-nox init</code> command that creates a <code>noxfile\.py</code> and <code>antsibull\-nox\.tomll</code> to get started \([https\://github\.com/ansible\-community/antsibull\-nox/pull/58](https\://github\.com/ansible\-community/antsibull\-nox/pull/58)\)\.
+* Add <code>callback\_before</code> and <code>callback\_after</code> parameters to <code>antsibull\_nox\.add\_ansible\_test\_session\(\)</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/63](https\://github\.com/ansible\-community/antsibull\-nox/pull/63)\)\.
+* Add a <code>antsibull\-nox</code> CLI tool with a subcommand <code>lint\-config</code> that lints <code>noxfile\.py</code> and the <code>antsibull\-nox\.toml</code> config file \([https\://github\.com/ansible\-community/antsibull\-nox/pull/56](https\://github\.com/ansible\-community/antsibull\-nox/pull/56)\)\.
+* Add a session for linting the antsibull\-nox configuration to <code>lint</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/56](https\://github\.com/ansible\-community/antsibull\-nox/pull/56)\)\.
+* Add new options <code>skip\_tests</code>\, <code>allow\_disabled</code>\, and <code>enable\_optional\_errors</code> for ansible\-test sanity sessions \([https\://github\.com/ansible\-community/antsibull\-nox/pull/61](https\://github\.com/ansible\-community/antsibull\-nox/pull/61)\)\.
+* Allow to disable coverage upload for specific integration test jobs in shared workflow with <code>has\-coverage\=false</code> in extra data \([https\://github\.com/ansible\-community/antsibull\-nox/pull/64](https\://github\.com/ansible\-community/antsibull\-nox/pull/64)\)\.
+* Ensure that Galaxy importer\'s output is actually collapsed on GHA \([https\://github\.com/ansible\-community/antsibull\-nox/pull/67](https\://github\.com/ansible\-community/antsibull\-nox/pull/67)\)\.
+* Never show Galaxy importer output unless it can be collapsed\, verbosity is enabled\, or a new config option <code>galaxy\_importer\_always\_show\_logs</code> is set to <code>true</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/67](https\://github\.com/ansible\-community/antsibull\-nox/pull/67)\)\.
+* Skip symlinks that do not point to files in <code>license\-check</code> and <code>yamllint</code> sessions \([https\://github\.com/ansible\-community/antsibull\-nox/pull/61](https\://github\.com/ansible\-community/antsibull\-nox/pull/61)\)\.
+* Update shared workflow to use a <code>display\-name</code> and <code>gha\-container</code> extra data \([https\://github\.com/ansible\-community/antsibull\-nox/pull/63](https\://github\.com/ansible\-community/antsibull\-nox/pull/63)\)\.
+
+<a id="removed-features-previously-deprecated"></a>
+### Removed Features \(previously deprecated\)
+
+* Removed all deprecated functions from <code>antsibull\_nox\.\*\*</code> that generate sessions\. The only functions left that are public API are <code>antsibull\_nox\.load\_antsibull\_nox\_toml\(\)</code>\, <code>antsibull\_nox\.add\_ansible\_test\_session\(\)</code>\, and <code>antsibull\_nox\.sessions\.prepare\_collections\(\)</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/54](https\://github\.com/ansible\-community/antsibull\-nox/pull/54)\)\.
+
+<a id="bugfixes"></a>
+### Bugfixes
+
+* Action groups extra test no longer fails if <code>action\_groups</code> does not exist in <code>meta/runtime\.yml</code>\. It can now be used to ensure that there is no action group present in <code>meta/runtime\.yml</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/60](https\://github\.com/ansible\-community/antsibull\-nox/pull/60)\)\.
+* Do not fail when trying to install an empty list of packages when <code>run\_reuse\=false</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/65](https\://github\.com/ansible\-community/antsibull\-nox/pull/65)\)\.
+* Make sure that <code>extra\_code\_files</code> is considered for <code>black</code> when <code>run\_black\_modules\=false</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/59](https\://github\.com/ansible\-community/antsibull\-nox/pull/59)\)\.
+* Make sure to flush stdout after calling <code>print\(\)</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/67](https\://github\.com/ansible\-community/antsibull\-nox/pull/67)\)\.
+
 <a id="v0-2-0"></a>
 ## v0\.2\.0
 
-<a id="release-summary"></a>
+<a id="release-summary-1"></a>
 ### Release Summary
 
 Major extension and overhaul with many breaking changes\. The next minor release is expected to bring more stabilization\.
@@ -13,7 +51,7 @@ Major extension and overhaul with many breaking changes\. The next minor release
 
 * There is now a new function <code>antsibull\_nox\.load\_antsibull\_nox\_toml\(\)</code> which loads <code>antsibull\-nox\.toml</code> and creates configuration and sessions from it\. Calling other functionality from <code>antsibull\_nox</code> in <code>noxfile\.py</code> is only necessary for creating own specialized sessions\, or ansible\-test sessions that cannot be created with the <code>antsibull\_nox\.add\_all\_ansible\_test\_\*\_test\_sessions\*\(\)</code> type functions \([https\://github\.com/ansible\-community/antsibull\-nox/pull/50](https\://github\.com/ansible\-community/antsibull\-nox/pull/50)\, [https\://github\.com/ansible\-community/antsibull\-nox/issues/34](https\://github\.com/ansible\-community/antsibull\-nox/issues/34)\)\.
 
-<a id="minor-changes"></a>
+<a id="minor-changes-1"></a>
 ### Minor Changes
 
 * Add descriptions to generated sessions that are shown when running <code>nox \-\-list</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/31](https\://github\.com/ansible\-community/antsibull\-nox/pull/31)\)\.
@@ -39,12 +77,12 @@ Major extension and overhaul with many breaking changes\. The next minor release
 <a id="v0-1-0"></a>
 ## v0\.1\.0
 
-<a id="release-summary-1"></a>
+<a id="release-summary-2"></a>
 ### Release Summary
 
 Feature release\.
 
-<a id="minor-changes-1"></a>
+<a id="minor-changes-2"></a>
 ### Minor Changes
 
 * A <code>build\-import\-check</code> session that builds and tries to import the collection with Galaxy Importer can be added with <code>add\_build\_import\_check\(\)</code> \([https\://github\.com/ansible\-community/antsibull\-nox/issues/15](https\://github\.com/ansible\-community/antsibull\-nox/issues/15)\, [https\://github\.com/ansible\-community/antsibull\-nox/pull/17](https\://github\.com/ansible\-community/antsibull\-nox/pull/17)\)\.
@@ -63,7 +101,7 @@ Feature release\.
 
 * The nox workflow now by default runs all sessions\, unless restricted with the <code>sessions</code> parameter \([https\://github\.com/ansible\-community/antsibull\-nox/pull/14](https\://github\.com/ansible\-community/antsibull\-nox/pull/14)\)\.
 
-<a id="bugfixes"></a>
+<a id="bugfixes-1"></a>
 ### Bugfixes
 
 * Make sure that black in CI checks formatting instead of just reformatting \([https\://github\.com/ansible\-community/antsibull\-nox/pull/14](https\://github\.com/ansible\-community/antsibull\-nox/pull/14)\)\.
@@ -71,7 +109,7 @@ Feature release\.
 <a id="v0-0-1"></a>
 ## v0\.0\.1
 
-<a id="release-summary-2"></a>
+<a id="release-summary-3"></a>
 ### Release Summary
 
 Initial alpha release\.
