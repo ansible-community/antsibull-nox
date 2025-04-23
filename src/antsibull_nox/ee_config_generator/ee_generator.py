@@ -42,7 +42,7 @@ class ExecutionEnvironmentGenerator:
         }
 
         req_filename = os.path.join(output_path, "requirements.yml")
-        with open(req_filename, "w") as f:
+        with open(req_filename, "w", encoding="utf-8") as f:
             yaml.dump(req_config, f)
 
         return req_filename
