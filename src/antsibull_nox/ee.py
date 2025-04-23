@@ -119,7 +119,7 @@ def build_ee_image(args: Args):
                 context_dir,
             ]
 
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
 
             if result.returncode == 0:
                 built_images.append(image_name)
