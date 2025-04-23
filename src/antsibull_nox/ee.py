@@ -84,8 +84,10 @@ def build_collection(args: Args, version: str):
         return Path(output_path) / collection_filename
 
     except subprocess.CalledProcessError as e:
+        print(f"An error was encountered while building the collection: {e}")
         return None
-    except Exception as e:
+    except OSError as e:
+        print(f"An error was encountered while building the collection: {e}")
         return None
 
 
@@ -96,7 +98,7 @@ def build_ee_image(args: Args):
     ee_files = list(args.path.glob("execution-environment-*.yml"))
 
     for ee_file in ee_files:
-        prefix = 'execution-environment-'
+        prefix = "execution-environment-"
         image_name = f"{args.namespace}-{args.name}-{ee_file.stem.replace(prefix, '')}"
 
         try:
@@ -126,7 +128,7 @@ def build_ee_image(args: Args):
                     f"Could not build image for {ee_file}, return code: {result.returncode}"
                 )
 
-        except Exception as e:
+        except OSError as e:
             print(
                 f"An error was encountered while building an image for {ee_file}: {e}"
             )
