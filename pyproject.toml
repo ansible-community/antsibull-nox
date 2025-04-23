@@ -83,6 +83,7 @@ typing = [
     "mypy",
     "antsibull-docutils >= 1.2.0",
     "types-PyYAML",
+    "types-jinja2",
 ]
 dev = [
     # Used by nox sessions
