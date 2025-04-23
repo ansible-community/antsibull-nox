@@ -384,9 +384,9 @@ It accepts the following options:
 * `run_license_check: bool` (default `true`):
   Whether a custom check script should be run that validates the following conditions:
 
-  1. All Python code in `plugins/` except module utils, modules, and docs fragments must be `GPL-3.0-or-later` licensed.
+    1. All Python code in `plugins/` except module utils, modules, and docs fragments must be `GPL-3.0-or-later` licensed.
 
-  2. Every non-empty file has an allowed license. (This is similar to what `reuse lint` checks.)
+    2. Every non-empty file has an allowed license. (This is similar to what `reuse lint` checks.)
 
 * `license_check_extra_ignore_paths: list[str]` (default `[]`):
   Allows to specify more paths that are ignored.
