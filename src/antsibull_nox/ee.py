@@ -96,7 +96,8 @@ def build_ee_image(args: Args):
     ee_files = list(args.path.glob("execution-environment-*.yml"))
 
     for ee_file in ee_files:
-        image_name = f"{args.namespace}-{args.name}-{ee_file.stem.replace('execution-environment-', '')}"
+        prefix = 'execution-environment-'
+        image_name = f"{args.namespace}-{args.name}-{ee_file.stem.replace(prefix, '')}"
 
         try:
             context_dir = str(ee_file.parent / f"context-{ee_file.stem}")
