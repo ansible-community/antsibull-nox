@@ -1,0 +1,25 @@
+---
+version: 3
+images:
+  base_image:
+    name: {{ base_image }}
+dependencies:
+  ansible_core:
+    package_pip: {{ ansible_core }}
+  ansible_runner:
+    package_pip: {{ ansible_runner }}
+  galaxy: requirements.yml
+{% if other_deps %}
+  {% for key, value in other_deps.items() %}
+  {{ key }}:
+    {% for subkey, subvalue in value.items() %}
+    {{ subkey }}: {{ subvalue }}
+    {% endfor %}
+  {% endfor %}
+{% endif %}
+additional_build_files:
+  - src: {{ collection_filename }}
+    dest: src
+additional_build_steps:
+  prepend_base:
+    - {{ pre_base }}
