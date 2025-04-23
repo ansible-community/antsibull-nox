@@ -10,7 +10,10 @@ MATRIX_CONFIGS = [
         "ansible_runner": "ansible-runner",
         "other_deps": {
             "python_interpreter": {
-                "package_system": "python3.11 python3.11-pip python3.11-wheel python3.11-cryptography",
+                "package_system": (
+                    "python3.11 python3.11-pip "
+                    "python3.11-wheel python3.11-cryptography"
+                ),
                 "python_path": "/usr/bin/python3.11",
             }
         },
