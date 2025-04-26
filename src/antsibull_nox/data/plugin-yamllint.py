@@ -128,6 +128,12 @@ def process_python_file(
             row_offset = child.value.lineno - 1
             col_offset = child.value.col_offset - 1
 
+            # Handle special values
+            if data in ("#", " # ") and section == "RETURN":
+                # Not skipping it here could result in all kind of linting errors,
+                # like no document start, or trailing space.
+                continue
+
             # If the string start with optional whitespace + linebreak, skip that line
             idx = data.find("\n")
             if idx >= 0 and (idx == 0 or data[:idx].isspace()):
