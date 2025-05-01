@@ -335,29 +335,22 @@ def add_yamllint(
     def execute_yamllint(session: nox.Session) -> None:
         # Run yamllint
         all_files = list_all_files()
-        cwd = Path.cwd()
         all_yaml_filenames = [
-            str(file.relative_to(cwd))
-            for file in all_files
-            if file.name.lower().endswith((".yml", ".yaml"))
+            file for file in all_files if file.name.lower().endswith((".yml", ".yaml"))
         ]
         if not all_yaml_filenames:
             session.warn("Skipping yamllint since no YAML file was found...")
             return
 
-        command = ["yamllint"]
-        if yamllint_config is not None:
-            command.extend(
-                [
-                    "-c",
-                    str(yamllint_config),
-                ]
-            )
-        command.append("--strict")
-        command.append("--")
-        command.extend(all_yaml_filenames)
-        command.extend(session.posargs)
-        session.run(*command)
+        run_bare_script(
+            session,
+            "file-yamllint",
+            use_session_python=True,
+            files=all_yaml_filenames,
+            extra_data={
+                "config": to_str(yamllint_config),
+            },
+        )
 
     def execute_plugin_yamllint(session: nox.Session) -> None:
         # Run yamllint

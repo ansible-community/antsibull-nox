@@ -113,6 +113,7 @@ module = [
     "pytest",
     "semantic_version",
     "yamllint",
+    "yamllint.cli",
     "yamllint.config",
     "yamllint.linter",
 ]
