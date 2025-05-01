@@ -44,6 +44,13 @@ def lint(
     config: YamlLintConfig,
     extra_for_errors: dict[str, t.Any] | None = None,
 ) -> None:
+    # If the string start with optional whitespace + linebreak, skip that line
+    idx = data.find("\n")
+    if idx >= 0 and (idx == 0 or data[:idx].isspace()):
+        data = data[idx + 1 :]
+        row_offset += 1
+        col_offset = 0
+
     try:
         problems = linter.run(
             io.StringIO(data),
@@ -84,6 +91,20 @@ def lint(
             errors[-1].update(extra_for_errors)
 
 
+def iterate_targets(
+    assignment: ast.Assign,
+) -> t.Iterable[tuple[ast.Constant, str, str]]:
+    if not isinstance(assignment.value, ast.Constant):
+        return
+    if not isinstance(assignment.value.value, str):
+        return
+    for target in assignment.targets:
+        try:
+            yield assignment.value, assignment.value.value, target.id  # type: ignore
+        except AttributeError:
+            continue
+
+
 def process_python_file(
     errors: list[dict[str, t.Any]],
     path: str,
@@ -107,39 +128,39 @@ def process_python_file(
         )
         return
 
-    # We look for top-level assignments
+    is_doc_fragment = path.startswith("plugins/doc_fragments/")
+
+    # We look for top-level assignments and classes
     for child in root.body:
+        if (
+            is_doc_fragment
+            and isinstance(child, ast.ClassDef)
+            and child.name == "ModuleDocFragment"
+        ):
+            for fragment in child.body:
+                if not isinstance(fragment, ast.Assign):
+                    continue
+                for constant, data, fragment_name in iterate_targets(fragment):
+                    lint(
+                        errors=errors,
+                        path=path,
+                        data=data,
+                        row_offset=constant.lineno - 1,
+                        col_offset=constant.col_offset - 1,
+                        section=fragment_name,
+                        config=config,
+                    )
         if not isinstance(child, ast.Assign):
             continue
-        if not isinstance(child.value, ast.Constant):
-            continue
-        if not isinstance(child.value.value, str):
-            continue
-        for target in child.targets:
-            try:
-                section = target.id  # type: ignore
-            except AttributeError:
-                continue
+        for constant, data, section in iterate_targets(child):
             if section not in ("DOCUMENTATION", "EXAMPLES", "RETURN"):
                 continue
-
-            # Extract value and offsets
-            data = child.value.value
-            row_offset = child.value.lineno - 1
-            col_offset = child.value.col_offset - 1
 
             # Handle special values
             if data in ("#", " # ") and section == "RETURN":
                 # Not skipping it here could result in all kind of linting errors,
                 # like no document start, or trailing space.
                 continue
-
-            # If the string start with optional whitespace + linebreak, skip that line
-            idx = data.find("\n")
-            if idx >= 0 and (idx == 0 or data[:idx].isspace()):
-                data = data[idx + 1 :]
-                row_offset += 1
-                col_offset = 0
 
             # Check for non-YAML examples
             if section == EXAMPLES_SECTION:
@@ -152,8 +173,8 @@ def process_python_file(
                 errors=errors,
                 path=path,
                 data=data,
-                row_offset=row_offset,
-                col_offset=col_offset,
+                row_offset=constant.lineno - 1,
+                col_offset=constant.col_offset - 1,
                 section=section,
                 config=config_examples if section == EXAMPLES_SECTION else config,
             )
