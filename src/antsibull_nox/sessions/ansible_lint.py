@@ -44,6 +44,8 @@ def add_ansible_lint(
         command = ["ansible-lint", "--offline"]
         if strict:
             command.append("--strict")
+        if session.posargs:
+            command.extend(session.posargs)
         session.run(*command, env=env)
 
     ansible_lint.__doc__ = "Run ansible-lint."
