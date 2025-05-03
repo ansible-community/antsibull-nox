@@ -10,6 +10,7 @@ Create nox lint sessions.
 
 from __future__ import annotations
 
+import json
 import os
 import shlex
 from pathlib import Path
@@ -29,6 +30,7 @@ from .utils import (
     compose_description,
     install,
     run_bare_script,
+    silence_run_verbosity,
 )
 
 CODE_FILES = [
@@ -189,6 +191,28 @@ def add_formatters(
     nox.session(name="formatters", default=False)(formatters)
 
 
+def process_pylint_errors(
+    session: nox.Session,
+    prepared_collections: CollectionSetup,
+    output: str,
+) -> None:
+    """
+    Process errors reported by pylint in 'json2' format.
+    """
+    data = json.loads(output)
+    found_error = False
+    if data["messages"]:
+        for message in data["messages"]:
+            path = os.path.relpath(
+                message["absolutePath"], prepared_collections.current_path
+            )
+            prefix = f"{path}:{message['line']}:{message['column']}: [{message['messageId']}]"
+            print(f"{prefix} {message['message']} [{message['symbol']}]")
+            found_error = True
+    if found_error:
+        session.error("Pylint failed")
+
+
 def add_codeqa(  # noqa: C901
     *,
     extra_code_files: list[str],
@@ -249,9 +273,17 @@ def add_codeqa(  # noqa: C901
                 ]
             )
         command.extend(["--source-roots", "."])
+        command.extend(["--output-format", "json2"])
         command.extend(session.posargs)
         command.extend(prepared_collections.prefix_current_paths(paths))
-        session.run(*command)
+        with silence_run_verbosity():
+            # Exit code is OR of some of 1, 2, 4, 8, 16
+            output = session.run(
+                *command, silent=True, success_codes=list(range(0, 32))
+            )
+
+        if output:
+            process_pylint_errors(session, prepared_collections, output)
 
     def execute_pylint(
         session: nox.Session, prepared_collections: CollectionSetup
@@ -408,6 +440,40 @@ def add_yamllint(
     nox.session(name="yamllint", default=False)(yamllint)
 
 
+def process_mypy_errors(
+    session: nox.Session,
+    prepared_collections: CollectionSetup,
+    output: str,
+) -> None:
+    """
+    Process errors reported by mypy in 'json' format.
+    """
+    found_error = False
+    for line in output.splitlines():
+        if not line.strip():
+            continue
+        try:
+            data = json.loads(line)
+            path = os.path.relpath(
+                prepared_collections.current_place / data["file"],
+                prepared_collections.current_path,
+            )
+            prefix = f"{path}:{data['line']}:{data['column']}: [{data['severity']}]"
+            if data["code"]:
+                print(f"{prefix} {data['message']} [{data['code']}]")
+            else:
+                print(f"{prefix} {data['message']}")
+            if data["hint"]:
+                prefix = " " * len(prefix)
+                for hint in data["hint"].splitlines():
+                    print(f"{prefix} {hint}")
+        except Exception:  # pylint: disable=broad-exception-caught
+            session.warn(f"Cannot parse mypy output: {line}")
+        found_error = True
+    if found_error:
+        session.error("Type checking failed")
+
+
 def add_typing(
     *,
     extra_code_files: list[str],
@@ -452,13 +518,21 @@ def add_typing(
                 )
             command.append("--namespace-packages")
             command.append("--explicit-package-bases")
+            command.extend(["--output", "json"])
             command.extend(session.posargs)
             command.extend(
                 prepared_collections.prefix_current_paths(CODE_FILES + extra_code_files)
             )
-            session.run(
-                *command, env={"MYPYPATH": str(prepared_collections.current_place)}
-            )
+            with silence_run_verbosity():
+                output = session.run(
+                    *command,
+                    env={"MYPYPATH": str(prepared_collections.current_place)},
+                    silent=True,
+                    success_codes=(0, 1, 2),
+                )
+
+            if output:
+                process_mypy_errors(session, prepared_collections, output)
 
     def typing(session: nox.Session) -> None:
         install(session, *compose_dependencies())
