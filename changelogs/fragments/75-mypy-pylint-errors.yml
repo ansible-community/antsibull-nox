@@ -1,0 +1,3 @@
+minor_changes:
+  - "Capture mypy and pylint errors to report paths of files relative to collection's root, instead of relative to the virtual ``ansible_collections`` directory
+     (https://github.com/ansible-community/antsibull-nox/pull/75)."
