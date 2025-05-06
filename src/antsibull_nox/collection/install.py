@@ -20,6 +20,7 @@ from pathlib import Path
 
 from antsibull_fileutils.yaml import load_yaml_file
 
+from ..ansible import AnsibleCoreVersion
 from ..paths import copy_collection as _paths_copy_collection
 from ..paths import remove_path as _remove
 from .data import CollectionData, CollectionSource, SetupResult
@@ -57,74 +58,148 @@ class _CollectionSources:
         return source
 
 
+class _CollectionDownloadCache:
+    @staticmethod
+    def _parse_galaxy_filename(file: Path) -> tuple[str, str, str]:
+        """
+        Split filename into (namespace, name, version) tuple.
+        """
+        if not file.name.endswith(_TARBALL_EXTENSION):
+            raise ValueError(
+                f"Filename {file.name!r} does not end with {_TARBALL_EXTENSION}"
+            )
+        parts = file.name[: -len(_TARBALL_EXTENSION)].split("-", 2)
+        if len(parts) != 3:
+            raise ValueError(
+                f"Filename {file.name!r} does not belong to a Galaxy tarball"
+            )
+        return parts[0], parts[1], parts[2]
+
+    @staticmethod
+    def _parse_cache_filename(file: Path) -> tuple[str, str, str, str] | None:
+        """
+        Split cache filename into (namespace, name, source_id, version) tuple.
+        """
+        if not file.name.endswith(_TARBALL_EXTENSION):
+            return None
+        parts = file.name[: -len(_TARBALL_EXTENSION)].split("-", 3)
+        if len(parts) != 4:
+            return None
+        return parts[0], parts[1], parts[2], parts[3]
+
+    @staticmethod
+    def _encode_cache_filename(
+        namespace: str, name: str, version: str, source: CollectionSource
+    ) -> str:
+        return f"{namespace}-{name}-{source.identifier()}-{version}{_TARBALL_EXTENSION}"
+
+    def download_collections(
+        self, *, destination: Path, sources: list[CollectionSource], runner: Runner
+    ) -> None:
+        """
+        Given a set of collection sources, downloads these and stores them in destination.
+        """
+        destination.mkdir(exist_ok=True)
+        names = ", ".join(sorted(source.name for source in sources))
+        print(f"Downloading {names} to {destination}...")
+        sources_by_name = {}
+        for source in sources:
+            sources_by_name[source.name] = source
+            if source.name != source.source:
+                print(f"  Installing {source.name} via {source.source}...")
+        with tempfile.TemporaryDirectory(
+            prefix="antsibull-nox-galaxy-download"
+        ) as dest:
+            tempdir = Path(dest)
+            command = [
+                "ansible-galaxy",
+                "collection",
+                "download",
+                "--no-deps",
+                "--download-path",
+                str(tempdir),
+                "--",
+                *(source.source for source in sources),
+            ]
+            runner(command)
+            for file in tempdir.iterdir():
+                if file.name.endswith(_TARBALL_EXTENSION) and file.is_file():
+                    namespace, name, version = self._parse_galaxy_filename(file)
+                    source_opt = sources_by_name.get(f"{namespace}.{name}")
+                    if source_opt is None:
+                        print(
+                            f"Found unknown collection artifact {file.name!r}, ignoring..."
+                        )
+                        continue
+                    destfile = destination / self._encode_cache_filename(
+                        namespace, name, version, source_opt
+                    )
+                    _remove(destfile)
+                    shutil.move(file, destfile)
+
+    def list_downloaded_dir(
+        self, *, path: Path
+    ) -> dict[tuple[str, str], tuple[Path, str]]:
+        """
+        List contents of download cache.
+
+        Returns a dictionary mapping (collection_name, source_id) tuples to
+        (tarball_path, version) tuples.
+        """
+        if not path.is_dir():
+            return {}
+        result: dict[tuple[str, str], tuple[Path, str]] = {}
+        for file in path.iterdir():
+            if not file.is_file():
+                continue
+            parsed = self._parse_cache_filename(file)
+            if parsed is None:
+                continue
+            namespace, name, source_id, version = parsed
+            collection_name = f"{namespace}.{name}"
+            key = collection_name, source_id
+            if key in result:
+                # Determine older entry
+                old_file = result[key][0]
+                old_stat = old_file.stat()
+                new_stat = file.stat()
+                if new_stat.st_mtime > old_stat.st_mtime:
+                    older_file = old_file
+                    result[key] = file, version
+                else:
+                    older_file = file
+                # Clean up older entry
+                _remove(older_file)
+            else:
+                result[key] = file, version
+        return result
+
+
 _COLLECTION_SOURCES = _CollectionSources()
+_COLLECTION_SOURCES_PER_CORE_VERSION: dict[AnsibleCoreVersion, _CollectionSources] = {}
+_COLLECTION_DOWNLOAD_CACHE = _CollectionDownloadCache()
 _TARBALL_EXTENSION = ".tar.gz"
 _INSTALLATION_CONFIG_ENV_VAR = "ANTSIBULL_NOX_INSTALL_COLLECTIONS"
 
 
-def setup_collection_sources(collection_sources: dict[str, CollectionSource]) -> None:
+def setup_collection_sources(
+    collection_sources: dict[str, CollectionSource],
+    *,
+    ansible_core_version: AnsibleCoreVersion | None = None,
+) -> None:
     """
     Setup collection sources.
     """
+    sources = _COLLECTION_SOURCES
+    if ansible_core_version is not None:
+        sources = _COLLECTION_SOURCES_PER_CORE_VERSION.get(
+            ansible_core_version, _COLLECTION_SOURCES
+        )
+        if sources is _COLLECTION_SOURCES:
+            sources = _CollectionSources()
+            _COLLECTION_SOURCES_PER_CORE_VERSION[ansible_core_version] = sources
     for name, source in collection_sources.items():
-        _COLLECTION_SOURCES.set_source(name, source)
-
-
-def _download_collections(
-    *, destination: Path, sources: list[CollectionSource], runner: Runner
-) -> None:
-    destination.mkdir(exist_ok=True)
-    names = ", ".join(sorted(source.name for source in sources))
-    print(f"Downloading {names} to {destination}...")
-    for source in sources:
-        if source.name != source.source:
-            print(f"  Installing {source.name} via {source.source}...")
-    with tempfile.TemporaryDirectory(prefix="antsibull-nox-galaxy-download") as dest:
-        tempdir = Path(dest)
-        command = [
-            "ansible-galaxy",
-            "collection",
-            "download",
-            "--no-deps",
-            "--download-path",
-            str(tempdir),
-            "--",
-            *(source.source for source in sources),
-        ]
-        runner(command)
-        for file in tempdir.iterdir():
-            if file.name.endswith(_TARBALL_EXTENSION) and file.is_file():
-                destfile = destination / file.name
-                _remove(destfile)
-                shutil.move(file, destfile)
-
-
-def _list_downloaded_dir(*, path: Path) -> dict[str, Path]:
-    if not path.is_dir():
-        return {}
-    result: dict[str, Path] = {}
-    for file in path.iterdir():
-        if not file.name.endswith(_TARBALL_EXTENSION) or not file.is_file():
-            continue
-        basename = file.name[: -len(_TARBALL_EXTENSION)]
-        # Format: community-internal_test_tools-0.15.0, community-aws-10.0.0-dev0
-        parts = basename.split("-", 2)
-        if len(parts) != 3:
-            continue
-        full_name = ".".join(parts[:2])
-        if full_name in result:
-            old_stat = result[full_name].stat()
-            new_stat = file.stat()
-            if new_stat.st_mtime > old_stat.st_mtime:
-                older_file = result[full_name]
-                result[full_name] = file
-            else:
-                older_file = file
-            # Clean up older entry
-            _remove(older_file)
-        else:
-            result[full_name] = file
-    return result
+        sources.set_source(name, source)
 
 
 def _install_from_download_cache(
@@ -140,6 +215,7 @@ def _install_from_download_cache(
 def _install_missing(
     collections: list[str],
     *,
+    ansible_core_version: AnsibleCoreVersion,
     runner: Runner,
 ) -> list[CollectionData]:
     config = os.environ.get(_INSTALLATION_CONFIG_ENV_VAR)
@@ -153,36 +229,44 @@ def _install_missing(
         return []
     sources = [_COLLECTION_SOURCES.get_source(name) for name in collections]
     result: list[CollectionData] = []
-    with _update_collection_list() as updater:
+    with _update_collection_list(ansible_core_version=ansible_core_version) as updater:
         global_cache = updater.get_global_cache()
-        install: list[str] = []
+        install: list[CollectionSource] = []
         download: list[CollectionSource] = []
-        download_cache = _list_downloaded_dir(path=global_cache.download_cache)
+        download_cache = _COLLECTION_DOWNLOAD_CACHE.list_downloaded_dir(
+            path=global_cache.download_cache
+        )
         for source in sources:
             if cd := updater.find(source.name):
                 result.append(cd)
             else:
-                install.append(source.name)
-                if not download_cache.get(source.name):
+                install.append(source)
+                if not download_cache.get((source.name, source.identifier())):
                     download.append(source)
         if download:
-            _download_collections(
+            _COLLECTION_DOWNLOAD_CACHE.download_collections(
                 destination=global_cache.download_cache, sources=download, runner=runner
             )
-            download_cache = _list_downloaded_dir(path=global_cache.download_cache)
+            download_cache = _COLLECTION_DOWNLOAD_CACHE.list_downloaded_dir(
+                path=global_cache.download_cache
+            )
         if install:
-            for name in install:
-                if name not in download_cache:
+            for source in install:
+                key = source.name, source.identifier()
+                if key not in download_cache:
                     raise ValueError(
-                        f"Error: cannot find {name} in download cache"
-                        f" {global_cache.download_cache} after successful download!"
+                        f"Error: cannot find {source.name} (source ID {source.identifier()})"
+                        f" in download cache {global_cache.download_cache}"
+                        " after successful download!"
                     )
                 c_dir = _install_from_download_cache(
-                    full_name=name,
-                    tarball=download_cache[name],
-                    destination=global_cache.extracted_cache,
+                    full_name=source.name,
+                    tarball=download_cache[key][0],
+                    destination=global_cache.get_extracted_path(
+                        ansible_core_version=ansible_core_version
+                    ),
                 )
-                c_namespace, c_name = name.split(".", 1)
+                c_namespace, c_name = source.name.split(".", 1)
                 result.append(
                     updater.add_collection(
                         directory=c_dir, namespace=c_namespace, name=c_name
@@ -414,6 +498,7 @@ def setup_collections(
     destination: str | os.PathLike,
     runner: Runner,
     *,
+    ansible_core_version: AnsibleCoreVersion,
     extra_collections: list[str] | None = None,
     extra_deps_files: list[str | os.PathLike] | None = None,
     global_cache_dir: Path,
@@ -423,7 +508,9 @@ def setup_collections(
     Setup all collections in a tree structure inside the destination directory.
     """
     all_collections = get_collection_list(
-        runner=runner, global_cache_dir=global_cache_dir
+        runner=runner,
+        global_cache_dir=global_cache_dir,
+        ansible_core_version=ansible_core_version,
     )
     destination_root = Path(destination) / "ansible_collections"
     destination_root.mkdir(exist_ok=True)
@@ -451,7 +538,9 @@ def setup_collections(
         if missing.is_empty():
             break
         for collection_data in _install_missing(
-            missing.get_missing_names(), runner=runner
+            missing.get_missing_names(),
+            ansible_core_version=ansible_core_version,
+            runner=runner,
         ):
             collections_to_install[collection_data.full_name] = collection_data
             missing.remove(collection_data.full_name)

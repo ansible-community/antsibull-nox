@@ -340,6 +340,9 @@ class Config(_BaseModel):
     """
 
     collection_sources: dict[CollectionName, CollectionSource] = {}
+    collection_sources_per_ansible: dict[
+        PAnsibleCoreVersion, dict[CollectionName, CollectionSource]
+    ] = {}
     sessions: Sessions = Sessions()
 
 

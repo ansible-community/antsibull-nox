@@ -18,6 +18,7 @@ from pathlib import Path
 
 import nox
 
+from ..ansible import AnsibleCoreVersion, parse_ansible_core_version
 from ..collection import (
     CollectionData,
     setup_collections,
@@ -76,6 +77,7 @@ def _run_subprocess(args: list[str]) -> tuple[bytes, bytes]:
 def prepare_collections(
     session: nox.Session,
     *,
+    ansible_core_version: AnsibleCoreVersion | str | None = None,
     install_in_site_packages: bool,
     extra_deps_files: list[str | os.PathLike] | None = None,
     extra_collections: list[str] | None = None,
@@ -84,6 +86,11 @@ def prepare_collections(
     """
     Install collections in site-packages.
     """
+    parsed_ansible_core_version = (
+        parse_ansible_core_version(ansible_core_version)
+        if ansible_core_version is not None
+        else "devel"
+    )
     if install_out_of_tree and install_in_site_packages:
         raise ValueError(
             "install_out_of_tree=True cannot be combined with install_in_site_packages=True"
@@ -116,6 +123,7 @@ def prepare_collections(
     setup = setup_collections(
         place,
         _run_subprocess,
+        ansible_core_version=parsed_ansible_core_version,
         extra_deps_files=extra_deps_files,
         extra_collections=extra_collections,
         with_current=False,
