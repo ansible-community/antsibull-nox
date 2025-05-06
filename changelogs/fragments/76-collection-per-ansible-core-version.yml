@@ -1,3 +1,0 @@
-major_changes:
-  - "Required collections can now be installed from different sources per depending on the ansible-core version
-     (https://github.com/ansible-community/antsibull-nox/pull/76)."

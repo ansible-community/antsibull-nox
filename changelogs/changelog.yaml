@@ -176,3 +176,31 @@ releases:
       - 65-fix.yml
       - 67-galaxy-importer.yml
     release_date: '2025-04-21'
+  0.4.0:
+    changes:
+      bugfixes:
+        - Adjust yamllint test to no longer use the user's global config, but only
+          the project's config (https://github.com/ansible-community/antsibull-nox/pull/72).
+      major_changes:
+        - Required collections can now be installed from different sources per depending
+          on the ansible-core version (https://github.com/ansible-community/antsibull-nox/pull/76).
+      minor_changes:
+        - Capture mypy and pylint errors to report paths of files relative to collection's
+          root, instead of relative to the virtual ``ansible_collections`` directory
+          (https://github.com/ansible-community/antsibull-nox/pull/75).
+        - Make yamllint plugin check also check doc fragments (https://github.com/ansible-community/antsibull-nox/pull/73).
+        - Positional arguments passed to nox are now forwarded to ``ansible-lint``
+          (https://github.com/ansible-community/antsibull-nox/pull/74).
+        - 'The yamllint session now ignores ``RETURN`` documentation with values ``#``
+          and `` # `` (https://github.com/ansible-community/antsibull-nox/pull/71).'
+        - The yamllint test no longer shows all filenames in the command line (https://github.com/ansible-community/antsibull-nox/pull/72).
+      release_summary: Feature and bugfix release.
+    fragments:
+      - 0.4.0.yml
+      - 71-yamllint-return.yml
+      - 72-yamllint-config.yml
+      - 73-yamllint-doc-fragments.yml
+      - 74-ansible-lint-args.yml
+      - 75-mypy-pylint-errors.yml
+      - 76-collection-per-ansible-core-version.yml
+    release_date: '2025-05-06'

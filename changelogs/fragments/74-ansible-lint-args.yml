@@ -1,2 +1,0 @@
-minor_changes:
-  - "Positional arguments passed to nox are now forwarded to ``ansible-lint`` (https://github.com/ansible-community/antsibull-nox/pull/74)."

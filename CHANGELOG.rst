@@ -4,6 +4,33 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v0.4.0
+======
+
+Release Summary
+---------------
+
+Feature and bugfix release.
+
+Major Changes
+-------------
+
+- Required collections can now be installed from different sources per depending on the ansible-core version (https://github.com/ansible-community/antsibull-nox/pull/76).
+
+Minor Changes
+-------------
+
+- Capture mypy and pylint errors to report paths of files relative to collection's root, instead of relative to the virtual ``ansible_collections`` directory (https://github.com/ansible-community/antsibull-nox/pull/75).
+- Make yamllint plugin check also check doc fragments (https://github.com/ansible-community/antsibull-nox/pull/73).
+- Positional arguments passed to nox are now forwarded to ``ansible-lint`` (https://github.com/ansible-community/antsibull-nox/pull/74).
+- The yamllint session now ignores ``RETURN`` documentation with values ``#`` and `` # `` (https://github.com/ansible-community/antsibull-nox/pull/71).
+- The yamllint test no longer shows all filenames in the command line (https://github.com/ansible-community/antsibull-nox/pull/72).
+
+Bugfixes
+--------
+
+- Adjust yamllint test to no longer use the user's global config, but only the project's config (https://github.com/ansible-community/antsibull-nox/pull/72).
+
 v0.3.0
 ======
 

@@ -1,4 +1,0 @@
-bugfixes:
-  - "Adjust yamllint test to no longer use the user's global config, but only the project's config (https://github.com/ansible-community/antsibull-nox/pull/72)."
-minor_changes:
-  - "The yamllint test no longer shows all filenames in the command line (https://github.com/ansible-community/antsibull-nox/pull/72)."

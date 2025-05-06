@@ -1,2 +1,0 @@
-minor_changes:
-  - "Make yamllint plugin check also check doc fragments (https://github.com/ansible-community/antsibull-nox/pull/73)."

@@ -1,2 +1,0 @@
-minor_changes:
-  - "The yamllint session now ignores ``RETURN`` documentation with values ``#`` and `` # `` (https://github.com/ansible-community/antsibull-nox/pull/71)."
