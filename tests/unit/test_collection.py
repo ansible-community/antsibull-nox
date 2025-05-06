@@ -825,16 +825,22 @@ def test_get_collection_list(tmp_path) -> None:
     with chdir(root3 / "foo" / "bar"):
         _COLLECTION_LIST.clear()
         assert _COLLECTION_LIST.get_cached() is None
-        result = get_collection_list(runner=runner, global_cache_dir=empty)
+        result = get_collection_list(
+            runner=runner, global_cache_dir=empty, ansible_core_version="devel"
+        )
         cl = _COLLECTION_LIST.get_cached()
         assert cl is not None
-        result_2 = get_collection_list(runner=runner, global_cache_dir=empty)
+        result_2 = get_collection_list(
+            runner=runner, global_cache_dir=empty, ansible_core_version="devel"
+        )
         assert _COLLECTION_LIST.get_cached() is cl
 
         with pytest.raises(
             ValueError, match="^Setup mismatch: global cache dir cannot be both "
         ):
-            get_collection_list(runner=runner, global_cache_dir=tmp_path)
+            get_collection_list(
+                runner=runner, global_cache_dir=tmp_path, ansible_core_version="devel"
+            )
 
     assert result.collections == sorted(
         [

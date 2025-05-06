@@ -253,8 +253,23 @@ def get_supported_core_versions(
     return result
 
 
+def parse_ansible_core_version(
+    version: str | AnsibleCoreVersion,
+) -> AnsibleCoreVersion:
+    """
+    Coerce a string or a AnsibleCoreVersion to a AnsibleCoreVersion.
+    """
+    if version in ("devel", "milestone"):
+        # For some reason mypy doesn't notice that
+        return t.cast(AnsibleCoreVersion, version)
+    if isinstance(version, Version):
+        return version
+    return Version.parse(version)
+
+
 __all__ = [
     "AnsibleCoreInfo",
     "get_ansible_core_info",
     "get_ansible_core_package_name",
+    "parse_ansible_core_version",
 ]

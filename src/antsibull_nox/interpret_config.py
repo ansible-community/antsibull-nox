@@ -46,6 +46,18 @@ def _interpret_config(config: Config) -> None:
                 for name, source in config.collection_sources.items()
             }
         )
+    if config.collection_sources_per_ansible:
+        for (
+            ansible_core_version,
+            collection_sources,
+        ) in config.collection_sources_per_ansible.items():
+            setup_collection_sources(
+                {
+                    name: CollectionSource(name=name, source=source.source)
+                    for name, source in collection_sources.items()
+                },
+                ansible_core_version=ansible_core_version,
+            )
 
 
 def _convert_action_groups(

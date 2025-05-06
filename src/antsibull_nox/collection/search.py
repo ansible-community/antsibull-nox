@@ -21,6 +21,7 @@ from pathlib import Path
 
 from antsibull_fileutils.yaml import load_yaml_file
 
+from ..ansible import AnsibleCoreVersion
 from .data import CollectionData
 
 # Function that runs a command (and fails on non-zero return code)
@@ -48,6 +49,12 @@ class _GlobalCache:
             download_cache=root / "downloaded",
             extracted_cache=root / "extracted",
         )
+
+    def get_extracted_path(self, *, ansible_core_version: AnsibleCoreVersion) -> Path:
+        """
+        Given an ansible-core version, returns its extracted collection cache directory.
+        """
+        return self.extracted_cache / str(ansible_core_version)
 
 
 def _load_galaxy_yml(galaxy_yml: Path) -> dict[str, t.Any]:
@@ -279,9 +286,9 @@ class CollectionList:
         )
 
     @classmethod
-    def collect(cls, *, runner: Runner, global_cache: _GlobalCache) -> CollectionList:
+    def collect_global(cls, *, runner: Runner) -> CollectionList:
         """
-        Search for a list of collections. The result is not cached.
+        Search for a global list of collections. The result is not cached.
         """
         found_collections = {}
         for collection_data in _fs_list_local_collections():
@@ -291,7 +298,25 @@ class CollectionList:
                 # Similar to Ansible, we use the first match
                 if collection_data.full_name not in found_collections:
                     found_collections[collection_data.full_name] = collection_data
-        for collection_data in _fs_list_global_cache(global_cache.extracted_cache):
+        return cls.create(found_collections)
+
+    @classmethod
+    def collect_local(
+        cls,
+        *,
+        ansible_core_version: AnsibleCoreVersion,
+        global_cache: _GlobalCache,
+        current: CollectionData,
+    ) -> CollectionList:
+        """
+        Search for a list of collections from a local cache path. The result is not cached.
+        """
+        found_collections = {
+            current.full_name: current,
+        }
+        for collection_data in _fs_list_global_cache(
+            global_cache.get_extracted_path(ansible_core_version=ansible_core_version)
+        ):
             # Similar to Ansible, we use the first match
             if collection_data.full_name not in found_collections:
                 found_collections[collection_data.full_name] = collection_data
@@ -313,6 +338,18 @@ class CollectionList:
             current=self.current,
         )
 
+    def merge_with(self, other: CollectionList) -> CollectionList:
+        """
+        Merge this collection list with another (local) one.
+        """
+        result = dict(self.collection_map)
+        for collection in other.collections:
+            # Similar to Ansible, we use the first match.
+            # For merge, this means we prefer self over other.
+            if collection.full_name not in result:
+                result[collection.full_name] = collection
+        return CollectionList.create(result)
+
     def _add(self, collection: CollectionData, *, force: bool = True) -> bool:
         if not force and collection.full_name in self.collection_map:
             return False
@@ -323,16 +360,23 @@ class CollectionList:
 
 class _CollectionListUpdater:
     def __init__(
-        self, *, owner: "_CollectionListSingleton", collection_list: CollectionList
+        self,
+        *,
+        owner: "_CollectionListSingleton",
+        merged_collection_list: CollectionList,
+        local_collection_list: CollectionList,
+        ansible_core_version: AnsibleCoreVersion,
     ) -> None:
         self._owner = owner
-        self._collection_list = collection_list
+        self._merged_collection_list = merged_collection_list
+        self._local_collection_list = local_collection_list
+        self._ansible_core_version = ansible_core_version
 
     def find(self, name: str) -> CollectionData | None:
         """
         Find a collection for a given name.
         """
-        return self._collection_list.find(name)
+        return self._merged_collection_list.find(name)
 
     def add_collection(
         self, *, directory: Path, namespace: str, name: str
@@ -341,9 +385,15 @@ class _CollectionListUpdater:
         Add a new collection to the cache.
         """
         # pylint: disable-next=protected-access
-        return self._owner._add_collection(
-            directory=directory, namespace=namespace, name=name
+        result = self._owner._add_collection(
+            directory=directory,
+            namespace=namespace,
+            name=name,
+            ansible_core_version=self._ansible_core_version,
         )
+        self._merged_collection_list._add(result)  # pylint: disable=protected-access
+        self._local_collection_list._add(result)  # pylint: disable=protected-access
+        return result
 
     def get_global_cache(self) -> _GlobalCache:
         """
@@ -356,7 +406,10 @@ class _CollectionListSingleton:
     _lock = threading.Lock()
 
     _global_cache_dir: Path | None = None
-    _collection_list: CollectionList | None = None
+    _global_collection_list: CollectionList | None = None
+    _global_collection_list_per_ansible_core_version: dict[
+        AnsibleCoreVersion, CollectionList
+    ] = {}
 
     def setup(self, *, global_cache_dir: Path) -> None:
         """
@@ -378,30 +431,48 @@ class _CollectionListSingleton:
         Clear collection cache.
         """
         with self._lock:
-            self._collection_list = None
+            self._global_collection_list = None
+            self._global_collection_list_per_ansible_core_version.clear()
 
-    def get_cached(self) -> CollectionList | None:
+    def get_cached(
+        self, *, ansible_core_version: AnsibleCoreVersion | None = None
+    ) -> CollectionList | None:
         """
         Return cached list of collections, if present.
         Do not modify the result!
         """
-        return self._collection_list
+        if ansible_core_version is None:
+            return self._global_collection_list
+        return self._global_collection_list_per_ansible_core_version.get(
+            ansible_core_version
+        )
 
-    def get(self, *, runner: Runner) -> CollectionList:
+    def get(
+        self, *, ansible_core_version: AnsibleCoreVersion, runner: Runner
+    ) -> CollectionList:
         """
         Search for a list of collections. The result is cached.
         """
         with self._lock:
             if self._global_cache_dir is None:
                 raise ValueError("Internal error: global cache dir not setup")
-            result = self._collection_list
-            if result is None:
-                result = CollectionList.collect(
-                    runner=runner,
+            global_list = self._global_collection_list
+            if global_list is None:
+                global_list = CollectionList.collect_global(runner=runner)
+                self._global_collection_list = global_list
+            local_list = self._global_collection_list_per_ansible_core_version.get(
+                ansible_core_version
+            )
+            if local_list is None:
+                local_list = CollectionList.collect_local(
                     global_cache=_GlobalCache.create(root=self._global_cache_dir),
+                    ansible_core_version=ansible_core_version,
+                    current=global_list.current,
                 )
-                self._collection_list = result
-        return result.clone()
+                self._global_collection_list_per_ansible_core_version[
+                    ansible_core_version
+                ] = local_list
+        return global_list.merge_with(local_list)
 
     def _get_global_cache(self) -> _GlobalCache:
         """
@@ -412,26 +483,45 @@ class _CollectionListSingleton:
         return _GlobalCache.create(root=self._global_cache_dir)
 
     def _add_collection(
-        self, *, directory: Path, namespace: str, name: str
+        self,
+        *,
+        directory: Path,
+        namespace: str,
+        name: str,
+        ansible_core_version: AnsibleCoreVersion,
     ) -> CollectionData:
         """
         Add collection in directory if the collection list has been cached.
         """
-        if not self._collection_list:
-            raise ValueError("Internal error: collections not listed")
+        local_list = self._global_collection_list_per_ansible_core_version.get(
+            ansible_core_version
+        )
+        if not local_list:
+            raise ValueError(
+                f"Internal error: collections not listed for {ansible_core_version}"
+            )
         data = load_collection_data_from_disk(directory, namespace=namespace, name=name)
-        self._collection_list._add(data)  # pylint: disable=protected-access
+        local_list._add(data)  # pylint: disable=protected-access
         return data
 
     @contextmanager
-    def _update_collection_list(self) -> t.Iterator[_CollectionListUpdater]:
+    def _update_collection_list(
+        self, *, ansible_core_version: AnsibleCoreVersion
+    ) -> t.Iterator[_CollectionListUpdater]:
         with self._lock:
-            if not self._collection_list or self._global_cache_dir is None:
+            global_list = self._global_collection_list
+            local_list = self._global_collection_list_per_ansible_core_version.get(
+                ansible_core_version
+            )
+            if not global_list or self._global_cache_dir is None or local_list is None:
                 raise ValueError(
                     "Internal error: collections not listed or global cache not setup"
                 )
             yield _CollectionListUpdater(
-                owner=self, collection_list=self._collection_list
+                owner=self,
+                merged_collection_list=global_list.merge_with(local_list),
+                local_collection_list=local_list,
+                ansible_core_version=ansible_core_version,
             )
 
 
@@ -439,18 +529,26 @@ _COLLECTION_LIST = _CollectionListSingleton()
 
 
 @contextmanager
-def _update_collection_list() -> t.Iterator[_CollectionListUpdater]:
+def _update_collection_list(
+    *, ansible_core_version: AnsibleCoreVersion
+) -> t.Iterator[_CollectionListUpdater]:
     # pylint: disable-next=protected-access
-    with _COLLECTION_LIST._update_collection_list() as result:
+    with _COLLECTION_LIST._update_collection_list(
+        ansible_core_version=ansible_core_version
+    ) as result:
         yield result
 
 
-def get_collection_list(*, runner: Runner, global_cache_dir: Path) -> CollectionList:
+def get_collection_list(
+    *, runner: Runner, global_cache_dir: Path, ansible_core_version: AnsibleCoreVersion
+) -> CollectionList:
     """
     Search for a list of collections. The result is cached.
     """
     _COLLECTION_LIST.setup(global_cache_dir=global_cache_dir)
-    return _COLLECTION_LIST.get(runner=runner)
+    return _COLLECTION_LIST.get(
+        runner=runner, ansible_core_version=ansible_core_version
+    )
 
 
 __all__ = [

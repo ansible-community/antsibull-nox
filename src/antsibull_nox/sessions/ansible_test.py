@@ -22,6 +22,7 @@ from ..ansible import (
     get_ansible_core_info,
     get_ansible_core_package_name,
     get_supported_core_versions,
+    parse_ansible_core_version,
 )
 from ..paths import copy_directory_tree_into
 from ..python import get_installed_python_versions
@@ -31,17 +32,6 @@ from .utils import (
     install,
     register,
 )
-
-
-def _parse_ansible_core_version(
-    version: str | AnsibleCoreVersion,
-) -> AnsibleCoreVersion:
-    if version in ("devel", "milestone"):
-        # For some reason mypy doesn't notice that
-        return t.cast(AnsibleCoreVersion, version)
-    if isinstance(version, Version):
-        return version
-    return Version.parse(version)
 
 
 def add_ansible_test_session(
@@ -67,7 +57,7 @@ def add_ansible_test_session(
 
     Returns a list of Python versions set for this session.
     """
-    parsed_ansible_core_version = _parse_ansible_core_version(ansible_core_version)
+    parsed_ansible_core_version = parse_ansible_core_version(ansible_core_version)
 
     def compose_dependencies() -> list[str]:
         deps = [
@@ -84,6 +74,7 @@ def add_ansible_test_session(
         install(session, *compose_dependencies())
         prepared_collections = prepare_collections(
             session,
+            ansible_core_version=parsed_ansible_core_version,
             install_in_site_packages=False,
             extra_deps_files=extra_deps_files,
             install_out_of_tree=True,
@@ -210,7 +201,7 @@ def _parse_min_max_except(
         max_version = Version.parse(max_version)
     if except_versions is None:
         return min_version, max_version, None
-    evs = tuple(_parse_ansible_core_version(version) for version in except_versions)
+    evs = tuple(parse_ansible_core_version(version) for version in except_versions)
     return min_version, max_version, evs
 
 

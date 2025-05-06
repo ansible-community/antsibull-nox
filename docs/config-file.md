@@ -19,10 +19,22 @@ A basic `antsibull-nox.toml` looks as follows:
 
 [collection_sources]
 # This section tells antsibull-nox how to install collections.
-# We want to install community.internal_test_tools and community.general
+# We want to install community.internal_test_tools, community.general, and community.crypto
 # from Git and not from Galaxy.
 "community.internal_test_tools" = "git+https://github.com/ansible-collections/community.internal_test_tools.git,main"
 "community.general" = "git+https://github.com/ansible-collections/community.general.git,main"
+"community.crypto" = "git+https://github.com/ansible-collections/community.crypto.git,main"
+
+[collection_sources_per_ansible.'2.16']
+# This section tells antsibull-nox how to install collections for ansible-core 2.16.
+# (Note that we have to quote the ansible-core version in the section name!)
+#
+# If a collection is not mentioned here, the above generic section will be used.
+# (And if it cannot be found there, antsibull-nox will simply get it from ansible-galaxy's default source.)
+#
+# We want to install community.crypto from its stable-2 branch from Git
+# (the main branch only works with ansible-core 2.17+).
+"community.crypto" = "git+https://github.com/ansible-collections/community.crypto.git,stable-2"
 
 [sessions]
 # The sub-sections of 'sessions' configure sessions to add.
@@ -87,6 +99,42 @@ The section `[collection_sources]` allows to configure this:
 ```
 The syntax used is explained in [the Ansible documentation on installation of collections from Git repositories](https://docs.ansible.com/ansible-core/devel/collections_guide/collections_installing.html#installing-a-collection-from-a-git-repository-at-the-command-line)
 and [the Ansible documentation on installation of older versions of a collection](https://docs.ansible.com/ansible-core/devel/collections_guide/collections_installing.html#installing-an-older-version-of-a-collection).
+
+### Specific collection sources per ansible-core version
+
+Sometimes it is necessary to use different sources for different ansible-core versions.
+
+For example, your collection might support ansible-core 2.16+.
+For testing, you need a collection that you want to install from Git.
+Unfortunately, the `main` branch only works with ansible-core 2.17+,
+so you need to use another branch for ansible-core 2.16.
+
+In the following example, community.crypto is such a collection.
+Its `main` branch needs ansible-core 2.17+,
+but its `stable-2` branch also supports ansible-core 2.16 and before.
+
+You can tell antsibull-nox to use the `stable-2` branch with ansible-core 2.16
+by adding a `[collection_sources_per_ansible.'2.16']` section (note the quotes!).
+```toml
+[collection_sources]
+# This section tells antsibull-nox how to install collections.
+# We want to install community.internal_test_tools, community.general, and community.crypto
+# from Git and not from Galaxy.
+"community.internal_test_tools" = "git+https://github.com/ansible-collections/community.internal_test_tools.git,main"
+"community.general" = "git+https://github.com/ansible-collections/community.general.git,main"
+"community.crypto" = "git+https://github.com/ansible-collections/community.crypto.git,main"
+
+[collection_sources_per_ansible.'2.16']
+# This section tells antsibull-nox how to install collections for ansible-core 2.16.
+# (Note that we have to quote the ansible-core version in the section name!)
+#
+# If a collection is not mentioned here, the above generic section will be used.
+# (And if it cannot be found there, antsibull-nox will simply get it from ansible-galaxy's default source.)
+#
+# We want to install community.crypto from its stable-2 branch from Git
+# (the main branch only works with ansible-core 2.17+).
+"community.crypto" = "git+https://github.com/ansible-collections/community.crypto.git,stable-2"
+```
 
 ## Basic linting sessions
 

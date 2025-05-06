@@ -10,6 +10,8 @@ Data types for collections.
 
 from __future__ import annotations
 
+import base64
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -97,6 +99,16 @@ class CollectionSource:
                 f"Collection name should be {collection_name!r}, but is {source.name!r}"
             )
         return source
+
+    def identifier(self) -> str:
+        """
+        Compute a source identifier.
+        """
+        hasher = hashlib.sha256()
+        hasher.update(self.name.encode("utf-8"))
+        hasher.update(b"::")
+        hasher.update(self.source.encode("utf-8"))
+        return base64.b32encode(hasher.digest())[:16].decode("ascii")
 
 
 __all__ = [
