@@ -48,12 +48,24 @@ class _CollectionSources:
         """
         self.sources[name] = source
 
-    def get_source(self, name: str) -> CollectionSource:
+    @t.overload
+    def get_source(
+        self, name: str, *, create_default: t.Literal[True] = True
+    ) -> CollectionSource: ...
+
+    @t.overload
+    def get_source(
+        self, name: str, *, create_default: t.Literal[False]
+    ) -> CollectionSource | None: ...
+
+    def get_source(
+        self, name: str, *, create_default: bool = True
+    ) -> CollectionSource | None:
         """
         Get source for collection.
         """
         source = self.sources.get(name)
-        if source is None:
+        if source is None and create_default:
             source = CollectionSource(name, name)
         return source
 
@@ -212,6 +224,17 @@ def _install_from_download_cache(
     return destination_dir
 
 
+def _get_source(
+    name: str, *, ansible_core_version: AnsibleCoreVersion
+) -> CollectionSource:
+    sources_per_version = _COLLECTION_SOURCES_PER_CORE_VERSION.get(ansible_core_version)
+    if sources_per_version:
+        result = sources_per_version.get_source(name, create_default=False)
+        if result is not None:
+            return result
+    return _COLLECTION_SOURCES.get_source(name)
+
+
 def _install_missing(
     collections: list[str],
     *,
@@ -227,7 +250,10 @@ def _install_missing(
             f" thus cannot install missing exception{plural_s} {names}..."
         )
         return []
-    sources = [_COLLECTION_SOURCES.get_source(name) for name in collections]
+    sources = [
+        _get_source(name, ansible_core_version=ansible_core_version)
+        for name in collections
+    ]
     result: list[CollectionData] = []
     with _update_collection_list(ansible_core_version=ansible_core_version) as updater:
         global_cache = updater.get_global_cache()
