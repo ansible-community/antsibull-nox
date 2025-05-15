@@ -1,6 +1,6 @@
 import os
 
-import yaml
+from antsibull_fileutils.yaml import store_yaml_file
 from jinja2 import Environment, FileSystemLoader
 
 MATRIX_CONFIGS = [
@@ -42,8 +42,7 @@ class ExecutionEnvironmentGenerator:
         }
 
         req_filename = os.path.join(output_path, "requirements.yml")
-        with open(req_filename, "w", encoding="utf-8") as f:
-            yaml.dump(req_config, f)
+        store_yaml_file(req_filename, req_config)
 
         return req_filename
 
@@ -73,8 +72,7 @@ class ExecutionEnvironmentGenerator:
                 output_path, f"execution-environment-{config_name}.yml"
             )
 
-            with open(ee_filename, "w", encoding="utf-8") as f:
-                f.write(output)
+            store_yaml_file(ee_filename, output)
 
             generated_files.append(ee_filename)
 

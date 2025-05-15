@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
-import yaml
+from antsibull_fileutils.yaml import load_yaml_file, store_yaml_file
 
 from antsibull_nox.ee_config_generator import ExecutionEnvironmentGenerator
 
@@ -42,13 +42,11 @@ def check_galaxy_version(args: Args):
 
     galaxy_path = args.path / "galaxy.yml"
 
-    with open(galaxy_path, "r", encoding="utf-8") as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
+    config = load_yaml_file(galaxy_path)
 
     config["version"] = config.get("version") or "0.0.1"
 
-    with open(galaxy_path, "wb") as f:
-        f.write(yaml.dump(config).encode("utf-8"))
+    store_yaml_file(galaxy_path, config)
 
     return config
 
