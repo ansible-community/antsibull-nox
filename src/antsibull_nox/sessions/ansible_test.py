@@ -169,7 +169,7 @@ def add_ansible_test_sanity_test_session(
     """
     Add generic ansible-test sanity test session.
     """
-    command = ["sanity", "--docker", "-v", "--color"]
+    command = ["sanity", "--color", "-v", "--docker"]
     if skip_tests:
         for test in skip_tests:
             command.extend(["--skip", test])
@@ -303,7 +303,7 @@ def add_ansible_test_unit_test_session(
     add_ansible_test_session(
         name=name,
         description=description,
-        ansible_test_params=["units", "--docker", "-v", "--color"],
+        ansible_test_params=["units", "--color", "-v", "--docker"],
         extra_deps_files=["tests/unit/requirements.yml"],
         default=default,
         ansible_core_version=ansible_core_version,
@@ -473,10 +473,10 @@ def add_ansible_test_integration_sessions_default_container(
                 description=description,
                 ansible_test_params=[
                     "integration",
+                    "--color",
+                    "-v",
                     "--docker",
                     "default",
-                    "-v",
-                    "--color",
                     "--python",
                     str(py_version),
                 ],
