@@ -275,6 +275,7 @@ class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
     except_versions: list[PAnsibleCoreVersion] = []
     core_python_versions: dict[t.Union[PAnsibleCoreVersion, str], list[PVersion]] = {}
     controller_python_versions_only: bool = False
+    ansible_vars_from_env_vars: dict[str, str] = {}
 
     @p.model_validator(mode="after")
     def _validate_core_keys(self) -> t.Self:

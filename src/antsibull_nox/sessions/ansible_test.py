@@ -16,6 +16,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import nox
+from antsibull_fileutils.yaml import store_yaml_file
 
 from ..ansible import (
     AnsibleCoreVersion,
@@ -397,6 +398,7 @@ def add_ansible_test_integration_sessions_default_container(
         dict[str | AnsibleCoreVersion, list[str | Version]] | None
     ) = None,
     controller_python_versions_only: bool = False,
+    ansible_vars_from_env_vars: dict[str, str] | None = None,
     default: bool = False,
 ) -> None:
     """
@@ -408,6 +410,18 @@ def add_ansible_test_integration_sessions_default_container(
     ``controller_python_versions_only`` can be used to only run against
     controller Python versions.
     """
+
+    def callback_before() -> None:
+        if not ansible_vars_from_env_vars:
+            return
+
+        path = Path("tests", "integration", "integration_config.yml")
+        content: dict[str, t.Any] = {}
+        for ans_var, env_var in ansible_vars_from_env_vars.items():
+            value = os.environ.get(env_var)
+            if value is not None:
+                content[ans_var] = env_var
+        store_yaml_file(path, content, nice=True, sort_keys=True)
 
     def add_integration_tests(
         ansible_core_version: AnsibleCoreVersion,
@@ -470,6 +484,7 @@ def add_ansible_test_integration_sessions_default_container(
                 ansible_core_version=ansible_core_version,
                 ansible_core_repo_name=repo_name,
                 ansible_core_branch_name=branch_name,
+                callback_before=callback_before,
                 default=False,
                 register_name="integration",
                 register_extra_data={
