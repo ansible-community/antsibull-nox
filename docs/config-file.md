@@ -874,6 +874,11 @@ It is possible to restrict the Python versions used to run the tests per ansible
   usually all Python versions supported on the remote side are used.
   If this is set to `true`, only all Python versions uspported on the controller side are used.
 
+* `ansible_vars_from_env_vars: dict[str, str]` (default `{}`):
+  If given, will create an integration test config file which for every `key=value` pair,
+  contains an Ansible variable `key` with the value of the environment variable `value`.
+  If the environment variable is not defined, the Ansible variable will not be defined either.
+
 #### Example code
 
 This example is from `community.dns`.
@@ -888,6 +893,28 @@ include_devel = true
 "2.16" = ["2.7", "3.6", "3.11"]
 "2.17" = ["3.7", "3.12"]
 "2.18" = ["3.8", "3.13"]
+```
+
+The following example is from `felixfontein.acme`.
+
+```toml
+[sessions.ansible_test_integration_w_default_container]
+include_devel = true
+
+[sessions.ansible_test_integration_w_default_container.ansible_vars_from_env_vars]
+"github_token" = "GITHUB_TOKEN"
+```
+
+It passes the `GITHUB_TOKEN` environment variable on as `github_token`.
+This allows to download files from other GitHub repositories while avoiding strict rate limiting:
+
+```yaml
+- name: Download SOPS test GPG key
+  ansible.builtin.get_url:
+    headers:
+      Authorization: "{{ ('Bearer ' ~ github_token) if github_token is defined and github_token else '' }}"
+    url: https://raw.githubusercontent.com/getsops/sops/master/pgp/sops_functional_tests_key.asc
+    dest: "{{ _tempfile.path }}"
 ```
 
 ### Run ansible-lint

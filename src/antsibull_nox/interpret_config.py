@@ -238,6 +238,7 @@ def _add_sessions(sessions: Sessions) -> None:
                 cfg.core_python_versions
             ),
             controller_python_versions_only=cfg.controller_python_versions_only,
+            ansible_vars_from_env_vars=cfg.ansible_vars_from_env_vars,
         )
     if sessions.ansible_lint:
         add_ansible_lint(
