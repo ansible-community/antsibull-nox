@@ -204,3 +204,18 @@ releases:
       - 75-mypy-pylint-errors.yml
       - 76-collection-per-ansible-core-version.yml
     release_date: '2025-05-06'
+  0.5.0:
+    changes:
+      bugfixes:
+        - Fix action group test. No errors were reported due to a bug in the test
+          (https://github.com/ansible-community/antsibull-nox/pull/80).
+      minor_changes:
+        - Allow to pass environment variables as Ansible variables for integration
+          tests with the new ``ansible_vars_from_env_vars`` option for ``sessions.ansible_test_integration_w_default_container``
+          (https://github.com/ansible-community/antsibull-nox/pull/78).
+      release_summary: Feature and bugfix release.
+    fragments:
+      - 0.5.0.yml
+      - 78-env-vars-integration-tests.yml
+      - 80-action-groups.yml
+    release_date: '2025-05-18'

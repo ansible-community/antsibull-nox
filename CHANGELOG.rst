@@ -4,6 +4,24 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v0.5.0
+======
+
+Release Summary
+---------------
+
+Feature and bugfix release.
+
+Minor Changes
+-------------
+
+- Allow to pass environment variables as Ansible variables for integration tests with the new ``ansible_vars_from_env_vars`` option for ``sessions.ansible_test_integration_w_default_container`` (https://github.com/ansible-community/antsibull-nox/pull/78).
+
+Bugfixes
+--------
+
+- Fix action group test. No errors were reported due to a bug in the test (https://github.com/ansible-community/antsibull-nox/pull/80).
+
 v0.4.0
 ======
 
