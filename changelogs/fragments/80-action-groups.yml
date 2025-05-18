@@ -1,0 +1,2 @@
+bugfixes:
+  - "Fix action group test. No errors were reported due to a bug in the test (https://github.com/ansible-community/antsibull-nox/pull/80)."
