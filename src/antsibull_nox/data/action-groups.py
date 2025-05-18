@@ -113,7 +113,6 @@ def scan(config: list[ActionGroup], errors: list[str]) -> None:
     modules_directory = "plugins/modules/"
     modules_suffix = ".py"
 
-    errors = []
     for file in os.listdir(modules_directory):
         if not file.endswith(modules_suffix):
             continue
