@@ -936,6 +936,14 @@ The added session is called `ansible-lint`. The section can contain the followin
   Whether the `--strict` parameter should be passed to ansible-lint.
   This treats warnings as errors.
 
+It is a good idea to add
+```yaml
+exclude_paths:
+  - .nox/
+```
+to your ansible-lint configuration file.
+Otherwise ansible-lint might try to lint collection dependencies that antsibull-nox installed.
+
 #### Example code
 
 This example is from `felixfontein.acme`.
