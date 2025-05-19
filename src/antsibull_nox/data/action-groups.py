@@ -59,12 +59,20 @@ def load_redirects(
 
     # Compare meta/runtime.yml content with config
     config_groups = {cfg.name for cfg in config}
-    for action_group in action_groups:
+    for action_group, elements in action_groups.items():
         if action_group not in config_groups:
+            if len(elements) == 1 and isinstance(elements[0], dict):
+                # Special case: if an action group is there with a single metadata entry,
+                # we don't complain that it shouldn't be there.
+                continue
             errors.append(
                 f"{meta_runtime}: found unknown action group"
                 f" {action_group!r}; likely noxfile needs updating"
             )
+        else:
+            action_groups[action_group] = [
+                element for element in elements if isinstance(element, str)
+            ]
     for action_group in config:
         if action_group.name not in action_groups:
             errors.append(
