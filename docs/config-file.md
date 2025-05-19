@@ -144,7 +144,7 @@ The basic linting session, `lint`, comes with three sessions it depends on:
   During a regular run, the formatting is directly applied.
   In CI, the sorting order and formatting is checked, and the tests fail if it is not as expected.
 
-* `codeqa`: runs `flake8` and `pylint`.
+* `codeqa`: runs `ruff check`, `flake8`, and `pylint`.
 
 * `yamllint`: runs `yamllint` on all `.yml` and `.yaml` files, and on the documentation included in Ansible modules and plugins.
 
@@ -208,6 +208,23 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 * `black_package: str` (default `"black"`):
   The package to install for `black` in this session.
   You can specify a value here to add restrictions to the `black` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
+### `ruff check` (part of the `codeqa` session)
+
+* `run_ruff_check: bool` (default `false`):
+  Whether to run `ruff check`.
+
+* `ruff_check_config: str | os.PathLike | None` (default `None`):
+  Allows to specify a config file.
+  Use a relative path to `noxfile.py`.
+  Note that right now antsibull-nox will not supply any default config file,
+  but this might change in the future.
+
+* `ruff_check_package: str` (default `"ruff"`):
+  The package to install for `ruff` in this session.
+  You can specify a value here to add restrictions to the `ruff` version,
   or to pin the version,
   or to install the package from a local repository.
 
