@@ -90,6 +90,11 @@ class SessionLint(_BaseModel):
     black_config: t.Optional[p.FilePath] = None
     black_package: str = "black"
 
+    # ruff check:
+    run_ruff_check: bool = False
+    ruff_check_config: t.Optional[p.FilePath] = None
+    ruff_check_package: str = "ruff"
+
     # flake8:
     run_flake8: bool = True
     flake8_config: t.Optional[p.FilePath] = None

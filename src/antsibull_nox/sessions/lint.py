@@ -216,6 +216,10 @@ def process_pylint_errors(
 def add_codeqa(  # noqa: C901
     *,
     extra_code_files: list[str],
+    # ruff check:
+    run_ruff_check: bool,
+    ruff_check_config: str | os.PathLike | None,
+    ruff_check_package: str,
     # flake8:
     run_flake8: bool,
     flake8_config: str | os.PathLike | None,
@@ -234,6 +238,8 @@ def add_codeqa(  # noqa: C901
 
     def compose_dependencies() -> list[str]:
         deps = []
+        if run_ruff_check:
+            deps.append(ruff_check_package)
         if run_flake8:
             deps.append(flake8_package)
         if run_pylint:
@@ -247,6 +253,17 @@ def add_codeqa(  # noqa: C901
             for extra_dep in pylint_extra_deps:
                 deps.extend(shlex.split(extra_dep))
         return deps
+
+    def execute_ruff_check(session: nox.Session) -> None:
+        command: list[str] = [
+            "ruff",
+            "check",
+        ]
+        if ruff_check_config is not None:
+            command.extend(["--config", str(ruff_check_config)])
+        command.extend(session.posargs)
+        command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+        session.run(*command)
 
     def execute_flake8(session: nox.Session) -> None:
         command: list[str] = [
@@ -326,6 +343,8 @@ def add_codeqa(  # noqa: C901
             )
             if not prepared_collections:
                 session.warn("Skipping pylint...")
+        if run_ruff_check:
+            execute_ruff_check(session)
         if run_flake8:
             execute_flake8(session)
         if run_pylint and prepared_collections:
@@ -336,6 +355,7 @@ def add_codeqa(  # noqa: C901
             "other": "Run code QA:",
         },
         programs={
+            "ruff check": run_ruff_check,
             "flake8": run_flake8,
             "pylint": run_pylint,
         },
@@ -594,6 +614,10 @@ def add_lint_sessions(
     run_black_modules: bool | None = None,
     black_config: str | os.PathLike | None = None,
     black_package: str = "black",
+    # ruff check:
+    run_ruff_check: bool = False,
+    ruff_check_config: str | os.PathLike | None = None,
+    ruff_check_package: str = "ruff",
     # flake8:
     run_flake8: bool = True,
     flake8_config: str | os.PathLike | None = None,
@@ -624,7 +648,7 @@ def add_lint_sessions(
     Add nox sessions for linting.
     """
     has_formatters = run_isort or run_black or run_black_modules or False
-    has_codeqa = run_flake8 or run_pylint
+    has_codeqa = run_ruff_check or run_flake8 or run_pylint
     has_yamllint = run_yamllint
     has_typing = run_mypy
     has_config_lint = run_antsibullnox_config_lint
@@ -653,6 +677,9 @@ def add_lint_sessions(
     if has_codeqa:
         add_codeqa(
             extra_code_files=extra_code_files or [],
+            run_ruff_check=run_ruff_check,
+            ruff_check_config=ruff_check_config,
+            ruff_check_package=ruff_check_package,
             run_flake8=run_flake8,
             flake8_config=flake8_config,
             flake8_package=flake8_package,
