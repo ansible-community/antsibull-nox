@@ -211,6 +211,23 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to pin the version,
   or to install the package from a local repository.
 
+### `ruff format` (part of the `formatters` session)
+
+* `run_ruff_format: bool` (default `false`):
+  Whether to run `ruff format`.
+
+* `ruff_format_config: str | os.PathLike | None` (default `None`):
+  Allows to specify a config file.
+  Use a relative path to `noxfile.py`.
+  Note that right now antsibull-nox will not supply any default config file,
+  but this might change in the future.
+
+* `ruff_format_package: str` (default `"ruff"`):
+  The package to install for `ruff` in this session.
+  You can specify a value here to add restrictions to the `ruff` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
 ### `ruff check` (part of the `codeqa` session)
 
 * `run_ruff_check: bool` (default `false`):
