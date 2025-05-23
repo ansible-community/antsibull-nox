@@ -94,6 +94,45 @@ def add_lint(
     )(lint)
 
 
+def _execute_isort(
+    session: nox.Session,
+    *,
+    run_check: bool,
+    extra_code_files: list[str],
+    isort_config: str | os.PathLike | None,
+) -> None:
+    command: list[str] = [
+        "isort",
+    ]
+    if run_check:
+        command.append("--check")
+    if isort_config is not None:
+        command.extend(["--settings-file", str(isort_config)])
+    command.extend(session.posargs)
+    command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+    session.run(*command)
+
+
+def _execute_ruff_format(
+    session: nox.Session,
+    *,
+    run_check: bool,
+    extra_code_files: list[str],
+    ruff_format_config: str | os.PathLike | None,
+) -> None:
+    command: list[str] = [
+        "ruff",
+        "format",
+    ]
+    if run_check:
+        command.append("--check")
+    if ruff_format_config is not None:
+        command.extend(["--config", str(ruff_format_config)])
+    command.extend(session.posargs)
+    command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+    session.run(*command)
+
+
 def add_formatters(
     *,
     extra_code_files: list[str],
@@ -106,6 +145,10 @@ def add_formatters(
     run_black_modules: bool | None,
     black_config: str | os.PathLike | None,
     black_package: str,
+    # ruff format:
+    run_ruff_format: bool,
+    ruff_format_config: str | os.PathLike | None,
+    ruff_format_package: str,
 ) -> None:
     """
     Add nox session for formatters.
@@ -120,19 +163,9 @@ def add_formatters(
             deps.append(isort_package)
         if run_black or run_black_modules:
             deps.append(black_package)
+        if run_ruff_format:
+            deps.append(ruff_format_package)
         return deps
-
-    def execute_isort(session: nox.Session) -> None:
-        command: list[str] = [
-            "isort",
-        ]
-        if run_check:
-            command.append("--check")
-        if isort_config is not None:
-            command.extend(["--settings-file", str(isort_config)])
-        command.extend(session.posargs)
-        command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
-        session.run(*command)
 
     def execute_black_for(session: nox.Session, paths: list[str]) -> None:
         if not paths:
@@ -174,9 +207,21 @@ def add_formatters(
     def formatters(session: nox.Session) -> None:
         install(session, *compose_dependencies())
         if run_isort:
-            execute_isort(session)
+            _execute_isort(
+                session,
+                run_check=run_check,
+                extra_code_files=extra_code_files,
+                isort_config=isort_config,
+            )
         if run_black or run_black_modules:
             execute_black(session)
+        if run_ruff_format:
+            _execute_ruff_format(
+                session,
+                run_check=run_check,
+                extra_code_files=extra_code_files,
+                ruff_format_config=ruff_format_config,
+            )
 
     formatters.__doc__ = compose_description(
         prefix={
@@ -186,6 +231,7 @@ def add_formatters(
         programs={
             "isort": run_isort,
             "black": run_black,
+            "ruff format": run_ruff_format,
         },
     )
     nox.session(name="formatters", default=False)(formatters)
@@ -614,6 +660,10 @@ def add_lint_sessions(
     run_black_modules: bool | None = None,
     black_config: str | os.PathLike | None = None,
     black_package: str = "black",
+    # ruff format:
+    run_ruff_format: bool = False,
+    ruff_format_config: str | os.PathLike | None = None,
+    ruff_format_package: str = "ruff",
     # ruff check:
     run_ruff_check: bool = False,
     ruff_check_config: str | os.PathLike | None = None,
@@ -647,7 +697,9 @@ def add_lint_sessions(
     """
     Add nox sessions for linting.
     """
-    has_formatters = run_isort or run_black or run_black_modules or False
+    has_formatters = (
+        run_isort or run_black or run_black_modules or False or run_ruff_format
+    )
     has_codeqa = run_ruff_check or run_flake8 or run_pylint
     has_yamllint = run_yamllint
     has_typing = run_mypy
@@ -672,6 +724,9 @@ def add_lint_sessions(
             run_black_modules=run_black_modules,
             black_config=black_config,
             black_package=black_package,
+            run_ruff_format=run_ruff_format,
+            ruff_format_config=ruff_format_config,
+            ruff_format_package=ruff_format_package,
         )
 
     if has_codeqa:
