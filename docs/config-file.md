@@ -255,10 +255,11 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to pin the version,
   or to install the package from a local repository.
 
-* `ruff_autofix_select: list[str]` (default `["I"]`):
+* `ruff_autofix_select: list[str]` (default `[]`):
   Selects which rules to fix.
   Will be passed with `--select`.
-  Set to an empty list to pass no `--select`.
+  An empty list will pass no `--select`,
+  which runs all available fixers.
 
 ### `ruff check` (part of the `codeqa` session)
 
