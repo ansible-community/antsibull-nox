@@ -100,7 +100,7 @@ class SessionLint(_BaseModel):
     run_ruff_autofix: bool = False
     ruff_autofix_config: t.Optional[p.FilePath] = None
     ruff_autofix_package: str = "ruff"
-    ruff_autofix_select: list[str] = ["I"]
+    ruff_autofix_select: list[str] = []
 
     # ruff check:
     run_ruff_check: bool = False
