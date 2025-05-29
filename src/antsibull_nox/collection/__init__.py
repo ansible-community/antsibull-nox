@@ -10,10 +10,7 @@ Handle Ansible collections.
 
 from __future__ import annotations
 
-from pathlib import Path
-
-from antsibull_fileutils.yaml import load_yaml_file, store_yaml_file
-
+from .build import build_collection
 from .data import CollectionData, CollectionSource, SetupResult
 from .install import (
     Runner,
@@ -21,27 +18,8 @@ from .install import (
     setup_collections,
     setup_current_tree,
 )
-from .search import GALAXY_YML, CollectionList, load_collection_data_from_disk
-
-
-def force_collection_version(path: Path, *, version: str) -> bool:
-    """
-    Make sure galaxy.yml contains this version.
-
-    Returns ``True`` if the version was changed, and ``False`` if the version
-    was already set to this value.
-    """
-    galaxy_yml = path / GALAXY_YML
-    try:
-        data = load_yaml_file(galaxy_yml)
-    except Exception as exc:
-        raise ValueError(f"Cannot parse {galaxy_yml}: {exc}") from exc
-    if data.get("version") == version:
-        return False
-    data["version"] = version
-    store_yaml_file(galaxy_yml, data)
-    return True
-
+from .search import CollectionList, load_collection_data_from_disk
+from .utils import force_collection_version
 
 __all__ = [
     "CollectionData",
@@ -49,6 +27,8 @@ __all__ = [
     "CollectionSource",
     "SetupResult",
     "Runner",
+    "build_collection",
+    "force_collection_version",
     "load_collection_data_from_disk",
     "setup_collections",
     "setup_current_tree",
