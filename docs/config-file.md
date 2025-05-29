@@ -172,11 +172,11 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   If you have other scripts in your collection that should be checked, you can add them with this option.
 
 * `ruff_config: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file for `ruff`.
+  Specifies a config file for `ruff`.
   Use a relative path to `noxfile.py`.
-  This config file will be used for all `ruff` checks,
-  unless more specific config file settings are provided for specific `ruff` invocations.
-  Note that right now antsibull-nox will not supply any default config file,
+  This config file applies to all `ruff` checks
+  but can be overridden for specific `ruff` invocations.
+  Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
 ### `isort` (part of the `formatters` session)
@@ -227,7 +227,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 * `ruff_format_config: str | os.PathLike | None` (default `None`):
   Allows to specify a config file.
   Use a relative path to `noxfile.py`.
-  Will fall back to `ruff_config` if set to `None`.
+  Falls back to `ruff_config` if set to `None`.
   Note that right now antsibull-nox will not supply any default config file,
   but this might change in the future.
 
@@ -245,7 +245,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 * `ruff_autofix_config: str | os.PathLike | None` (default `None`):
   Allows to specify a config file.
   Use a relative path to `noxfile.py`.
-  Will fall back to `ruff_config` if set to `None`.
+  Falls back to `ruff_config` if set to `None`.
   Note that right now antsibull-nox will not supply any default config file,
   but this might change in the future.
 
@@ -258,8 +258,8 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 * `ruff_autofix_select: list[str]` (default `[]`):
   Selects which rules to fix.
   Will be passed with `--select`.
-  An empty list will pass no `--select`,
-  which runs all available fixers.
+  An empty list passes no `--select` option
+  and runs all available fixers.
 
 ### `ruff check` (part of the `codeqa` session)
 
@@ -269,7 +269,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 * `ruff_check_config: str | os.PathLike | None` (default `None`):
   Allows to specify a config file.
   Use a relative path to `noxfile.py`.
-  Will fall back to `ruff_config` if set to `None`.
+  Falls back to `ruff_config` if set to `None`.
   Note that right now antsibull-nox will not supply any default config file,
   but this might change in the future.
 
