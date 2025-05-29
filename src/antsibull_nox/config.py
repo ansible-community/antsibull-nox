@@ -78,6 +78,7 @@ class SessionLint(_BaseModel):
 
     default: bool = True
     extra_code_files: list[str] = []
+    ruff_config: t.Optional[p.FilePath] = None
 
     # isort:
     run_isort: bool = True

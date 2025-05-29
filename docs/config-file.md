@@ -171,6 +171,14 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   By default the formatters and linters run on code files in `plugins/`, `tests/unit/`, and on `noxfile.py`.
   If you have other scripts in your collection that should be checked, you can add them with this option.
 
+* `ruff_config: str | os.PathLike | None` (default `None`):
+  Allows to specify a config file for `ruff`.
+  Use a relative path to `noxfile.py`.
+  This config file will be used for all `ruff` checks,
+  unless more specific config file settings are provided for specific `ruff` invocations.
+  Note that right now antsibull-nox will not supply any default config file,
+  but this might change in the future.
+
 ### `isort` (part of the `formatters` session)
 
 * `run_isort: bool` (default `true`):
@@ -219,6 +227,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 * `ruff_format_config: str | os.PathLike | None` (default `None`):
   Allows to specify a config file.
   Use a relative path to `noxfile.py`.
+  Will fall back to `ruff_config` if set to `None`.
   Note that right now antsibull-nox will not supply any default config file,
   but this might change in the future.
 
@@ -236,6 +245,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 * `ruff_autofix_config: str | os.PathLike | None` (default `None`):
   Allows to specify a config file.
   Use a relative path to `noxfile.py`.
+  Will fall back to `ruff_config` if set to `None`.
   Note that right now antsibull-nox will not supply any default config file,
   but this might change in the future.
 
@@ -258,6 +268,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 * `ruff_check_config: str | os.PathLike | None` (default `None`):
   Allows to specify a config file.
   Use a relative path to `noxfile.py`.
+  Will fall back to `ruff_config` if set to `None`.
   Note that right now antsibull-nox will not supply any default config file,
   but this might change in the future.
 
