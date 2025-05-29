@@ -177,9 +177,9 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Whether to run `isort`.
 
 * `isort_config: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file.
-  Use a relative path to `noxfile.py`.
-  Note that right now antsibull-nox will not supply any default config file,
+  Specifies a config file for `isort`.
+  Use a path relative to `noxfile.py`.
+  Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
 * `isort_package: str` (default `"isort"`):
@@ -200,9 +200,9 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   you can use this to avoid reformatting of that code (which for example removes the `u` prefix).
 
 * `black_config: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file.
-  Use a relative path to `noxfile.py`.
-  Note that right now antsibull-nox will not supply any default config file,
+  Specifies a config file for `black`.
+  Use a path relative to `noxfile.py`.
+  Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
 * `black_package: str` (default `"black"`):
@@ -217,9 +217,9 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Whether to run `flake8`.
 
 * `flake8_config: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file.
-  Use a relative path to `noxfile.py`.
-  Note that right now antsibull-nox will not supply any default config file,
+  Specifies a config file for `flake8`.
+  Use a path relative to `noxfile.py`.
+  Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
 * `flake8_package: str` (default `"flake8"`):
@@ -234,16 +234,16 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Whether to run `pylint`.
 
 * `pylint_rcfile: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file.
-  Use a relative path to `noxfile.py`.
-  Note that right now antsibull-nox will not supply any default config file,
+  Specifies a config file for `pylint`.
+  Use a path relative to `noxfile.py`.
+  Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
 * `pylint_modules_rcfile: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file for modules, module utils, and the associated unit tests.
+  Specifies a config file for `pylint`  for modules, module utils, and the associated unit tests.
   If not specified but `pylint_rcfile` is specified, `pylint_rcfile` will be used for these files.
-  Use a relative path to `noxfile.py`.
-  Note that right now antsibull-nox will not supply any default config file,
+  Use a path relative to `noxfile.py`.
+  Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
 * `pylint_package: str` (default `"pylint"`):
@@ -259,7 +259,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to install the package from a local repository.
 
 * `pylint_extra_deps: list[str]` (default `[]`):
-  Allows to specify further packages to install in this session.
+  Specify further packages to install in this session.
 
 ### `yamllint` (part of the `yamllint` session)
 
@@ -267,20 +267,20 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Whether to run `yamllint`.
 
 * `yamllint_config: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file.
-  Use a relative path to `noxfile.py`.
-  Note that right now antsibull-nox will not supply any default config file,
+  Specifies a config file for `yamllint`.
+  Use a path relative to `noxfile.py`.
+  Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
 * `yamllint_config_plugins: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file for YAML content embedded in plugins.
-  Use a relative path to `noxfile.py`.
+  Specifies a config file for `yamllint` for YAML content embedded in plugins.
+  Use a path relative to `noxfile.py`.
 
     If not provided, the same config will be used as for standalone YAML files (`yamllint_config`).
 
 * `yamllint_config_plugins_examples: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file for YAML examples embedded in plugins and sidecar docs.
-  Use a relative path to `noxfile.py`.
+  Specifies a config file for `yamllint` for YAML examples embedded in plugins and sidecar docs.
+  Use a path relative to `noxfile.py`.
 
     If not provided, the same config will be used as for YAML content embedded in plugins (`yamllint_config_plugins`),
     which falls back to the config used for standalone YAML files (`yamllint_config`).
@@ -297,9 +297,9 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Whether to run `mypy`.
 
 * `mypy_config: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file.
-  Use a relative path to `noxfile.py`.
-  Note that right now antsibull-nox will not supply any default config file,
+  Specifies a config file for `mypy`.
+  Use a path relative to `noxfile.py`.
+  Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
 * `mypy_package: str` (default `"mypy"`):
@@ -315,7 +315,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to install the package from a local repository.
 
 * `mypy_extra_deps: list[str]` (default `[]`):
-  Allows to specify further packages to install in this session.
+  Specify further packages to install in this session.
   This can be used for typing stubs like `types-PyYAML`, `types-mock`, and so on.
 
 ### `antsibull-nox-config` (part of `lint` session)
@@ -356,7 +356,7 @@ mypy_extra_deps = [
 
 ## Collection documentation check
 
-The collection documentation check allows to use antsibull-docs' `antsibull-docs lint-collection-docs` command to validate various documentation-related things:
+The collection documentation check uses antsibull-docs' `antsibull-docs lint-collection-docs` command to validate various documentation-related things:
 
 * extra documentation (`docs/docsite/extra-docs.yml`, RST files in `docs/docsite/rst/`);
 * links for docsite (`docs/docsite/links.yml`);
@@ -384,7 +384,7 @@ The function has the following configuration settings:
   or to install the package from a local repository.
 
 * `validate_collection_refs: "self" | "dependent" | "all" | None` (default `None`):
-  This allows to configure whether references to content (modules/plugins/roles, their options, and return values) in module, plugins, and roles documentation should be validated.
+  This configures whether references to content (modules/plugins/roles, their options, and return values) in module, plugins, and roles documentation should be validated.
 
     * If set to `self`, only references to the own collection will be checked.
 
@@ -396,7 +396,7 @@ The function has the following configuration settings:
     Refer to the [documentation of antsibull-docs](https://ansible.readthedocs.io/projects/antsibull-docs/collection-docs/) for more information.
 
 * `extra_collections: list[str]` (default `[]`):
-  Allows to ensure that further collections will be added to the search path.
+  Ensure that further collections will be added to the search path.
   This is important when setting `validate_collection_refs="all"`.
 
 ### Example code
@@ -437,7 +437,7 @@ It accepts the following options:
     2. Every non-empty file has an allowed license. (This is similar to what `reuse lint` checks.)
 
 * `license_check_extra_ignore_paths: list[str]` (default `[]`):
-  Allows to specify more paths that are ignored.
+  Specify more paths that are ignored.
   You can use [glob patterns](https://docs.python.org/3/library/glob.html).
 
 ### Example code
@@ -569,7 +569,7 @@ doc_fragment = "community.dns.attributes.actiongroup_hosttech"
 
 ## Collection build and Galaxy import test
 
-The build and import test allows to test whether a collection can be built with `ansible-galaxy collection build`,
+The build and import test check whether a collection can be built with `ansible-galaxy collection build`,
 and whether the resulting artefact can be imported by the Galaxy importer.
 
 The `build-import-check` session is added with the `[sessions.build_import_check]` section in `antsibull-nox.toml`.
@@ -595,7 +595,7 @@ It accepts the following options:
   or to install the package from a local repository.
 
 * `galaxy_importer_config_path: str | None` (default `None`):
-  Allows to specify a path to a [Galaxy importer configuration file](https://github.com/ansible/galaxy-importer#configuration).
+  Specifies a path to a [Galaxy importer configuration file](https://github.com/ansible/galaxy-importer#configuration).
   This allows to configure which aspects to check.
   Which settings are enabled depends on the Galaxy server the collection should be imported to.
   [Ansible Automation Hub](https://www.redhat.com/en/technologies/management/ansible/automation-hub)
@@ -648,7 +648,7 @@ The function supports the following parameters:
   at specific dates published in advance.
 
 * `add_devel_like_branches: list[DevelLikeBranch]` (default `[]`):
-  Allows to add a list of optional repositories and branches for ansible-core
+  Add a list of optional repositories and branches for ansible-core
   that will be treated similar to `devel`.
   This can be used for testing ansible-core features or bugfixes
   that are still under development.
@@ -739,7 +739,7 @@ The function supports the following parameters:
   at specific dates published in advance.
 
 * `add_devel_like_branches: list[DevelLikeBranch]` (default `[]`):
-  Allows to add a list of optional repositories and branches for ansible-core
+  Add a list of optional repositories and branches for ansible-core
   that will be treated similar to `devel`.
   This can be used for testing ansible-core features or bugfixes
   that are still under development.
@@ -816,7 +816,7 @@ It is possible to restrict the Python versions used to run the tests per ansible
   at specific dates published in advance.
 
 * `add_devel_like_branches: list[DevelLikeBranch]` (default `[]`):
-  Allows to add a list of optional repositories and branches for ansible-core
+  Add a list of optional repositories and branches for ansible-core
   that will be treated similar to `devel`.
   This can be used for testing ansible-core features or bugfixes
   that are still under development.
@@ -859,7 +859,7 @@ It is possible to restrict the Python versions used to run the tests per ansible
   and `"x.y"` where `x` and `y` are integers that specify a minor ansible-core x.y release.
 
 * `core_python_versions: dict[AnsibleCoreVersion | str, list[Version]]` (default `{}`):
-  Allows to restrict the number of Python versions per ansible-core release.
+  Restrict the number of Python versions per ansible-core release.
   An empty list means that the ansible-core version will be skipped completely.
   If no restrictions are provided, all Python versions supported by this version of ansible-core are used;
   see `controller_python_versions_only` below for more details.
