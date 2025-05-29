@@ -173,7 +173,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 
 * `ruff_config: str | os.PathLike | None` (default `None`):
   Specifies a config file for `ruff`.
-  Use a relative path to `noxfile.py`.
+  Use a path relative to `noxfile.py`.
   This config file applies to all `ruff` checks
   but can be overridden for specific `ruff` invocations.
   Note that antsibull-nox does not currently supply a default config file,
@@ -225,10 +225,10 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Whether to run `ruff format`.
 
 * `ruff_format_config: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file.
-  Use a relative path to `noxfile.py`.
+  Specifies a config file for `ruff format`.
+  Use a path relative to `noxfile.py`.
   Falls back to `ruff_config` if set to `None`.
-  Note that right now antsibull-nox will not supply any default config file,
+  Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
 * `ruff_format_package: str` (default `"ruff"`):
@@ -243,10 +243,10 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Whether to run `ruff check --fix`.
 
 * `ruff_autofix_config: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file.
-  Use a relative path to `noxfile.py`.
+  Specifies a config file for `ruff check --fix`.
+  Use a path relative to `noxfile.py`.
   Falls back to `ruff_config` if set to `None`.
-  Note that right now antsibull-nox will not supply any default config file,
+  Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
 * `ruff_autofix_package: str` (default `"ruff"`):
@@ -267,10 +267,10 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Whether to run `ruff check`.
 
 * `ruff_check_config: str | os.PathLike | None` (default `None`):
-  Allows to specify a config file.
-  Use a relative path to `noxfile.py`.
+  Specifies a config file for `ruff check`.
+  Use a path relative to `noxfile.py`.
   Falls back to `ruff_config` if set to `None`.
-  Note that right now antsibull-nox will not supply any default config file,
+  Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
 * `ruff_check_package: str` (default `"ruff"`):
