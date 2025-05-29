@@ -17,12 +17,7 @@ from pathlib import Path
 import nox
 
 from ..collection import (
-    force_collection_version,
-    load_collection_data_from_disk,
-)
-from ..paths import (
-    copy_collection,
-    remove_path,
+    build_collection,
 )
 from .utils import (
     ci_group,
@@ -57,41 +52,16 @@ def add_build_import_check(
     def build_import_check(session: nox.Session) -> None:
         install(session, *compose_dependencies())
 
-        tmp = Path(session.create_tmp())
-        collection_dir = tmp / "collection"
-        remove_path(collection_dir)
-        copy_collection(Path.cwd(), collection_dir)
+        tarball, _, __ = build_collection(session)
 
-        collection = load_collection_data_from_disk(
-            collection_dir, accept_manifest=False
-        )
-        version = collection.version
-        if not version:
-            version = "0.0.1"
-            force_collection_version(collection_dir, version=version)
-
-        with session.chdir(collection_dir):
-            build_ran = session.run("ansible-galaxy", "collection", "build") is not None
-
-        tarball = (
-            collection_dir
-            / f"{collection.namespace}-{collection.name}-{version}.tar.gz"
-        )
-        if build_ran and not tarball.is_file():
-            files = "\n".join(
-                f"* {path.name}"
-                for path in collection_dir.iterdir()
-                if not path.is_dir()
-            )
-            session.error(f"Cannot find file {tarball}! List of all files:\n{files}")
-
-        if run_galaxy_importer and tarball.is_file():
+        if run_galaxy_importer and tarball:
             env = {}
             if galaxy_importer_config_path:
                 env["GALAXY_IMPORTER_CONFIG"] = str(
                     Path(galaxy_importer_config_path).absolute()
                 )
-            with session.chdir(collection_dir), silence_run_verbosity():
+            assert tarball.parent is not None
+            with session.chdir(tarball.parent), silence_run_verbosity():
                 import_log = session.run(
                     "python",
                     "-m",
