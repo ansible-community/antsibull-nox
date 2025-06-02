@@ -219,6 +219,7 @@ def _execute_ruff_autofix(
 def add_formatters(
     *,
     extra_code_files: list[str],
+    editable_install: bool,
     # isort:
     run_isort: bool,
     isort_config: str | os.PathLike | None,
@@ -265,7 +266,7 @@ def add_formatters(
         return deps
 
     def formatters(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(), editable=editable_install)
         if run_isort:
             _execute_isort(
                 session,
@@ -338,6 +339,7 @@ def process_pylint_errors(
 def add_codeqa(  # noqa: C901
     *,
     extra_code_files: list[str],
+    editable_install: bool,
     # ruff check:
     run_ruff_check: bool,
     ruff_check_config: str | os.PathLike | None,
@@ -455,7 +457,7 @@ def add_codeqa(  # noqa: C901
                 )
 
     def codeqa(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(), editable=editable_install)
         prepared_collections: CollectionSetup | None = None
         if run_pylint:
             prepared_collections = prepare_collections(
@@ -488,6 +490,7 @@ def add_codeqa(  # noqa: C901
 def add_yamllint(
     *,
     run_yamllint: bool,
+    editable_install: bool,
     yamllint_config: str | os.PathLike | None,
     yamllint_config_plugins: str | os.PathLike | None,
     yamllint_config_plugins_examples: str | os.PathLike | None,
@@ -565,7 +568,7 @@ def add_yamllint(
         )
 
     def yamllint(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(), editable=editable_install)
         if run_yamllint:
             execute_yamllint(session)
             execute_plugin_yamllint(session)
@@ -619,6 +622,7 @@ def process_mypy_errors(
 def add_typing(
     *,
     extra_code_files: list[str],
+    editable_install: bool,
     run_mypy: bool,
     mypy_config: str | os.PathLike | None,
     mypy_package: str,
@@ -677,7 +681,7 @@ def add_typing(
                 process_mypy_errors(session, prepared_collections, output)
 
     def typing(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(), editable=editable_install)
         prepared_collections = prepare_collections(
             session,
             install_in_site_packages=False,
@@ -727,6 +731,11 @@ def add_lint_sessions(
     *,
     make_lint_default: bool = True,
     extra_code_files: list[str] | None = None,
+    # Whether to install packages in editable mode
+    editable_formatters: bool = False,
+    editable_codeqa: bool = False,
+    editable_yamllint: bool = False,
+    editable_typing: bool = False,
     # isort:
     run_isort: bool = True,
     isort_config: str | os.PathLike | None = None,
@@ -803,6 +812,7 @@ def add_lint_sessions(
     if has_formatters:
         add_formatters(
             extra_code_files=extra_code_files or [],
+            editable_install=editable_formatters,
             run_isort=run_isort,
             isort_config=isort_config,
             isort_package=isort_package,
@@ -822,6 +832,7 @@ def add_lint_sessions(
     if has_codeqa:
         add_codeqa(
             extra_code_files=extra_code_files or [],
+            editable_install=editable_codeqa,
             run_ruff_check=run_ruff_check,
             ruff_check_config=ruff_check_config,
             ruff_check_package=ruff_check_package,
@@ -838,6 +849,7 @@ def add_lint_sessions(
 
     if has_yamllint:
         add_yamllint(
+            editable_install=editable_yamllint,
             run_yamllint=run_yamllint,
             yamllint_config=yamllint_config,
             yamllint_config_plugins=yamllint_config_plugins,
@@ -848,6 +860,7 @@ def add_lint_sessions(
     if has_typing:
         add_typing(
             extra_code_files=extra_code_files or [],
+            editable_install=editable_typing,
             run_mypy=run_mypy,
             mypy_config=mypy_config,
             mypy_package=mypy_package,

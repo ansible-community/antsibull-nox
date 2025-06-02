@@ -112,7 +112,19 @@ def install(session: nox.Session, *args: str, editable: bool = False, **kwargs):
     # Don't install in editable mode in CI or if it's explicitly disabled.
     # This ensures that the wheel contains all of the correct files.
     if editable and ALLOW_EDITABLE:
-        args = ("-e", *args)
+        new_args = []
+        for arg in args:
+            if os.path.isdir(arg):
+                new_args.append("-e")
+            new_args.append(arg)
+        # Without the following: mypy won't find type hints in editable ansible-core installs:
+        new_args.extend(["--config-settings", "editable_mode=strict"])
+        # Links:
+        # - https://github.com/python/mypy/issues/13392,
+        # - https://setuptools.pypa.io/en/latest/userguide/development_mode.html
+        # - https://microsoft.github.io/pyright/#/import-resolution?id=pip-setuptools)
+        # (I was not able to get it to work with 'compat', only with 'strict'.)
+        args = tuple(new_args)
     session.install(*args, "-U", **kwargs)
 
 
