@@ -104,6 +104,10 @@ def _add_sessions(sessions: Sessions) -> None:
         add_lint_sessions(
             make_lint_default=sessions.lint.default,
             extra_code_files=sessions.lint.extra_code_files,
+            editable_formatters=sessions.lint.editable_formatters,
+            editable_codeqa=sessions.lint.editable_codeqa,
+            editable_yamllint=sessions.lint.editable_yamllint,
+            editable_typing=sessions.lint.editable_typing,
             run_isort=sessions.lint.run_isort,
             isort_config=sessions.lint.isort_config,
             isort_package=sessions.lint.isort_package,

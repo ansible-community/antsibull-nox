@@ -187,6 +187,24 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to pin the version,
   or to install the package from a local repository.
 
+### Development settings
+
+The following settings are mostly useful when working on tools that antsibull-nox runs,
+or modifying packages such as ansible-core that are used for tests.
+You should then set the `xxx_package` options to (relative) paths to the package's checkout.
+
+* `editable_formatters: bool` (default `False`):
+  Install packages for the `formatters` session in editable mode.
+
+* `editable_codeqa: bool` (default `False`):
+  Install packages for the `formatters` session in editable mode.
+
+* `editable_yamllint: bool` (default `False`):
+  Install packages for the `formatters` session in editable mode.
+
+* `editable_typing: bool` (default `False`):
+  Install packages for the `formatters` session in editable mode.
+
 ### `isort` (part of the `formatters` session)
 
 * `run_isort: bool` (default `true`):

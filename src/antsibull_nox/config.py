@@ -81,6 +81,12 @@ class SessionLint(_BaseModel):
     ruff_config: t.Optional[p.FilePath] = None
     ruff_package: str = "ruff"
 
+    # Whether to install packages in editable mode
+    editable_formatters: bool = False
+    editable_codeqa: bool = False
+    editable_yamllint: bool = False
+    editable_typing: bool = False
+
     # isort:
     run_isort: bool = True
     isort_config: t.Optional[p.FilePath] = None
