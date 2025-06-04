@@ -39,11 +39,16 @@ def main() -> int:
         if not os.path.isfile(path):
             continue
 
-        with open(path, "r", encoding="latin1") as f:
-            for i, line in enumerate(f):
-                line = line.rstrip("\n\r")
-                if line.rstrip() != line:
-                    errors.append(f"{path}:{i + 1}: found trailing whitespace")
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                for i, line in enumerate(f):
+                    line = line.rstrip("\n\r")
+                    if line.rstrip() != line:
+                        errors.append(f"{path}:{i + 1}: found trailing whitespace")
+        except UnicodeDecodeError as e:
+            errors.append(f"{path}: cannot parse file as UTF-8")
+        except Exception as e:
+            errors.append(f"{path}: unexpected error: {e}")
 
     for error in sorted(errors):
         print(error)
