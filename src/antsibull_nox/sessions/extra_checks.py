@@ -58,6 +58,10 @@ def add_extra_checks(
     # action-groups:
     run_action_groups: bool = False,
     action_groups_config: list[ActionGroup] | None = None,
+    # no-trailing-whitespace:
+    run_no_trailing_whitespace: bool = False,
+    no_trailing_whitespace_skip_paths: list[str] | None = None,
+    no_trailing_whitespace_skip_directories: list[str] | None = None,
 ) -> None:
     """
     Add extra-checks session for extra checks.
@@ -94,11 +98,23 @@ def add_extra_checks(
             },
         )
 
+    def execute_no_trailing_whitespace(session: nox.Session) -> None:
+        run_bare_script(
+            session,
+            "no-trailing-whitespace",
+            extra_data={
+                "skip_paths": no_trailing_whitespace_skip_paths or [],
+                "skip_directories": no_trailing_whitespace_skip_directories or [],
+            },
+        )
+
     def extra_checks(session: nox.Session) -> None:
         if run_no_unwanted_files:
             execute_no_unwanted_files(session)
         if run_action_groups:
             execute_action_groups(session)
+        if run_no_trailing_whitespace:
+            execute_no_trailing_whitespace(session)
 
     extra_checks.__doc__ = compose_description(
         prefix={
@@ -112,6 +128,9 @@ def add_extra_checks(
                 else False
             ),
             "action-groups": "validate action groups" if run_action_groups else False,
+            "no-trailing-whitespace": (
+                "avoid trailing whitespace" if run_no_trailing_whitespace else False
+            ),
         },
     )
     nox.session(

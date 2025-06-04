@@ -189,6 +189,11 @@ class SessionExtraChecks(_BaseModel):
     run_action_groups: bool = False
     action_groups_config: list[ActionGroup] = []
 
+    # no-trailing-whitespace:
+    run_no_trailing_whitespace: bool = False
+    no_trailing_whitespace_skip_paths: list[str] = []
+    no_trailing_whitespace_skip_directories: list[str] = []
+
 
 class SessionBuildImportCheck(_BaseModel):
     """
