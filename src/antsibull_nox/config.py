@@ -78,6 +78,7 @@ class SessionLint(_BaseModel):
 
     default: bool = True
     extra_code_files: list[str] = []
+    ruff_config: t.Optional[p.FilePath] = None
 
     # isort:
     run_isort: bool = True
@@ -89,6 +90,22 @@ class SessionLint(_BaseModel):
     run_black_modules: t.Optional[bool] = None
     black_config: t.Optional[p.FilePath] = None
     black_package: str = "black"
+
+    # ruff format:
+    run_ruff_format: bool = False
+    ruff_format_config: t.Optional[p.FilePath] = None
+    ruff_format_package: str = "ruff"
+
+    # ruff autofix:
+    run_ruff_autofix: bool = False
+    ruff_autofix_config: t.Optional[p.FilePath] = None
+    ruff_autofix_package: str = "ruff"
+    ruff_autofix_select: list[str] = []
+
+    # ruff check:
+    run_ruff_check: bool = False
+    ruff_check_config: t.Optional[p.FilePath] = None
+    ruff_check_package: str = "ruff"
 
     # flake8:
     run_flake8: bool = True

@@ -45,7 +45,7 @@ def main() -> int:
                     line = line.rstrip("\n\r")
                     if line.rstrip() != line:
                         errors.append(f"{path}:{i + 1}: found trailing whitespace")
-        except UnicodeDecodeError as e:
+        except UnicodeDecodeError:
             errors.append(f"{path}: cannot parse file as UTF-8")
         except Exception as e:
             errors.append(f"{path}: unexpected error: {e}")
