@@ -531,6 +531,17 @@ It can be configured as follows:
         This must list all modules whose names match `pattern`,
         but that are not part of the action group.
 
+* No trailing whitespace:
+
+    * `run_no_trailing_whitespace: bool` (default `false`):
+      Whether the check should be run.
+
+    * `no_trailing_whitespace_skip_paths: list[str]` (default `[]`):
+      Which files to ignore.
+
+    * `no_trailing_whitespace_skip_directories: list[str]` (default `[]`):
+      Which directories to ignore.
+
 ### Example code
 
 This example is from `community.dns`.

@@ -65,7 +65,7 @@ def main() -> int:
     skip_paths = set(get_list_of_strings(extra_data, "skip_paths", default=[]))
 
     skip_directories = tuple(
-        get_list_of_strings(extra_data, "skip_prefixes", default=[])
+        get_list_of_strings(extra_data, "skip_directories", default=[])
     )
 
     yaml_directories = tuple(

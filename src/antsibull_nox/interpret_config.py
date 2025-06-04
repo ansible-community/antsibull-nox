@@ -179,6 +179,13 @@ def _add_sessions(sessions: Sessions) -> None:
             action_groups_config=_convert_action_groups(
                 sessions.extra_checks.action_groups_config
             ),
+            run_no_trailing_whitespace=sessions.extra_checks.run_no_trailing_whitespace,
+            no_trailing_whitespace_skip_paths=(
+                sessions.extra_checks.no_trailing_whitespace_skip_paths
+            ),
+            no_trailing_whitespace_skip_directories=(
+                sessions.extra_checks.no_trailing_whitespace_skip_directories
+            ),
         )
     if sessions.build_import_check:
         add_build_import_check(

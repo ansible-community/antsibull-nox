@@ -178,8 +178,8 @@ class SessionExtraChecks(_BaseModel):
     no_unwanted_files_other_extensions: list[str] = [".py", ".pyi"]
     no_unwanted_files_yaml_extensions: list[str] = [".yml", ".yaml"]
     no_unwanted_files_skip_paths: list[str] = []
-    no_unwanted_files_skip_directories: t.Optional[list[str]] = []
-    no_unwanted_files_yaml_directories: t.Optional[list[str]] = [
+    no_unwanted_files_skip_directories: list[str] = []
+    no_unwanted_files_yaml_directories: list[str] = [
         "plugins/test/",
         "plugins/filter/",
     ]
@@ -188,6 +188,11 @@ class SessionExtraChecks(_BaseModel):
     # action-groups:
     run_action_groups: bool = False
     action_groups_config: list[ActionGroup] = []
+
+    # no-trailing-whitespace:
+    run_no_trailing_whitespace: bool = False
+    no_trailing_whitespace_skip_paths: list[str] = []
+    no_trailing_whitespace_skip_directories: list[str] = []
 
 
 class SessionBuildImportCheck(_BaseModel):
