@@ -816,9 +816,7 @@ def add_lint_sessions(
             run_ruff_autofix=run_ruff_autofix,
             ruff_autofix_config=ruff_autofix_config,
             ruff_autofix_package=ruff_autofix_package,
-            ruff_autofix_select=(
-                ["I"] if ruff_autofix_select is None else ruff_autofix_select
-            ),
+            ruff_autofix_select=ruff_autofix_select or [],
         )
 
     if has_codeqa:
