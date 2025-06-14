@@ -114,16 +114,19 @@ def _add_sessions(sessions: Sessions) -> None:
             run_ruff_format=sessions.lint.run_ruff_format,
             ruff_format_config=sessions.lint.ruff_format_config
             or sessions.lint.ruff_config,
-            ruff_format_package=sessions.lint.ruff_format_package,
+            ruff_format_package=sessions.lint.ruff_format_package
+            or sessions.lint.ruff_package,
             run_ruff_autofix=sessions.lint.run_ruff_autofix,
             ruff_autofix_config=sessions.lint.ruff_autofix_config
             or sessions.lint.ruff_config,
-            ruff_autofix_package=sessions.lint.ruff_autofix_package,
+            ruff_autofix_package=sessions.lint.ruff_autofix_package
+            or sessions.lint.ruff_package,
             ruff_autofix_select=sessions.lint.ruff_autofix_select,
             run_ruff_check=sessions.lint.run_ruff_check,
             ruff_check_config=sessions.lint.ruff_check_config
             or sessions.lint.ruff_config,
-            ruff_check_package=sessions.lint.ruff_check_package,
+            ruff_check_package=sessions.lint.ruff_check_package
+            or sessions.lint.ruff_package,
             run_flake8=sessions.lint.run_flake8,
             flake8_config=sessions.lint.flake8_config,
             flake8_package=sessions.lint.flake8_package,

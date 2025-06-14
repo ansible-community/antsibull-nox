@@ -179,6 +179,14 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
+* `ruff_package: str` (default `"ruff"`):
+  The package to install for `ruff`.
+  This config file applies to all `ruff` checks
+  but can be overridden for specific `ruff` invocations.
+  You can specify a value here to add restrictions to the `ruff` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
 ### `isort` (part of the `formatters` session)
 
 * `run_isort: bool` (default `true`):
@@ -231,8 +239,9 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `ruff_format_package: str` (default `"ruff"`):
+* `ruff_format_package: str | None` (default `None`):
   The package to install for `ruff` in this session.
+  Falls back to `ruff_package` if set to `None`.
   You can specify a value here to add restrictions to the `ruff` version,
   or to pin the version,
   or to install the package from a local repository.
@@ -249,8 +258,9 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `ruff_autofix_package: str` (default `"ruff"`):
+* `ruff_autofix_package: str | None` (default `None`):
   The package to install for `ruff` in this session.
+  Falls back to `ruff_package` if set to `None`.
   You can specify a value here to add restrictions to the `ruff` version,
   or to pin the version,
   or to install the package from a local repository.
@@ -273,8 +283,9 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `ruff_check_package: str` (default `"ruff"`):
+* `ruff_check_package: str | None` (default `None`):
   The package to install for `ruff` in this session.
+  Falls back to `ruff_package` if set to `None`.
   You can specify a value here to add restrictions to the `ruff` version,
   or to pin the version,
   or to install the package from a local repository.
