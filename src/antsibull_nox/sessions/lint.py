@@ -94,6 +94,128 @@ def add_lint(
     )(lint)
 
 
+def _execute_isort(
+    session: nox.Session,
+    *,
+    run_check: bool,
+    extra_code_files: list[str],
+    isort_config: str | os.PathLike | None,
+) -> None:
+    command: list[str] = [
+        "isort",
+    ]
+    if run_check:
+        command.append("--check")
+    if isort_config is not None:
+        command.extend(["--settings-file", str(isort_config)])
+    command.extend(session.posargs)
+    command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+    session.run(*command)
+
+
+def _execute_black_for(
+    session: nox.Session,
+    *,
+    paths: list[str],
+    run_check: bool,
+    black_config: str | os.PathLike | None,
+) -> None:
+    if not paths:
+        return
+    command = ["black"]
+    if run_check:
+        command.append("--check")
+    if black_config is not None:
+        command.extend(["--config", str(black_config)])
+    command.extend(session.posargs)
+    command.extend(paths)
+    session.run(*command)
+
+
+def _execute_black(
+    session: nox.Session,
+    *,
+    run_check: bool,
+    extra_code_files: list[str],
+    run_black: bool,
+    run_black_modules: bool | None,
+    black_config: str | os.PathLike | None,
+) -> None:
+    if run_black and run_black_modules:
+        _execute_black_for(
+            session,
+            paths=filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files),
+            run_check=run_check,
+            black_config=black_config,
+        )
+        return
+    if run_black:
+        paths = (
+            filter_paths(
+                CODE_FILES,
+                remove=MODULE_PATHS,
+                extensions=[".py"],
+            )
+            + ["noxfile.py"]
+            + extra_code_files
+        )
+        _execute_black_for(
+            session, paths=paths, run_check=run_check, black_config=black_config
+        )
+    if run_black_modules:
+        paths = filter_paths(
+            CODE_FILES,
+            restrict=MODULE_PATHS,
+            extensions=[".py"],
+        )
+        _execute_black_for(
+            session, paths=paths, run_check=run_check, black_config=black_config
+        )
+
+
+def _execute_ruff_format(
+    session: nox.Session,
+    *,
+    run_check: bool,
+    extra_code_files: list[str],
+    ruff_format_config: str | os.PathLike | None,
+) -> None:
+    command: list[str] = [
+        "ruff",
+        "format",
+    ]
+    if run_check:
+        command.append("--check")
+    if ruff_format_config is not None:
+        command.extend(["--config", str(ruff_format_config)])
+    command.extend(session.posargs)
+    command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+    session.run(*command)
+
+
+def _execute_ruff_autofix(
+    session: nox.Session,
+    *,
+    run_check: bool,
+    extra_code_files: list[str],
+    ruff_autofix_config: str | os.PathLike | None,
+    ruff_autofix_select: list[str],
+) -> None:
+    command: list[str] = [
+        "ruff",
+        "check",
+    ]
+    if not run_check:
+        command.append("--fix")
+    if ruff_autofix_config is not None:
+        command.extend(["--config", str(ruff_autofix_config)])
+    if ruff_autofix_select:
+        command.extend(["--select", ",".join(ruff_autofix_select)])
+    command.extend(session.posargs)
+    command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+    session.run(*command)
+
+
 def add_formatters(
     *,
     extra_code_files: list[str],
@@ -106,6 +228,15 @@ def add_formatters(
     run_black_modules: bool | None,
     black_config: str | os.PathLike | None,
     black_package: str,
+    # ruff format:
+    run_ruff_format: bool,
+    ruff_format_config: str | os.PathLike | None,
+    ruff_format_package: str,
+    # ruff autofix:
+    run_ruff_autofix: bool,
+    ruff_autofix_config: str | os.PathLike | None,
+    ruff_autofix_package: str,
+    ruff_autofix_select: list[str],
 ) -> None:
     """
     Add nox session for formatters.
@@ -120,63 +251,52 @@ def add_formatters(
             deps.append(isort_package)
         if run_black or run_black_modules:
             deps.append(black_package)
+        if (
+            run_ruff_format
+            and run_ruff_autofix
+            and ruff_format_package == ruff_autofix_package
+        ):
+            deps.append(ruff_format_package)
+        else:
+            if run_ruff_format:
+                deps.append(ruff_format_package)
+            if run_ruff_autofix:
+                deps.append(ruff_autofix_package)
         return deps
-
-    def execute_isort(session: nox.Session) -> None:
-        command: list[str] = [
-            "isort",
-        ]
-        if run_check:
-            command.append("--check")
-        if isort_config is not None:
-            command.extend(["--settings-file", str(isort_config)])
-        command.extend(session.posargs)
-        command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
-        session.run(*command)
-
-    def execute_black_for(session: nox.Session, paths: list[str]) -> None:
-        if not paths:
-            return
-        command = ["black"]
-        if run_check:
-            command.append("--check")
-        if black_config is not None:
-            command.extend(["--config", str(black_config)])
-        command.extend(session.posargs)
-        command.extend(paths)
-        session.run(*command)
-
-    def execute_black(session: nox.Session) -> None:
-        if run_black and run_black_modules:
-            execute_black_for(
-                session, filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files)
-            )
-            return
-        if run_black:
-            paths = (
-                filter_paths(
-                    CODE_FILES,
-                    remove=MODULE_PATHS,
-                    extensions=[".py"],
-                )
-                + ["noxfile.py"]
-                + extra_code_files
-            )
-            execute_black_for(session, paths)
-        if run_black_modules:
-            paths = filter_paths(
-                CODE_FILES,
-                restrict=MODULE_PATHS,
-                extensions=[".py"],
-            )
-            execute_black_for(session, paths)
 
     def formatters(session: nox.Session) -> None:
         install(session, *compose_dependencies())
         if run_isort:
-            execute_isort(session)
+            _execute_isort(
+                session,
+                run_check=run_check,
+                extra_code_files=extra_code_files,
+                isort_config=isort_config,
+            )
         if run_black or run_black_modules:
-            execute_black(session)
+            _execute_black(
+                session,
+                run_check=run_check,
+                extra_code_files=extra_code_files,
+                run_black=run_black,
+                run_black_modules=run_black_modules,
+                black_config=black_config,
+            )
+        if run_ruff_format:
+            _execute_ruff_format(
+                session,
+                run_check=run_check,
+                extra_code_files=extra_code_files,
+                ruff_format_config=ruff_format_config,
+            )
+        if run_ruff_autofix:
+            _execute_ruff_autofix(
+                session,
+                run_check=run_check,
+                extra_code_files=extra_code_files,
+                ruff_autofix_config=ruff_autofix_config,
+                ruff_autofix_select=ruff_autofix_select,
+            )
 
     formatters.__doc__ = compose_description(
         prefix={
@@ -186,6 +306,8 @@ def add_formatters(
         programs={
             "isort": run_isort,
             "black": run_black,
+            "ruff format": run_ruff_format,
+            "ruff check --fix": run_ruff_autofix,
         },
     )
     nox.session(name="formatters", default=False)(formatters)
@@ -216,6 +338,10 @@ def process_pylint_errors(
 def add_codeqa(  # noqa: C901
     *,
     extra_code_files: list[str],
+    # ruff check:
+    run_ruff_check: bool,
+    ruff_check_config: str | os.PathLike | None,
+    ruff_check_package: str,
     # flake8:
     run_flake8: bool,
     flake8_config: str | os.PathLike | None,
@@ -234,6 +360,8 @@ def add_codeqa(  # noqa: C901
 
     def compose_dependencies() -> list[str]:
         deps = []
+        if run_ruff_check:
+            deps.append(ruff_check_package)
         if run_flake8:
             deps.append(flake8_package)
         if run_pylint:
@@ -247,6 +375,17 @@ def add_codeqa(  # noqa: C901
             for extra_dep in pylint_extra_deps:
                 deps.extend(shlex.split(extra_dep))
         return deps
+
+    def execute_ruff_check(session: nox.Session) -> None:
+        command: list[str] = [
+            "ruff",
+            "check",
+        ]
+        if ruff_check_config is not None:
+            command.extend(["--config", str(ruff_check_config)])
+        command.extend(session.posargs)
+        command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+        session.run(*command)
 
     def execute_flake8(session: nox.Session) -> None:
         command: list[str] = [
@@ -326,6 +465,8 @@ def add_codeqa(  # noqa: C901
             )
             if not prepared_collections:
                 session.warn("Skipping pylint...")
+        if run_ruff_check:
+            execute_ruff_check(session)
         if run_flake8:
             execute_flake8(session)
         if run_pylint and prepared_collections:
@@ -336,6 +477,7 @@ def add_codeqa(  # noqa: C901
             "other": "Run code QA:",
         },
         programs={
+            "ruff check": run_ruff_check,
             "flake8": run_flake8,
             "pylint": run_pylint,
         },
@@ -594,6 +736,19 @@ def add_lint_sessions(
     run_black_modules: bool | None = None,
     black_config: str | os.PathLike | None = None,
     black_package: str = "black",
+    # ruff format:
+    run_ruff_format: bool = False,
+    ruff_format_config: str | os.PathLike | None = None,
+    ruff_format_package: str = "ruff",
+    # ruff autofix:
+    run_ruff_autofix: bool = False,
+    ruff_autofix_config: str | os.PathLike | None = None,
+    ruff_autofix_package: str = "ruff",
+    ruff_autofix_select: list[str] | None = None,
+    # ruff check:
+    run_ruff_check: bool = False,
+    ruff_check_config: str | os.PathLike | None = None,
+    ruff_check_package: str = "ruff",
     # flake8:
     run_flake8: bool = True,
     flake8_config: str | os.PathLike | None = None,
@@ -623,8 +778,15 @@ def add_lint_sessions(
     """
     Add nox sessions for linting.
     """
-    has_formatters = run_isort or run_black or run_black_modules or False
-    has_codeqa = run_flake8 or run_pylint
+    has_formatters = (
+        run_isort
+        or run_black
+        or run_black_modules
+        or False
+        or run_ruff_format
+        or run_ruff_autofix
+    )
+    has_codeqa = run_ruff_check or run_flake8 or run_pylint
     has_yamllint = run_yamllint
     has_typing = run_mypy
     has_config_lint = run_antsibullnox_config_lint
@@ -648,11 +810,21 @@ def add_lint_sessions(
             run_black_modules=run_black_modules,
             black_config=black_config,
             black_package=black_package,
+            run_ruff_format=run_ruff_format,
+            ruff_format_config=ruff_format_config,
+            ruff_format_package=ruff_format_package,
+            run_ruff_autofix=run_ruff_autofix,
+            ruff_autofix_config=ruff_autofix_config,
+            ruff_autofix_package=ruff_autofix_package,
+            ruff_autofix_select=ruff_autofix_select or [],
         )
 
     if has_codeqa:
         add_codeqa(
             extra_code_files=extra_code_files or [],
+            run_ruff_check=run_ruff_check,
+            ruff_check_config=ruff_check_config,
+            ruff_check_package=ruff_check_package,
             run_flake8=run_flake8,
             flake8_config=flake8_config,
             flake8_package=flake8_package,
