@@ -37,6 +37,7 @@ def lint(
     row_offset: int,
     col_offset: int,
     config: YamlLintConfig,
+    extra_for_errors: dict[str, t.Any] | None = None,
 ) -> None:
     # If the string start with optional whitespace + linebreak, skip that line
     idx = data.find("\n")
@@ -66,6 +67,8 @@ def lint(
                     "message": msg,
                 }
             )
+            if extra_for_errors:
+                errors[-1].update(extra_for_errors)
     except Exception as exc:
         error = str(exc).replace("\n", " / ")
         errors.append(
@@ -79,6 +82,8 @@ def lint(
                 ),
             }
         )
+        if extra_for_errors:
+            errors[-1].update(extra_for_errors)
 
 
 def process_rst_file(
@@ -127,6 +132,13 @@ def process_rst_file(
         if (code_block.language or "").lower() not in YAML_LANGUAGES:
             continue
 
+        extra_for_errors = {}
+        if not code_block.position_exact:
+            extra_for_errors["note"] = (
+                "The code block could not be exactly located in the source file."
+                " The line/column numbers might be off."
+            )
+
         # Parse the (remaining) string content
         lint(
             errors=errors,
@@ -135,6 +147,7 @@ def process_rst_file(
             row_offset=code_block.row_offset,
             col_offset=code_block.col_offset,
             config=config,
+            extra_for_errors=extra_for_errors,
         )
 
 
@@ -165,6 +178,8 @@ def main() -> int:
     for error in errors:
         prefix = f"{error['path']}:{error['line']}:{error['col']}: "
         msg = error["message"]
+        if "note" in error:
+            msg = f"{msg}\nNote: {error['note']}"
         for i, line in enumerate(msg.splitlines()):
             print(f"{prefix}{line}")
             if i == 0:
