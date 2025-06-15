@@ -146,7 +146,7 @@ The basic linting session, `lint`, comes with three sessions it depends on:
 
 * `codeqa`: runs `ruff check`, `flake8`, and `pylint`.
 
-* `yamllint`: runs `yamllint` on all `.yml` and `.yaml` files, and on the documentation included in Ansible modules and plugins.
+* `yamllint`: runs `yamllint` on all `.yml` and `.yaml` files, on the documentation included in Ansible modules and plugins, and on YAML code included in extra docs.
 
 * `typing`: runs `mypy`.
 
@@ -364,9 +364,23 @@ and there are plenty of configuration settings for the indiviual formatters/lint
     If not provided, the same config will be used as for YAML content embedded in plugins (`yamllint_config_plugins`),
     which falls back to the config used for standalone YAML files (`yamllint_config`).
 
+* `yamllint_config_extra_docs: str | os.PathLike | None` (default `None`):
+  Specifies a config file for `yamllint` for YAML code in extra documentation
+  (`docs/docsite/rst/` directory)
+  Use a path relative to `noxfile.py`.
+
+    If not provided, the same config will be used as for YAML examples embedded in plugins (`yamllint_config_plugins_examples`),
+    which falls back to the `yamllint_config_plugins` and `yamllint_config`.
+
 * `yamllint_package: str` (default `"yamllint"`):
   The package to install for `yamllint` in this session.
   You can specify a value here to add restrictions to the `yamllint` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
+* `yamllint_antsibull_docutils_package: str` (default `"antsibull-docutils"`):
+  The package to install for `antsibull-docutils` in this session.
+  You can specify a value here to add restrictions to the `antsibull-docutils` version,
   or to pin the version,
   or to install the package from a local repository.
 

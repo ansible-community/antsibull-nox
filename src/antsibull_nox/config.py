@@ -126,7 +126,9 @@ class SessionLint(_BaseModel):
     yamllint_config: t.Optional[p.FilePath] = None
     yamllint_config_plugins: t.Optional[p.FilePath] = None
     yamllint_config_plugins_examples: t.Optional[p.FilePath] = None
+    yamllint_config_extra_docs: t.Optional[p.FilePath] = None
     yamllint_package: str = "yamllint"
+    yamllint_antsibull_docutils_package: str = "antsibull-docutils"
 
     # mypy:
     run_mypy: bool = True
