@@ -124,7 +124,7 @@ def process_rst_file(
         root_prefix="docs/docsite/rst",
         warn_unknown_block=warn_unknown_block,
     ):
-        if code_block.language.lower() not in YAML_LANGUAGES:
+        if (code_block.language or "").lower() not in YAML_LANGUAGES:
             continue
 
         # Parse the (remaining) string content
