@@ -25,6 +25,7 @@ from .collections import (
     CollectionSetup,
     prepare_collections,
 )
+from .docs_check import find_extra_docs_rst_files
 from .utils import (
     IN_CI,
     compose_description,
@@ -509,7 +510,6 @@ def add_yamllint(
         return str(config) if config else None
 
     def execute_yamllint(session: nox.Session) -> None:
-        # Run yamllint
         all_files = list_all_files()
         all_yaml_filenames = [
             file for file in all_files if file.name.lower().endswith((".yml", ".yaml"))
@@ -529,7 +529,6 @@ def add_yamllint(
         )
 
     def execute_plugin_yamllint(session: nox.Session) -> None:
-        # Run yamllint
         all_files = list_all_files()
         cwd = Path.cwd()
         plugins_dir = cwd / "plugins"
@@ -567,16 +566,7 @@ def add_yamllint(
         )
 
     def execute_extra_docs_yamllint(session: nox.Session) -> None:
-        # Run yamllint
-        all_files = list_all_files()
-        cwd = Path.cwd()
-        extra_docs_dir = cwd / "docs" / "docsite" / "rst"
-        all_extra_docs = [
-            file
-            for file in all_files
-            if file.is_relative_to(extra_docs_dir)
-            and file.name.lower().endswith((".rst"))
-        ]
+        all_extra_docs = find_extra_docs_rst_files()
         if not all_extra_docs:
             session.warn(
                 "Skipping yamllint for extra docs since"

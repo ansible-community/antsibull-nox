@@ -157,6 +157,13 @@ def _add_sessions(sessions: Sessions) -> None:
             ansible_core_package=sessions.docs_check.ansible_core_package,
             validate_collection_refs=sessions.docs_check.validate_collection_refs,
             extra_collections=sessions.docs_check.extra_collections,
+            codeblocks_restrict_types=sessions.docs_check.codeblocks_restrict_types,
+            codeblocks_restrict_type_exact_case=(
+                sessions.docs_check.codeblocks_restrict_type_exact_case
+            ),
+            codeblocks_allow_without_type=sessions.docs_check.codeblocks_allow_without_type,
+            codeblocks_allow_literal_blocks=sessions.docs_check.codeblocks_allow_literal_blocks,
+            antsibull_docutils_package=sessions.docs_check.antsibull_docutils_package,
         )
     if sessions.license_check:
         add_license_check(

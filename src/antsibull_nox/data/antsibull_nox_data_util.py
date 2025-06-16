@@ -33,6 +33,8 @@ def setup() -> tuple[list[str], dict[str, t.Any]]:
             paths = get_list_of_strings(data, "paths")
         except ValueError as exc:
             raise ValueError(f"Invalid JSON content in {path}: {exc}") from exc
+        if paths is None:
+            raise ValueError(f"Broken JSON content in {path}: path is missing")
         data.pop("paths")
         return paths, data
     if len(sys.argv) >= 2:
@@ -45,12 +47,33 @@ def setup() -> tuple[list[str], dict[str, t.Any]]:
     return sys.stdin.read().splitlines(), {}
 
 
+_T = t.TypeVar("_T", default=None)
+
+
+@t.overload
 def get_list_of_strings(
     data: dict[str, t.Any],
     key: str,
     *,
-    default: list[str] | None = None,
-) -> list[str]:
+    default: None = None,
+) -> list[str] | None: ...
+
+
+@t.overload
+def get_list_of_strings(
+    data: dict[str, t.Any],
+    key: str,
+    *,
+    default: _T,
+) -> list[str] | _T: ...
+
+
+def get_list_of_strings(
+    data: dict[str, t.Any],
+    key: str,
+    *,
+    default: _T | None = None,
+) -> list[str] | _T | None:
     """
     Retrieves a list of strings from key ``key`` of the JSON object ``data``.
 
