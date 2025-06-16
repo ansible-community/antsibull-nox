@@ -38,11 +38,14 @@ def install(session: nox.Session, *args, editable=False, **kwargs):
 
 def other_antsibull(
     mode: str | None = None,
+    additional_projects: list[str] | None = None,
 ) -> list[str | Path]:
     if mode is None:
         mode = DEFAULT_MODE
     to_install: list[str | Path] = []
     args = ("antsibull-fileutils",)
+    if additional_projects:
+        args = list(args) + additional_projects
     for project in args:
         path = Path("../", project)
         path_exists = path.is_dir()
@@ -177,7 +180,11 @@ def codeqa(session: nox.Session):
 
 @nox.session
 def typing(session: nox.Session):
-    install(session, ".[typing]", *other_antsibull())
+    install(
+        session,
+        ".[typing]",
+        *other_antsibull(additional_projects=["antsibull-docutils"]),
+    )
     session.run(
         "mypy",
         "src/antsibull_nox",

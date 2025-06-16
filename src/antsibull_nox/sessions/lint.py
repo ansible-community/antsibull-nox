@@ -491,7 +491,9 @@ def add_yamllint(
     yamllint_config: str | os.PathLike | None,
     yamllint_config_plugins: str | os.PathLike | None,
     yamllint_config_plugins_examples: str | os.PathLike | None,
+    yamllint_config_extra_docs: str | os.PathLike | None,
     yamllint_package: str,
+    yamllint_antsibull_docutils_package: str,
 ) -> None:
     """
     Add yamllint session for linting YAML files and plugin/module docs.
@@ -500,7 +502,7 @@ def add_yamllint(
     def compose_dependencies() -> list[str]:
         deps = []
         if run_yamllint:
-            deps.append(yamllint_package)
+            deps.extend([yamllint_package, yamllint_antsibull_docutils_package])
         return deps
 
     def to_str(config: str | os.PathLike | None) -> str | None:
@@ -564,11 +566,44 @@ def add_yamllint(
             },
         )
 
+    def execute_extra_docs_yamllint(session: nox.Session) -> None:
+        # Run yamllint
+        all_files = list_all_files()
+        cwd = Path.cwd()
+        extra_docs_dir = cwd / "docs" / "docsite" / "rst"
+        all_extra_docs = [
+            file
+            for file in all_files
+            if file.is_relative_to(extra_docs_dir)
+            and file.name.lower().endswith((".rst"))
+        ]
+        if not all_extra_docs:
+            session.warn(
+                "Skipping yamllint for extra docs since"
+                " no appropriate RST file was found..."
+            )
+            return
+        run_bare_script(
+            session,
+            "rst-yamllint",
+            use_session_python=True,
+            files=all_extra_docs,
+            extra_data={
+                "config": to_str(
+                    yamllint_config_extra_docs
+                    or yamllint_config_plugins_examples
+                    or yamllint_config_plugins
+                    or yamllint_config
+                ),
+            },
+        )
+
     def yamllint(session: nox.Session) -> None:
         install(session, *compose_dependencies())
         if run_yamllint:
             execute_yamllint(session)
             execute_plugin_yamllint(session)
+            execute_extra_docs_yamllint(session)
 
     yamllint.__doc__ = compose_description(
         prefix={
@@ -765,7 +800,9 @@ def add_lint_sessions(
     yamllint_config: str | os.PathLike | None = None,
     yamllint_config_plugins: str | os.PathLike | None = None,
     yamllint_config_plugins_examples: str | os.PathLike | None = None,
+    yamllint_config_extra_docs: str | os.PathLike | None = None,
     yamllint_package: str = "yamllint",
+    yamllint_antsibull_docutils_package: str = "antsibull-docutils",
     # mypy:
     run_mypy: bool = True,
     mypy_config: str | os.PathLike | None = None,
@@ -842,7 +879,9 @@ def add_lint_sessions(
             yamllint_config=yamllint_config,
             yamllint_config_plugins=yamllint_config_plugins,
             yamllint_config_plugins_examples=yamllint_config_plugins_examples,
+            yamllint_config_extra_docs=yamllint_config_extra_docs,
             yamllint_package=yamllint_package,
+            yamllint_antsibull_docutils_package=yamllint_antsibull_docutils_package,
         )
 
     if has_typing:

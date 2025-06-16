@@ -1,0 +1,2 @@
+minor_changes:
+  - "The ``yamllint`` test now also checks YAML and YAML+Jinja code blocks in extra documentation (``.rst`` files in ``docs/docsite/rst/``) (https://github.com/ansible-community/antsibull-nox/pull/87)."
