@@ -49,6 +49,12 @@ jobs:
         with:
           path: antsibull-nox
           persist-credentials: false
+      - name: Check out dependent project antsibull-docutils
+        uses: actions/checkout@v4
+        with:
+          repository: ansible-community/antsibull-docutils
+          path: antsibull-docutils
+          persist-credentials: false
       - name: Check out dependent project antsibull-fileutils
         uses: actions/checkout@v4
         with:
