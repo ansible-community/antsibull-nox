@@ -153,7 +153,7 @@ class SessionDocsCheck(_BaseModel):
     validate_collection_refs: t.Optional[t.Literal["self", "dependent", "all"]] = None
     extra_collections: list[CollectionName] = []
 
-    codeblocks_restrict_types: list[str] | None = None
+    codeblocks_restrict_types: t.Optional[list[str]] = None
     codeblocks_restrict_type_exact_case: bool = True
     codeblocks_allow_without_type: bool = True
     codeblocks_allow_literal_blocks: bool = True
