@@ -1,5 +1,0 @@
-bugfixes:
-  - "Fix config file types for ``no_unwanted_files_skip_directories`` and ``no_unwanted_files_yaml_directories`` to what is documented; that is, do not allow ``None`` (https://github.com/ansible-community/antsibull-nox/pull/85)."
-  - "The ``no_unwanted_files_skip_directories`` option for the ``no-unwanted-files`` was not used (https://github.com/ansible-community/antsibull-nox/pull/85)."
-minor_changes:
-  - "Add new extra check ``no-trailing-whitespace`` (https://github.com/ansible-community/antsibull-nox/pull/85)."

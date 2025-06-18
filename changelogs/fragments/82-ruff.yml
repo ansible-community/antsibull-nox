@@ -1,4 +1,0 @@
-minor_changes:
-  - "Support running ``ruff check`` in the ``codeqa`` session by setting ``run_ruff_check=true`` in the config (https://github.com/ansible-community/antsibull-nox/issues/70, https://github.com/ansible-community/antsibull-nox/pull/82)."
-  - "Support running ``ruff format`` in the ``formatters`` session by setting ``run_ruff_format=true`` in the config (https://github.com/ansible-community/antsibull-nox/issues/70, https://github.com/ansible-community/antsibull-nox/pull/82)."
-  - "Support running ``ruff check --fix --select ...`` in the ``formatters`` session by setting ``run_ruff_autofix=true`` in the config (https://github.com/ansible-community/antsibull-nox/issues/70, https://github.com/ansible-community/antsibull-nox/pull/82)."

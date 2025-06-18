@@ -4,6 +4,32 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v0.6.0
+======
+
+Release Summary
+---------------
+
+Bugfix and feature release.
+
+Minor Changes
+-------------
+
+- Add new extra check ``no-trailing-whitespace`` (https://github.com/ansible-community/antsibull-nox/pull/85).
+- Add new options to ``docs-check`` that allow to validate code blocks in collection extra docs (https://github.com/ansible-community/antsibull-nox/pull/88).
+- Support running ``ruff check --fix --select ...`` in the ``formatters`` session by setting ``run_ruff_autofix=true`` in the config (https://github.com/ansible-community/antsibull-nox/issues/70, https://github.com/ansible-community/antsibull-nox/pull/82).
+- Support running ``ruff check`` in the ``codeqa`` session by setting ``run_ruff_check=true`` in the config (https://github.com/ansible-community/antsibull-nox/issues/70, https://github.com/ansible-community/antsibull-nox/pull/82).
+- Support running ``ruff format`` in the ``formatters`` session by setting ``run_ruff_format=true`` in the config (https://github.com/ansible-community/antsibull-nox/issues/70, https://github.com/ansible-community/antsibull-nox/pull/82).
+- The ``yamllint`` test now also checks YAML and YAML+Jinja code blocks in extra documentation (``.rst`` files in ``docs/docsite/rst/``) (https://github.com/ansible-community/antsibull-nox/pull/87).
+
+Bugfixes
+--------
+
+- Do not fail if an unexpected action group is found that only contains a metadata entry (https://github.com/ansible-community/antsibull-nox/pull/81).
+- Fix config file types for ``no_unwanted_files_skip_directories`` and ``no_unwanted_files_yaml_directories`` to what is documented; that is, do not allow ``None`` (https://github.com/ansible-community/antsibull-nox/pull/85).
+- Ignore metadata entries in action groups (https://github.com/ansible-community/antsibull-nox/pull/81).
+- The ``no_unwanted_files_skip_directories`` option for the ``no-unwanted-files`` was not used (https://github.com/ansible-community/antsibull-nox/pull/85).
+
 v0.5.0
 ======
 
