@@ -14,10 +14,10 @@ import atexit
 import functools
 import os
 import shutil
-import tempfile
 from pathlib import Path
 
 from antsibull_fileutils.copier import Copier, GitCopier
+from antsibull_fileutils.tempfile import ansible_mkdtemp
 from antsibull_fileutils.vcs import detect_vcs, list_git_files
 
 
@@ -181,8 +181,7 @@ def create_temp_directory(basename: str) -> Path:
     """
     Create a temporary directory outside the nox tree.
     """
-    directory = tempfile.mkdtemp(prefix=basename)
-    path = Path(directory)
+    path = ansible_mkdtemp(prefix=basename)
 
     def cleanup() -> None:
         remove_path(path)

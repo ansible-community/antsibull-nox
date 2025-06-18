@@ -455,7 +455,8 @@ The collection documentation check uses antsibull-docs' `antsibull-docs lint-col
 * links for docsite (`docs/docsite/links.yml`);
 * documentation of modules, plugins, and roles.
 
-The latter validation of modules and plugins is more strict and validates more (and for modules, also different) aspects than the `validate-modules` test of `ansible-test sanity`. Also `validate-modules` currently does not validate test and filter plugins, and role argument specs are not validated by it either.
+The latter validation of modules and plugins is more strict and validates more (and for modules, also different) aspects than the `validate-modules` test of `ansible-test sanity`.
+Also `validate-modules` currently does not validate test and filter plugins, and role argument specs are not validated by it either.
 
 The test is added with the `[sessions.docs_check]` section in `antsibull-nox.toml`, and the session is called `docs-check`.
 The function has the following configuration settings:
@@ -492,6 +493,31 @@ The function has the following configuration settings:
   Ensure that further collections will be added to the search path.
   This is important when setting `validate_collection_refs="all"`.
 
+The following options are for a separate test that is run first.
+It allows to apply certain restrictions to code blocks and literal blocks.
+
+* `codeblocks_restrict_types: list[str] | None` (default `None`):
+  If set to a list, only code blocks with these languages are allowed.
+  To accept languages differing by case, set `codeblocks_restrict_type_exact_case` to `false`
+  See `codeblocks_restrict_type_exact_case` below
+
+* `codeblocks_restrict_type_exact_case: bool` (default `true`):
+  Whether the code block languages must be exactly as in `codeblocks_restrict_types` (if set to `true`)
+  or can differ by case (if set to `false`).
+
+* `codeblocks_allow_without_type: bool` (default `true`):
+  Whether code blocks without language are allowed.
+
+* `codeblocks_allow_literal_blocks: bool` (default `true`):
+  Whether literal blocks (`::`) are allowed.
+
+* `antsibull_docutils_package: str` (default `"antsibull-docutils"`):
+  The package to install for `antsibull-docutils` in this session.
+  You can specify a value here to add restrictions to the `antsibull-docutils` version,
+  or to pin the version,
+  or to install the package from a local repository.
+  Note that this package is only explicitly installed when certain tests are activated.
+
 ### Example code
 
 This example is from `community.dns`:
@@ -499,6 +525,14 @@ This example is from `community.dns`:
 ```toml
 [sessions.docs_check]
 validate_collection_refs="all"
+
+codeblocks_restrict_types = [
+    "yaml",
+    "yaml+jinja",
+]
+codeblocks_restrict_type_exact_case = true
+codeblocks_allow_without_type = false
+codeblocks_allow_literal_blocks = false
 ```
 
 ## REUSE and license checks
