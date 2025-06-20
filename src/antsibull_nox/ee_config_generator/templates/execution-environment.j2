@@ -9,14 +9,15 @@ dependencies:
   ansible_runner:
     package_pip: {{ ansible_runner }}
   galaxy: requirements.yml
-{% if other_deps %}
-  {% for key, value in other_deps.items() %}
-  {{ key }}:
-    {% for subkey, subvalue in value.items() %}
-    {{ subkey }}: {{ subvalue }}
-    {% endfor %}
-  {% endfor %}
-{% endif %}
+{%- if python_interpreter %}
+  python_interpreter:
+{%- if python_interpreter.package_system %}
+    package_system: "{{ python_interpreter.package_system }}"
+{%- endif %}
+{%- if python_interpreter.python_path %}
+    python_path: "{{ python_interpreter.python_path }}"
+{%- endif %}
+{%- endif %}
 additional_build_files:
   - src: {{ collection_filename }}
     dest: src

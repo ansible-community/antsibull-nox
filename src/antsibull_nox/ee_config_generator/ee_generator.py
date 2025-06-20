@@ -8,14 +8,13 @@ MATRIX_CONFIGS = [
         "name": "ansible-core devel @ RHEL UBI 9",
         "ansible_core": "https://github.com/ansible/ansible/archive/devel.tar.gz",
         "ansible_runner": "ansible-runner",
-        "other_deps": {
-            "python_interpreter": {
-                "package_system": (
-                    "python3.11 python3.11-pip "
-                    "python3.11-wheel python3.11-cryptography"
-                ),
-                "python_path": "/usr/bin/python3.11",
-            }
+        "other_deps": {},
+        "python_interpreter": {
+            "package_system": (
+                "python3.11 python3.11-pip "
+                "python3.11-wheel python3.11-cryptography"
+            ),
+            "python_path": "/usr/bin/python3.11",
         },
         "base_image": "docker.io/redhat/ubi9:latest",
         "pre_base": "RUN echo 'No prepend actions'",
@@ -63,6 +62,7 @@ class ExecutionEnvironmentGenerator:
                 "pre_base": matrix["pre_base"],
                 "collection_filename": collection_filename,
                 "other_deps": matrix.get("other_deps", {}),
+                "python_interpreter": matrix.get("python_interpreter"),
             }
 
             output = template.render(**context)
@@ -72,7 +72,8 @@ class ExecutionEnvironmentGenerator:
                 output_path, f"execution-environment-{config_name}.yml"
             )
 
-            store_yaml_file(ee_filename, output)
+            with open(ee_filename, 'w', encoding='utf-8') as f:
+                f.write(output)
 
             generated_files.append(ee_filename)
 
