@@ -18,6 +18,17 @@ from ..collection import CollectionData, build_collection
 
 
 def build_ee_image(collection_path: Path, namespace: str, name: str) -> list[str]:
+    """
+    Build container images for execution environments.
+
+    Args:
+        collection_path: Path to directory that contains execution environment definitions
+        namespace: Collection namespace
+        name: Collection
+
+    Returns:
+        List of successfully built container image names
+    """
     built_images = []
 
     ee_files = list(collection_path.glob("execution-environment-*.yml"))
@@ -62,36 +73,54 @@ def build_ee_image(collection_path: Path, namespace: str, name: str) -> list[str
 
 
 def prepare_execution_environment(
-    session, collection_path: Path, collection_data: CollectionData
+    session, collection_data: CollectionData
 ) -> tuple[Path, list[str]]:
+    """
+    Generate execution environments for a collection.
+
+    Args:
+        session: Nox session object
+        collection_data: Collection metadata
+
+    Returns:
+        Tuple with:
+        - collection_tarball_path: Path to the built collection tarball
+        - built_image_names: List of built container images
+    """
     collection_tarball_result = build_collection(session)
 
     collection_tarball_path = collection_tarball_result[0]
     if collection_tarball_path is None:
         raise RuntimeError("Failed to build collection tarball")
 
-    ee_generator = ExecutionEnvironmentGenerator()
-    ee_generator.generate_requirements_file(
-        collection_path, collection_tarball_path.name
-    )
-    ee_generator.generate_execution_environments(
-        collection_path, collection_tarball_path.name
-    )
+    tmp = Path(session.create_tmp())
 
-    built_images = build_ee_image(
-        collection_path, collection_data.namespace, collection_data.name
-    )
+    ee_generator = ExecutionEnvironmentGenerator()
+    ee_generator.generate_requirements_file(tmp, collection_tarball_path.name)
+    ee_generator.generate_execution_environments(tmp, collection_tarball_path.name)
+
+    built_images = build_ee_image(tmp, collection_data.namespace, collection_data.name)
 
     return collection_tarball_path, built_images
 
 
 def add_execution_environment_session(
-    sessions_dict: dict,
-    collection_path: Path,
     collection_data: CollectionData,
     session_name: str = "build-ee",
     description: str = "Build execution environment images",
 ) -> None:
+    """
+    Creates a nox session that builds execution environments for the collection.
+
+    Args:
+        sessions_dict: Dictionary to register the session function
+        collection_data: Collection metadata
+        session_name: Name for the session
+        description: Human-readable description for the session
+
+    Returns:
+        None
+    """
 
     def session_func(session):
         session.log(
@@ -99,7 +128,7 @@ def add_execution_environment_session(
         )
 
         collection_tarball, built_images = prepare_execution_environment(
-            session, collection_path, collection_data
+            session, collection_data
         )
 
         if built_images:
