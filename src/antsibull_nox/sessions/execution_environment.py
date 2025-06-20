@@ -62,7 +62,7 @@ def build_ee_image(collection_path: Path, namespace: str, name: str) -> list[str
 
 
 def prepare_execution_environment(
-    session, collection_path: Path, collection_data: CollectionData
+    session, collection_data: CollectionData
 ) -> tuple[Path, list[str]]:
     collection_tarball_result = build_collection(session)
 
@@ -70,16 +70,18 @@ def prepare_execution_environment(
     if collection_tarball_path is None:
         raise RuntimeError("Failed to build collection tarball")
 
+    tmp = Path(session.create_tmp())
+
     ee_generator = ExecutionEnvironmentGenerator()
     ee_generator.generate_requirements_file(
-        collection_path, collection_tarball_path.name
+        tmp, collection_tarball_path.name
     )
     ee_generator.generate_execution_environments(
-        collection_path, collection_tarball_path.name
+        tmp, collection_tarball_path.name
     )
 
     built_images = build_ee_image(
-        collection_path, collection_data.namespace, collection_data.name
+        tmp, collection_data.namespace, collection_data.name
     )
 
     return collection_tarball_path, built_images
@@ -99,7 +101,7 @@ def add_execution_environment_session(
         )
 
         collection_tarball, built_images = prepare_execution_environment(
-            session, collection_path, collection_data
+            session, collection_data
         )
 
         if built_images:
