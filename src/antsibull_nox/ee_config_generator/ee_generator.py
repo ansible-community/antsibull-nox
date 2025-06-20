@@ -1,3 +1,12 @@
+# GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or
+# https://www.gnu.org/licenses/gpl-3.0.txt)
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025, Ansible Project
+
+"""
+Generate execution environment definitions from templates.
+"""
+
 import os
 
 from antsibull_fileutils.yaml import store_yaml_file
@@ -11,8 +20,7 @@ MATRIX_CONFIGS = [
         "other_deps": {},
         "python_interpreter": {
             "package_system": (
-                "python3.11 python3.11-pip "
-                "python3.11-wheel python3.11-cryptography"
+                "python3.11 python3.11-pip " "python3.11-wheel python3.11-cryptography"
             ),
             "python_path": "/usr/bin/python3.11",
         },
@@ -31,11 +39,28 @@ MATRIX_CONFIGS = [
 
 
 class ExecutionEnvironmentGenerator:
+    """
+    Generate execution environment files from Jinja2 templates.
+    """
+
     def __init__(self):
+        """
+        Initialize the EE generator.
+        """
         template_dir = os.path.join(os.path.dirname(__file__), "templates")
         self.env = Environment(loader=FileSystemLoader(template_dir))
 
     def generate_requirements_file(self, output_path, collection_filename):
+        """
+        Generate a requirements.yml file for collection dependencies.
+
+        Args:
+            output_path: Directory for requirements.yml
+            collection_filename: Name of the collection tarball
+
+        Returns:
+            Path to the generated requirements.yml file
+        """
         req_config = {
             "collections": [{"name": f"src/{collection_filename}", "type": "file"}]
         }
@@ -48,6 +73,17 @@ class ExecutionEnvironmentGenerator:
     def generate_execution_environments(
         self, output_path, collection_filename, configs=None
     ):
+        """
+        Generate execution environment definitions from the config matrix.
+
+        Args:
+            output_path: Directory for EE yml files
+            collection_filename: Name of the collection tarball
+            configs: List of matrix configs
+
+        Returns:
+            Generated EE yml file paths
+        """
         if configs is None:
             configs = MATRIX_CONFIGS
 
@@ -72,7 +108,7 @@ class ExecutionEnvironmentGenerator:
                 output_path, f"execution-environment-{config_name}.yml"
             )
 
-            with open(ee_filename, 'w', encoding='utf-8') as f:
+            with open(ee_filename, "w", encoding="utf-8") as f:
                 f.write(output)
 
             generated_files.append(ee_filename)
