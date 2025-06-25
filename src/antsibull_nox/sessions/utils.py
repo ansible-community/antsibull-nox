@@ -10,6 +10,7 @@ Utils for creating nox sessions.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
@@ -19,6 +20,8 @@ from pathlib import Path
 
 import nox
 from nox.logger import OUTPUT as nox_OUTPUT
+from packaging.version import InvalidVersion
+from packaging.version import parse as parse_version
 
 from ..data_util import prepare_data_script
 from ..paths import (
@@ -151,6 +154,86 @@ def run_bare_script(
     )
 
 
+def get_package_versions(
+    session: nox.Session,
+    /,
+    packages: list[str] | str,
+    *,
+    use_session_python: bool = True,
+) -> None | dict[str, str | None]:
+    """
+    Retrieve the versions of one or more Python packages.
+    """
+    name = "get-package-versions"
+    if isinstance(packages, str):
+        packages = [packages]
+    if not packages:
+        return {}
+    data = prepare_data_script(
+        session,
+        base_name=name,
+        paths=[],
+        extra_data={
+            "packages": packages,
+        },
+    )
+    python = sys.executable
+    env = {}
+    if use_session_python:
+        python = "python"
+        env["PYTHONPATH"] = str(find_data_directory())
+    result = session.run(
+        python,
+        find_data_directory() / f"{name}.py",
+        "--data",
+        data,
+        external=True,
+        silent=True,
+        env=env,
+    )
+    if result is None:
+        return None
+    return json.loads(result)
+
+
+def get_package_version(
+    session: nox.Session,
+    /,
+    package: str,
+    *,
+    use_session_python: bool = True,
+) -> str | None:
+    """
+    Retrieve a Python package's version.
+    """
+    result = get_package_versions(
+        session, package, use_session_python=use_session_python
+    )
+    return None if result is None else result.get(package)
+
+
+def is_new_enough(actual_version: str | None, *, min_version: str) -> bool:
+    """
+    Given a program version, compares it to the min_version.
+    If the program version is not given, it is assumed to be "new enough".
+    """
+    if actual_version is None:
+        return True
+    try:
+        act_v = parse_version(actual_version)
+    except InvalidVersion as exc:
+        raise ValueError(
+            f"Cannot parse actual version {actual_version!r}: {exc}"
+        ) from exc
+    try:
+        min_v = parse_version(min_version)
+    except InvalidVersion as exc:
+        raise ValueError(
+            f"Cannot parse minimum version {min_version!r}: {exc}"
+        ) from exc
+    return act_v >= min_v
+
+
 def compose_description(
     *,
     prefix: str | dict[t.Literal["one", "other"], str] | None = None,
@@ -197,8 +280,11 @@ def compose_description(
 __all__ = [
     "ci_group",
     "compose_description",
+    "get_package_version",
+    "get_package_versions",
     "get_registered_sessions",
     "install",
+    "is_new_enough",
     "nox_has_verbosity",
     "register",
     "run_bare_script",

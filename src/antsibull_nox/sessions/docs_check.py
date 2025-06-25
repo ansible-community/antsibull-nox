@@ -23,7 +23,9 @@ from .collections import (
     prepare_collections,
 )
 from .utils import (
+    get_package_version,
     install,
+    is_new_enough,
     run_bare_script,
 )
 
@@ -93,6 +95,9 @@ def add_docs_check(
     def execute_antsibull_docs(
         session: nox.Session, prepared_collections: CollectionSetup
     ) -> None:
+        antsibull_docs_version = get_package_version(session, "antsibull-docs")
+        if antsibull_docs_version is not None:
+            session.log(f"Detected antsibull-docs version {antsibull_docs_version}")
         with session.chdir(prepared_collections.current_path):
             collections_path = f"{prepared_collections.current_place}"
             command = [
@@ -104,6 +109,8 @@ def add_docs_check(
             ]
             if validate_collection_refs:
                 command.extend(["--validate-collection-refs", validate_collection_refs])
+            if is_new_enough(antsibull_docs_version, min_version="2.18.0"):
+                command.append("--check-extra-docs-refs")
             session.run(*command, env={"ANSIBLE_COLLECTIONS_PATH": collections_path})
 
     def docs_check(session: nox.Session) -> None:
