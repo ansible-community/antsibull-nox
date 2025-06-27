@@ -12,6 +12,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+import nox
+
 from antsibull_nox.ee_config_generator import ExecutionEnvironmentGenerator
 
 from ..collection import CollectionData, build_collection
@@ -113,7 +115,6 @@ def add_execution_environment_session(
     Creates a nox session that builds execution environments for the collection.
 
     Args:
-        sessions_dict: Dictionary to register the session function
         collection_data: Collection metadata
         session_name: Name for the session
         description: Human-readable description for the session
@@ -139,4 +140,6 @@ def add_execution_environment_session(
         session.log(f"Collection tarball: {collection_tarball}")
 
     session_func.__doc__ = description
-    sessions_dict[session_name] = session_func
+    nox.session(
+        name=session_name,
+    )(session_func)
