@@ -82,12 +82,12 @@ def prepare_execution_environment(
 
     Args:
         session: Nox session object
-        collection_data: Collection metadata
 
     Returns:
         Tuple with:
         - collection_tarball_path: Path to the built collection tarball
         - built_image_names: List of built container images
+        - collection_data: Collection metadata
     """
     collection_tarball_result = build_collection(session)
 
@@ -108,19 +108,9 @@ def prepare_execution_environment(
     return collection_tarball_path, built_images, collection_data
 
 
-def add_execution_environment_session(
-    session_name: str = "build-ee",
-    description: str = "Build execution environment images",
-) -> None:
+def add_execution_environment_session() -> None:
     """
-    Creates a nox session that builds execution environments for the collection.
-
-    Args:
-        session_name: Name for the session
-        description: Human-readable description for the session
-
-    Returns:
-        None
+    Build and test execution environments for the collection.
     """
 
     def session_func(session):
@@ -140,7 +130,7 @@ def add_execution_environment_session(
 
         session.log(f"Collection tarball: {collection_tarball}")
 
-    session_func.__doc__ = description
+    session_func.__doc__ = "Build and test execution environment images"
     nox.session(
-        name=session_name,
+        name="ee-check",
     )(session_func)
