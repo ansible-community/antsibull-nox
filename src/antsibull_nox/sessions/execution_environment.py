@@ -105,7 +105,6 @@ def prepare_execution_environment(
 
 
 def add_execution_environment_session(
-    sessions_dict: dict,
     collection_data: CollectionData,
     session_name: str = "build-ee",
     description: str = "Build execution environment images",
