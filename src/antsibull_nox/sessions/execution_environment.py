@@ -75,8 +75,8 @@ def build_ee_image(collection_path: Path, namespace: str, name: str) -> list[str
 
 
 def prepare_execution_environment(
-    session, collection_data: CollectionData
-) -> tuple[Path, list[str]]:
+    session,
+) -> tuple[Path, list[str], CollectionData]:
     """
     Generate execution environments for a collection.
 
@@ -95,6 +95,8 @@ def prepare_execution_environment(
     if collection_tarball_path is None:
         raise RuntimeError("Failed to build collection tarball")
 
+    collection_data = collection_tarball_result[1]
+
     tmp = Path(session.create_tmp())
 
     ee_generator = ExecutionEnvironmentGenerator()
@@ -103,11 +105,10 @@ def prepare_execution_environment(
 
     built_images = build_ee_image(tmp, collection_data.namespace, collection_data.name)
 
-    return collection_tarball_path, built_images
+    return collection_tarball_path, built_images, collection_data
 
 
 def add_execution_environment_session(
-    collection_data: CollectionData,
     session_name: str = "build-ee",
     description: str = "Build execution environment images",
 ) -> None:
@@ -115,7 +116,6 @@ def add_execution_environment_session(
     Creates a nox session that builds execution environments for the collection.
 
     Args:
-        collection_data: Collection metadata
         session_name: Name for the session
         description: Human-readable description for the session
 
@@ -124,12 +124,13 @@ def add_execution_environment_session(
     """
 
     def session_func(session):
-        session.log(
-            f"Building execution environment for {collection_data.namespace}.{collection_data.name}"
+
+        collection_tarball, built_images, collection_data = (
+            prepare_execution_environment(session)
         )
 
-        collection_tarball, built_images = prepare_execution_environment(
-            session, collection_data
+        session.log(
+            f"Building execution environment for {collection_data.namespace}.{collection_data.name}"
         )
 
         if built_images:
