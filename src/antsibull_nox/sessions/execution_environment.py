@@ -10,6 +10,8 @@ Build execution environments for testing.
 from __future__ import annotations
 
 import subprocess
+import typing as t
+from dataclasses import dataclass
 from pathlib import Path
 
 import nox
@@ -17,6 +19,69 @@ import nox
 from antsibull_nox.ee_config_generator import ExecutionEnvironmentGenerator
 
 from ..collection import CollectionData, build_collection
+from .utils import register
+
+
+@dataclass
+class ExecutionEnvironmentData:
+    """
+    Information for an execution environment session.
+    """
+
+    name: str
+    description: str
+    config: dict[str, t.Any]
+    test_playbooks: list[str]
+
+
+EXAMPLE_EE_DATA_1 = ExecutionEnvironmentData(
+    name="devel-ubi-9",
+    description="ansible-core devel @ RHEL UBI 9",
+    config={
+        "version": 3,
+        "images": {
+            "base_image": {
+                "name": "docker.io/redhat/ubi9:latest",
+            },
+        },
+        "dependencies": {
+            "ansible_core": {
+                "package_pip": "https://github.com/ansible/ansible/archive/devel.tar.gz",
+            },
+            "ansible_runner": {
+                "package_pip": "ansible-runner",
+            },
+            "python_interpreter": {
+                "package_system": "python3.11 python3.11-pip "
+                "python3.11-wheel python3.11-cryptography",
+                "python_path": "/usr/bin/python3.11",
+            },
+        },
+    },
+    test_playbooks=["tests/ee/all.yml"],
+)
+
+EXAMPLE_EE_DATA_2 = ExecutionEnvironmentData(
+    name="2.15-rocky-9",
+    description="ansible-core 2.15 @ Rocky Linux 9",
+    config={
+        "version": 3,
+        "images": {
+            "base_image": {
+                "name": "quay.io/rockylinux/rockylinux:9",
+            },
+        },
+        "dependencies": {
+            "ansible_core": {
+                "package_pip": "https://github.com/ansible/ansible/archive/stable-2.15.tar.gz",
+            },
+            "ansible_runner": {
+                "package_pip": "ansible-runner",
+            },
+        },
+    },
+    test_playbooks=["tests/ee/all.yml"],
+)
 
 
 def build_ee_image(collection_path: Path, namespace: str, name: str) -> list[str]:
@@ -75,7 +140,9 @@ def build_ee_image(collection_path: Path, namespace: str, name: str) -> list[str
 
 
 def prepare_execution_environment(
-    session,
+    *,
+    session: nox.Session,
+    execution_environment: ExecutionEnvironmentData,
 ) -> tuple[Path, list[str], CollectionData]:
     """
     Generate execution environments for a collection.
@@ -108,19 +175,26 @@ def prepare_execution_environment(
     return collection_tarball_path, built_images, collection_data
 
 
-def add_execution_environment_session() -> None:
+def add_execution_environment_session(
+    *,
+    session_name: str,
+    execution_environment: ExecutionEnvironmentData,
+    default: bool = False,
+) -> None:
     """
     Build and test execution environments for the collection.
     """
 
-    def session_func(session):
-
+    def session_func(session: nox.Session):
         collection_tarball, built_images, collection_data = (
-            prepare_execution_environment(session)
+            prepare_execution_environment(
+                session=session, execution_environment=execution_environment
+            )
         )
 
         session.log(
-            f"Building execution environment for {collection_data.namespace}.{collection_data.name}"
+            f"Building execution environment {execution_environment.description}"
+            f" for {collection_data.namespace}.{collection_data.name}"
         )
 
         if built_images:
@@ -130,7 +204,45 @@ def add_execution_environment_session() -> None:
 
         session.log(f"Collection tarball: {collection_tarball}")
 
-    session_func.__doc__ = "Build and test execution environment images"
+        # TODO: run ee tests (playbooks from execution_environment.test_playbooks)
+
+    session_func.__doc__ = (
+        "Build and test execution environment image:"
+        f" {execution_environment.description}"
+    )
+    nox.session(name=session_name, default=default)(session_func)
+
+    data = {
+        "name": session_name,
+        "description": execution_environment.description,
+    }
+    register("execution-environment", data)
+
+
+def add_execution_environment_sessions(
+    *, execution_environments: list[ExecutionEnvironmentData], default: bool = False
+) -> None:
+    """
+    Build and test execution environments for the collection.
+    """
+    session_names = []
+    for ee in execution_environments:
+        session_name = f"ee-check-{ee.name}"
+        add_execution_environment_session(
+            session_name=session_name, execution_environment=ee, default=False
+        )
+        session_names.append(session_name)
+
+    def session_func(
+        session: nox.Session,  # pylint: disable=unused-argument
+    ) -> None:
+        pass
+
+    session_func.__doc__ = (
+        "Meta session for building and testing execution environment images"
+    )
     nox.session(
         name="ee-check",
+        requires=session_names,
+        default=default,
     )(session_func)
