@@ -9,17 +9,17 @@ Build execution environments for testing.
 
 from __future__ import annotations
 
-import subprocess
+import shutil
 import typing as t
 from dataclasses import dataclass
 from pathlib import Path
 
 import nox
 
-from antsibull_nox.ee_config_generator import ExecutionEnvironmentGenerator
+from antsibull_nox.ee_config import generate_ee_config
 
 from ..collection import CollectionData, build_collection
-from .utils import register
+from .utils import install, register
 
 
 @dataclass
@@ -84,66 +84,50 @@ EXAMPLE_EE_DATA_2 = ExecutionEnvironmentData(
 )
 
 
-def build_ee_image(collection_path: Path, namespace: str, name: str) -> list[str]:
+def build_ee_image(
+    *,
+    session: nox.Session,
+    directory: Path,
+    ee_name: str,
+    collection_data: CollectionData,
+) -> str:
     """
     Build container images for execution environments.
 
     Args:
-        collection_path: Path to directory that contains execution environment definitions
-        namespace: Collection namespace
-        name: Collection
+        session: Nox session object
+        directory: Path to directory that contains execution environment definition
+        ee_name: Name of execution environment
+        collection_data: Collection information
 
     Returns:
-        List of successfully built container image names
+        Name of successfully built container image
     """
-    built_images = []
-
-    ee_files = list(collection_path.glob("execution-environment-*.yml"))
-
-    for ee_file in ee_files:
-        prefix = "execution-environment-"
-        image_name = f"{namespace}-{name}-{ee_file.stem.replace(prefix, '')}"
-
-        try:
-            context_dir = str(ee_file.parent / f"context-{ee_file.stem}")
-
-            cmd = [
-                "ansible-builder",
-                "build",
-                "--file",
-                str(ee_file),
-                "--tag",
-                image_name,
-                "--container-runtime",
-                "podman",
-                "--verbosity",
-                "3",
-                "--context",
-                context_dir,
-            ]
-
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-
-            if result.returncode == 0:
-                built_images.append(image_name)
-            else:
-                print(
-                    f"Could not build image for {ee_file}, return code: {result.returncode}"
-                )
-
-        except OSError as e:
-            print(
-                f"An error was encountered while building an image for {ee_file}: {e}"
-            )
-
-    return built_images
+    image_name = f"{collection_data.namespace}-{collection_data.name}-{ee_name}"
+    cmd = [
+        "ansible-builder",
+        "build",
+        "--file",
+        "execution-environment.yml",
+        "--tag",
+        image_name,
+        "--container-runtime",
+        "podman",  # TODO: shouldn't be hardcoded
+        "--verbosity",
+        "3",
+        "--context",
+        str(directory),
+    ]
+    with session.chdir(directory):
+        session.run(*cmd)  # , silent=True)
+    return image_name
 
 
 def prepare_execution_environment(
     *,
     session: nox.Session,
     execution_environment: ExecutionEnvironmentData,
-) -> tuple[Path, list[str], CollectionData]:
+) -> tuple[Path | None, str | None, CollectionData]:
     """
     Generate execution environments for a collection.
 
@@ -156,23 +140,32 @@ def prepare_execution_environment(
         - built_image_names: List of built container images
         - collection_data: Collection metadata
     """
-    collection_tarball_result = build_collection(session)
+    collection_tarball_path, collection_data, _ = build_collection(session)
 
-    collection_tarball_path = collection_tarball_result[0]
     if collection_tarball_path is None:
-        raise RuntimeError("Failed to build collection tarball")
+        return collection_tarball_path, None, collection_data
 
-    collection_data = collection_tarball_result[1]
+    directory = Path(session.create_tmp()) / "ee"
+    if directory.is_dir():
+        shutil.rmtree(directory)
+    if not directory.is_dir():
+        directory.mkdir()
 
-    tmp = Path(session.create_tmp())
+    generate_ee_config(
+        directory=directory,
+        collection_tarball_path=collection_tarball_path.absolute(),
+        collection_data=collection_data,
+        ee_config=execution_environment.config,
+    )
 
-    ee_generator = ExecutionEnvironmentGenerator()
-    ee_generator.generate_requirements_file(tmp, collection_tarball_path.name)
-    ee_generator.generate_execution_environments(tmp, collection_tarball_path.name)
+    built_image = build_ee_image(
+        session=session,
+        directory=directory,
+        ee_name=execution_environment.name,
+        collection_data=collection_data,
+    )
 
-    built_images = build_ee_image(tmp, collection_data.namespace, collection_data.name)
-
-    return collection_tarball_path, built_images, collection_data
+    return collection_tarball_path, built_image, collection_data
 
 
 def add_execution_environment_session(
@@ -186,25 +179,38 @@ def add_execution_environment_session(
     """
 
     def session_func(session: nox.Session):
-        collection_tarball, built_images, collection_data = (
+        install(session, "ansible-builder", "ansible-navigator")
+
+        collection_tarball, built_image, collection_data = (
             prepare_execution_environment(
                 session=session, execution_environment=execution_environment
             )
         )
 
+        if collection_tarball is None or built_image is None:
+            # Install only
+            return
+
         session.log(
             f"Building execution environment {execution_environment.description}"
-            f" for {collection_data.namespace}.{collection_data.name}"
+            f" for {collection_data.namespace}.{collection_data.name}. Image: {built_image}"
         )
 
-        if built_images:
-            session.log(f"Successfully built images: {', '.join(built_images)}")
-        else:
-            session.warn("No execution environment images were built")
-
-        session.log(f"Collection tarball: {collection_tarball}")
-
-        # TODO: run ee tests (playbooks from execution_environment.test_playbooks)
+        for playbook in execution_environment.test_playbooks:
+            session.run(
+                "ansible-navigator",
+                "run",
+                "--mode",
+                "stdout",
+                "--container-engine",
+                "podman",  # TODO: shouldn't be hardcoded
+                "--pull-policy",
+                "never",
+                "--execution-environment-image",
+                built_image,
+                "-v",
+                playbook,
+            )
 
     session_func.__doc__ = (
         "Build and test execution environment image:"
