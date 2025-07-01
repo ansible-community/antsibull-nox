@@ -87,13 +87,13 @@ _SUPPORTED_CORE_VERSIONS: dict[Version, AnsibleCoreInfo] = {
             ["3.11", "3.12", "3.13"],
             ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"],
         ],
+        "2.20": [
+            ["3.11", "3.12", "3.13"],
+            ["3.9", "3.10", "3.11", "3.12", "3.13"],
+        ],
         # The following might need updates. Look for the "``ansible-core`` support matrix" table in:
         # https://github.com/ansible/ansible-documentation/blob/devel/docs/docsite/rst/reference_appendices/release_and_maintenance.rst?plain=1
         # It contains commented-out entries for future ansible-core versions.
-        "2.20": [
-            ["3.12", "3.13", "3.14"],
-            ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"],
-        ],
         "2.21": [
             ["3.12", "3.13", "3.14"],
             ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"],
