@@ -1,14 +1,28 @@
 # Antsibull Nox Helper Release Notes
 
-<a id="v0-6-0"></a>
-## v0\.6\.0
+<a id="v0-7-0"></a>
+## v0\.7\.0
 
 <a id="release-summary"></a>
 ### Release Summary
 
-Bugfix and feature release\.
+Feature release\.
 
 <a id="minor-changes"></a>
+### Minor Changes
+
+* Antsibull\-nox\'s ansible\-core <code>devel</code> and <code>milestone</code> branch versions have been updated to 2\.20\. This means that <code>stable\-2\.19</code> will now be added to CI matrices if <code>max\_version</code> has not been explicitly specified \([https\://github\.com/ansible\-community/antsibull\-nox/pull/91](https\://github\.com/ansible\-community/antsibull\-nox/pull/91)\)\.
+* The <code>docs\-check</code> session now also passes the new <code>\-\-check\-extra\-docs\-refs</code> parameter to <code>antsibull\-docs lint\-collection\-docs</code> for antsibull\-docs \>\= 2\.18\.0 \([https\://github\.com/ansible\-community/antsibull\-nox/pull/90](https\://github\.com/ansible\-community/antsibull\-nox/pull/90)\)\.
+
+<a id="v0-6-0"></a>
+## v0\.6\.0
+
+<a id="release-summary-1"></a>
+### Release Summary
+
+Bugfix and feature release\.
+
+<a id="minor-changes-1"></a>
 ### Minor Changes
 
 * Add new extra check <code>no\-trailing\-whitespace</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/85](https\://github\.com/ansible\-community/antsibull\-nox/pull/85)\)\.
@@ -29,12 +43,12 @@ Bugfix and feature release\.
 <a id="v0-5-0"></a>
 ## v0\.5\.0
 
-<a id="release-summary-1"></a>
+<a id="release-summary-2"></a>
 ### Release Summary
 
 Feature and bugfix release\.
 
-<a id="minor-changes-1"></a>
+<a id="minor-changes-2"></a>
 ### Minor Changes
 
 * Allow to pass environment variables as Ansible variables for integration tests with the new <code>ansible\_vars\_from\_env\_vars</code> option for <code>sessions\.ansible\_test\_integration\_w\_default\_container</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/78](https\://github\.com/ansible\-community/antsibull\-nox/pull/78)\)\.
@@ -47,7 +61,7 @@ Feature and bugfix release\.
 <a id="v0-4-0"></a>
 ## v0\.4\.0
 
-<a id="release-summary-2"></a>
+<a id="release-summary-3"></a>
 ### Release Summary
 
 Feature and bugfix release\.
@@ -57,7 +71,7 @@ Feature and bugfix release\.
 
 * Required collections can now be installed from different sources per depending on the ansible\-core version \([https\://github\.com/ansible\-community/antsibull\-nox/pull/76](https\://github\.com/ansible\-community/antsibull\-nox/pull/76)\)\.
 
-<a id="minor-changes-2"></a>
+<a id="minor-changes-3"></a>
 ### Minor Changes
 
 * Capture mypy and pylint errors to report paths of files relative to collection\'s root\, instead of relative to the virtual <code>ansible\_collections</code> directory \([https\://github\.com/ansible\-community/antsibull\-nox/pull/75](https\://github\.com/ansible\-community/antsibull\-nox/pull/75)\)\.
@@ -74,7 +88,7 @@ Feature and bugfix release\.
 <a id="v0-3-0"></a>
 ## v0\.3\.0
 
-<a id="release-summary-3"></a>
+<a id="release-summary-4"></a>
 ### Release Summary
 
 Feature release that is stabilizing the API\.
@@ -82,7 +96,7 @@ Feature release that is stabilizing the API\.
 All noxfiles and configs using this version should still work with antsibull\-nox 1\.0\.0\,
 unless a critical problem is found that cannot be solved in any other way\.
 
-<a id="minor-changes-3"></a>
+<a id="minor-changes-4"></a>
 ### Minor Changes
 
 * Add <code>antsibull\-nox init</code> command that creates a <code>noxfile\.py</code> and <code>antsibull\-nox\.tomll</code> to get started \([https\://github\.com/ansible\-community/antsibull\-nox/pull/58](https\://github\.com/ansible\-community/antsibull\-nox/pull/58)\)\.
@@ -112,7 +126,7 @@ unless a critical problem is found that cannot be solved in any other way\.
 <a id="v0-2-0"></a>
 ## v0\.2\.0
 
-<a id="release-summary-4"></a>
+<a id="release-summary-5"></a>
 ### Release Summary
 
 Major extension and overhaul with many breaking changes\. The next minor release is expected to bring more stabilization\.
@@ -122,7 +136,7 @@ Major extension and overhaul with many breaking changes\. The next minor release
 
 * There is now a new function <code>antsibull\_nox\.load\_antsibull\_nox\_toml\(\)</code> which loads <code>antsibull\-nox\.toml</code> and creates configuration and sessions from it\. Calling other functionality from <code>antsibull\_nox</code> in <code>noxfile\.py</code> is only necessary for creating own specialized sessions\, or ansible\-test sessions that cannot be created with the <code>antsibull\_nox\.add\_all\_ansible\_test\_\*\_test\_sessions\*\(\)</code> type functions \([https\://github\.com/ansible\-community/antsibull\-nox/pull/50](https\://github\.com/ansible\-community/antsibull\-nox/pull/50)\, [https\://github\.com/ansible\-community/antsibull\-nox/issues/34](https\://github\.com/ansible\-community/antsibull\-nox/issues/34)\)\.
 
-<a id="minor-changes-4"></a>
+<a id="minor-changes-5"></a>
 ### Minor Changes
 
 * Add descriptions to generated sessions that are shown when running <code>nox \-\-list</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/31](https\://github\.com/ansible\-community/antsibull\-nox/pull/31)\)\.
@@ -148,12 +162,12 @@ Major extension and overhaul with many breaking changes\. The next minor release
 <a id="v0-1-0"></a>
 ## v0\.1\.0
 
-<a id="release-summary-5"></a>
+<a id="release-summary-6"></a>
 ### Release Summary
 
 Feature release\.
 
-<a id="minor-changes-5"></a>
+<a id="minor-changes-6"></a>
 ### Minor Changes
 
 * A <code>build\-import\-check</code> session that builds and tries to import the collection with Galaxy Importer can be added with <code>add\_build\_import\_check\(\)</code> \([https\://github\.com/ansible\-community/antsibull\-nox/issues/15](https\://github\.com/ansible\-community/antsibull\-nox/issues/15)\, [https\://github\.com/ansible\-community/antsibull\-nox/pull/17](https\://github\.com/ansible\-community/antsibull\-nox/pull/17)\)\.
@@ -180,7 +194,7 @@ Feature release\.
 <a id="v0-0-1"></a>
 ## v0\.0\.1
 
-<a id="release-summary-6"></a>
+<a id="release-summary-7"></a>
 ### Release Summary
 
 Initial alpha release\.

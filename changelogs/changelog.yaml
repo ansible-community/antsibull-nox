@@ -253,3 +253,18 @@ releases:
       - 87-yamllint-rst.yml
       - 88-docs-check.yml
     release_date: '2025-06-18'
+  0.7.0:
+    changes:
+      minor_changes:
+        - Antsibull-nox's ansible-core ``devel`` and ``milestone`` branch versions
+          have been updated to 2.20. This means that ``stable-2.19`` will now be added
+          to CI matrices if ``max_version`` has not been explicitly specified (https://github.com/ansible-community/antsibull-nox/pull/91).
+        - The ``docs-check`` session now also passes the new ``--check-extra-docs-refs``
+          parameter to ``antsibull-docs lint-collection-docs`` for antsibull-docs
+          >= 2.18.0 (https://github.com/ansible-community/antsibull-nox/pull/90).
+      release_summary: Feature release.
+    fragments:
+      - 0.7.0.yml
+      - 90-antsibull-docs-lint.yml
+      - 91-ansible-core-2.19.yml
+    release_date: '2025-07-01'

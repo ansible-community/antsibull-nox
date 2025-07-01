@@ -1,2 +1,0 @@
-minor_changes:
-  - "The ``docs-check`` session now also passes the new ``--check-extra-docs-refs`` parameter to ``antsibull-docs lint-collection-docs`` for antsibull-docs >= 2.18.0 (https://github.com/ansible-community/antsibull-nox/pull/90)."

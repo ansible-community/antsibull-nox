@@ -4,6 +4,20 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v0.7.0
+======
+
+Release Summary
+---------------
+
+Feature release.
+
+Minor Changes
+-------------
+
+- Antsibull-nox's ansible-core ``devel`` and ``milestone`` branch versions have been updated to 2.20. This means that ``stable-2.19`` will now be added to CI matrices if ``max_version`` has not been explicitly specified (https://github.com/ansible-community/antsibull-nox/pull/91).
+- The ``docs-check`` session now also passes the new ``--check-extra-docs-refs`` parameter to ``antsibull-docs lint-collection-docs`` for antsibull-docs >= 2.18.0 (https://github.com/ansible-community/antsibull-nox/pull/90).
+
 v0.6.0
 ======
 
