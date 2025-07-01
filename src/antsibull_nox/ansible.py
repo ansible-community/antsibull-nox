@@ -118,8 +118,8 @@ _SUPPORTED_CORE_VERSIONS: dict[Version, AnsibleCoreInfo] = {
 }
 
 _MIN_SUPPORTED_VERSION = Version.parse("2.9")
-_CURRENT_DEVEL_VERSION = Version.parse("2.19")
-_CURRENT_MILESTONE_VERSION = Version.parse("2.19")
+_CURRENT_DEVEL_VERSION = Version.parse("2.20")
+_CURRENT_MILESTONE_VERSION = Version.parse("2.20")
 
 
 def get_ansible_core_info(
