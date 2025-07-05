@@ -34,9 +34,21 @@ class AnsibleCoreInfo:
     remote_python_versions: tuple[Version, ...]
 
 
-_SUPPORTED_CORE_VERSIONS: dict[Version, AnsibleCoreInfo] = {
-    Version.parse(ansible_version): AnsibleCoreInfo(
-        ansible_core_version=Version.parse(ansible_version),
+_MIN_SUPPORTED_VERSION = Version.parse("2.9")
+_CURRENT_DEVEL_VERSION = Version.parse("2.20")
+_CURRENT_MILESTONE_VERSION = Version.parse("2.20")
+
+_SUPPORTED_CORE_VERSIONS: dict[Version | t.Literal["milestone"], AnsibleCoreInfo] = {
+    (
+        "milestone"
+        if ansible_version == "milestone"
+        else Version.parse(ansible_version)
+    ): AnsibleCoreInfo(
+        ansible_core_version=(
+            _CURRENT_MILESTONE_VERSION
+            if ansible_version == "milestone"
+            else Version.parse(ansible_version)
+        ),
         controller_python_versions=tuple(
             Version.parse(v) for v in controller_python_versions
         ),
@@ -90,6 +102,13 @@ _SUPPORTED_CORE_VERSIONS: dict[Version, AnsibleCoreInfo] = {
         "2.20": [
             ["3.11", "3.12", "3.13"],
             ["3.9", "3.10", "3.11", "3.12", "3.13"],
+            # Note: 3.14 should get added, 3.11 removed
+        ],
+        "milestone": [
+            ["3.11", "3.12", "3.13"],
+            ["3.9", "3.10", "3.11", "3.12", "3.13"],
+            # Note: might lag behind devel
+            # Note: 3.14 should get added, 3.11 removed
         ],
         # The following might need updates. Look for the "``ansible-core`` support matrix" table in:
         # https://github.com/ansible/ansible-documentation/blob/devel/docs/docsite/rst/reference_appendices/release_and_maintenance.rst?plain=1
@@ -116,10 +135,6 @@ _SUPPORTED_CORE_VERSIONS: dict[Version, AnsibleCoreInfo] = {
         ],
     }.items()
 }
-
-_MIN_SUPPORTED_VERSION = Version.parse("2.9")
-_CURRENT_DEVEL_VERSION = Version.parse("2.20")
-_CURRENT_MILESTONE_VERSION = Version.parse("2.20")
 
 
 def get_ansible_core_info(
