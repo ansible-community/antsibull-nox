@@ -4,6 +4,19 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.0.0
+======
+
+Release Summary
+---------------
+
+First stable release.
+
+Minor Changes
+-------------
+
+- New extra check ``avoid-characters`` allows to flag characters / regular expressions. This can for example be used to avoid tabulator characters, but also more complex character sequences (https://github.com/ansible-community/antsibull-nox/issues/89, https://github.com/ansible-community/antsibull-nox/pull/94).
+
 v0.7.0
 ======
 
