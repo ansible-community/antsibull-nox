@@ -15,6 +15,7 @@ import typing as t
 from .ansible import AnsibleCoreVersion
 from .collection import CollectionSource, setup_collection_sources
 from .config import ActionGroup as ConfigActionGroup
+from .config import AvoidCharacterGroup as ConfigAvoidCharacterGroup
 from .config import (
     Config,
     DevelLikeBranch,
@@ -31,6 +32,7 @@ from .sessions.build_import_check import add_build_import_check
 from .sessions.docs_check import add_docs_check
 from .sessions.extra_checks import (
     ActionGroup,
+    AvoidCharacterGroup,
     add_extra_checks,
 )
 from .sessions.license_check import add_license_check
@@ -73,6 +75,26 @@ def _convert_action_groups(
             exclusions=action_group.exclusions,
         )
         for action_group in action_groups
+    ]
+
+
+def _convert_avoid_character_groups(
+    avoid_character_groups: list[ConfigAvoidCharacterGroup] | None,
+) -> list[AvoidCharacterGroup] | None:
+    if avoid_character_groups is None:
+        return None
+    return [
+        AvoidCharacterGroup(
+            name=avoid_character_group.name,
+            regex=avoid_character_group.regex,
+            match_extensions=avoid_character_group.match_extensions,
+            match_paths=avoid_character_group.match_paths,
+            match_directories=avoid_character_group.match_directories,
+            skip_extensions=avoid_character_group.skip_extensions,
+            skip_paths=avoid_character_group.skip_paths,
+            skip_directories=avoid_character_group.skip_directories,
+        )
+        for avoid_character_group in avoid_character_groups
     ]
 
 
@@ -210,6 +232,10 @@ def _add_sessions(sessions: Sessions) -> None:
             ),
             no_trailing_whitespace_skip_directories=(
                 sessions.extra_checks.no_trailing_whitespace_skip_directories
+            ),
+            run_avoid_characters=sessions.extra_checks.run_avoid_characters,
+            avoid_character_group=_convert_avoid_character_groups(
+                sessions.extra_checks.avoid_character_group
             ),
         )
     if sessions.build_import_check:

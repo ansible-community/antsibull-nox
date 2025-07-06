@@ -575,7 +575,7 @@ This example is from `community.dns`:
 [sessions.license_check]
 ```
 
-## Extra checks: action groups and unwanted files
+## Extra checks: action groups, unwanted files, trailing whitespace, unwanted characters/regular expressions
 
 The extra checks session `extra-checks` runs various extra checks.
 Right now it can run the following checks:
@@ -587,6 +587,13 @@ Right now it can run the following checks:
 * Action groups:
   This check makes sure that the modules you want are part of an action group,
   and that all modules in an action group use the corresponding docs fragment.
+
+* No trailing whitespace:
+  This check flags all trailing whitespace.
+
+* Avoid characters:
+  This check allows to flag specific characters / regular expressions in files.
+  For example, you can use this to flag tab characters, Windows newlines, curly quotes, and so on.
 
 The session is added with the `[sessions.extra_checks]` section in `antsibull-nox.toml`.
 It can be configured as follows:
@@ -669,6 +676,43 @@ It can be configured as follows:
     * `no_trailing_whitespace_skip_directories: list[str]` (default `[]`):
       Which directories to ignore.
 
+* Avoid characters:
+
+    * `run_avoid_characters: bool` (default `false`):
+      Whether the check should be run.
+
+    * `avoid_character_group: list[AvoidCharacterGroup]` (default `[]`):
+      List of groups of regular expressions with optional names and file selectors.
+
+      Every group is an object.
+      It should be defined in a new section `[[sessions.extra_checks.avoid_character_group]]`.
+      (See [Array of Tables](https://toml.io/en/v1.0.0#array-of-tables) in the TOML Specification.)
+      Groups have the following properties:
+
+      * `name: str` (**optional**):
+        User-friendly name to show instead of the regular expression.
+
+      * `regex: str` (**required**):
+        A [Python regular expression](https://docs.python.org/3/library/re.html) to flag when being found.
+
+      * `match_extensions: list[str] | None` (default `None`):
+        If specified, will only match files whose filename ends with a string from this list.
+
+      * `match_paths: list[str] | None` (default `None`):
+        If specified, will only match files whose paths are part of this list.
+
+      * `match_directories: list[str] | None` (default `None`):
+        If specified, will only match files which are in a directory or subdirectory of a path in this list.
+
+      * `skip_extensions: list[str]` (default `[]`):
+        If specified, will not match files whose filename ends with a string from this list.
+
+      * `skip_paths: list[str]` (default `[]`):
+        If specified, will only match files whose paths are not part of this list.
+
+      * `skip_directories: list[str]` (default `[]`):
+        If specified, will not match files which are in a directory or subdirectory of a path in this list.
+
 ### Example code
 
 This example is from `community.dns`.
@@ -691,6 +735,8 @@ no_unwanted_files_skip_paths = [
 ]
 no_unwanted_files_yaml_extensions = [".yml"]
 run_action_groups = true
+run_no_trailing_whitespace = true
+run_avoid_characters = true
 
 [[sessions.extra_checks.action_groups_config]]
 name = "hetzner"
@@ -703,6 +749,13 @@ name = "hosttech"
 pattern = "^hosttech_.*$"
 exclusions = []
 doc_fragment = "community.dns.attributes.actiongroup_hosttech"
+
+[[sessions.extra_checks.avoid_character_group]]
+name = "tab"
+# Note that we have to escape the backslash for TOML.
+# The actual regular expression is '\x09',
+# which matches the Unicode character code 9.
+regex = "\\x09"
 ```
 
 ## Collection build and Galaxy import test

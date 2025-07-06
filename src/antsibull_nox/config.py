@@ -191,6 +191,29 @@ class ActionGroup(_BaseModel):
     exclusions: list[str] = []
 
 
+class AvoidCharacterGroup(_BaseModel):
+    """
+    Information about characters/regexes to avoid in files.
+    """
+
+    # User-friendly name
+    name: t.Optional[str] = None
+
+    # Regular expression
+    regex: str
+
+    # Extensions, paths, and directories to look for.
+    # If None (not specified), will consider all files.
+    match_extensions: t.Optional[list[str]] = None
+    match_paths: t.Optional[list[str]] = None
+    match_directories: t.Optional[list[str]] = None
+
+    # Extensions, paths, and directories to skip.
+    skip_extensions: list[str] = []
+    skip_paths: list[str] = []
+    skip_directories: list[str] = []
+
+
 class SessionExtraChecks(_BaseModel):
     """
     Extra checks session config.
@@ -219,6 +242,10 @@ class SessionExtraChecks(_BaseModel):
     run_no_trailing_whitespace: bool = False
     no_trailing_whitespace_skip_paths: list[str] = []
     no_trailing_whitespace_skip_directories: list[str] = []
+
+    # avoid-characters:
+    run_avoid_characters: bool = False
+    avoid_character_group: list[AvoidCharacterGroup] = []
 
 
 class SessionBuildImportCheck(_BaseModel):
