@@ -17,7 +17,7 @@ from .config import (
 from .interpret_config import interpret_config
 from .sessions.ansible_test import add_ansible_test_session
 
-__version__ = "1.0.0"
+__version__ = "1.0.0.post0"
 
 
 def load_antsibull_nox_toml() -> None:
