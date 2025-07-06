@@ -39,6 +39,27 @@ class ActionGroup:
     exclusions: list[str] | None = None
 
 
+@dataclass
+class AvoidCharacterGroup:  # pylint: disable=too-many-instance-attributes
+    """
+    Defines an avoid character group.
+    """
+
+    # User-friendly name
+    name: str | None
+    # Regular expression
+    regex: str
+    # Extensions, paths, and directories to look for.
+    # If None (not specified), will consider all files.
+    match_extensions: list[str] | None
+    match_paths: list[str] | None
+    match_directories: list[str] | None
+    # Extensions, paths, and directories to skip.
+    skip_extensions: list[str]
+    skip_paths: list[str]
+    skip_directories: list[str]
+
+
 def add_extra_checks(
     *,
     make_extra_checks_default: bool = True,
@@ -62,6 +83,9 @@ def add_extra_checks(
     run_no_trailing_whitespace: bool = False,
     no_trailing_whitespace_skip_paths: list[str] | None = None,
     no_trailing_whitespace_skip_directories: list[str] | None = None,
+    # avoid-character-group:
+    run_avoid_characters: bool = False,
+    avoid_character_group: list[AvoidCharacterGroup] | None = None,
 ) -> None:
     """
     Add extra-checks session for extra checks.
@@ -108,6 +132,18 @@ def add_extra_checks(
             },
         )
 
+    def execute_avoid_characters(session: nox.Session) -> None:
+        if avoid_character_group is None:
+            session.warn("Skipping avoid-characters since config is not provided...")
+            return
+        run_bare_script(
+            session,
+            "avoid-characters",
+            extra_data={
+                "config": [asdict(cfg) for cfg in avoid_character_group],
+            },
+        )
+
     def extra_checks(session: nox.Session) -> None:
         if run_no_unwanted_files:
             execute_no_unwanted_files(session)
@@ -115,6 +151,8 @@ def add_extra_checks(
             execute_action_groups(session)
         if run_no_trailing_whitespace:
             execute_no_trailing_whitespace(session)
+        if run_avoid_characters:
+            execute_avoid_characters(session)
 
     extra_checks.__doc__ = compose_description(
         prefix={
@@ -130,6 +168,9 @@ def add_extra_checks(
             "action-groups": "validate action groups" if run_action_groups else False,
             "no-trailing-whitespace": (
                 "avoid trailing whitespace" if run_no_trailing_whitespace else False
+            ),
+            "avoid-character-groups": (
+                "avoid characters" if run_avoid_characters else False
             ),
         },
     )
