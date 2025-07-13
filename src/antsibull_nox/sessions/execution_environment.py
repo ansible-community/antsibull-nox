@@ -16,9 +16,7 @@ from pathlib import Path
 
 import nox
 
-from antsibull_nox.ee_config_generator import (
-    generate_ee_config,
-)
+from antsibull_nox.ee_config import generate_ee_config
 
 from ..collection import CollectionData, build_collection
 from .utils import install, register

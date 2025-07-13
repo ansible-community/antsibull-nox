@@ -13,8 +13,7 @@ from pathlib import Path
 
 from antsibull_fileutils.yaml import store_yaml_file
 
-from ..collection import CollectionData
-from .ee_generator import ExecutionEnvironmentGenerator
+from .collection import CollectionData
 
 
 def find_dict(destination: dict[str, t.Any], path: list[str]) -> dict[str, t.Any]:
@@ -84,4 +83,4 @@ def generate_ee_config(
     store_yaml_file(directory / "execution-environment.yml", config)
 
 
-__all__ = ("ExecutionEnvironmentGenerator", "generate_ee_config")
+__all__ = ["generate_ee_config"]
