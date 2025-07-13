@@ -9,6 +9,7 @@ Build execution environments for testing.
 
 from __future__ import annotations
 
+import os
 import shutil
 import typing as t
 from dataclasses import dataclass
@@ -90,6 +91,7 @@ def build_ee_image(
     directory: Path,
     ee_name: str,
     collection_data: CollectionData,
+    container_engine: str,
 ) -> str:
     """
     Build container images for execution environments.
@@ -99,6 +101,7 @@ def build_ee_image(
         directory: Path to directory that contains execution environment definition
         ee_name: Name of execution environment
         collection_data: Collection information
+        container_engine: Container runtime to use
 
     Returns:
         Name of successfully built container image
@@ -112,7 +115,7 @@ def build_ee_image(
         "--tag",
         image_name,
         "--container-runtime",
-        "podman",  # TODO: shouldn't be hardcoded
+        container_engine,
         "--verbosity",
         "3",
         "--context",
@@ -127,12 +130,15 @@ def prepare_execution_environment(
     *,
     session: nox.Session,
     execution_environment: ExecutionEnvironmentData,
+    container_engine: str,
 ) -> tuple[Path | None, str | None, CollectionData]:
     """
     Generate execution environments for a collection.
 
     Args:
         session: Nox session object
+        execution_environment: EE configuration data
+        container_engine: Container runtime to use
 
     Returns:
         Tuple with:
@@ -163,6 +169,7 @@ def prepare_execution_environment(
         directory=directory,
         ee_name=execution_environment.name,
         collection_data=collection_data,
+        container_engine=container_engine,
     )
 
     return collection_tarball_path, built_image, collection_data
@@ -172,6 +179,7 @@ def add_execution_environment_session(
     *,
     session_name: str,
     execution_environment: ExecutionEnvironmentData,
+    container_engine: str,
     default: bool = False,
 ) -> None:
     """
@@ -183,7 +191,9 @@ def add_execution_environment_session(
 
         collection_tarball, built_image, collection_data = (
             prepare_execution_environment(
-                session=session, execution_environment=execution_environment
+                session=session,
+                execution_environment=execution_environment,
+                container_engine=container_engine,
             )
         )
 
@@ -194,6 +204,7 @@ def add_execution_environment_session(
         session.log(
             f"Building execution environment {execution_environment.description}"
             f" for {collection_data.namespace}.{collection_data.name}. Image: {built_image}"
+            f" using {container_engine}"
         )
 
         for playbook in execution_environment.test_playbooks:
@@ -203,7 +214,7 @@ def add_execution_environment_session(
                 "--mode",
                 "stdout",
                 "--container-engine",
-                "podman",  # TODO: shouldn't be hardcoded
+                container_engine,
                 "--pull-policy",
                 "never",
                 "--execution-environment-image",
@@ -215,27 +226,36 @@ def add_execution_environment_session(
     session_func.__doc__ = (
         "Build and test execution environment image:"
         f" {execution_environment.description}"
+        f" using {container_engine}"
     )
     nox.session(name=session_name, default=default)(session_func)
 
     data = {
         "name": session_name,
-        "description": execution_environment.description,
+        "description": f"{execution_environment.description} ({container_engine})",
     }
     register("execution-environment", data)
 
 
 def add_execution_environment_sessions(
-    *, execution_environments: list[ExecutionEnvironmentData], default: bool = False
+    *,
+    execution_environments: list[ExecutionEnvironmentData],
+    default: bool = False,
 ) -> None:
     """
     Build and test execution environments for the collection.
     """
+
+    container_engine = os.environ.get("ANTSIBULL_NOX_CONTAINER_ENGINE", "docker")
+
     session_names = []
     for ee in execution_environments:
         session_name = f"ee-check-{ee.name}"
         add_execution_environment_session(
-            session_name=session_name, execution_environment=ee, default=False
+            session_name=session_name,
+            execution_environment=ee,
+            container_engine=container_engine,
+            default=False,
         )
         session_names.append(session_name)
 
