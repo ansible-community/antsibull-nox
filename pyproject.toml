@@ -82,6 +82,7 @@ test = [
 typing = [
     "mypy",
     "antsibull-docutils >= 1.2.0",
+    "types-docutils",
     "types-PyYAML",
 ]
 dev = [

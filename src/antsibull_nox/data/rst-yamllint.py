@@ -5,7 +5,7 @@
 # or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Make sure all plugin and module documentation adheres to yamllint."""
+"""Make sure all YAML in RST extra documentation adheres to yamllint."""
 
 from __future__ import annotations
 
@@ -15,8 +15,13 @@ import sys
 import traceback
 import typing as t
 
-from antsibull_docutils.rst_code_finder import find_code_blocks
+from antsibull_docutils.rst_code_finder import (
+    find_code_blocks,
+    mark_antsibull_code_block,
+)
 from antsibull_nox_data_util import setup  # type: ignore
+from docutils import nodes
+from docutils.parsers.rst import Directive
 from yamllint import linter
 from yamllint.config import YamlLintConfig
 from yamllint.linter import PROBLEM_LEVELS
@@ -86,6 +91,24 @@ def lint(
             errors[-1].update(extra_for_errors)
 
 
+_ANSIBLE_OUTPUT_DATA_LANGUAGE = "ansible-output-data-FPho6oogookao7okinoX"
+
+
+class AnsibleOutputDataDirective(Directive):
+    has_content = True
+
+    def run(self) -> list[nodes.literal_block]:
+        code = "\n".join(self.content)
+        literal = nodes.literal_block(code, code)
+        literal["classes"].append("code-block")
+        mark_antsibull_code_block(
+            literal,
+            language=_ANSIBLE_OUTPUT_DATA_LANGUAGE,
+            content_offset=self.content_offset,
+        )
+        return [literal]
+
+
 def process_rst_file(
     errors: list[dict[str, t.Any]],
     path: str,
@@ -128,8 +151,11 @@ def process_rst_file(
         path=path,
         root_prefix="docs/docsite/rst",
         warn_unknown_block=warn_unknown_block,
+        extra_directives={"ansible-output-data": AnsibleOutputDataDirective},
     ):
-        if (code_block.language or "").lower() not in YAML_LANGUAGES:
+        if (
+            code_block.language or ""
+        ).lower() not in YAML_LANGUAGES and code_block.language != _ANSIBLE_OUTPUT_DATA_LANGUAGE:
             continue
 
         extra_for_errors = {}
