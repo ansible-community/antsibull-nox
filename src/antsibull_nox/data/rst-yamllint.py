@@ -5,7 +5,7 @@
 # or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Make sure all plugin and module documentation adheres to yamllint."""
+"""Make sure all YAML in RST extra documentation adheres to yamllint."""
 
 from __future__ import annotations
 
