@@ -1,3 +1,3 @@
 minor_changes:
-  - "The YAML-in-RST checker for the ``yamllint`` session now also checks ``ansible-output-data`` environments for antsibull-doc's ``ansible-output`` subcommand
-     (https://github.com/ansible-community/antsibull-nox/pull/95)."
+  - "The YAML-in-RST checker for the ``yamllint`` session now also checks ``ansible-output-data`` and ``ansible-output-meta`` directives for antsibull-doc's ``ansible-output`` subcommand
+     (https://github.com/ansible-community/antsibull-nox/pull/95, https://github.com/ansible-community/antsibull-nox/pull/96)."
