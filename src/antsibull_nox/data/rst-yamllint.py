@@ -92,6 +92,7 @@ def lint(
 
 
 _ANSIBLE_OUTPUT_DATA_LANGUAGE = "ansible-output-data-FPho6oogookao7okinoX"
+_ANSIBLE_OUTPUT_META_LANGUAGE = "ansible-output-meta-FPho6oogookao7okinoX"
 
 
 class AnsibleOutputDataDirective(Directive):
@@ -104,6 +105,21 @@ class AnsibleOutputDataDirective(Directive):
         mark_antsibull_code_block(
             literal,
             language=_ANSIBLE_OUTPUT_DATA_LANGUAGE,
+            content_offset=self.content_offset,
+        )
+        return [literal]
+
+
+class AnsibleOutputMetaDirective(Directive):
+    has_content = True
+
+    def run(self) -> list[nodes.literal_block]:
+        code = "\n".join(self.content)
+        literal = nodes.literal_block(code, code)
+        literal["classes"].append("code-block")
+        mark_antsibull_code_block(
+            literal,
+            language=_ANSIBLE_OUTPUT_META_LANGUAGE,
             content_offset=self.content_offset,
         )
         return [literal]
@@ -151,11 +167,17 @@ def process_rst_file(
         path=path,
         root_prefix="docs/docsite/rst",
         warn_unknown_block=warn_unknown_block,
-        extra_directives={"ansible-output-data": AnsibleOutputDataDirective},
+        extra_directives={
+            "ansible-output-data": AnsibleOutputDataDirective,
+            "ansible-output-meta": AnsibleOutputMetaDirective,
+        },
     ):
         if (
             code_block.language or ""
-        ).lower() not in YAML_LANGUAGES and code_block.language != _ANSIBLE_OUTPUT_DATA_LANGUAGE:
+        ).lower() not in YAML_LANGUAGES and code_block.language not in (
+            _ANSIBLE_OUTPUT_DATA_LANGUAGE,
+            _ANSIBLE_OUTPUT_META_LANGUAGE,
+        ):
             continue
 
         extra_for_errors = {}
