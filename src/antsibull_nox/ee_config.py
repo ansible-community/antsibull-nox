@@ -71,7 +71,7 @@ def generate_ee_config(
     if not isinstance(config["additional_build_files"], list):
         raise ValueError(
             f"Expected a list at additional_build_files,"
-            f" but found {type(config["additional_build_files"])}"
+            f" but found {type(config['additional_build_files'])}"
         )
     config["additional_build_files"].append(
         {
