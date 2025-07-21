@@ -11,7 +11,7 @@ import typing as t
 from copy import deepcopy
 from pathlib import Path
 
-from antsibull_fileutils.yaml import load_yaml_file, store_yaml_file
+from antsibull_fileutils.yaml import store_yaml_file
 
 from .collection import CollectionData
 
@@ -83,14 +83,6 @@ def generate_ee_config(
     store_yaml_file(directory / "execution-environment.yml", config)
 
 
-def load_ee_config(ee_file: str | Path) -> dict[str, t.Any]:
-    """
-    Load execution environment file.
-    """
-    config_path = Path(ee_file)
-    return load_yaml_file(config_path)
-
-
 def create_ee_config(
     version: int = 3,
     base_image: str | None = None,
@@ -109,4 +101,4 @@ def create_ee_config(
     return config
 
 
-__all__ = ["generate_ee_config", "load_ee_config", "create_ee_config"]
+__all__ = ["generate_ee_config", "create_ee_config"]
