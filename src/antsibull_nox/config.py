@@ -15,6 +15,8 @@ import typing as t
 
 import pydantic as p
 
+from antsibull_nox.ee_config import create_ee_config
+
 from ._pydantic import forbid_extras, get_formatted_error_messages
 from .ansible import AnsibleCoreVersion
 from .utils import Version
@@ -171,6 +173,65 @@ class SessionLicenseCheck(_BaseModel):
     reuse_package: str = "reuse"
     run_license_check: bool = True
     license_check_extra_ignore_paths: list[str] = []
+
+
+class ExecutionEnvironmentConfig(_BaseModel):
+    """
+    Execution enviroment check session config.
+    """
+
+    name: str
+    description: t.Optional[str] = None
+    test_playbooks: list[str] = ["tests/ee/all.yml"]
+    version: int = 3
+    base_image_name: str = "quay.io/fedora:latest"
+    ansible_core_source: t.Literal["package_pip", "package_system"] = "package_pip"
+    ansible_core_package: str = "ansible-core"
+    ansible_runner_package: str = "ansible-runner"
+    system_packages: list[str] = []
+    python_packages: list[str] = []
+    python_interpreter_package: t.Optional[str] = None
+    python_path: t.Optional[str] = None
+
+    def to_execution_environment_config(self) -> dict[str, t.Any]:
+        """
+        Convert TOML config to execution environment YAML.
+        """
+
+        dependencies: dict[str, t.Any] = {}
+        dependencies["ansible_core"] = {
+            self.ansible_core_source: self.ansible_core_package
+        }
+        dependencies["ansible_runner"] = {"package_pip": self.ansible_runner_package}
+        if self.python_interpreter_package:
+            python_interpreter: dict[str, t.Any] = {
+                "package_system": self.python_interpreter_package
+            }
+            if self.python_path:
+                python_interpreter["python_path"] = self.python_path
+            dependencies["python_interpreter"] = python_interpreter
+        if self.system_packages:
+            dependencies["system"] = self.system_packages
+        if self.python_packages:
+            dependencies["python"] = self.python_packages
+
+        return create_ee_config(
+            version=self.version,
+            base_image=self.base_image_name,
+            dependencies=dependencies,
+        )
+
+
+class SessionExecutionEnvironmentCheck(_BaseModel):
+    """
+    Execution environment check session.
+    """
+
+    default: bool = False
+
+    container_engine: t.Literal["docker", "podman"] = "docker"
+    execution_environments: list[ExecutionEnvironmentConfig] = []
+    include_example_ees: bool = True
 
 
 class ActionGroup(_BaseModel):
@@ -376,6 +437,7 @@ class Sessions(_BaseModel):
         SessionAnsibleTestIntegrationWDefaultContainer
     ] = None
     ansible_lint: t.Optional[SessionAnsibleLint] = None
+    ee_check: t.Optional[SessionExecutionEnvironmentCheck] = None
 
 
 class CollectionSource(_BaseModel):
