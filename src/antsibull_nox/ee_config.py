@@ -7,6 +7,8 @@
 Execution environment definition generator.
 """
 
+from __future__ import annotations
+
 import typing as t
 from copy import deepcopy
 from pathlib import Path
