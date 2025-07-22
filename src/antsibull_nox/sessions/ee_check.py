@@ -18,6 +18,7 @@ from pathlib import Path
 import nox
 
 from antsibull_nox.ee_config import generate_ee_config
+from antsibull_nox.paths import create_temp_directory
 
 from ..collection import CollectionData, build_collection
 from .utils import install, register
@@ -207,21 +208,28 @@ def add_execution_environment_session(
             f" using {container_engine}"
         )
 
+        playbook_dir = Path.cwd()
+        temp_dir = create_temp_directory("ansible-navigator-")
+
         for playbook in execution_environment.test_playbooks:
-            session.run(
-                "ansible-navigator",
-                "run",
-                "--mode",
-                "stdout",
-                "--container-engine",
-                container_engine,
-                "--pull-policy",
-                "never",
-                "--execution-environment-image",
-                built_image,
-                "-v",
-                playbook,
-            )
+            playbook_path = playbook_dir / playbook
+            with session.chdir(temp_dir):
+                env = {"TMPDIR": str(temp_dir)}
+                session.run(
+                    "ansible-navigator",
+                    "run",
+                    "--mode",
+                    "stdout",
+                    "--container-engine",
+                    container_engine,
+                    "--pull-policy",
+                    "never",
+                    "--execution-environment-image",
+                    built_image,
+                    "-v",
+                    str(playbook_path),
+                    env=env,
+                )
 
     session_func.__doc__ = (
         "Build and test execution environment image:"
