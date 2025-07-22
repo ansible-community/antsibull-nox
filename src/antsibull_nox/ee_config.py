@@ -96,7 +96,11 @@ def create_ee_config(
 
     config: dict[str, t.Any] = {
         "version": version,
-        "images": {"base_image": {"name": base_image or "quay.io/fedora:latest"}},
+        "images": {
+            "base_image": {
+                "name": base_image or "registry.fedoraproject.org/fedora-toolbox:latest"
+            }
+        },
         "dependencies": dependencies or {},
     }
 

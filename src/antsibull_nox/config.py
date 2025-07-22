@@ -231,6 +231,7 @@ class SessionExecutionEnvironmentCheck(_BaseModel):
 
     execution_environments: dict[str, ExecutionEnvironmentConfig] = {}
 
+
 class ActionGroup(_BaseModel):
     """
     Information about an action group.
