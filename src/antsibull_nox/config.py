@@ -229,7 +229,7 @@ class SessionExecutionEnvironmentCheck(_BaseModel):
 
     default: bool = False
 
-    execution_environments: dict[str, ExecutionEnvironmentConfig] = {}
+    execution_environments: list[ExecutionEnvironmentConfig]
 
 
 class ActionGroup(_BaseModel):
