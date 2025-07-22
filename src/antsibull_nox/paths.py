@@ -17,7 +17,11 @@ import shutil
 from pathlib import Path
 
 from antsibull_fileutils.copier import Copier, GitCopier
-from antsibull_fileutils.tempfile import ansible_mkdtemp
+from antsibull_fileutils.tempfile import (
+    ansible_mkdtemp,
+    find_tempdir,
+    is_acceptable_tempdir,
+)
 from antsibull_fileutils.vcs import detect_vcs, list_git_files
 
 
@@ -177,9 +181,30 @@ def copy_collection(source: Path, destination: Path) -> None:
     copier.copy(source, destination, exclude_root=[".nox", ".tox"])
 
 
+def _is_acceptable_tempdir(directory: Path, exclude: Path) -> bool:
+    # Avoid being inside an ansible_collections tree
+    if not is_acceptable_tempdir(directory):
+        return False
+    # Avoid something that's inside exclude
+    if directory.is_relative_to(exclude):
+        return False
+    return True
+
+
+def get_outside_temp_directory(exclude: Path | None = None) -> Path:
+    """
+    Find a temporary directory root that's outside the provided path.
+
+    Raises ``ValueError`` in case no candidate was found.
+    """
+    if exclude is None:
+        exclude = Path.cwd()
+    return find_tempdir(lambda path: _is_acceptable_tempdir(path, exclude))
+
+
 def create_temp_directory(basename: str) -> Path:
     """
-    Create a temporary directory outside the nox tree.
+    Create a temporary directory outside an existing ansible_collections tree.
     """
     path = ansible_mkdtemp(prefix=basename)
 
@@ -214,6 +239,7 @@ __all__ = [
     "create_temp_directory",
     "filter_paths",
     "find_data_directory",
+    "get_outside_temp_directory",
     "list_all_files",
     "remove_path",
 ]
