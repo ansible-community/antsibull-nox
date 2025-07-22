@@ -229,7 +229,6 @@ class SessionExecutionEnvironmentCheck(_BaseModel):
 
     default: bool = False
 
-    container_engine: t.Literal["docker", "podman"] = "docker"
     execution_environments: list[ExecutionEnvironmentConfig] = []
     include_example_ees: bool = True
 
