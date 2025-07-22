@@ -230,7 +230,6 @@ class SessionExecutionEnvironmentCheck(_BaseModel):
     default: bool = False
 
     execution_environments: list[ExecutionEnvironmentConfig] = []
-    include_example_ees: bool = True
 
 
 class ActionGroup(_BaseModel):
