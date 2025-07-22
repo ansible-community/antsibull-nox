@@ -10,7 +10,6 @@ Interpret config.
 
 from __future__ import annotations
 
-import os
 import typing as t
 
 from .ansible import AnsibleCoreVersion
@@ -31,9 +30,7 @@ from .sessions.ansible_test import (
 )
 from .sessions.build_import_check import add_build_import_check
 from .sessions.docs_check import add_docs_check
-from .sessions.execution_environment import (
-    EXAMPLE_EE_DATA_1,
-    EXAMPLE_EE_DATA_2,
+from .sessions.ee_check import (
     ExecutionEnvironmentData,
     add_execution_environment_sessions,
 )
@@ -314,7 +311,7 @@ def _add_sessions(sessions: Sessions) -> None:
     if sessions.ee_check:
         execution_environments = []
 
-        for ee_config in sessions.ee_check.execution_environments:
+        for ee_config in sessions.ee_check.execution_environments.values():
             execution_environments.append(
                 ExecutionEnvironmentData(
                     name=ee_config.name,
@@ -323,16 +320,11 @@ def _add_sessions(sessions: Sessions) -> None:
                     test_playbooks=ee_config.test_playbooks,
                 )
             )
-        if sessions.ee_check.include_example_ees:
-            execution_environments.extend([EXAMPLE_EE_DATA_1, EXAMPLE_EE_DATA_2])
 
         if execution_environments:
             add_execution_environment_sessions(
                 execution_environments=execution_environments,
                 default=sessions.ee_check.default,
-            )
-            os.environ["ANTSIBULL_NOX_CONTAINER_ENGINE"] = (
-                sessions.ee_check.container_engine
             )
     add_matrix_generator()
 
