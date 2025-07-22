@@ -184,7 +184,7 @@ class ExecutionEnvironmentConfig(_BaseModel):
     description: t.Optional[str] = None
     test_playbooks: list[str]
     version: t.Literal[3] = 3
-    base_image_name: str = "quay.io/fedora:latest"
+    base_image_name: str
     ansible_core_source: t.Literal["package_pip", "package_system"] = "package_pip"
     ansible_core_package: str = "ansible-core"
     ansible_runner_package: str = "ansible-runner"
@@ -229,7 +229,7 @@ class SessionExecutionEnvironmentCheck(_BaseModel):
 
     default: bool = False
 
-    execution_environments: list[ExecutionEnvironmentConfig]
+    execution_environments: dict[str, ExecutionEnvironmentConfig]
 
 
 class ActionGroup(_BaseModel):
