@@ -182,7 +182,7 @@ class ExecutionEnvironmentConfig(_BaseModel):
 
     name: str
     description: t.Optional[str] = None
-    test_playbooks: list[str] = ["tests/ee/all.yml"]
+    test_playbooks: list[str]
     version: int = 3
     base_image_name: str = "quay.io/fedora:latest"
     ansible_core_source: t.Literal["package_pip", "package_system"] = "package_pip"
