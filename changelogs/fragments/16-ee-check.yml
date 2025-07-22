@@ -1,3 +1,2 @@
 major_changes:
-  - "Add an `ee-check` session that allows test builds of execution environments (https://github.com/ansible-community/antsibull-nox/issues/16)."
-  - "Add an `ee-config` module that generates execution environment definition files."
+  - "Add an ``ee-check`` session that allows test builds of execution environments (https://github.com/ansible-community/antsibull-nox/issues/16, https://github.com/ansible-community/antsibull-nox/pull/69)."
