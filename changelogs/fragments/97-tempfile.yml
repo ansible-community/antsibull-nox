@@ -1,0 +1,2 @@
+minor_changes:
+  - "antsibull-nox now depends on antsibull-fileutils >= 1.4.0 (https://github.com/ansible-community/antsibull-nox/pull/97)."
