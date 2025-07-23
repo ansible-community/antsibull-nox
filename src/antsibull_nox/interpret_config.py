@@ -311,7 +311,7 @@ def _add_sessions(sessions: Sessions) -> None:
     if sessions.ee_check:
         execution_environments = []
 
-        for ee_config in sessions.ee_check.execution_environments.values():
+        for ee_config in sessions.ee_check.execution_environments:
             execution_environments.append(
                 ExecutionEnvironmentData(
                     name=ee_config.name,
