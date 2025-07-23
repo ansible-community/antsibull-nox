@@ -213,23 +213,22 @@ def add_execution_environment_session(
 
         for playbook in execution_environment.test_playbooks:
             playbook_path = playbook_dir / playbook
-            with session.chdir(temp_dir):
-                env = {"TMPDIR": str(temp_dir)}
-                session.run(
-                    "ansible-navigator",
-                    "run",
-                    "--mode",
-                    "stdout",
-                    "--container-engine",
-                    container_engine,
-                    "--pull-policy",
-                    "never",
-                    "--execution-environment-image",
-                    built_image,
-                    "-v",
-                    str(playbook_path),
-                    env=env,
-                )
+            env = {"TMPDIR": str(temp_dir)}
+            session.run(
+                "ansible-navigator",
+                "run",
+                "--mode",
+                "stdout",
+                "--container-engine",
+                container_engine,
+                "--pull-policy",
+                "never",
+                "--execution-environment-image",
+                built_image,
+                "-v",
+                playbook,
+                env=env,
+            )
 
     session_func.__doc__ = (
         "Build and test execution environment image:"
