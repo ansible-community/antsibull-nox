@@ -18,7 +18,7 @@ from pathlib import Path
 import nox
 
 from antsibull_nox.ee_config import generate_ee_config
-from antsibull_nox.paths import create_temp_directory
+from antsibull_nox.paths import get_outside_temp_directory
 
 from ..collection import CollectionData, build_collection
 from .utils import install, register
