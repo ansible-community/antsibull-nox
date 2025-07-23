@@ -212,7 +212,6 @@ def add_execution_environment_session(
         temp_dir = get_outside_temp_directory(playbook_dir.absolute())
 
         for playbook in execution_environment.test_playbooks:
-            playbook_path = playbook_dir / playbook
             env = {"TMPDIR": str(temp_dir)}
             session.run(
                 "ansible-navigator",
