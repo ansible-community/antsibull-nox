@@ -1150,7 +1150,7 @@ antsibull-nox allows you to test your collection against an execution environmen
 The `ee-check` session is added with the `[[sessions.ee_check.execution_environments]]` sections (one for every EE) in `antsibull-nox.toml`.
 It accepts the following options:
 
-* `name: str` (Required field): Specifies a unique name for the `ee-check` session.
+* `name: str` (**required**): Specifies a unique name for the `ee-check` session.
 * `description: t.Optional[str]` (default `None`): Specifies a description for the `ee-check` session.
 * `test_playbooks: list[str]` (Required field): Specifies a list of playbooks that test the collection against the EE.
 * `version: t.Literal[3]` (default `3`): Configures the schema version for the EE definition.
