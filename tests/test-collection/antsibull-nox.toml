@@ -7,6 +7,9 @@
 [sessions.lint]
 run_mypy = false
 
+[sessions.ee_check]
+default = true
+
 [[sessions.ee_check.execution_environments]]
 name = "minimal"
 test_playbooks = ["tests/test-collection/ee.yml"]
