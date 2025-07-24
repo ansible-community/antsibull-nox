@@ -96,11 +96,7 @@ def create_ee_config(
 
     config: dict[str, t.Any] = {
         "version": version,
-        "images": {
-            "base_image": {
-                "name": base_image
-            }
-        },
+        "images": {"base_image": {"name": base_image}},
         "dependencies": dependencies or {},
     }
 
