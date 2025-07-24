@@ -1160,8 +1160,8 @@ It accepts the following options:
 * `ansible_runner_package: str` (default `"ansible-runner"`): Specifies the name of the `ansible-runner` package.
 * `system_packages: list[str]` (default `"[]"`): Specifies a list of system packages to build into the EE.
 * `python_packages: list[str]` (default `"[]"`): Specifies a list of Python packages to build into the EE.
-* `python_interpreter_package: t.Optional[str]`(default `None`): Defines the Python system package name for the EE.
-* `python_path: t.Optional[str]`(default `None`): Specifies the path to the Python interpreter.
+* `python_interpreter_package: str | None`(default `None`): Defines the Python system package name for the EE.
+* `python_path: str | None`(default `None`): Specifies the path to the Python interpreter.
 
 For more information about these options, see the [Execution environment definition](https://ansible.readthedocs.io/projects/builder/en/latest/definition/) documentation for Ansible Builder.
 
