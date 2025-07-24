@@ -98,7 +98,7 @@ def create_ee_config(
         "version": version,
         "images": {
             "base_image": {
-                "name": base_image or "registry.fedoraproject.org/fedora-toolbox:latest"
+                "name": base_image
             }
         },
         "dependencies": dependencies or {},

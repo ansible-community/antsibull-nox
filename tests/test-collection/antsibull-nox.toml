@@ -10,7 +10,6 @@ run_mypy = false
 [[sessions.ee_check.execution_environments]]
 name = "minimal"
 test_playbooks = ["tests/test-collection/ee.yml"]
-base_image_name = "docker.io/redhat/ubi9:latest"
 
 [[sessions.ee_check.execution_environments]]
 name = "fedora-toolbox"
