@@ -1155,7 +1155,7 @@ It accepts the following options:
 * `test_playbooks: list[str]` (Required field): Specifies a list of playbooks that test the collection against the EE.
 * `version: t.Literal[3]` (default `3`): Configures the schema version for the EE definition.
 * `base_image_name: str` (default `"registry.fedoraproject.org/fedora-toolbox:latest"`): Specifies the base image to use when building the EE.
-* `ansible_core_source: t.Literal["package_pip", "package_system"]` (default `"package_pip"`): Configures the source for installing the `ansible-core` package.
+* `ansible_core_source: "package_pip" | "package_system"` (default `"package_pip"`): Configures the source for installing the `ansible-core` package.
 * `ansible_core_package: str` (default `"ansible-core"`): Specifies the name of the `ansible-core` package.
 * `ansible_runner_package: str` (default `"ansible-runner"`): Specifies the name of the `ansible-runner` package.
 * `system_packages: list[str]` (default `"[]"`): Specifies a list of system packages to build into the EE.
