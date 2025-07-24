@@ -1151,7 +1151,7 @@ The `ee-check` session is added with the `[[sessions.ee_check.execution_environm
 It accepts the following options:
 
 * `name: str` (**required**): Specifies a unique name for the `ee-check` session.
-* `description: t.Optional[str]` (default `None`): Specifies a description for the `ee-check` session.
+* `description: str | None` (default `None`): Specifies a description for the `ee-check` session.
 * `test_playbooks: list[str]` (Required field): Specifies a list of playbooks that test the collection against the EE.
 * `version: t.Literal[3]` (default `3`): Configures the schema version for the EE definition.
 * `base_image_name: str` (default `"registry.fedoraproject.org/fedora-toolbox:latest"`): Specifies the base image to use when building the EE.
