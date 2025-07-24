@@ -12,7 +12,7 @@ default = true
 
 [[sessions.ee_check.execution_environments]]
 name = "minimal"
-test_playbooks = ["tests/test-collection/ee.yml"]
+test_playbooks = ["ee.yml"]
 
 [[sessions.ee_check.execution_environments]]
 name = "fedora-toolbox"
