@@ -14,7 +14,7 @@ test_playbooks = ["tests/test-collection/ee.yml"]
 [[sessions.ee_check.execution_environments]]
 name = "fedora-toolbox"
 description = "Testing EE builds with the fedora toolbox"
-test_playbooks = ["tests/test-collection/ee.yml"]
+test_playbooks = ["ee.yml"]
 base_image_name = "registry.fedoraproject.org/fedora-toolbox:latest"
 ansible_core_package = "ansible-core"
 ansible_core_source = "package_pip"
