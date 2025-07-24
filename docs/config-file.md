@@ -1147,7 +1147,7 @@ It simply runs `ansible-lint`.
 ## Execution environment check
 
 antsibull-nox allows you to test your collection against an execution environment (EE).
-The `ee-check` session is added with the `[[sessions.ee_check.execution_environments]]` section in `antsibull-nox.toml`.
+The `ee-check` session is added with the `[[sessions.ee_check.execution_environments]]` sections (one for every EE) in `antsibull-nox.toml`.
 It accepts the following options:
 
 * `name: str` (Required field): Specifies a unique name for the `ee-check` session.
