@@ -36,56 +36,6 @@ class ExecutionEnvironmentData:
     test_playbooks: list[str]
 
 
-EXAMPLE_EE_DATA_1 = ExecutionEnvironmentData(
-    name="devel-ubi-9",
-    description="ansible-core devel @ RHEL UBI 9",
-    config={
-        "version": 3,
-        "images": {
-            "base_image": {
-                "name": "docker.io/redhat/ubi9:latest",
-            },
-        },
-        "dependencies": {
-            "ansible_core": {
-                "package_pip": "https://github.com/ansible/ansible/archive/devel.tar.gz",
-            },
-            "ansible_runner": {
-                "package_pip": "ansible-runner",
-            },
-            "python_interpreter": {
-                "package_system": "python3.11 python3.11-pip "
-                "python3.11-wheel python3.11-cryptography",
-                "python_path": "/usr/bin/python3.11",
-            },
-        },
-    },
-    test_playbooks=["tests/ee/all.yml"],
-)
-
-EXAMPLE_EE_DATA_2 = ExecutionEnvironmentData(
-    name="2.15-rocky-9",
-    description="ansible-core 2.15 @ Rocky Linux 9",
-    config={
-        "version": 3,
-        "images": {
-            "base_image": {
-                "name": "quay.io/rockylinux/rockylinux:9",
-            },
-        },
-        "dependencies": {
-            "ansible_core": {
-                "package_pip": "https://github.com/ansible/ansible/archive/stable-2.15.tar.gz",
-            },
-            "ansible_runner": {
-                "package_pip": "ansible-runner",
-            },
-        },
-    },
-    test_playbooks=["tests/ee/all.yml"],
-)
-
-
 def build_ee_image(
     *,
     session: nox.Session,
