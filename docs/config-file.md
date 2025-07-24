@@ -1143,3 +1143,51 @@ It simply runs `ansible-lint`.
 ```toml
 [sessions.ansible_lint]
 ```
+
+## Execution environment check
+
+antsibull-nox allows you to test your collection against an execution environment (EE).
+The `ee-check` session is added with the `[[sessions.ee_check.execution_environments]]` section in `antsibull-nox.toml`.
+It accepts the following options:
+
+* `name: str` (Required field): Specifies a unique name for the `ee-check` session.
+* `description: t.Optional[str]` (default `None`): Specifies a description for the `ee-check` session.
+* `test_playbooks: list[str]` (Required field): Specifies a list of playbooks that test the collection against the EE.
+* `version: t.Literal[3]` (default `3`): Configures the schema version for the EE definition.
+* `base_image_name: str` (default `"registry.fedoraproject.org/fedora-toolbox:latest"`): Specifies the base image to use when building the EE.
+* `ansible_core_source: t.Literal["package_pip", "package_system"]` (default `"package_pip"`): Configures the source for installing the `ansible-core` package.
+* `ansible_core_package: str` (default `"ansible-core"`): Specifies the name of the `ansible-core` package.
+* `ansible_runner_package: str` (default `"ansible-runner"`): Specifies the name of the `ansible-runner` package.
+* `system_packages: list[str]` (default `"[]"`): Specifies a list of system packages to build into the EE.
+* `python_packages: list[str]` (default `"[]"`): Specifies a list of Python packages to build into the EE.
+* `python_interpreter_package: t.Optional[str]`(default `None`): Defines the Python system package name for the EE.
+* `python_path: t.Optional[str]`(default `None`): Specifies the path to the Python interpreter.
+
+For more information about these options, see the [Execution environment definition](https://ansible.readthedocs.io/projects/builder/en/latest/definition/) documentation for Ansible Builder.
+
+### Example TOML definition
+
+The following example shows a minimal EE check definition:
+
+```toml
+[[sessions.ee_check.execution_environments]]
+name = "minimal_ee"
+test_playbooks = ["tests/ee/all.yml"]
+```
+
+The following example shows a full EE check definition:
+
+```toml
+[[sessions.ee_check.execution_environments]]
+name = "fedora-toolbox"
+description = "Testing EE builds with the fedora toolbox"
+test_playbooks = ["tests/ee/all.yml"]
+base_image_name = "registry.fedoraproject.org/fedora-toolbox:latest"
+ansible_core_package = "ansible-core"
+ansible_core_source = "package_pip"
+ansible_runner_package = "ansible-runner"
+system_packages = ["git", "curl"]
+python_packages = ["jinja2", "pyyaml", "requests"]
+python_interpreter_package = "python3"
+python_path = "/usr/bin/python3"
+```
