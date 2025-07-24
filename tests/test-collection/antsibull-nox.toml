@@ -8,13 +8,14 @@
 run_mypy = false
 
 [[sessions.ee_check.execution_environments]]
-name = "minimal_test_ee"
-test_playbooks = ["ee.yml"]
+name = "minimal"
+test_playbooks = ["tests/test-collection/ee.yml"]
+base_image_name = "docker.io/redhat/ubi9:latest"
 
 [[sessions.ee_check.execution_environments]]
 name = "fedora-toolbox"
 description = "Testing EE builds with the fedora toolbox"
-test_playbooks = ["ee.yml"]
+test_playbooks = ["tests/test-collection/ee.yml"]
 base_image_name = "registry.fedoraproject.org/fedora-toolbox:latest"
 ansible_core_package = "ansible-core"
 ansible_core_source = "package_pip"
