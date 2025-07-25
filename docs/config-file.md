@@ -1158,11 +1158,13 @@ It accepts the following options:
 * `base_image_name: str` (default `"registry.fedoraproject.org/fedora-toolbox:latest"`): Specifies the base image to use when building the EE.
 * `ansible_core_source: "package_pip" | "package_system"` (default `"package_pip"`): Configures the source for installing the `ansible-core` package.
 * `ansible_core_package: str` (default `"ansible-core"`): Specifies the name of the `ansible-core` package.
+* `ansible_runner_source: "package_pip" | "package_system"` (default `"package_pip"`): Configures the source for installing the `ansible-runner` package.
 * `ansible_runner_package: str` (default `"ansible-runner"`): Specifies the name of the `ansible-runner` package.
 * `system_packages: list[str]` (default `"[]"`): Specifies a list of system packages to build into the EE.
 * `python_packages: list[str]` (default `"[]"`): Specifies a list of Python packages to build into the EE.
 * `python_interpreter_package: str | None`(default `None`): Defines the Python system package name for the EE.
 * `python_path: str | None`(default `None`): Specifies the path to the Python interpreter.
+* `config: dict[str, t.Any]`: Allows explicit configuration of an EE definition.
 
 For more information about these options, see the [Execution environment definition](https://ansible.readthedocs.io/projects/builder/en/latest/definition/) documentation for Ansible Builder.
 
@@ -1187,8 +1189,32 @@ base_image_name = "registry.fedoraproject.org/fedora-toolbox:latest"
 ansible_core_package = "ansible-core"
 ansible_core_source = "package_pip"
 ansible_runner_package = "ansible-runner"
+ansible_runner_source = "package_pip"
 system_packages = ["git", "curl"]
 python_packages = ["jinja2", "pyyaml", "requests"]
 python_interpreter_package = "python3"
 python_path = "/usr/bin/python3"
+```
+
+The following example shows an explicit configuration of an EE:
+
+```toml
+[[sessions.ee_check.execution_environments]]
+name = "fedora-toolbox"
+description = "Testing EE builds with the fedora toolbox"
+test_playbooks = ["tests/ee/all.yml"]
+config.images.base_image.name = "registry.fedoraproject.org/fedora-toolbox:latest"
+config.dependencies.ansible_core.package_pip = "ansible-core"
+config.dependencies.ansible_runner.package_pip = "ansible-runner"
+config.dependencies.system = [
+    "git",
+    "curl",
+]
+config.dependencies.python = [
+    "jinja2",
+    "pyyaml",
+    "requests",
+]
+config.dependencies.python_interpreter.package_system = "python3"
+config.dependencies.python_interpreter.python_path = "/usr/bin/python3"
 ```
