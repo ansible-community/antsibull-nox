@@ -30,8 +30,12 @@ For sessions that require a container engine, antsibull-nox tries to detect the 
 
 1. For execution environment sessions (`ee-check`), one of Podman or Docker is determined when the session is started.
    The behavior can be configured by the environment variable `ANTSIBULL_NOX_CONTAINER_ENGINE`.
-   If set to `podman` or `docker`, that container engine will be used.
-   The default value is `auto`.
+
+    If set to `podman` or `docker`, that container engine will be used.
+    If set to `auto`, `auto-prefer-docker`, or `auto-prefer-podman`, antsibull-nox will try to find the
+    `podman` or `docker` CLI tools in the execution path and use that information to select the container engine to use.
+
+    The default value is `auto`.
 
 2. For ansible-test sessions, ansible-test itself detects whether to use Podman or Docker.
    By default it prefers `docker` if both `docker` and `podman` are available.

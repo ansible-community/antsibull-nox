@@ -151,6 +151,7 @@ def add_execution_environment_session(
         install(session, *get_package_list())
 
         container_engine = get_preferred_container_engine()
+        session.log(f"Using container engine {container_engine}")
 
         collection_tarball, built_image, collection_data = (
             prepare_execution_environment(
