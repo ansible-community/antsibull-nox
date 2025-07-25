@@ -199,7 +199,7 @@ def add_execution_environment_session(
             command.extend(
                 [
                     "-v",
-                    command,
+                    playbook,
                 ]
             )
             session.run(
