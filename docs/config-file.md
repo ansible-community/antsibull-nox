@@ -1252,6 +1252,10 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
       when the playbooks are executed.
       This will be passed through `--container-options` to `ansible-navigator`.
 
+    * `runtime_extra_vars: dict[str, str]` (default `{}`):
+      Specify extra variables that will be set when the playbooks are executed.
+      This will be passed through `-e` to `ansible-navigator`.
+
 For more information about these options, see the [Execution environment definition](https://ansible.readthedocs.io/projects/builder/en/latest/definition/) documentation for Ansible Builder.
 
 !!! note

@@ -36,6 +36,7 @@ class ExecutionEnvironmentData:
     test_playbooks: list[str]
     runtime_environment: dict[str, str] | None = None
     runtime_container_options: list[str] | None = None
+    runtime_extra_vars: dict[str, str] | None = None
 
 
 def build_ee_image(
@@ -183,17 +184,15 @@ def add_execution_environment_session(
                 "stdout",
                 "--container-engine",
                 container_engine,
-                "--pull-policy",
-                "never",
-                "--execution-environment-image",
-                built_image,
             ]
             if execution_environment.runtime_container_options:
                 for value in execution_environment.runtime_container_options:
                     command.append(f"--container-options={value}")
+            command.extend(["--pull-policy", "never"])
             if execution_environment.runtime_environment:
                 for k, v in execution_environment.runtime_environment.items():
                     command.extend(["--set-environment-variable", f"{k}={v}"])
+            command.extend(["--execution-environment-image", built_image])
             # Note that another parameter must follow after --set-environment-variable
             # to prevent an argument parsing SNAFU by ansible-navigator.
             # Otherwise you get errors such as "Error: The following set-environment-variable
@@ -204,6 +203,9 @@ def add_execution_environment_session(
                     playbook,
                 ]
             )
+            if execution_environment.runtime_extra_vars:
+                for k, v in execution_environment.runtime_extra_vars.items():
+                    command.extend(["-e", f"{k}={v}"])
             session.run(
                 *command,
                 env=env,
