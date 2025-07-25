@@ -318,6 +318,8 @@ def _add_sessions(sessions: Sessions) -> None:
                     description=ee_config.description or ee_config.name,
                     config=ee_config.to_execution_environment_config(),
                     test_playbooks=ee_config.test_playbooks,
+                    runtime_environment=ee_config.runtime_environment,
+                    runtime_container_options=ee_config.runtime_container_options,
                 )
             )
 

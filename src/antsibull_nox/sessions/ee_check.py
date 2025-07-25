@@ -34,6 +34,8 @@ class ExecutionEnvironmentData:
     description: str
     config: dict[str, t.Any]
     test_playbooks: list[str]
+    runtime_environment: dict[str, str] | None = None
+    runtime_container_options: list[str] | None = None
 
 
 def build_ee_image(
@@ -172,7 +174,7 @@ def add_execution_environment_session(
 
         for playbook in execution_environment.test_playbooks:
             env = {"TMPDIR": str(temp_dir)}
-            session.run(
+            command = [
                 "ansible-navigator",
                 "run",
                 "--mode",
@@ -184,6 +186,15 @@ def add_execution_environment_session(
                 "--execution-environment-image",
                 built_image,
                 "-v",
+            ]
+            if execution_environment.runtime_environment:
+                for k, v in execution_environment.runtime_environment.items():
+                    command.extend(["--set-environment-variable", f"{k}={v}"])
+            if execution_environment.runtime_container_options:
+                for value in execution_environment.runtime_container_options:
+                    command.append(f"--container-options={value}")
+            session.run(
+                *command,
                 playbook,
                 env=env,
             )

@@ -1192,9 +1192,6 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
     * `description: str | None` (default `None`):
       Adds a description for the `ee-check` session.
 
-    * `test_playbooks: list[str]` (**required**):
-      Specifies a list of playbooks that test the collection against the EE.
-
     * `version: t.Literal[3]` (default `3`):
       Configures the schema version for the EE definition.
 
@@ -1242,6 +1239,18 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
 
         !!! note
             antsibull-nox does not check the EE definition syntax.
+
+    * `test_playbooks: list[str]` (**required**):
+      Specifies a list of playbooks that test the collection against the EE.
+
+    * `runtime_environment: dict[str, str]` (default `{}`):
+      Specify environment variables that will be set when the playbooks are executed.
+      This will be passed through `--set-environment-variable` to `ansible-navigator`.
+
+    * `runtime_container_options: list[str]` (default `[]`):
+      Specify additional options to pass to the container runtime (Podman or Docker)
+      when the playbooks are executed.
+      This will be passed through `--container-options` to `ansible-navigator`.
 
 For more information about these options, see the [Execution environment definition](https://ansible.readthedocs.io/projects/builder/en/latest/definition/) documentation for Ansible Builder.
 

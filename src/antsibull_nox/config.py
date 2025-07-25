@@ -182,7 +182,8 @@ class ExecutionEnvironmentConfig(_BaseModel):
 
     name: str
     description: t.Optional[str] = None
-    test_playbooks: list[str]
+
+    # EE definition
     version: t.Literal[3] = 3
     base_image_name: t.Optional[str] = None  # implicit default
     ansible_core_source: t.Literal["package_pip", "package_system"] = "package_pip"
@@ -194,6 +195,11 @@ class ExecutionEnvironmentConfig(_BaseModel):
     python_interpreter_package: t.Optional[str] = None
     python_path: t.Optional[str] = None
     config: dict[str, t.Any] = {}
+
+    # EE tests
+    test_playbooks: list[str]
+    runtime_environment: dict[str, str] = {}
+    runtime_container_options: list[str] = []
 
     def to_execution_environment_config(self) -> dict[str, t.Any]:
         """
