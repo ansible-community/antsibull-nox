@@ -187,11 +187,13 @@ class ExecutionEnvironmentConfig(_BaseModel):
     base_image_name: str = "registry.fedoraproject.org/fedora-toolbox:latest"
     ansible_core_source: t.Literal["package_pip", "package_system"] = "package_pip"
     ansible_core_package: str = "ansible-core"
+    ansible_runner_source: t.Literal["package_pip", "package_system"] = "package_pip"
     ansible_runner_package: str = "ansible-runner"
     system_packages: list[str] = []
     python_packages: list[str] = []
     python_interpreter_package: t.Optional[str] = None
     python_path: t.Optional[str] = None
+    config: dict[str, t.Any] = {}
 
     def to_execution_environment_config(self) -> dict[str, t.Any]:
         """
@@ -202,7 +204,9 @@ class ExecutionEnvironmentConfig(_BaseModel):
         dependencies["ansible_core"] = {
             self.ansible_core_source: self.ansible_core_package
         }
-        dependencies["ansible_runner"] = {"package_pip": self.ansible_runner_package}
+        dependencies["ansible_runner"] = {
+            self.ansible_runner_source: self.ansible_runner_package
+        }
         if self.python_interpreter_package:
             python_interpreter: dict[str, t.Any] = {
                 "package_system": self.python_interpreter_package
@@ -215,11 +219,15 @@ class ExecutionEnvironmentConfig(_BaseModel):
         if self.python_packages:
             dependencies["python"] = self.python_packages
 
-        return create_ee_config(
+        simple_config = create_ee_config(
             version=self.version,
             base_image=self.base_image_name,
             dependencies=dependencies,
         )
+
+        ee_config = {**simple_config, **self.config}
+
+        return ee_config
 
 
 class SessionExecutionEnvironmentCheck(_BaseModel):
