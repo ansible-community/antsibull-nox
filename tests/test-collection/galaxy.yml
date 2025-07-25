@@ -4,5 +4,11 @@
 # or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-namespace: antsibull
-name: test
+namespace: "antsibull"
+name: "test"
+version: 1.0.0
+readme: README.md
+authors:
+  - Felix Fontein
+repository: https://github.com/ansible-community/antsibull-nox
+description: A test collection for antisbull-nox sessions.

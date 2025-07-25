@@ -1143,3 +1143,146 @@ It simply runs `ansible-lint`.
 ```toml
 [sessions.ansible_lint]
 ```
+
+## Execution environment check
+
+antsibull-nox allows you to test your collection against an execution environment (EE).
+The `ee-check` meta session is added with the `[sessions.ee_check]` section
+or `[[sessions.ee_check.execution_environments]]` sections (one for every EE) in `antsibull-nox.toml`.
+The `[sessions.ee_check]` section is optional and accepts the following options:
+
+* `default: bool` (default `false`):
+  Whether the `ee-check` session should be made default.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
+
+* `execution_environments: list[ExecutionEnvironmentConfig]` (**required**):
+  List of execution environment configs.
+  The configurations come with information on how to build the execution environment (EE) and in which ways to test them.
+
+    Every execution environment config is an object and will result in its own session.
+    (The `ee-check` meta session executes all these sessions.)
+    It should be defined in a new section `[[sessions.ee_check.execution_environments]]`.
+    (See [Array of Tables](https://toml.io/en/v1.0.0#array-of-tables) in the TOML Specification.)
+
+    Every execution environment config has the following properties:
+
+    * `name: str` (**required**):
+      Specifies a unique name for the `ee-check` session.
+
+    * `description: str | None` (default `None`):
+      Adds a description for the `ee-check` session.
+
+    * `test_playbooks: list[str]` (**required**):
+      Specifies a list of playbooks that test the collection against the EE.
+
+    * `version: t.Literal[3]` (default `3`):
+      Configures the schema version for the EE definition.
+
+    * `base_image_name: str` (default `"registry.fedoraproject.org/fedora-toolbox:latest"`):
+      Specifies the base image to use when building the EE.
+      We strongly recommend to always provide the base image explicitly (here or through `config`),
+      and not to rely on this default.
+
+    * `ansible_core_source: "package_pip" | "package_system"` (default `"package_pip"`):
+      Configures the source for installing the `ansible-core` package.
+      when the `ansible_core_package` option is used.
+
+    * `ansible_core_package: str | None` (default `None`):
+      Specifies the name of the `ansible-core` package.
+
+    * `ansible_runner_source: "package_pip" | "package_system"` (default `"package_pip"`):
+      Configures the source for installing the `ansible-runner` package
+      when the `ansible_runner_package` option is used.
+
+    * `ansible_runner_package: str | None` (default `None`):
+      Specifies the name of the `ansible-runner` package.
+
+    * `system_packages: list[str]` (default `"[]"`):
+      Specifies a list of system packages to build into the EE.
+
+    * `python_packages: list[str]` (default `"[]"`):
+      Specifies a list of Python packages to build into the EE.
+
+    * `python_interpreter_package: str | None`(default `None`):
+      Defines the Python system package name for the EE.
+
+    * `python_path: str | None`(default `None`):
+      Specifies the path to the Python interpreter.
+
+    * `config: dict[str, Any]` (default `{}`):
+      Allows explicit configuration of an EE definition.
+
+        If `config` is used,
+        the other options to specify values in the EE definition can still be used,
+        but every value can only come from one source.
+        If this is violated, an error will be produced.
+
+        !!! warning
+            The key `dependencies.galaxy` will always be overridden.
+
+        !!! note
+            antsibull-nox does not check the EE definition syntax.
+
+For more information about these options, see the [Execution environment definition](https://ansible.readthedocs.io/projects/builder/en/latest/definition/) documentation for Ansible Builder.
+
+### Example TOML definition
+
+The following example shows a minimal EE check definition:
+
+```toml
+[[sessions.ee_check.execution_environments]]
+name = "minimal_ee"
+test_playbooks = ["tests/ee/all.yml"]
+base_image_name = "registry.fedoraproject.org/fedora-toolbox:latest"
+ansible_core_package = "ansible-core"
+ansible_runner_package = "ansible-runner"
+```
+
+!!! note
+    While the `base_image_name` option is optional, we strongly recommend to provide it explicitly,
+    or alternatively provide the appropriate base image in `config`.
+
+!!! note
+    The `ansible_core_package` and `ansible_runner_package` options are necessary as the default base image `registry.fedoraproject.org/fedora-toolbox:latest` of antsibull-nox does not contain ansible-core and ansible-runner.
+    ansible-builder will refuse to create the EE without both of these packages present.
+
+The following example shows a full EE check definition:
+
+```toml
+[[sessions.ee_check.execution_environments]]
+name = "fedora-toolbox"
+description = "Testing EE builds with the fedora toolbox"
+test_playbooks = ["tests/ee/all.yml"]
+base_image_name = "registry.fedoraproject.org/fedora-toolbox:latest"
+ansible_core_package = "ansible-core"
+ansible_core_source = "package_pip"
+ansible_runner_package = "ansible-runner"
+ansible_runner_source = "package_pip"
+system_packages = ["git", "curl"]
+python_packages = ["jinja2", "pyyaml", "requests"]
+python_interpreter_package = "python3"
+python_path = "/usr/bin/python3"
+```
+
+The following example shows an explicit configuration of an EE:
+
+```toml
+[[sessions.ee_check.execution_environments]]
+name = "fedora-toolbox"
+description = "Testing EE builds with the fedora toolbox"
+test_playbooks = ["tests/ee/all.yml"]
+config.images.base_image.name = "registry.fedoraproject.org/fedora-toolbox:latest"
+config.dependencies.ansible_core.package_pip = "ansible-core"
+config.dependencies.ansible_runner.package_pip = "ansible-runner"
+config.dependencies.system = [
+    "git",
+    "curl",
+]
+config.dependencies.python = [
+    "jinja2",
+    "pyyaml",
+    "requests",
+]
+config.dependencies.python_interpreter.package_system = "python3"
+config.dependencies.python_interpreter.python_path = "/usr/bin/python3"
+```

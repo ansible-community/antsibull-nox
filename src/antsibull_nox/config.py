@@ -15,6 +15,8 @@ import typing as t
 
 import pydantic as p
 
+from antsibull_nox.ee_config import create_ee_config
+
 from ._pydantic import forbid_extras, get_formatted_error_messages
 from .ansible import AnsibleCoreVersion
 from .utils import Version
@@ -171,6 +173,79 @@ class SessionLicenseCheck(_BaseModel):
     reuse_package: str = "reuse"
     run_license_check: bool = True
     license_check_extra_ignore_paths: list[str] = []
+
+
+class ExecutionEnvironmentConfig(_BaseModel):
+    """
+    Execution enviroment check session config.
+    """
+
+    name: str
+    description: t.Optional[str] = None
+    test_playbooks: list[str]
+    version: t.Literal[3] = 3
+    base_image_name: t.Optional[str] = None  # implicit default
+    ansible_core_source: t.Literal["package_pip", "package_system"] = "package_pip"
+    ansible_core_package: t.Optional[str] = None
+    ansible_runner_source: t.Literal["package_pip", "package_system"] = "package_pip"
+    ansible_runner_package: t.Optional[str] = None
+    system_packages: list[str] = []
+    python_packages: list[str] = []
+    python_interpreter_package: t.Optional[str] = None
+    python_path: t.Optional[str] = None
+    config: dict[str, t.Any] = {}
+
+    def to_execution_environment_config(self) -> dict[str, t.Any]:
+        """
+        Convert TOML config to execution environment YAML.
+        """
+
+        dependencies: dict[str, t.Any] = {}
+        if self.ansible_core_package is not None:
+            dependencies["ansible_core"] = {
+                self.ansible_core_source: self.ansible_core_package
+            }
+        if self.ansible_runner_package is not None:
+            dependencies["ansible_runner"] = {
+                self.ansible_runner_source: self.ansible_runner_package
+            }
+        if self.python_interpreter_package is not None:
+            python_interpreter: dict[str, t.Any] = {
+                "package_system": self.python_interpreter_package
+            }
+            if self.python_path is not None:
+                python_interpreter["python_path"] = self.python_path
+            dependencies["python_interpreter"] = python_interpreter
+        if self.system_packages:
+            dependencies["system"] = self.system_packages
+        if self.python_packages:
+            dependencies["python"] = self.python_packages
+
+        simple_config = create_ee_config(
+            version=self.version,
+            base_image=(
+                "registry.fedoraproject.org/fedora-toolbox:latest"
+                if self.base_image_name is None
+                else self.base_image_name
+            ),
+            base_image_is_default=self.base_image_name is None,
+            dependencies=dependencies,
+            config=self.config,
+        )
+
+        ee_config = {**simple_config, **self.config}
+
+        return ee_config
+
+
+class SessionExecutionEnvironmentCheck(_BaseModel):
+    """
+    Execution environment check session.
+    """
+
+    default: bool = False
+
+    execution_environments: list[ExecutionEnvironmentConfig]
 
 
 class ActionGroup(_BaseModel):
@@ -376,6 +451,7 @@ class Sessions(_BaseModel):
         SessionAnsibleTestIntegrationWDefaultContainer
     ] = None
     ansible_lint: t.Optional[SessionAnsibleLint] = None
+    ee_check: t.Optional[SessionExecutionEnvironmentCheck] = None
 
 
 class CollectionSource(_BaseModel):

@@ -30,6 +30,10 @@ from .sessions.ansible_test import (
 )
 from .sessions.build_import_check import add_build_import_check
 from .sessions.docs_check import add_docs_check
+from .sessions.ee_check import (
+    ExecutionEnvironmentData,
+    add_execution_environment_sessions,
+)
 from .sessions.extra_checks import (
     ActionGroup,
     AvoidCharacterGroup,
@@ -304,6 +308,24 @@ def _add_sessions(sessions: Sessions) -> None:
             ansible_lint_package=sessions.ansible_lint.ansible_lint_package,
             strict=sessions.ansible_lint.strict,
         )
+    if sessions.ee_check:
+        execution_environments = []
+
+        for ee_config in sessions.ee_check.execution_environments:
+            execution_environments.append(
+                ExecutionEnvironmentData(
+                    name=ee_config.name,
+                    description=ee_config.description or ee_config.name,
+                    config=ee_config.to_execution_environment_config(),
+                    test_playbooks=ee_config.test_playbooks,
+                )
+            )
+
+        if execution_environments:
+            add_execution_environment_sessions(
+                execution_environments=execution_environments,
+                default=sessions.ee_check.default,
+            )
     add_matrix_generator()
 
 

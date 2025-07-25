@@ -134,3 +134,6 @@ dmypy.json
 *.in
 *.build
 *.deps
+
+# VSCode Ansible extension
+/.ansible/
