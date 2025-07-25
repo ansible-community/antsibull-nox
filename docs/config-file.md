@@ -1180,6 +1180,8 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
 
     * `base_image_name: str` (default `"registry.fedoraproject.org/fedora-toolbox:latest"`):
       Specifies the base image to use when building the EE.
+      We strongly recommend to always provide the base image explicitly (here or through `config`),
+      and not to rely on this default.
 
     * `ansible_core_source: "package_pip" | "package_system"` (default `"package_pip"`):
       Configures the source for installing the `ansible-core` package.
@@ -1231,9 +1233,14 @@ The following example shows a minimal EE check definition:
 [[sessions.ee_check.execution_environments]]
 name = "minimal_ee"
 test_playbooks = ["tests/ee/all.yml"]
+base_image_name = "registry.fedoraproject.org/fedora-toolbox:latest"
 ansible_core_package = "ansible-core"
 ansible_runner_package = "ansible-runner"
 ```
+
+!!! note
+    While the `base_image_name` option is optional, we strongly recommend to provide it explicitly,
+    or alternatively provide the appropriate base image in `config`.
 
 !!! note
     The `ansible_core_package` and `ansible_runner_package` options are necessary as the default base image `registry.fedoraproject.org/fedora-toolbox:latest` of antsibull-nox does not contain ansible-core and ansible-runner.
