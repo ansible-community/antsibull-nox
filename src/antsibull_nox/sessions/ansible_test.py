@@ -25,6 +25,7 @@ from ..ansible import (
     get_supported_core_versions,
     parse_ansible_core_version,
 )
+from ..container import get_container_engine_preference
 from ..paths import copy_directory_tree_into
 from ..python import get_installed_python_versions
 from ..utils import Version
@@ -33,6 +34,28 @@ from .utils import (
     install,
     register,
 )
+
+
+def get_ansible_test_env() -> dict[str, str]:
+    """
+    Set ANSIBLE_TEST_PREFER_PODMAN if the user prefers one of podman or docker over the other.
+    """
+    # Check whether the user explicitly set ANSIBLE_TEST_PREFER_PODMAN
+    if os.environ.get("ANSIBLE_TEST_PREFER_PODMAN") is not None:
+        return {}
+    # Check whether the user explicitly requested a container engine for antsibull-nox
+    preference, explicitly_set = get_container_engine_preference()
+    if not explicitly_set:
+        return {}
+    # Check whether the users prefers one of podman and docker over the other
+    if preference in ("auto-prefer-podman", "podman"):
+        # Yes, the user prefers podman.
+        return {"ANSIBLE_TEST_PREFER_PODMAN": "1"}
+    if preference in ("auto-prefer-docker", "docker"):
+        # Yes, the user prefers docker.
+        return {"ANSIBLE_TEST_PREFER_PODMAN": ""}
+    # Apparently not: do nothing.
+    return {}
 
 
 def add_ansible_test_session(
@@ -91,7 +114,7 @@ def add_ansible_test_session(
             command = ["ansible-test"] + ansible_test_params
             if add_posargs and session.posargs:
                 command.extend(session.posargs)
-            session.run(*command)
+            session.run(*command, env=get_ansible_test_env())
 
             coverage = (handle_coverage == "auto" and "--coverage" in command) or (
                 handle_coverage == "always"

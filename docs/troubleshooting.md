@@ -42,6 +42,10 @@ For sessions that require a container engine, antsibull-nox tries to detect the 
    If the environment variable `ANSIBLE_TEST_PREFER_PODMAN` is set to a non-empty value,
    it will prefer `podman` over `docker`.
 
+    If `ANSIBLE_TEST_PREFER_PODMAN` is not set,
+    but `ANTSIBULL_NOX_CONTAINER_ENGINE` is set to something other than `auto`,
+    `ANSIBLE_TEST_PREFER_PODMAN` will be set to `""` (that is, prefer Docker) or `1` (that is, prefer Podman) accordingly.
+
 ## Differences between CI and local runs
 
 If you notice that your local tests report different results than CI,
