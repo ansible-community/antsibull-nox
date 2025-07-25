@@ -320,6 +320,7 @@ def _add_sessions(sessions: Sessions) -> None:
                     test_playbooks=ee_config.test_playbooks,
                     runtime_environment=ee_config.runtime_environment,
                     runtime_container_options=ee_config.runtime_container_options,
+                    runtime_extra_vars=ee_config.runtime_extra_vars,
                 )
             )
 

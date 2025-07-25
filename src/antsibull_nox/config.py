@@ -200,6 +200,7 @@ class ExecutionEnvironmentConfig(_BaseModel):
     test_playbooks: list[str]
     runtime_environment: dict[str, str] = {}
     runtime_container_options: list[str] = []
+    runtime_extra_vars: dict[str, str] = {}
 
     def to_execution_environment_config(self) -> dict[str, t.Any]:
         """
