@@ -9,7 +9,6 @@ Build execution environments for testing.
 
 from __future__ import annotations
 
-import os
 import shutil
 import typing as t
 from dataclasses import dataclass
@@ -21,6 +20,7 @@ from antsibull_nox.ee_config import generate_ee_config
 from antsibull_nox.paths import get_outside_temp_directory
 
 from ..collection import CollectionData, build_collection
+from ..container import get_container_engine_preference, get_preferred_container_engine
 from .utils import install, register
 
 
@@ -132,7 +132,6 @@ def add_execution_environment_session(
     *,
     session_name: str,
     execution_environment: ExecutionEnvironmentData,
-    container_engine: str,
     default: bool = False,
     ansible_builder_package: str = "ansible-builder",
     ansible_core_package: str | None = None,
@@ -150,6 +149,9 @@ def add_execution_environment_session(
 
     def session_func(session: nox.Session) -> None:
         install(session, *get_package_list())
+
+        container_engine = get_preferred_container_engine()
+        session.log(f"Using container engine {container_engine}")
 
         collection_tarball, built_image, collection_data = (
             prepare_execution_environment(
@@ -207,16 +209,18 @@ def add_execution_environment_session(
                 env=env,
             )
 
+    # Get container engine preference to check for valid values
+    get_container_engine_preference()
+
     session_func.__doc__ = (
         "Build and test execution environment image:"
         f" {execution_environment.description}"
-        f" using {container_engine}"
     )
     nox.session(name=session_name, default=default)(session_func)
 
     data = {
         "name": session_name,
-        "description": f"{execution_environment.description} ({container_engine})",
+        "description": execution_environment.description,
     }
     register("execution-environment", data)
 
@@ -233,15 +237,12 @@ def add_execution_environment_sessions(
     Build and test execution environments for the collection.
     """
 
-    container_engine = os.environ.get("ANTSIBULL_NOX_CONTAINER_ENGINE", "docker")
-
     session_names = []
     for ee in execution_environments:
         session_name = f"ee-check-{ee.name}"
         add_execution_environment_session(
             session_name=session_name,
             execution_environment=ee,
-            container_engine=container_engine,
             default=False,
             ansible_builder_package=ansible_builder_package,
             ansible_core_package=ansible_core_package,

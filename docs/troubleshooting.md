@@ -24,6 +24,28 @@ uv run noxfile.py -e lint
 
 This often resolves the problems.
 
+## The wrong container engine is used for certain sessions
+
+For sessions that require a container engine, antsibull-nox tries to detect the appropriate one:
+
+1. For execution environment sessions (`ee-check`), one of Podman or Docker is determined when the session is started.
+   The behavior can be configured by the environment variable `ANTSIBULL_NOX_CONTAINER_ENGINE`.
+
+    If set to `podman` or `docker`, that container engine will be used.
+    If set to `auto`, `auto-prefer-docker`, or `auto-prefer-podman`, antsibull-nox will try to find the
+    `podman` or `docker` CLI tools in the execution path and use that information to select the container engine to use.
+
+    The default value is `auto`.
+
+2. For ansible-test sessions, ansible-test itself detects whether to use Podman or Docker.
+   By default it prefers `docker` if both `docker` and `podman` are available.
+   If the environment variable `ANSIBLE_TEST_PREFER_PODMAN` is set to a non-empty value,
+   it will prefer `podman` over `docker`.
+
+    If `ANSIBLE_TEST_PREFER_PODMAN` is not set,
+    but `ANTSIBULL_NOX_CONTAINER_ENGINE` is set to something other than `auto`,
+    `ANSIBLE_TEST_PREFER_PODMAN` will be set to `""` (that is, prefer Docker) or `1` (that is, prefer Podman) accordingly.
+
 ## Differences between CI and local runs
 
 If you notice that your local tests report different results than CI,
