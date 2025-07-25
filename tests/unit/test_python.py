@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2025, Ansible Project
 
+from __future__ import annotations
+
 import contextlib
 import os
 import typing as t
