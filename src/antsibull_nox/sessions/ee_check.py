@@ -196,10 +196,12 @@ def add_execution_environment_session(
             # to prevent an argument parsing SNAFU by ansible-navigator.
             # Otherwise you get errors such as "Error: The following set-environment-variable
             # entry could not be parsed: tests/ee/all.yml"...
-            command.extend[
-                "-v",
-                command,
-            ]
+            command.extend(
+                [
+                    "-v",
+                    command,
+                ]
+            )
             session.run(
                 *command,
                 env=env,
