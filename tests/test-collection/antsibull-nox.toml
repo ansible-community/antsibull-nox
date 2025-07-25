@@ -13,6 +13,8 @@ default = true
 [[sessions.ee_check.execution_environments]]
 name = "minimal"
 test_playbooks = ["ee.yml"]
+ansible_core_package = "ansible-core"
+ansible_runner_package = "ansible-runner"
 
 [[sessions.ee_check.execution_environments]]
 name = "fedora-toolbox-direct"

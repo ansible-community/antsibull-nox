@@ -1183,14 +1183,16 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
 
     * `ansible_core_source: "package_pip" | "package_system"` (default `"package_pip"`):
       Configures the source for installing the `ansible-core` package.
+      when the `ansible_core_package` option is used.
 
-    * `ansible_core_package: str` (default `"ansible-core"`):
+    * `ansible_core_package: str | None` (default `None`):
       Specifies the name of the `ansible-core` package.
 
     * `ansible_runner_source: "package_pip" | "package_system"` (default `"package_pip"`):
-      Configures the source for installing the `ansible-runner` package.
+      Configures the source for installing the `ansible-runner` package
+      when the `ansible_runner_package` option is used.
 
-    * `ansible_runner_package: str` (default `"ansible-runner"`):
+    * `ansible_runner_package: str | None` (default `None`):
       Specifies the name of the `ansible-runner` package.
 
     * `system_packages: list[str]` (default `"[]"`):
@@ -1229,7 +1231,13 @@ The following example shows a minimal EE check definition:
 [[sessions.ee_check.execution_environments]]
 name = "minimal_ee"
 test_playbooks = ["tests/ee/all.yml"]
+ansible_core_package = "ansible-core"
+ansible_runner_package = "ansible-runner"
 ```
+
+!!! note
+    The `ansible_core_package` and `ansible_runner_package` options are necessary as the default base image `registry.fedoraproject.org/fedora-toolbox:latest` of antsibull-nox does not contain ansible-core and ansible-runner.
+    ansible-builder will refuse to create the EE without both of these packages present.
 
 The following example shows a full EE check definition:
 
