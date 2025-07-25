@@ -325,6 +325,9 @@ def _add_sessions(sessions: Sessions) -> None:
             add_execution_environment_sessions(
                 execution_environments=execution_environments,
                 default=sessions.ee_check.default,
+                ansible_builder_package=sessions.ee_check.ansible_builder_package,
+                ansible_core_package=sessions.ee_check.ansible_core_package,
+                ansible_navigator_package=sessions.ee_check.ansible_navigator_package,
             )
     add_matrix_generator()
 

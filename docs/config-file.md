@@ -1155,6 +1155,26 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
   Whether the `ee-check` session should be made default.
   This means that when a user just runs `nox` without specifying sessions, this session will run.
 
+* `ansible_builder_package: str` (default `"ansible-builder"`):
+  The package to install for `ansible-builder` in this session.
+  You can specify a value here to add restrictions to the `ansible-builder` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
+* `ansible_core_package: str | None` (default `None`):
+  The package to install for `ansible-core` in this session.
+  Note that `ansible-core` is a dependency of `ansible-runner`,
+  so if not specified explicitly here it will still be installed.
+  You can specify a value here to add restrictions to the `ansible-core` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
+* `ansible_navigator_package: str` (default `"ansible-navigator"`):
+  The package to install for `ansible-navigator` in this session.
+  You can specify a value here to add restrictions to the `ansible-navigator` version,
+  or to pin the version,
+  or to install the package from a local repository.
+
 * `execution_environments: list[ExecutionEnvironmentConfig]` (**required**):
   List of execution environment configs.
   The configurations come with information on how to build the execution environment (EE) and in which ways to test them.

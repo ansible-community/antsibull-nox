@@ -244,6 +244,9 @@ class SessionExecutionEnvironmentCheck(_BaseModel):
     """
 
     default: bool = False
+    ansible_builder_package: str = "ansible-builder"
+    ansible_core_package: t.Optional[str] = None
+    ansible_navigator_package: str = "ansible-navigator"
 
     execution_environments: list[ExecutionEnvironmentConfig]
 
