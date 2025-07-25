@@ -1254,6 +1254,11 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
 
 For more information about these options, see the [Execution environment definition](https://ansible.readthedocs.io/projects/builder/en/latest/definition/) documentation for Ansible Builder.
 
+!!! note
+    A container engine (Docker or Podman) needs to be installed for this session.
+    Information on which container engine is chosen by antsibull-nox can be found
+    [on the troubleshooting page](troubleshooting.md).
+
 ### Example TOML definition
 
 The following example shows a minimal EE check definition:
