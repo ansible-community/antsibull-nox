@@ -185,17 +185,23 @@ def add_execution_environment_session(
                 "never",
                 "--execution-environment-image",
                 built_image,
-                "-v",
             ]
-            if execution_environment.runtime_environment:
-                for k, v in execution_environment.runtime_environment.items():
-                    command.extend(["--set-environment-variable", f"{k}={v}"])
             if execution_environment.runtime_container_options:
                 for value in execution_environment.runtime_container_options:
                     command.append(f"--container-options={value}")
+            if execution_environment.runtime_environment:
+                for k, v in execution_environment.runtime_environment.items():
+                    command.extend(["--set-environment-variable", f"{k}={v}"])
+            # Note that another parameter must follow after --set-environment-variable
+            # to prevent an argument parsing SNAFU by ansible-navigator.
+            # Otherwise you get errors such as "Error: The following set-environment-variable
+            # entry could not be parsed: tests/ee/all.yml"...
+            command.extend[
+                "-v",
+                command,
+            ]
             session.run(
                 *command,
-                playbook,
                 env=env,
             )
 
