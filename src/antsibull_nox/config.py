@@ -184,11 +184,11 @@ class ExecutionEnvironmentConfig(_BaseModel):
     description: t.Optional[str] = None
     test_playbooks: list[str]
     version: t.Literal[3] = 3
-    base_image_name: str = "registry.fedoraproject.org/fedora-toolbox:latest"
+    base_image_name: t.Optional[str] = None  # implicit default
     ansible_core_source: t.Literal["package_pip", "package_system"] = "package_pip"
-    ansible_core_package: str = "ansible-core"
+    ansible_core_package: t.Optional[str] = None
     ansible_runner_source: t.Literal["package_pip", "package_system"] = "package_pip"
-    ansible_runner_package: str = "ansible-runner"
+    ansible_runner_package: t.Optional[str] = None
     system_packages: list[str] = []
     python_packages: list[str] = []
     python_interpreter_package: t.Optional[str] = None
@@ -201,17 +201,19 @@ class ExecutionEnvironmentConfig(_BaseModel):
         """
 
         dependencies: dict[str, t.Any] = {}
-        dependencies["ansible_core"] = {
-            self.ansible_core_source: self.ansible_core_package
-        }
-        dependencies["ansible_runner"] = {
-            self.ansible_runner_source: self.ansible_runner_package
-        }
-        if self.python_interpreter_package:
+        if self.ansible_core_package is not None:
+            dependencies["ansible_core"] = {
+                self.ansible_core_source: self.ansible_core_package
+            }
+        if self.ansible_runner_package is not None:
+            dependencies["ansible_runner"] = {
+                self.ansible_runner_source: self.ansible_runner_package
+            }
+        if self.python_interpreter_package is not None:
             python_interpreter: dict[str, t.Any] = {
                 "package_system": self.python_interpreter_package
             }
-            if self.python_path:
+            if self.python_path is not None:
                 python_interpreter["python_path"] = self.python_path
             dependencies["python_interpreter"] = python_interpreter
         if self.system_packages:
@@ -221,8 +223,14 @@ class ExecutionEnvironmentConfig(_BaseModel):
 
         simple_config = create_ee_config(
             version=self.version,
-            base_image=self.base_image_name,
+            base_image=(
+                "registry.fedoraproject.org/fedora-toolbox:latest"
+                if self.base_image_name is None
+                else self.base_image_name
+            ),
+            base_image_is_default=self.base_image_name is None,
             dependencies=dependencies,
+            config=self.config,
         )
 
         ee_config = {**simple_config, **self.config}

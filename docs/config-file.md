@@ -1205,8 +1205,19 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
     * `python_path: str | None`(default `None`):
       Specifies the path to the Python interpreter.
 
-    * `config: dict[str, t.Any]`:
+    * `config: dict[str, Any]` (default `{}`):
       Allows explicit configuration of an EE definition.
+
+        If `config` is used,
+        the other options to specify values in the EE definition can still be used,
+        but every value can only come from one source.
+        If this is violated, an error will be produced.
+
+        !!! warning
+            The key `dependencies.galaxy` will always be overridden.
+
+        !!! note
+            antsibull-nox does not check the EE definition syntax.
 
 For more information about these options, see the [Execution environment definition](https://ansible.readthedocs.io/projects/builder/en/latest/definition/) documentation for Ansible Builder.
 

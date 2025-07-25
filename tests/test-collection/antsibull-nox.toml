@@ -15,8 +15,8 @@ name = "minimal"
 test_playbooks = ["ee.yml"]
 
 [[sessions.ee_check.execution_environments]]
-name = "fedora-toolbox"
-description = "Testing EE builds with the fedora toolbox"
+name = "fedora-toolbox-direct"
+description = "Testing EE builds with the Fedora toolbox (from options)"
 test_playbooks = ["ee.yml"]
 base_image_name = "registry.fedoraproject.org/fedora-toolbox:latest"
 ansible_core_package = "ansible-core"
@@ -26,3 +26,22 @@ system_packages = ["git", "curl"]
 python_packages = ["jinja2", "pyyaml", "requests"]
 python_interpreter_package = "python3"
 python_path = "/usr/bin/python3"
+
+[[sessions.ee_check.execution_environments]]
+name = "fedora-toolbox-config"
+description = "Testing EE builds with the Fedora toolbox (from config)"
+test_playbooks = ["ee.yml"]
+config.images.base_image.name = "registry.fedoraproject.org/fedora-toolbox:latest"
+config.dependencies.ansible_core.package_pip = "ansible-core"
+config.dependencies.ansible_runner.package_pip = "ansible-runner"
+config.dependencies.system = [
+    "git",
+    "curl",
+]
+config.dependencies.python = [
+    "jinja2",
+    "pyyaml",
+    "requests",
+]
+config.dependencies.python_interpreter.package_system = "python3"
+config.dependencies.python_interpreter.python_path = "/usr/bin/python3"
