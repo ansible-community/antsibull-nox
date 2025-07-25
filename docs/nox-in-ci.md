@@ -64,7 +64,7 @@ jobs:
 
 ### Running ansible-test CI matrix from nox
 
-If you use the `[sessions.ansible_test_sanity]`, `[sessions.ansible_test_units]`, or `[sessions.ansible_test_integration_w_default_container]` sections in `antsibull-nox.toml`,
+If you use the `[sessions.ansible_test_sanity]`, `[sessions.ansible_test_units]`, `[sessions.ansible_test_integration_w_default_container]`, or `[sessions.ee_check]` sections in `antsibull-nox.toml`,
 or the `antsibull_nox.add_ansible_test_session()` function in `noxfile.py` to add specific `ansible-test` sessions,
 then you can use the shared workflow
 [ansible-community/antsibull-nox/.github/workflows/reusable-nox-matrix.yml@main](https://github.com/ansible-community/antsibull-nox/blob/main/.github/workflows/reusable-nox-matrix.yml)

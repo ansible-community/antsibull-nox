@@ -27,6 +27,7 @@ jobs:
       sanity-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).sanity }}
       units-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).units }}
       integration-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).integration }}
+      ee-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).execution-environment }}
     steps:
       - name: Check out collection
         uses: actions/checkout@v4
@@ -37,6 +38,8 @@ jobs:
         id: generate-matrix
         with:
           sessions: matrix-generator
+
+  # Sessions with coverage
 
   sanity:
     name: ${{ matrix.skip && 'Skipping ' || '' }}Sanity (Ⓐ${{ matrix.ansible-core }})
@@ -160,3 +163,29 @@ jobs:
         with:
           files: coverage=*.xml
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  # Sessions without coverage
+
+  ee:
+    name: ${{ matrix.skip && 'Skipping ' || '' }}EE (${{ matrix.description }})
+    needs:
+      - create-matrixes
+    strategy:
+      fail-fast: false
+      matrix:
+        include: >-
+          ${{ fromJson(needs.create-matrixes.outputs.ee-matrix || '[{"skip": true}]') }}
+    runs-on: ${{ matrix.gha-container || 'ubuntu-latest' }}
+    steps:
+      - name: Check out collection
+        if: >-
+          !matrix.skip
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run nox
+        if: >-
+          !matrix.skip
+        uses: ansible-community/antsibull-nox@main
+        with:
+          sessions: ${{ matrix.name }}

@@ -34,6 +34,8 @@ class ExecutionEnvironmentData:
     description: str
     config: dict[str, t.Any]
     test_playbooks: list[str]
+    runtime_environment: dict[str, str] | None = None
+    runtime_container_options: list[str] | None = None
 
 
 def build_ee_image(
@@ -132,13 +134,22 @@ def add_execution_environment_session(
     execution_environment: ExecutionEnvironmentData,
     container_engine: str,
     default: bool = False,
+    ansible_builder_package: str = "ansible-builder",
+    ansible_core_package: str | None = None,
+    ansible_navigator_package: str = "ansible-navigator",
 ) -> None:
     """
     Build and test execution environments for the collection.
     """
 
-    def session_func(session: nox.Session):
-        install(session, "ansible-builder", "ansible-navigator")
+    def get_package_list() -> list[str]:
+        result = [ansible_builder_package, ansible_navigator_package]
+        if ansible_core_package is not None:
+            result.append(ansible_core_package)
+        return result
+
+    def session_func(session: nox.Session) -> None:
+        install(session, *get_package_list())
 
         collection_tarball, built_image, collection_data = (
             prepare_execution_environment(
@@ -163,7 +174,7 @@ def add_execution_environment_session(
 
         for playbook in execution_environment.test_playbooks:
             env = {"TMPDIR": str(temp_dir)}
-            session.run(
+            command = [
                 "ansible-navigator",
                 "run",
                 "--mode",
@@ -175,6 +186,15 @@ def add_execution_environment_session(
                 "--execution-environment-image",
                 built_image,
                 "-v",
+            ]
+            if execution_environment.runtime_environment:
+                for k, v in execution_environment.runtime_environment.items():
+                    command.extend(["--set-environment-variable", f"{k}={v}"])
+            if execution_environment.runtime_container_options:
+                for value in execution_environment.runtime_container_options:
+                    command.append(f"--container-options={value}")
+            session.run(
+                *command,
                 playbook,
                 env=env,
             )
@@ -197,6 +217,9 @@ def add_execution_environment_sessions(
     *,
     execution_environments: list[ExecutionEnvironmentData],
     default: bool = False,
+    ansible_builder_package: str = "ansible-builder",
+    ansible_core_package: str | None = None,
+    ansible_navigator_package: str = "ansible-navigator",
 ) -> None:
     """
     Build and test execution environments for the collection.
@@ -212,6 +235,9 @@ def add_execution_environment_sessions(
             execution_environment=ee,
             container_engine=container_engine,
             default=False,
+            ansible_builder_package=ansible_builder_package,
+            ansible_core_package=ansible_core_package,
+            ansible_navigator_package=ansible_navigator_package,
         )
         session_names.append(session_name)
 
