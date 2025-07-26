@@ -1,3 +1,0 @@
-minor_changes:
-  - "Allow to set preference for container engines with ``ANTSIBULL_NOX_CONTAINER_ENGINE`` environment variable
-    (https://github.com/ansible-community/antsibull-nox/issues/98, https://github.com/ansible-community/antsibull-nox/pull/100)."

@@ -4,6 +4,23 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.1.0
+======
+
+Release Summary
+---------------
+
+Feature release.
+
+Minor Changes
+-------------
+
+- Add an ``ee-check`` session that allows test builds of execution environments (https://github.com/ansible-community/antsibull-nox/issues/16, https://github.com/ansible-community/antsibull-nox/pull/69, https://github.com/ansible-community/antsibull-nox/pull/99, https://github.com/ansible-community/antsibull-nox/pull/100, https://github.com/ansible-community/antsibull-nox/pull/101).
+- Allow to set preference for container engines with ``ANTSIBULL_NOX_CONTAINER_ENGINE`` environment variable (https://github.com/ansible-community/antsibull-nox/issues/98, https://github.com/ansible-community/antsibull-nox/pull/100).
+- The YAML-in-RST checker for the ``yamllint`` session now also checks ``ansible-output-data`` and ``ansible-output-meta`` directives for antsibull-doc's ``ansible-output`` subcommand (https://github.com/ansible-community/antsibull-nox/pull/95, https://github.com/ansible-community/antsibull-nox/pull/96).
+- When using the reusable GHA workflow, execution environment tests are automatically added to the matrix (https://github.com/ansible-community/antsibull-nox/issues/16, https://github.com/ansible-community/antsibull-nox/pull/99).
+- antsibull-nox now depends on antsibull-fileutils >= 1.4.0 (https://github.com/ansible-community/antsibull-nox/pull/97).
+
 v1.0.0
 ======
 
