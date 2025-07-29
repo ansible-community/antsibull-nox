@@ -100,8 +100,8 @@ _SUPPORTED_CORE_VERSIONS: dict[Version | t.Literal["milestone"], AnsibleCoreInfo
             ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"],
         ],
         "2.20": [
-            ["3.11", "3.12", "3.13"],
-            ["3.9", "3.10", "3.11", "3.12", "3.13"],
+            ["3.12", "3.13", "3.14"],
+            ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"],
             # Note: 3.14 should get added, 3.11 removed
         ],
         "milestone": [
