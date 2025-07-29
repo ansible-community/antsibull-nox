@@ -4,6 +4,19 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.1.1
+======
+
+Release Summary
+---------------
+
+Maintenance release.
+
+Bugfixes
+--------
+
+- Update supported Python versions for ansible-core devel (https://github.com/ansible-community/antsibull-nox/pull/102).
+
 v1.1.0
 ======
 

@@ -306,3 +306,12 @@ releases:
       - 95-rst-yaml-ansible-output-data.yml
       - 97-tempfile.yml
     release_date: '2025-07-26'
+  1.1.1:
+    changes:
+      bugfixes:
+        - Update supported Python versions for ansible-core devel (https://github.com/ansible-community/antsibull-nox/pull/102).
+      release_summary: Maintenance release.
+    fragments:
+      - 1.1.1.yml
+      - 102-devel.yml
+    release_date: '2025-07-29'
