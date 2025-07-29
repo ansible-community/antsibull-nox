@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2025, Ansible Project
 
+import json
 import re
 import urllib.error
 import urllib.request
@@ -20,6 +21,10 @@ _ANSIBLE_CORE_VERSION_REGEX = re.compile(r"""__version__ = (?:'([^']+)'|"([^"]+)
 _EOL_ANSIBLE_BRANCH_TEST_URL = (
     "https://raw.githubusercontent.com/{repo}/refs/heads/stable-{version}/README.md"
 )
+
+# You can get this value from https://github.com/ansible/ansible/commits/milestone.
+# One this changes, information src/antsibull_nox/ansible.py might need to be updated.
+_MILESTONE_LAST_COMMIT = "ac8c66d4310eb75ebe8eeb683c989e34c53b899a"
 
 
 def get_branch_version(branch_name: str) -> Version:
@@ -64,3 +69,9 @@ def test_check_eol_ansible() -> None:
         repo=_ANSIBLE_EOL_REPO, version=next_version
     )
     assert does_exist(next_max_url) is False
+
+
+def test_check_latest_milestone_commit() -> None:
+    url = "https://api.github.com/repos/ansible/ansible/commits/milestone"
+    data = json.loads(urllib.request.urlopen(url).read().decode("utf-8"))
+    assert data.get("sha") == _MILESTONE_LAST_COMMIT
