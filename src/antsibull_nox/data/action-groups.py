@@ -121,7 +121,9 @@ def scan(config: list[ActionGroup], errors: list[str]) -> None:
     modules_directory = "plugins/modules/"
     modules_suffix = ".py"
 
-    for file in os.listdir(modules_directory):
+    for file in (
+        os.listdir(modules_directory) if os.path.isdir(modules_directory) else []
+    ):
         if not file.endswith(modules_suffix):
             continue
         module_name = file[: -len(modules_suffix)]
