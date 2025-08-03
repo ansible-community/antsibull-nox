@@ -28,6 +28,7 @@ from .collections import (
 from .docs_check import find_extra_docs_rst_files
 from .utils import (
     IN_CI,
+    PackageName,
     compose_description,
     install,
     run_bare_script,
@@ -223,20 +224,20 @@ def add_formatters(
     # isort:
     run_isort: bool,
     isort_config: str | os.PathLike | None,
-    isort_package: str,
+    isort_package: PackageName,
     # black:
     run_black: bool,
     run_black_modules: bool | None,
     black_config: str | os.PathLike | None,
-    black_package: str,
+    black_package: PackageName,
     # ruff format:
     run_ruff_format: bool,
     ruff_format_config: str | os.PathLike | None,
-    ruff_format_package: str,
+    ruff_format_package: PackageName,
     # ruff autofix:
     run_ruff_autofix: bool,
     ruff_autofix_config: str | os.PathLike | None,
-    ruff_autofix_package: str,
+    ruff_autofix_package: PackageName,
     ruff_autofix_select: list[str],
 ) -> None:
     """
@@ -246,7 +247,7 @@ def add_formatters(
         run_black_modules = run_black
     run_check = IN_CI
 
-    def compose_dependencies() -> list[str]:
+    def compose_dependencies() -> list[PackageName]:
         deps = []
         if run_isort:
             deps.append(isort_package)
@@ -342,24 +343,24 @@ def add_codeqa(  # noqa: C901
     # ruff check:
     run_ruff_check: bool,
     ruff_check_config: str | os.PathLike | None,
-    ruff_check_package: str,
+    ruff_check_package: PackageName,
     # flake8:
     run_flake8: bool,
     flake8_config: str | os.PathLike | None,
-    flake8_package: str,
+    flake8_package: PackageName,
     # pylint:
     run_pylint: bool,
     pylint_rcfile: str | os.PathLike | None,
     pylint_modules_rcfile: str | os.PathLike | None,
-    pylint_package: str,
-    pylint_ansible_core_package: str | None,
+    pylint_package: PackageName,
+    pylint_ansible_core_package: PackageName | None,
     pylint_extra_deps: list[str],
 ) -> None:
     """
     Add nox session for codeqa.
     """
 
-    def compose_dependencies() -> list[str]:
+    def compose_dependencies() -> list[PackageName]:
         deps = []
         if run_ruff_check:
             deps.append(ruff_check_package)
@@ -493,14 +494,14 @@ def add_yamllint(
     yamllint_config_plugins: str | os.PathLike | None,
     yamllint_config_plugins_examples: str | os.PathLike | None,
     yamllint_config_extra_docs: str | os.PathLike | None,
-    yamllint_package: str,
-    yamllint_antsibull_docutils_package: str,
+    yamllint_package: PackageName,
+    yamllint_antsibull_docutils_package: PackageName,
 ) -> None:
     """
     Add yamllint session for linting YAML files and plugin/module docs.
     """
 
-    def compose_dependencies() -> list[str]:
+    def compose_dependencies() -> list[PackageName]:
         deps = []
         if run_yamllint:
             deps.extend([yamllint_package, yamllint_antsibull_docutils_package])
@@ -646,15 +647,15 @@ def add_typing(
     extra_code_files: list[str],
     run_mypy: bool,
     mypy_config: str | os.PathLike | None,
-    mypy_package: str,
-    mypy_ansible_core_package: str | None,
+    mypy_package: PackageName,
+    mypy_ansible_core_package: PackageName | None,
     mypy_extra_deps: list[str],
 ) -> None:
     """
     Add nox session for typing.
     """
 
-    def compose_dependencies() -> list[str]:
+    def compose_dependencies() -> list[PackageName]:
         deps = []
         if run_mypy:
             deps.append(mypy_package)
@@ -755,35 +756,35 @@ def add_lint_sessions(
     # isort:
     run_isort: bool = True,
     isort_config: str | os.PathLike | None = None,
-    isort_package: str = "isort",
+    isort_package: PackageName = "isort",
     # black:
     run_black: bool = True,
     run_black_modules: bool | None = None,
     black_config: str | os.PathLike | None = None,
-    black_package: str = "black",
+    black_package: PackageName = "black",
     # ruff format:
     run_ruff_format: bool = False,
     ruff_format_config: str | os.PathLike | None = None,
-    ruff_format_package: str = "ruff",
+    ruff_format_package: PackageName = "ruff",
     # ruff autofix:
     run_ruff_autofix: bool = False,
     ruff_autofix_config: str | os.PathLike | None = None,
-    ruff_autofix_package: str = "ruff",
+    ruff_autofix_package: PackageName = "ruff",
     ruff_autofix_select: list[str] | None = None,
     # ruff check:
     run_ruff_check: bool = False,
     ruff_check_config: str | os.PathLike | None = None,
-    ruff_check_package: str = "ruff",
+    ruff_check_package: PackageName = "ruff",
     # flake8:
     run_flake8: bool = True,
     flake8_config: str | os.PathLike | None = None,
-    flake8_package: str = "flake8",
+    flake8_package: PackageName = "flake8",
     # pylint:
     run_pylint: bool = True,
     pylint_rcfile: str | os.PathLike | None = None,
     pylint_modules_rcfile: str | os.PathLike | None = None,
-    pylint_package: str = "pylint",
-    pylint_ansible_core_package: str | None = "ansible-core",
+    pylint_package: PackageName = "pylint",
+    pylint_ansible_core_package: PackageName | None = "ansible-core",
     pylint_extra_deps: list[str] | None = None,
     # yamllint:
     run_yamllint: bool = False,
@@ -791,13 +792,13 @@ def add_lint_sessions(
     yamllint_config_plugins: str | os.PathLike | None = None,
     yamllint_config_plugins_examples: str | os.PathLike | None = None,
     yamllint_config_extra_docs: str | os.PathLike | None = None,
-    yamllint_package: str = "yamllint",
-    yamllint_antsibull_docutils_package: str = "antsibull-docutils",
+    yamllint_package: PackageName = "yamllint",
+    yamllint_antsibull_docutils_package: PackageName = "antsibull-docutils",
     # mypy:
     run_mypy: bool = True,
     mypy_config: str | os.PathLike | None = None,
-    mypy_package: str = "mypy",
-    mypy_ansible_core_package: str | None = "ansible-core",
+    mypy_package: PackageName = "mypy",
+    mypy_ansible_core_package: PackageName | None = "ansible-core",
     mypy_extra_deps: list[str] | None = None,
     # antsibull-nox config lint:
     run_antsibullnox_config_lint: bool = True,

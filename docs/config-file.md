@@ -136,6 +136,24 @@ by adding a `[collection_sources_per_ansible.'2.16']` section (note the quotes!)
 "community.crypto" = "git+https://github.com/ansible-collections/community.crypto.git,stable-2"
 ```
 
+## Package names
+
+For many sessions, the package names of tools that are used / installed can be configured.
+These options usually end with `_package`.
+
+A special syntax can be used to install a package in editable mode:
+if the package name is `-e package`, then `package` will be installed in editable mode
+unless editable mode is disallowed.
+
+!!! note
+    Whether editable mode is allowed can be configured with the `ALLOW_EDITABLE` environment variable.
+    Set it to `1` or `true` (ignoring case) to allow editable installs.
+    If not set, the default is `true` unless `nox` is run in a CI system, in which case the default is `false`.
+
+!!! note
+    CI is currently detected by checking for the `CI` environment variable.
+    If your CI system is not supported, you can simply set `CI=true` before running `nox` in CI.
+
 ## Basic linting sessions
 
 The basic linting session, `lint`, comes with three sessions it depends on:
@@ -149,10 +167,6 @@ The basic linting session, `lint`, comes with three sessions it depends on:
 * `yamllint`: runs `yamllint` on all `.yml` and `.yaml` files, on the documentation included in Ansible modules and plugins, and on YAML code included in extra docs.
 
 * `typing`: runs `mypy`.
-
-!!! note
-    CI is currently detected by checking for the `CI` environment variable.
-    If your CI system is not supported, you can simply set `CI=true` before running `nox` in CI.
 
 These sessions can be added with the `[sessions.lint]` section in `antsibull-nox.toml`.
 
