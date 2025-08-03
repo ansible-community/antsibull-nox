@@ -10,11 +10,13 @@ Utils for creating nox sessions.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import logging
 import os
 import sys
 import typing as t
+from collections.abc import Sequence
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -102,21 +104,77 @@ def get_registered_sessions() -> dict[str, list[dict[str, t.Any]]]:
     }
 
 
-def install(session: nox.Session, *args: str, editable: bool = False, **kwargs):
+@dataclasses.dataclass
+class Editable:
+    """
+    Indicate a package that should be installed editably, if allowed.
+    """
+
+    package_name: str
+
+
+# A package name is either a simple string or an Editable instance.
+PackageName = t.Union[str, Editable]
+
+
+def _get_install_params(packages: Sequence[PackageName]) -> list[str]:
+    # Look for editable markers.
+    # Don't install in editable mode in CI or if it's explicitly disabled.
+    # This ensures that the wheel contains all of the correct files.
+    new_args = []
+    next_is_editable = False
+    for arg in packages:
+        arg_str: str
+        if arg == "-e":
+            if next_is_editable:
+                raise ValueError(f"Found double -e in package list: {packages}")
+            next_is_editable = True
+            if not ALLOW_EDITABLE:
+                continue
+            arg_str = "-e"
+        elif isinstance(arg, Editable):
+            if next_is_editable:
+                raise ValueError(
+                    f"Found -e followed by an editable package name: {packages}"
+                )
+            next_is_editable = False
+            arg_str = arg.package_name
+            if ALLOW_EDITABLE:
+                new_args.append("-e")
+        else:
+            arg_str = arg
+            next_is_editable = False
+        new_args.append(arg_str)
+    if next_is_editable:
+        raise ValueError(f"Found trailing -e in package list: {packages}")
+    return new_args
+
+
+def install(session: nox.Session, *args: PackageName, **kwargs):
     """
     Install Python packages.
+
+    The special package name ``"-e"`` indicates that the next package should
+    be installed editable, if allowed. The next package must be a regular
+    package name, and not an ``Editable`` instance or an ``"-e"`` indicator.
+
+    If a package name is an ``Editable`` object, it will be installed
+    editably as well, if allowed.
+
+    Whether editable installs are allowed depends on the global flag
+    ``ALLOW_EDITABLE``, which can be controlled by the environment variable
+    ``ALLOW_EDITABLE``, and defaults to the inverted value of ``CI``.
     """
     if not args:
         return
+
     # nox --no-venv
     if isinstance(session.virtualenv, nox.virtualenv.PassthroughEnv):
         session.warn(f"No venv. Skipping installation of {args}")
         return
-    # Don't install in editable mode in CI or if it's explicitly disabled.
-    # This ensures that the wheel contains all of the correct files.
-    if editable and ALLOW_EDITABLE:
-        args = ("-e", *args)
-    session.install(*args, "-U", **kwargs)
+
+    new_args = _get_install_params(args)
+    session.install(*new_args, "-U", **kwargs)
 
 
 def run_bare_script(

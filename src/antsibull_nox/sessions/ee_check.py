@@ -21,7 +21,7 @@ from antsibull_nox.paths import get_outside_temp_directory
 
 from ..collection import CollectionData, build_collection
 from ..container import get_container_engine_preference, get_preferred_container_engine
-from .utils import install, register
+from .utils import PackageName, install, register
 
 
 @dataclass
@@ -134,22 +134,22 @@ def add_execution_environment_session(
     session_name: str,
     execution_environment: ExecutionEnvironmentData,
     default: bool = False,
-    ansible_builder_package: str = "ansible-builder",
-    ansible_core_package: str | None = None,
-    ansible_navigator_package: str = "ansible-navigator",
+    ansible_builder_package: PackageName = "ansible-builder",
+    ansible_core_package: PackageName | None = None,
+    ansible_navigator_package: PackageName = "ansible-navigator",
 ) -> None:
     """
     Build and test execution environments for the collection.
     """
 
-    def get_package_list() -> list[str]:
+    def compose_dependencies() -> list[PackageName]:
         result = [ansible_builder_package, ansible_navigator_package]
         if ansible_core_package is not None:
             result.append(ansible_core_package)
         return result
 
     def session_func(session: nox.Session) -> None:
-        install(session, *get_package_list())
+        install(session, *compose_dependencies())
 
         container_engine = get_preferred_container_engine()
         session.log(f"Using container engine {container_engine}")
@@ -231,9 +231,9 @@ def add_execution_environment_sessions(
     *,
     execution_environments: list[ExecutionEnvironmentData],
     default: bool = False,
-    ansible_builder_package: str = "ansible-builder",
-    ansible_core_package: str | None = None,
-    ansible_navigator_package: str = "ansible-navigator",
+    ansible_builder_package: PackageName = "ansible-builder",
+    ansible_core_package: PackageName | None = None,
+    ansible_navigator_package: PackageName = "ansible-navigator",
 ) -> None:
     """
     Build and test execution environments for the collection.

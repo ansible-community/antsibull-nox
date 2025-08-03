@@ -13,20 +13,20 @@ from __future__ import annotations
 import nox
 
 from .collections import prepare_collections
-from .utils import install
+from .utils import PackageName, install
 
 
 def add_ansible_lint(
     *,
     make_ansible_lint_default: bool = True,
-    ansible_lint_package: str = "ansible-lint",
+    ansible_lint_package: PackageName = "ansible-lint",
     strict: bool = False,
 ) -> None:
     """
     Add a session that runs ansible-lint.
     """
 
-    def compose_dependencies() -> list[str]:
+    def compose_dependencies() -> list[PackageName]:
         return [ansible_lint_package]
 
     def ansible_lint(session: nox.Session) -> None:
