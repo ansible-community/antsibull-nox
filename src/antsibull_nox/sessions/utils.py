@@ -117,6 +117,8 @@ class PackageEditable(p.BaseModel):
     name: str
 
     def get_pip_install_args(self) -> Iterator[str]:
+        # Don't install in editable mode in CI or if it's explicitly disabled.
+        # This ensures that the wheel contains all of the correct files.
         if ALLOW_EDITABLE:
             yield "-e"
         yield self.name
@@ -149,48 +151,19 @@ PackageType = t.Union[
 
 
 def _get_install_params(packages: Sequence[PackageType | str]) -> list[str]:
-    # Look for editable markers.
-    # Don't install in editable mode in CI or if it's explicitly disabled.
-    # This ensures that the wheel contains all of the correct files.
     new_args: list[str] = []
     next_is_editable = False
     for arg in packages:
-        if not isinstance(arg, str):
-            # TODO: Remove special support for -e and just use PackageEditable instances
-            if next_is_editable and isinstance(arg, PackageEditable):
-                raise ValueError(
-                    f"Found -e followed by an editable package name: {packages}"
-                )
-            next_is_editable = False
-            new_args.extend(arg.get_pip_install_args())
-        # TODO: Remove special support for -e and just use PackageEditable instances
-        elif arg == "-e":
-            if next_is_editable:
-                raise ValueError(f"Found double -e in package list: {packages}")
-            next_is_editable = True
-            if ALLOW_EDITABLE:
-                new_args.append("-e")
-        else:
+        if isinstance(arg, str):
             new_args.append(arg)
-    if next_is_editable:
-        raise ValueError(f"Found trailing -e in package list: {packages}")
+        else:
+            new_args.extend(arg.get_pip_install_args())
     return new_args
 
 
-def install(session: nox.Session, *args: PackageType, **kwargs):
+def install(session: nox.Session, *args: PackageType | str, **kwargs):
     """
     Install Python packages.
-
-    The special package name ``"-e"`` indicates that the next package should
-    be installed editable, if allowed. The next package must be a regular
-    package name, and not an ``Editable`` instance or an ``"-e"`` indicator.
-
-    If a package name is an ``Editable`` object, it will be installed
-    editably as well, if allowed.
-
-    Whether editable installs are allowed depends on the global flag
-    ``ALLOW_EDITABLE``, which can be controlled by the environment variable
-    ``ALLOW_EDITABLE``, and defaults to the inverted value of ``CI``.
     """
     if not args:
         return
