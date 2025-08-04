@@ -19,6 +19,7 @@ from antsibull_nox.ee_config import create_ee_config
 
 from ._pydantic import forbid_extras, get_formatted_error_messages
 from .ansible import AnsibleCoreVersion
+from .sessions.utils import PackageName, PackageType
 from .utils import Version
 
 try:
@@ -68,6 +69,33 @@ PAnsibleCoreVersion = t.Annotated[
     AnsibleCoreVersion, p.BeforeValidator(_parse_ansible_core_version)
 ]
 
+_ValidPackageTypeNames = tuple(
+    p.model_fields["type"].default for p in t.get_args(PackageType)
+)
+
+
+def package_name_validator(value: t.Any) -> t.Any:
+    """
+    Convert plain strings into PackageName instances.
+    """
+    if isinstance(value, str):
+        return PackageName(name=value)
+    elif isinstance(value, dict):
+        # Special-casing for "type" to provide a clean error message
+        if "type" not in value or value["type"] not in _ValidPackageTypeNames:
+            raise ValueError(
+                "Must provide a valid 'type' when specifying a package."
+                + f" Valid types are: {_ValidPackageTypeNames}"
+            )
+    return value
+
+
+PackageField = t.Annotated[
+    PackageType,
+    p.Field(discriminator="type"),
+    p.BeforeValidator(package_name_validator),
+]
+
 
 class _BaseModel(p.BaseModel):
     model_config = p.ConfigDict(frozen=True, extra="allow", validate_default=True)
@@ -81,46 +109,48 @@ class SessionLint(_BaseModel):
     default: bool = True
     extra_code_files: list[str] = []
     ruff_config: t.Optional[p.FilePath] = None
-    ruff_package: str = "ruff"
+    ruff_package: PackageField = PackageName(name="ruff")
 
     # isort:
     run_isort: bool = True
     isort_config: t.Optional[p.FilePath] = None
-    isort_package: str = "isort"
+    isort_package: PackageField = PackageName(name="isort")
 
     # black:
     run_black: bool = True
     run_black_modules: t.Optional[bool] = None
     black_config: t.Optional[p.FilePath] = None
-    black_package: str = "black"
+    black_package: PackageField = PackageName(name="black")
 
     # ruff format:
     run_ruff_format: bool = False
     ruff_format_config: t.Optional[p.FilePath] = None
-    ruff_format_package: t.Optional[str] = None
+    ruff_format_package: t.Optional[PackageField] = None
 
     # ruff autofix:
     run_ruff_autofix: bool = False
     ruff_autofix_config: t.Optional[p.FilePath] = None
-    ruff_autofix_package: t.Optional[str] = None
+    ruff_autofix_package: t.Optional[PackageField] = None
     ruff_autofix_select: list[str] = []
 
     # ruff check:
     run_ruff_check: bool = False
     ruff_check_config: t.Optional[p.FilePath] = None
-    ruff_check_package: t.Optional[str] = None
+    ruff_check_package: t.Optional[PackageField] = None
 
     # flake8:
     run_flake8: bool = True
     flake8_config: t.Optional[p.FilePath] = None
-    flake8_package: str = "flake8"
+    flake8_package: PackageField = PackageName(name="flake8")
 
     # pylint:
     run_pylint: bool = True
     pylint_rcfile: t.Optional[p.FilePath] = None
     pylint_modules_rcfile: t.Optional[p.FilePath] = None
-    pylint_package: str = "pylint"
-    pylint_ansible_core_package: t.Optional[str] = "ansible-core"
+    pylint_package: PackageField = PackageName(name="pylint")
+    pylint_ansible_core_package: t.Optional[PackageField] = PackageName(
+        name="ansible-core"
+    )
     pylint_extra_deps: list[str] = []
 
     # yamllint:
@@ -129,14 +159,18 @@ class SessionLint(_BaseModel):
     yamllint_config_plugins: t.Optional[p.FilePath] = None
     yamllint_config_plugins_examples: t.Optional[p.FilePath] = None
     yamllint_config_extra_docs: t.Optional[p.FilePath] = None
-    yamllint_package: str = "yamllint"
-    yamllint_antsibull_docutils_package: str = "antsibull-docutils"
+    yamllint_package: PackageField = PackageName(name="yamllint")
+    yamllint_antsibull_docutils_package: PackageField = PackageName(
+        name="antsibull-docutils"
+    )
 
     # mypy:
     run_mypy: bool = True
     mypy_config: t.Optional[p.FilePath] = None
-    mypy_package: str = "mypy"
-    mypy_ansible_core_package: t.Optional[str] = "ansible-core"
+    mypy_package: PackageField = PackageName(name="mypy")
+    mypy_ansible_core_package: t.Optional[PackageField] = PackageName(
+        name="ansible-core"
+    )
     mypy_extra_deps: list[str] = []
 
     # antsibull-nox config lint:
@@ -150,8 +184,8 @@ class SessionDocsCheck(_BaseModel):
 
     default: bool = True
 
-    antsibull_docs_package: str = "antsibull-docs"
-    ansible_core_package: str = "ansible-core"
+    antsibull_docs_package: PackageField = PackageName(name="antsibull-docs")
+    ansible_core_package: PackageField = PackageName(name="ansible-core")
     validate_collection_refs: t.Optional[t.Literal["self", "dependent", "all"]] = None
     extra_collections: list[CollectionName] = []
 
@@ -159,7 +193,7 @@ class SessionDocsCheck(_BaseModel):
     codeblocks_restrict_type_exact_case: bool = True
     codeblocks_allow_without_type: bool = True
     codeblocks_allow_literal_blocks: bool = True
-    antsibull_docutils_package: str = "antsibull-docutils"
+    antsibull_docutils_package: PackageField = PackageName(name="antsibull-docutils")
 
 
 class SessionLicenseCheck(_BaseModel):
@@ -170,7 +204,7 @@ class SessionLicenseCheck(_BaseModel):
     default: bool = True
 
     run_reuse: bool = True
-    reuse_package: str = "reuse"
+    reuse_package: PackageField = PackageName(name="reuse")
     run_license_check: bool = True
     license_check_extra_ignore_paths: list[str] = []
 
@@ -251,9 +285,9 @@ class SessionExecutionEnvironmentCheck(_BaseModel):
     """
 
     default: bool = False
-    ansible_builder_package: str = "ansible-builder"
+    ansible_builder_package: PackageField = PackageName(name="ansible-builder")
     ansible_core_package: t.Optional[str] = None
-    ansible_navigator_package: str = "ansible-navigator"
+    ansible_navigator_package: PackageField = PackageName(name="ansible-navigator")
 
     execution_environments: list[ExecutionEnvironmentConfig]
 
@@ -340,9 +374,9 @@ class SessionBuildImportCheck(_BaseModel):
 
     default: bool = True
 
-    ansible_core_package: str = "ansible-core"
+    ansible_core_package: PackageField = PackageName(name="ansible-core")
     run_galaxy_importer: bool = True
-    galaxy_importer_package: str = "galaxy-importer"
+    galaxy_importer_package: PackageField = PackageName(name="galaxy-importer")
     # https://github.com/ansible/galaxy-importer#configuration
     galaxy_importer_config_path: t.Optional[p.FilePath] = None
     galaxy_importer_always_show_logs: bool = False
@@ -441,7 +475,7 @@ class SessionAnsibleLint(_BaseModel):
 
     default: bool = True
 
-    ansible_lint_package: str = "ansible-lint"
+    ansible_lint_package: PackageField = PackageName(name="ansible-lint")
     strict: bool = False
 
 

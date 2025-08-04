@@ -10,17 +10,17 @@ Utils for creating nox sessions.
 
 from __future__ import annotations
 
-import dataclasses
 import json
 import logging
 import os
 import sys
 import typing as t
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 
 import nox
+import pydantic as p
 from nox.logger import OUTPUT as nox_OUTPUT
 from packaging.version import InvalidVersion
 from packaging.version import parse as parse_version
@@ -104,53 +104,80 @@ def get_registered_sessions() -> dict[str, list[dict[str, t.Any]]]:
     }
 
 
-@dataclasses.dataclass
-class Editable:
-    """
-    Indicate a package that should be installed editably, if allowed.
-    """
+class PackageName(p.BaseModel):
+    type: t.Literal["package"] = "package"
+    name: str
 
-    package_name: str
-
-
-# A package name is either a simple string or an Editable instance.
-PackageName = t.Union[str, Editable]
+    def get_pip_install_args(self) -> Iterator[str]:
+        yield self.name
 
 
-def _get_install_params(packages: Sequence[PackageName]) -> list[str]:
+class PackageEditable(p.BaseModel):
+    type: t.Literal["editable"] = "editable"
+    name: str
+
+    def get_pip_install_args(self) -> Iterator[str]:
+        if ALLOW_EDITABLE:
+            yield "-e"
+        yield self.name
+
+
+class PackageRequirements(p.BaseModel):
+    type: t.Literal["requirements"] = "requirements"
+    file: str
+
+    def get_pip_install_args(self) -> Iterator[str]:
+        yield "-r"
+        yield self.file
+
+
+# TODO: This isn't super useful currently, b/c all of the _package fileds in
+# the config only accept a single string and constraints only make sense when
+# combined with another package spec or a requirements file
+class PackageConstraints(p.BaseModel):
+    type: t.Literal["constraints"] = "constraints"
+    name: str
+
+    def get_pip_install_args(self) -> Iterator[str]:
+        yield "-c"
+        yield self.name
+
+
+PackageType = t.Union[
+    PackageName, PackageEditable, PackageRequirements, PackageConstraints
+]
+
+
+def _get_install_params(packages: Sequence[PackageType | str]) -> list[str]:
     # Look for editable markers.
     # Don't install in editable mode in CI or if it's explicitly disabled.
     # This ensures that the wheel contains all of the correct files.
-    new_args = []
+    new_args: list[str] = []
     next_is_editable = False
     for arg in packages:
-        arg_str: str
-        if arg == "-e":
-            if next_is_editable:
-                raise ValueError(f"Found double -e in package list: {packages}")
-            next_is_editable = True
-            if not ALLOW_EDITABLE:
-                continue
-            arg_str = "-e"
-        elif isinstance(arg, Editable):
-            if next_is_editable:
+        if not isinstance(arg, str):
+            # TODO: Remove special support for -e and just use PackageEditable instances
+            if next_is_editable and isinstance(arg, PackageEditable):
                 raise ValueError(
                     f"Found -e followed by an editable package name: {packages}"
                 )
             next_is_editable = False
-            arg_str = arg.package_name
+            new_args.extend(arg.get_pip_install_args())
+        # TODO: Remove special support for -e and just use PackageEditable instances
+        elif arg == "-e":
+            if next_is_editable:
+                raise ValueError(f"Found double -e in package list: {packages}")
+            next_is_editable = True
             if ALLOW_EDITABLE:
                 new_args.append("-e")
         else:
-            arg_str = arg
-            next_is_editable = False
-        new_args.append(arg_str)
+            new_args.append(arg)
     if next_is_editable:
         raise ValueError(f"Found trailing -e in package list: {packages}")
     return new_args
 
 
-def install(session: nox.Session, *args: PackageName, **kwargs):
+def install(session: nox.Session, *args: PackageType, **kwargs):
     """
     Install Python packages.
 
