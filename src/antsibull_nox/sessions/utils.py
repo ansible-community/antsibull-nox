@@ -136,17 +136,20 @@ class PackageRequirements(p.BaseModel):
 # TODO: This isn't super useful currently, b/c all of the _package fileds in
 # the config only accept a single string and constraints only make sense when
 # combined with another package spec or a requirements file
-class PackageConstraints(p.BaseModel):
-    type: t.Literal["constraints"] = "constraints"
-    name: str
-
-    def get_pip_install_args(self) -> Iterator[str]:
-        yield "-c"
-        yield self.name
+# class PackageConstraints(p.BaseModel):
+#     type: t.Literal["constraints"] = "constraints"
+#     name: str
+#
+#     def get_pip_install_args(self) -> Iterator[str]:
+#         yield "-c"
+#         yield self.name
 
 
 PackageType = t.Union[
-    PackageName, PackageEditable, PackageRequirements, PackageConstraints
+    PackageName,
+    PackageEditable,
+    PackageRequirements,
+    # PackageConstraints, # See above TODO:
 ]
 
 
