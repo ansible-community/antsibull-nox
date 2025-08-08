@@ -20,6 +20,7 @@ from ..collection import (
     build_collection,
 )
 from .utils import (
+    PackageType,
     ci_group,
     compose_description,
     install,
@@ -31,9 +32,9 @@ from .utils import (
 def add_build_import_check(
     *,
     make_build_import_check_default: bool = True,
-    ansible_core_package: str = "ansible-core",
+    ansible_core_package: PackageType = "ansible-core",
     run_galaxy_importer: bool = True,
-    galaxy_importer_package: str = "galaxy-importer",
+    galaxy_importer_package: PackageType = "galaxy-importer",
     galaxy_importer_config_path: (
         str | os.PathLike | None
     ) = None,  # https://github.com/ansible/galaxy-importer#configuration
@@ -43,7 +44,7 @@ def add_build_import_check(
     Add license-check session for license checks.
     """
 
-    def compose_dependencies() -> list[str]:
+    def compose_dependencies() -> list[PackageType]:
         deps = [ansible_core_package]
         if run_galaxy_importer:
             deps.append(galaxy_importer_package)

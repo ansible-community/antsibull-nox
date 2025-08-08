@@ -23,6 +23,7 @@ from .collections import (
     prepare_collections,
 )
 from .utils import (
+    PackageType,
     get_package_version,
     install,
     is_new_enough,
@@ -47,15 +48,15 @@ def find_extra_docs_rst_files() -> list[Path]:
 def add_docs_check(
     *,
     make_docs_check_default: bool = True,
-    antsibull_docs_package: str = "antsibull-docs",
-    ansible_core_package: str = "ansible-core",
+    antsibull_docs_package: PackageType = "antsibull-docs",
+    ansible_core_package: PackageType = "ansible-core",
     validate_collection_refs: t.Literal["self", "dependent", "all"] | None = None,
     extra_collections: list[str] | None = None,
     codeblocks_restrict_types: list[str] | None = None,
     codeblocks_restrict_type_exact_case: bool = True,
     codeblocks_allow_without_type: bool = True,
     codeblocks_allow_literal_blocks: bool = True,
-    antsibull_docutils_package: str = "antsibull-docutils",
+    antsibull_docutils_package: PackageType = "antsibull-docutils",
 ) -> None:
     """
     Add docs-check session for linting.
@@ -66,7 +67,7 @@ def add_docs_check(
         or not codeblocks_allow_literal_blocks
     )
 
-    def compose_dependencies() -> list[str]:
+    def compose_dependencies() -> list[PackageType]:
         deps = [antsibull_docs_package, ansible_core_package]
         if run_extra_checks:
             deps.append(antsibull_docutils_package)

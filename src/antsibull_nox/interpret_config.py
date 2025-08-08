@@ -19,6 +19,7 @@ from .config import AvoidCharacterGroup as ConfigAvoidCharacterGroup
 from .config import (
     Config,
     DevelLikeBranch,
+    PackageType,
     Sessions,
 )
 from .sessions import add_matrix_generator
@@ -41,6 +42,7 @@ from .sessions.extra_checks import (
 )
 from .sessions.license_check import add_license_check
 from .sessions.lint import add_lint_sessions
+from .sessions.utils import PackageType as RuntimePackageType
 from .utils import Version
 
 
@@ -125,6 +127,24 @@ def _convert_core_python_versions(
     )
 
 
+@t.overload
+def _convert_package_name(package_name: PackageType) -> RuntimePackageType: ...
+
+
+@t.overload
+def _convert_package_name(
+    package_name: PackageType | None,
+) -> RuntimePackageType | None: ...
+
+
+def _convert_package_name(
+    package_name: PackageType | None,
+) -> RuntimePackageType | None:
+    if package_name is None:
+        return None
+    return package_name.to_utils_instance()
+
+
 def _add_sessions(sessions: Sessions) -> None:
     if sessions.lint:
         add_lint_sessions(
@@ -132,55 +152,68 @@ def _add_sessions(sessions: Sessions) -> None:
             extra_code_files=sessions.lint.extra_code_files,
             run_isort=sessions.lint.run_isort,
             isort_config=sessions.lint.isort_config,
-            isort_package=sessions.lint.isort_package,
+            isort_package=_convert_package_name(sessions.lint.isort_package),
             run_black=sessions.lint.run_black,
             run_black_modules=sessions.lint.run_black_modules,
             black_config=sessions.lint.black_config,
-            black_package=sessions.lint.black_package,
+            black_package=_convert_package_name(sessions.lint.black_package),
             run_ruff_format=sessions.lint.run_ruff_format,
             ruff_format_config=sessions.lint.ruff_format_config
             or sessions.lint.ruff_config,
-            ruff_format_package=sessions.lint.ruff_format_package
-            or sessions.lint.ruff_package,
+            ruff_format_package=_convert_package_name(
+                sessions.lint.ruff_format_package or sessions.lint.ruff_package
+            ),
             run_ruff_autofix=sessions.lint.run_ruff_autofix,
             ruff_autofix_config=sessions.lint.ruff_autofix_config
             or sessions.lint.ruff_config,
-            ruff_autofix_package=sessions.lint.ruff_autofix_package
-            or sessions.lint.ruff_package,
+            ruff_autofix_package=_convert_package_name(
+                sessions.lint.ruff_autofix_package or sessions.lint.ruff_package
+            ),
             ruff_autofix_select=sessions.lint.ruff_autofix_select,
             run_ruff_check=sessions.lint.run_ruff_check,
             ruff_check_config=sessions.lint.ruff_check_config
             or sessions.lint.ruff_config,
-            ruff_check_package=sessions.lint.ruff_check_package
-            or sessions.lint.ruff_package,
+            ruff_check_package=_convert_package_name(
+                sessions.lint.ruff_check_package or sessions.lint.ruff_package
+            ),
             run_flake8=sessions.lint.run_flake8,
             flake8_config=sessions.lint.flake8_config,
-            flake8_package=sessions.lint.flake8_package,
+            flake8_package=_convert_package_name(sessions.lint.flake8_package),
             run_pylint=sessions.lint.run_pylint,
             pylint_rcfile=sessions.lint.pylint_rcfile,
             pylint_modules_rcfile=sessions.lint.pylint_modules_rcfile,
-            pylint_package=sessions.lint.pylint_package,
-            pylint_ansible_core_package=sessions.lint.pylint_ansible_core_package,
+            pylint_package=_convert_package_name(sessions.lint.pylint_package),
+            pylint_ansible_core_package=_convert_package_name(
+                sessions.lint.pylint_ansible_core_package
+            ),
             pylint_extra_deps=sessions.lint.pylint_extra_deps,
             run_yamllint=sessions.lint.run_yamllint,
             yamllint_config=sessions.lint.yamllint_config,
             yamllint_config_plugins=sessions.lint.yamllint_config_plugins,
             yamllint_config_plugins_examples=sessions.lint.yamllint_config_plugins_examples,
             yamllint_config_extra_docs=sessions.lint.yamllint_config_extra_docs,
-            yamllint_package=sessions.lint.yamllint_package,
-            yamllint_antsibull_docutils_package=sessions.lint.yamllint_antsibull_docutils_package,
+            yamllint_package=_convert_package_name(sessions.lint.yamllint_package),
+            yamllint_antsibull_docutils_package=_convert_package_name(
+                sessions.lint.yamllint_antsibull_docutils_package
+            ),
             run_mypy=sessions.lint.run_mypy,
             mypy_config=sessions.lint.mypy_config,
-            mypy_package=sessions.lint.mypy_package,
-            mypy_ansible_core_package=sessions.lint.mypy_ansible_core_package,
+            mypy_package=_convert_package_name(sessions.lint.mypy_package),
+            mypy_ansible_core_package=_convert_package_name(
+                sessions.lint.mypy_ansible_core_package
+            ),
             mypy_extra_deps=sessions.lint.mypy_extra_deps,
             run_antsibullnox_config_lint=sessions.lint.run_antsibullnox_config_lint,
         )
     if sessions.docs_check:
         add_docs_check(
             make_docs_check_default=sessions.docs_check.default,
-            antsibull_docs_package=sessions.docs_check.antsibull_docs_package,
-            ansible_core_package=sessions.docs_check.ansible_core_package,
+            antsibull_docs_package=_convert_package_name(
+                sessions.docs_check.antsibull_docs_package
+            ),
+            ansible_core_package=_convert_package_name(
+                sessions.docs_check.ansible_core_package
+            ),
             validate_collection_refs=sessions.docs_check.validate_collection_refs,
             extra_collections=sessions.docs_check.extra_collections,
             codeblocks_restrict_types=sessions.docs_check.codeblocks_restrict_types,
@@ -189,13 +222,15 @@ def _add_sessions(sessions: Sessions) -> None:
             ),
             codeblocks_allow_without_type=sessions.docs_check.codeblocks_allow_without_type,
             codeblocks_allow_literal_blocks=sessions.docs_check.codeblocks_allow_literal_blocks,
-            antsibull_docutils_package=sessions.docs_check.antsibull_docutils_package,
+            antsibull_docutils_package=_convert_package_name(
+                sessions.docs_check.antsibull_docutils_package
+            ),
         )
     if sessions.license_check:
         add_license_check(
             make_license_check_default=sessions.license_check.default,
             run_reuse=sessions.license_check.run_reuse,
-            reuse_package=sessions.license_check.reuse_package,
+            reuse_package=_convert_package_name(sessions.license_check.reuse_package),
             run_license_check=sessions.license_check.run_license_check,
             license_check_extra_ignore_paths=(
                 sessions.license_check.license_check_extra_ignore_paths
@@ -245,9 +280,13 @@ def _add_sessions(sessions: Sessions) -> None:
     if sessions.build_import_check:
         add_build_import_check(
             make_build_import_check_default=sessions.build_import_check.default,
-            ansible_core_package=sessions.build_import_check.ansible_core_package,
+            ansible_core_package=_convert_package_name(
+                sessions.build_import_check.ansible_core_package
+            ),
             run_galaxy_importer=sessions.build_import_check.run_galaxy_importer,
-            galaxy_importer_package=sessions.build_import_check.galaxy_importer_package,
+            galaxy_importer_package=_convert_package_name(
+                sessions.build_import_check.galaxy_importer_package
+            ),
             galaxy_importer_config_path=sessions.build_import_check.galaxy_importer_config_path,
             galaxy_importer_always_show_logs=(
                 sessions.build_import_check.galaxy_importer_always_show_logs
@@ -305,7 +344,9 @@ def _add_sessions(sessions: Sessions) -> None:
     if sessions.ansible_lint:
         add_ansible_lint(
             make_ansible_lint_default=sessions.ansible_lint.default,
-            ansible_lint_package=sessions.ansible_lint.ansible_lint_package,
+            ansible_lint_package=_convert_package_name(
+                sessions.ansible_lint.ansible_lint_package
+            ),
             strict=sessions.ansible_lint.strict,
         )
     if sessions.ee_check:
@@ -328,9 +369,15 @@ def _add_sessions(sessions: Sessions) -> None:
             add_execution_environment_sessions(
                 execution_environments=execution_environments,
                 default=sessions.ee_check.default,
-                ansible_builder_package=sessions.ee_check.ansible_builder_package,
-                ansible_core_package=sessions.ee_check.ansible_core_package,
-                ansible_navigator_package=sessions.ee_check.ansible_navigator_package,
+                ansible_builder_package=_convert_package_name(
+                    sessions.ee_check.ansible_builder_package
+                ),
+                ansible_core_package=_convert_package_name(
+                    sessions.ee_check.ansible_core_package
+                ),
+                ansible_navigator_package=_convert_package_name(
+                    sessions.ee_check.ansible_navigator_package
+                ),
             )
     add_matrix_generator()
 
