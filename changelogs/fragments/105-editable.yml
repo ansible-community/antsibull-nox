@@ -1,2 +1,0 @@
-minor_changes:
-  - 'Allow to install packages editably by using the package name prefix ``"-e "`` (https://github.com/ansible-community/antsibull-nox/pull/105).'

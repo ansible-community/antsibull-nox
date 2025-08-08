@@ -19,7 +19,11 @@ from antsibull_nox.ee_config import create_ee_config
 
 from ._pydantic import forbid_extras, get_formatted_error_messages
 from .ansible import AnsibleCoreVersion
-from .sessions.utils import PackageName, PackageType
+
+# from .sessions.utils import PackageConstraints as _PackageConstraints
+from .sessions.utils import PackageEditable as _PackageEditable
+from .sessions.utils import PackageName as _PackageName
+from .sessions.utils import PackageRequirements as _PackageRequirements
 from .utils import Version
 
 try:
@@ -69,6 +73,71 @@ PAnsibleCoreVersion = t.Annotated[
     AnsibleCoreVersion, p.BeforeValidator(_parse_ansible_core_version)
 ]
 
+
+class PackageName(p.BaseModel):
+    """
+    A PyPI package name.
+    """
+
+    type: t.Literal["package"] = "package"
+    name: str
+
+    def to_utils_instance(self) -> _PackageName:
+        """
+        Convert config object to runtime package name object.
+        """
+        return _PackageName(name=self.name)
+
+
+class PackageEditable(p.BaseModel):
+    """
+    A PyPI package name that should be installed editably (if allowed).
+    """
+
+    type: t.Literal["editable"] = "editable"
+    name: str
+
+    def to_utils_instance(self) -> _PackageEditable:
+        """
+        Convert config object to runtime editable package name object.
+        """
+        return _PackageEditable(name=self.name)
+
+
+class PackageRequirements(p.BaseModel):
+    """
+    A Python requirements.txt file.
+    """
+
+    type: t.Literal["requirements"] = "requirements"
+    file: str
+
+    def to_utils_instance(self) -> _PackageRequirements:
+        """
+        Convert config object to runtime package requirements object.
+        """
+        return _PackageRequirements(file=self.file)
+
+
+# This isn't super useful currently, b/c all of the _package fileds in
+# the config only accept a single string and constraints only make sense when
+# combined with another package spec or a requirements file
+# class PackageConstraints(p.BaseModel):
+#     type : t.Literal["constraints"] = "constraints"
+#     name: str
+#
+#     def to_utils_instance(self) -> _PackageConstraints:
+#         return _PackageConstraints(name=self.name)
+
+
+PackageType = t.Union[
+    PackageName,
+    PackageEditable,
+    PackageRequirements,
+    # PackageConstraints,  # see above
+]
+
+
 _ValidPackageTypeNames = tuple(
     p.model_fields["type"].default for p in t.get_args(PackageType)
 )
@@ -80,7 +149,7 @@ def package_name_validator(value: t.Any) -> t.Any:
     """
     if isinstance(value, str):
         return PackageName(name=value)
-    elif isinstance(value, dict):
+    if isinstance(value, dict):
         # Special-casing for "type" to provide a clean error message
         if "type" not in value or value["type"] not in _ValidPackageTypeNames:
             raise ValueError(
@@ -286,7 +355,7 @@ class SessionExecutionEnvironmentCheck(_BaseModel):
 
     default: bool = False
     ansible_builder_package: PackageField = PackageName(name="ansible-builder")
-    ansible_core_package: t.Optional[str] = None
+    ansible_core_package: t.Optional[PackageField] = None
     ansible_navigator_package: PackageField = PackageName(name="ansible-navigator")
 
     execution_environments: list[ExecutionEnvironmentConfig]

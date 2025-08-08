@@ -13,7 +13,7 @@ from __future__ import annotations
 import nox
 
 from .utils import (
-    PackageName,
+    PackageType,
     compose_description,
     install,
     run_bare_script,
@@ -24,7 +24,7 @@ def add_license_check(
     *,
     make_license_check_default: bool = True,
     run_reuse: bool = True,
-    reuse_package: PackageName = "reuse",
+    reuse_package: PackageType = "reuse",
     run_license_check: bool = True,
     license_check_extra_ignore_paths: list[str] | None = None,
 ) -> None:
@@ -32,7 +32,7 @@ def add_license_check(
     Add license-check session for license checks.
     """
 
-    def compose_dependencies() -> list[PackageName]:
+    def compose_dependencies() -> list[PackageType]:
         deps = []
         if run_reuse:
             deps.append(reuse_package)

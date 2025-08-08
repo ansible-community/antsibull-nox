@@ -21,7 +21,7 @@ from antsibull_nox.paths import get_outside_temp_directory
 
 from ..collection import CollectionData, build_collection
 from ..container import get_container_engine_preference, get_preferred_container_engine
-from .utils import PackageName, install, register
+from .utils import PackageType, install, register
 
 
 @dataclass
@@ -134,15 +134,15 @@ def add_execution_environment_session(
     session_name: str,
     execution_environment: ExecutionEnvironmentData,
     default: bool = False,
-    ansible_builder_package: PackageName = "ansible-builder",
-    ansible_core_package: PackageName | None = None,
-    ansible_navigator_package: PackageName = "ansible-navigator",
+    ansible_builder_package: PackageType = "ansible-builder",
+    ansible_core_package: PackageType | None = None,
+    ansible_navigator_package: PackageType = "ansible-navigator",
 ) -> None:
     """
     Build and test execution environments for the collection.
     """
 
-    def compose_dependencies() -> list[PackageName]:
+    def compose_dependencies() -> list[PackageType]:
         result = [ansible_builder_package, ansible_navigator_package]
         if ansible_core_package is not None:
             result.append(ansible_core_package)
@@ -231,9 +231,9 @@ def add_execution_environment_sessions(
     *,
     execution_environments: list[ExecutionEnvironmentData],
     default: bool = False,
-    ansible_builder_package: PackageName = "ansible-builder",
-    ansible_core_package: PackageName | None = None,
-    ansible_navigator_package: PackageName = "ansible-navigator",
+    ansible_builder_package: PackageType = "ansible-builder",
+    ansible_core_package: PackageType | None = None,
+    ansible_navigator_package: PackageType = "ansible-navigator",
 ) -> None:
     """
     Build and test execution environments for the collection.

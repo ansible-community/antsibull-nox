@@ -10,6 +10,7 @@ Utils for creating nox sessions.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import logging
 import os
@@ -20,7 +21,6 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import nox
-import pydantic as p
 from nox.logger import OUTPUT as nox_OUTPUT
 from packaging.version import InvalidVersion
 from packaging.version import parse as parse_version
@@ -104,19 +104,33 @@ def get_registered_sessions() -> dict[str, list[dict[str, t.Any]]]:
     }
 
 
-class PackageName(p.BaseModel):
-    type: t.Literal["package"] = "package"
+@dataclasses.dataclass
+class PackageName:
+    """
+    A PyPI package name.
+    """
+
     name: str
 
     def get_pip_install_args(self) -> Iterator[str]:
+        """
+        Yield arguments to 'pip install'.
+        """
         yield self.name
 
 
-class PackageEditable(p.BaseModel):
-    type: t.Literal["editable"] = "editable"
+@dataclasses.dataclass
+class PackageEditable:
+    """
+    A PyPI package name that should be installed editably (if allowed).
+    """
+
     name: str
 
     def get_pip_install_args(self) -> Iterator[str]:
+        """
+        Yield arguments to 'pip install'.
+        """
         # Don't install in editable mode in CI or if it's explicitly disabled.
         # This ensures that the wheel contains all of the correct files.
         if ALLOW_EDITABLE:
@@ -124,20 +138,27 @@ class PackageEditable(p.BaseModel):
         yield self.name
 
 
-class PackageRequirements(p.BaseModel):
-    type: t.Literal["requirements"] = "requirements"
+@dataclasses.dataclass
+class PackageRequirements:
+    """
+    A Python requirements.txt file.
+    """
+
     file: str
 
     def get_pip_install_args(self) -> Iterator[str]:
+        """
+        Yield arguments to 'pip install'.
+        """
         yield "-r"
         yield self.file
 
 
-# TODO: This isn't super useful currently, b/c all of the _package fileds in
+# This isn't super useful currently, b/c all of the _package fileds in
 # the config only accept a single string and constraints only make sense when
 # combined with another package spec or a requirements file
-# class PackageConstraints(p.BaseModel):
-#     type: t.Literal["constraints"] = "constraints"
+# @dataclasses.dataclass
+# class PackageConstraints:
 #     name: str
 #
 #     def get_pip_install_args(self) -> Iterator[str]:
@@ -146,16 +167,16 @@ class PackageRequirements(p.BaseModel):
 
 
 PackageType = t.Union[
+    str,
     PackageName,
     PackageEditable,
     PackageRequirements,
-    # PackageConstraints, # See above TODO:
+    # PackageConstraints,  # see above
 ]
 
 
-def _get_install_params(packages: Sequence[PackageType | str]) -> list[str]:
+def _get_install_params(packages: Sequence[PackageType]) -> list[str]:
     new_args: list[str] = []
-    next_is_editable = False
     for arg in packages:
         if isinstance(arg, str):
             new_args.append(arg)
@@ -164,7 +185,7 @@ def _get_install_params(packages: Sequence[PackageType | str]) -> list[str]:
     return new_args
 
 
-def install(session: nox.Session, *args: PackageType | str, **kwargs):
+def install(session: nox.Session, *args: PackageType, **kwargs):
     """
     Install Python packages.
     """
