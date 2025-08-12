@@ -60,7 +60,7 @@ Maintenance and feature release\.
 <a id="minor-changes"></a>
 ### Minor Changes
 
-* Allow to install packages editably by using the package name prefix <code>\"\-e \"</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/106](https\://github\.com/ansible\-community/antsibull\-nox/pull/106)\)\.
+* Allow to install packages editably and from requirement files \([https\://github\.com/ansible\-community/antsibull\-nox/pull/106](https\://github\.com/ansible\-community/antsibull\-nox/pull/106)\)\.
 
 <a id="bugfixes"></a>
 ### Bugfixes

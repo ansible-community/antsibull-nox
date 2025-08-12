@@ -15,7 +15,7 @@ Maintenance and feature release.
 Minor Changes
 -------------
 
-- Allow to install packages editably by using the package name prefix ``"-e "`` (https://github.com/ansible-community/antsibull-nox/pull/106).
+- Allow to install packages editably and from requirement files (https://github.com/ansible-community/antsibull-nox/pull/106).
 
 Bugfixes
 --------

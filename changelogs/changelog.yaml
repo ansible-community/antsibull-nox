@@ -322,8 +322,7 @@ releases:
           exist (https://github.com/ansible-community/antsibull-nox/pull/104).
         - Update supported Python versions for ansible-core milestone (https://github.com/ansible-community/antsibull-nox/pull/109).
       minor_changes:
-        - Allow to install packages editably by using the package name prefix ``"-e
-          "`` (https://github.com/ansible-community/antsibull-nox/pull/106).
+        - Allow to install packages editably and from requirement files (https://github.com/ansible-community/antsibull-nox/pull/106).
       release_summary: Maintenance and feature release.
     fragments:
       - 1.2.0.yml
