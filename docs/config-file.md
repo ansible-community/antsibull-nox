@@ -136,6 +136,42 @@ by adding a `[collection_sources_per_ansible.'2.16']` section (note the quotes!)
 "community.crypto" = "git+https://github.com/ansible-collections/community.crypto.git,stable-2"
 ```
 
+## Package names
+
+For many sessions, the package names of tools that are used / installed can be configured.
+These options usually end with `_package`.
+These options are all annotated as `PackageType` in the configuration reference below.
+
+Package names may be simple strings or a special dictionary to install an
+editable dependency or a requirements file.
+
+Using the `ruff_package` config option as an example, the following examples
+show the valid formats for specifying package names throughout the configuration:
+
+``` toml
+# Simple package name
+ruff_package = "ruff"
+
+# More verbose syntax for package name
+ruff_package = {type = "package", name = "ruff"}
+
+# Editable package (path relative to noxfile.py)
+# Package will be installed without editable mode when ALLOW_EDITABLE is disabled.
+ruff_package = {type = "editable", name = "./path-to-editable-package"}
+
+# Requirements file
+ruff_package = {type = "requirements", name = "requirements/ruff.txt"}
+```
+
+!!! note
+    Whether editable mode is allowed can be configured with the `ALLOW_EDITABLE` environment variable.
+    Set it to `1` or `true` (ignoring case) to allow editable installs.
+    If not set, the default is `true` unless `nox` is run in a CI system, in which case the default is `false`.
+
+!!! note
+    CI is currently detected by checking for the `CI` environment variable.
+    If your CI system is not supported, you can simply set `CI=true` before running `nox` in CI.
+
 ## Basic linting sessions
 
 The basic linting session, `lint`, comes with three sessions it depends on:
@@ -149,10 +185,6 @@ The basic linting session, `lint`, comes with three sessions it depends on:
 * `yamllint`: runs `yamllint` on all `.yml` and `.yaml` files, on the documentation included in Ansible modules and plugins, and on YAML code included in extra docs.
 
 * `typing`: runs `mypy`.
-
-!!! note
-    CI is currently detected by checking for the `CI` environment variable.
-    If your CI system is not supported, you can simply set `CI=true` before running `nox` in CI.
 
 These sessions can be added with the `[sessions.lint]` section in `antsibull-nox.toml`.
 
@@ -179,7 +211,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `ruff_package: str` (default `"ruff"`):
+* `ruff_package: PackageType` (default `"ruff"`):
   The package to install for `ruff`.
   This config file applies to all `ruff` checks
   but can be overridden for specific `ruff` invocations.
@@ -198,7 +230,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `isort_package: str` (default `"isort"`):
+* `isort_package: PackageType` (default `"isort"`):
   The package to install for `isort` in this session.
   You can specify a value here to add restrictions to the `isort` version,
   or to pin the version,
@@ -221,7 +253,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `black_package: str` (default `"black"`):
+* `black_package: PackageType` (default `"black"`):
   The package to install for `black` in this session.
   You can specify a value here to add restrictions to the `black` version,
   or to pin the version,
@@ -239,7 +271,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `ruff_format_package: str | None` (default `None`):
+* `ruff_format_package: PackageType | None` (default `None`):
   The package to install for `ruff` in this session.
   Falls back to `ruff_package` if set to `None`.
   You can specify a value here to add restrictions to the `ruff` version,
@@ -258,7 +290,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `ruff_autofix_package: str | None` (default `None`):
+* `ruff_autofix_package: PackageType | None` (default `None`):
   The package to install for `ruff` in this session.
   Falls back to `ruff_package` if set to `None`.
   You can specify a value here to add restrictions to the `ruff` version,
@@ -283,7 +315,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `ruff_check_package: str | None` (default `None`):
+* `ruff_check_package: PackageType | None` (default `None`):
   The package to install for `ruff` in this session.
   Falls back to `ruff_package` if set to `None`.
   You can specify a value here to add restrictions to the `ruff` version,
@@ -301,7 +333,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `flake8_package: str` (default `"flake8"`):
+* `flake8_package: PackageType` (default `"flake8"`):
   The package to install for `flake8` in this session.
   You can specify a value here to add restrictions to the `flake8` version,
   or to pin the version,
@@ -325,13 +357,13 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `pylint_package: str` (default `"pylint"`):
+* `pylint_package: PackageType` (default `"pylint"`):
   The package to install for `pylint` in this session.
   You can specify a value here to add restrictions to the `pylint` version,
   or to pin the version,
   or to install the package from a local repository.
 
-* `pylint_ansible_core_package: str` (default `"ansible-core"`):
+* `pylint_ansible_core_package: PackageType` (default `"ansible-core"`):
   The package to install for `ansible-core` in this session.
   You can specify a value here to add restrictions to the `ansible-core` version,
   or to pin the version,
@@ -372,13 +404,13 @@ and there are plenty of configuration settings for the indiviual formatters/lint
     If not provided, the same config will be used as for YAML examples embedded in plugins (`yamllint_config_plugins_examples`),
     which falls back to the `yamllint_config_plugins` and `yamllint_config`.
 
-* `yamllint_package: str` (default `"yamllint"`):
+* `yamllint_package: PackageType` (default `"yamllint"`):
   The package to install for `yamllint` in this session.
   You can specify a value here to add restrictions to the `yamllint` version,
   or to pin the version,
   or to install the package from a local repository.
 
-* `yamllint_antsibull_docutils_package: str` (default `"antsibull-docutils"`):
+* `yamllint_antsibull_docutils_package: PackageType` (default `"antsibull-docutils"`):
   The package to install for `antsibull-docutils` in this session.
   You can specify a value here to add restrictions to the `antsibull-docutils` version,
   or to pin the version,
@@ -395,13 +427,13 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
-* `mypy_package: str` (default `"mypy"`):
+* `mypy_package: PackageType` (default `"mypy"`):
   The package to install for `mypy` in this session.
   You can specify a value here to add restrictions to the `mypy` version,
   or to pin the version,
   or to install the package from a local repository.
 
-* `mypy_ansible_core_package: str` (default `"ansible-core"`):
+* `mypy_ansible_core_package: PackageType` (default `"ansible-core"`):
   The package to install for `ansible-core` in this session.
   You can specify a value here to add restrictions to the `ansible-core` version,
   or to pin the version,
@@ -465,13 +497,13 @@ The function has the following configuration settings:
   Whether the `docs-check` session should be made default.
   This means that when a user just runs `nox` without specifying sessions, this session will run.
 
-* `antsibull_docs_package: str` (default `"antsibull-docs"`):
+* `antsibull_docs_package: PackageType` (default `"antsibull-docs"`):
   The package to install for `antsibull-docs` in this session.
   You can specify a value here to add restrictions to the `antsibull-docs` version,
   or to pin the version,
   or to install the package from a local repository.
 
-* `ansible_core_package: str` (default `"ansible-core"`):
+* `ansible_core_package: PackageType` (default `"ansible-core"`):
   The package to install for `ansible-core` in this session.
   You can specify a value here to add restrictions to the `ansible-core` version,
   or to pin the version,
@@ -511,7 +543,7 @@ It allows to apply certain restrictions to code blocks and literal blocks.
 * `codeblocks_allow_literal_blocks: bool` (default `true`):
   Whether literal blocks (`::`) are allowed.
 
-* `antsibull_docutils_package: str` (default `"antsibull-docutils"`):
+* `antsibull_docutils_package: PackageType` (default `"antsibull-docutils"`):
   The package to install for `antsibull-docutils` in this session.
   You can specify a value here to add restrictions to the `antsibull-docutils` version,
   or to pin the version,
@@ -550,7 +582,7 @@ It accepts the following options:
 * `run_reuse: bool` (default `true`):
   Whether to run `reuse lint`.
 
-* `reuse_package: str` (default `"reuse"`):
+* `reuse_package: PackageType` (default `"reuse"`):
   The package to install for `reuse` in this session.
   You can specify a value here to add restrictions to the `reuse` version,
   or to pin the version,
@@ -770,7 +802,7 @@ It accepts the following options:
   Whether the `build-import-check` session should be made default.
   This means that when a user just runs `nox` without specifying sessions, this session will run.
 
-* `ansible_core_package: str` (default `"ansible-core"`):
+* `ansible_core_package: PackageType` (default `"ansible-core"`):
   The package to install for `ansible-core` in this session.
   You can specify a value here to add restrictions to the `ansible-core` version,
   or to pin the version,
@@ -779,7 +811,7 @@ It accepts the following options:
 * `run_galaxy_importer: bool` (default `true`):
   Whether the Galaxy importer should be run on the built collection artefact.
 
-* `galaxy_importer_package: str` (default `"galaxy-importer"`):
+* `galaxy_importer_package: PackageType` (default `"galaxy-importer"`):
   The package to install for `galaxy-importer` in this session.
   You can specify a value here to add restrictions to the `galaxy-importer` version,
   or to pin the version,
@@ -1117,7 +1149,7 @@ The added session is called `ansible-lint`. The section can contain the followin
   Whether the `ansible-lint` session should be made default.
   This means that when a user just runs `nox` without specifying sessions, this session will run.
 
-* `ansible_lint_package: str` (default `"ansible-lint"`):
+* `ansible_lint_package: PackageType` (default `"ansible-lint"`):
   The package to install for `ansible-lint` in this session.
   You can specify a value here to add restrictions to the `ansible-lint` version,
   or to pin the version,
@@ -1155,13 +1187,13 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
   Whether the `ee-check` session should be made default.
   This means that when a user just runs `nox` without specifying sessions, this session will run.
 
-* `ansible_builder_package: str` (default `"ansible-builder"`):
+* `ansible_builder_package: PackageType` (default `"ansible-builder"`):
   The package to install for `ansible-builder` in this session.
   You can specify a value here to add restrictions to the `ansible-builder` version,
   or to pin the version,
   or to install the package from a local repository.
 
-* `ansible_core_package: str | None` (default `None`):
+* `ansible_core_package: PackageType | None` (default `None`):
   The package to install for `ansible-core` in this session.
   Note that `ansible-core` is a dependency of `ansible-runner`,
   so if not specified explicitly here it will still be installed.
@@ -1169,7 +1201,7 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
   or to pin the version,
   or to install the package from a local repository.
 
-* `ansible_navigator_package: str` (default `"ansible-navigator"`):
+* `ansible_navigator_package: PackageType` (default `"ansible-navigator"`):
   The package to install for `ansible-navigator` in this session.
   You can specify a value here to add restrictions to the `ansible-navigator` version,
   or to pin the version,
@@ -1204,14 +1236,14 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
       Configures the source for installing the `ansible-core` package.
       when the `ansible_core_package` option is used.
 
-    * `ansible_core_package: str | None` (default `None`):
+    * `ansible_core_package: PackageType | None` (default `None`):
       Specifies the name of the `ansible-core` package.
 
     * `ansible_runner_source: "package_pip" | "package_system"` (default `"package_pip"`):
       Configures the source for installing the `ansible-runner` package
       when the `ansible_runner_package` option is used.
 
-    * `ansible_runner_package: str | None` (default `None`):
+    * `ansible_runner_package: PackageType | None` (default `None`):
       Specifies the name of the `ansible-runner` package.
 
     * `system_packages: list[str]` (default `"[]"`):
@@ -1220,7 +1252,7 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
     * `python_packages: list[str]` (default `"[]"`):
       Specifies a list of Python packages to build into the EE.
 
-    * `python_interpreter_package: str | None`(default `None`):
+    * `python_interpreter_package: PackageType | None`(default `None`):
       Defines the Python system package name for the EE.
 
     * `python_path: str | None`(default `None`):

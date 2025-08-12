@@ -10,11 +10,13 @@ Utils for creating nox sessions.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import logging
 import os
 import sys
 import typing as t
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -102,21 +104,101 @@ def get_registered_sessions() -> dict[str, list[dict[str, t.Any]]]:
     }
 
 
-def install(session: nox.Session, *args: str, editable: bool = False, **kwargs):
+@dataclasses.dataclass
+class PackageName:
+    """
+    A PyPI package name.
+    """
+
+    name: str
+
+    def get_pip_install_args(self) -> Iterator[str]:
+        """
+        Yield arguments to 'pip install'.
+        """
+        yield self.name
+
+
+@dataclasses.dataclass
+class PackageEditable:
+    """
+    A PyPI package name that should be installed editably (if allowed).
+    """
+
+    name: str
+
+    def get_pip_install_args(self) -> Iterator[str]:
+        """
+        Yield arguments to 'pip install'.
+        """
+        # Don't install in editable mode in CI or if it's explicitly disabled.
+        # This ensures that the wheel contains all of the correct files.
+        if ALLOW_EDITABLE:
+            yield "-e"
+        yield self.name
+
+
+@dataclasses.dataclass
+class PackageRequirements:
+    """
+    A Python requirements.txt file.
+    """
+
+    file: str
+
+    def get_pip_install_args(self) -> Iterator[str]:
+        """
+        Yield arguments to 'pip install'.
+        """
+        yield "-r"
+        yield self.file
+
+
+# This isn't super useful currently, b/c all of the _package fileds in
+# the config only accept a single string and constraints only make sense when
+# combined with another package spec or a requirements file
+# @dataclasses.dataclass
+# class PackageConstraints:
+#     name: str
+#
+#     def get_pip_install_args(self) -> Iterator[str]:
+#         yield "-c"
+#         yield self.name
+
+
+PackageType = t.Union[
+    str,
+    PackageName,
+    PackageEditable,
+    PackageRequirements,
+    # PackageConstraints,  # see above
+]
+
+
+def _get_install_params(packages: Sequence[PackageType]) -> list[str]:
+    new_args: list[str] = []
+    for arg in packages:
+        if isinstance(arg, str):
+            new_args.append(arg)
+        else:
+            new_args.extend(arg.get_pip_install_args())
+    return new_args
+
+
+def install(session: nox.Session, *args: PackageType, **kwargs):
     """
     Install Python packages.
     """
     if not args:
         return
+
     # nox --no-venv
     if isinstance(session.virtualenv, nox.virtualenv.PassthroughEnv):
         session.warn(f"No venv. Skipping installation of {args}")
         return
-    # Don't install in editable mode in CI or if it's explicitly disabled.
-    # This ensures that the wheel contains all of the correct files.
-    if editable and ALLOW_EDITABLE:
-        args = ("-e", *args)
-    session.install(*args, "-U", **kwargs)
+
+    new_args = _get_install_params(args)
+    session.install(*new_args, "-U", **kwargs)
 
 
 def run_bare_script(
