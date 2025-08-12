@@ -4,6 +4,25 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.2.0
+======
+
+Release Summary
+---------------
+
+Maintenance and feature release.
+
+Minor Changes
+-------------
+
+- Allow to install packages editably by using the package name prefix ``"-e "`` (https://github.com/ansible-community/antsibull-nox/pull/106).
+
+Bugfixes
+--------
+
+- The ``action-groups`` extra check failed if ``plugins/modules/`` does not exist (https://github.com/ansible-community/antsibull-nox/pull/104).
+- Update supported Python versions for ansible-core milestone (https://github.com/ansible-community/antsibull-nox/pull/109).
+
 v1.1.1
 ======
 

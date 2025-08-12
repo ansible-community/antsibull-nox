@@ -1,2 +1,0 @@
-bugfixes:
-  - "The ``action-groups`` extra check failed if ``plugins/modules/`` does not exist (https://github.com/ansible-community/antsibull-nox/pull/104)."

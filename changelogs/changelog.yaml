@@ -315,3 +315,19 @@ releases:
       - 1.1.1.yml
       - 102-devel.yml
     release_date: '2025-07-29'
+  1.2.0:
+    changes:
+      bugfixes:
+        - The ``action-groups`` extra check failed if ``plugins/modules/`` does not
+          exist (https://github.com/ansible-community/antsibull-nox/pull/104).
+        - Update supported Python versions for ansible-core milestone (https://github.com/ansible-community/antsibull-nox/pull/109).
+      minor_changes:
+        - Allow to install packages editably by using the package name prefix ``"-e
+          "`` (https://github.com/ansible-community/antsibull-nox/pull/106).
+      release_summary: Maintenance and feature release.
+    fragments:
+      - 1.2.0.yml
+      - 104-action-groups.yml
+      - 106-editable.yml
+      - 109-milestone.yml
+    release_date: '2025-08-12'
