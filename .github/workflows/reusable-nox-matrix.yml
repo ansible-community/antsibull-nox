@@ -30,7 +30,7 @@ jobs:
       ee-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).execution-environment }}
     steps:
       - name: Check out collection
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Run nox
@@ -54,7 +54,7 @@ jobs:
       - name: Check out collection
         if: >-
           !matrix.skip
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Run nox
@@ -86,7 +86,7 @@ jobs:
       - name: Check out collection
         if: >-
           !matrix.skip
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Run nox
@@ -119,7 +119,7 @@ jobs:
       - name: Check out collection
         if: >-
           !matrix.skip
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Run nox
@@ -148,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Download coverage from previous steps
@@ -181,7 +181,7 @@ jobs:
       - name: Check out collection
         if: >-
           !matrix.skip
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Run nox
