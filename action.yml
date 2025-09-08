@@ -45,7 +45,7 @@ runs:
   using: composite
   steps:
     - name: "Install Python ${{ inputs.python-version }}"
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       id: python
       with:
         python-version: |-
