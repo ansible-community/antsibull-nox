@@ -75,16 +75,20 @@ class PackageRequirements:
         yield self.file
 
 
-# This isn't super useful currently, b/c all of the _package fileds in
-# the config only accept a single string and constraints only make sense when
-# combined with another package spec or a requirements file
-# @dataclasses.dataclass
-# class PackageConstraints:
-#     name: str
-#
-#     def get_pip_install_args(self) -> Iterator[str]:
-#         yield "-c"
-#         yield self.name
+@dataclasses.dataclass
+class PackageConstraints:
+    """
+    A Python constraints.txt file.
+    """
+
+    file: str
+
+    def get_pip_install_args(self) -> Iterator[str]:
+        """
+        Yield arguments to 'pip install'.
+        """
+        yield "-c"
+        yield self.file
 
 
 PackageType = t.Union[
@@ -92,8 +96,23 @@ PackageType = t.Union[
     PackageName,
     PackageEditable,
     PackageRequirements,
-    # PackageConstraints,  # see above
+    PackageConstraints,
 ]
+
+PackageTypeOrList = t.Union[PackageType, Sequence[PackageType]]
+
+
+def normalize_package_type(packages: PackageTypeOrList | None) -> list[PackageType]:
+    """
+    Given a package type or a list of package types or ``None``,
+    convert this to a list of package types.
+    """
+    if packages is None:
+        return []
+    # A str is a Sequence as well.
+    if isinstance(packages, Sequence) and not isinstance(packages, str):
+        return list(packages)  # return a copy
+    return [packages]
 
 
 def _get_install_params(packages: Sequence[PackageType]) -> list[str]:
@@ -128,4 +147,5 @@ __all__ = [
     "PackageRequirements",
     "PackageType",
     "install",
+    "normalize_package_type",
 ]

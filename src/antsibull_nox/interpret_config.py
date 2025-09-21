@@ -142,24 +142,6 @@ def _convert_core_python_versions(
     )
 
 
-@t.overload
-def _convert_package_name(package_name: PackageType) -> RuntimePackageType: ...
-
-
-@t.overload
-def _convert_package_name(
-    package_name: PackageType | None,
-) -> RuntimePackageType | None: ...
-
-
-def _convert_package_name(
-    package_name: PackageType | None,
-) -> RuntimePackageType | None:
-    if package_name is None:
-        return None
-    return package_name.to_utils_instance()
-
-
 def _ensure_list(value: _T | list[_T]) -> list[_T]:
     if isinstance(value, list):
         return value
@@ -170,6 +152,27 @@ def _ensure_list_w_none(value: _T | list[_T] | None) -> list[_T | None]:
     if isinstance(value, list):
         return value  # type: ignore
     return [value]
+
+
+@t.overload
+def _convert_package_name(
+    package_name: PackageType | list[PackageType],
+) -> list[RuntimePackageType]: ...
+
+
+@t.overload
+def _convert_package_name(
+    package_name: PackageType | list[PackageType] | None,
+) -> list[RuntimePackageType] | None: ...
+
+
+def _convert_package_name(
+    package_name: PackageType | list[PackageType] | None,
+) -> list[RuntimePackageType] | None:
+    if package_name is None:
+        return None
+    package_name = _ensure_list(package_name)
+    return [pkg.to_utils_instance() for pkg in package_name]
 
 
 def _coalesce(*values: _T) -> _T | None:

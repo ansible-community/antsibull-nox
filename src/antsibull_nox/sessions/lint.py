@@ -32,7 +32,9 @@ from .utils import (
 )
 from .utils.packages import (
     PackageType,
+    PackageTypeOrList,
     install,
+    normalize_package_type,
 )
 from .utils.paths import (
     filter_files_cd,
@@ -257,20 +259,20 @@ def add_formatters(
     # isort:
     run_isort: bool,
     isort_config: str | os.PathLike | None,
-    isort_package: PackageType,
+    isort_package: PackageTypeOrList,
     # black:
     run_black: bool,
     run_black_modules: bool | None,
     black_config: str | os.PathLike | None,
-    black_package: PackageType,
+    black_package: PackageTypeOrList,
     # ruff format:
     run_ruff_format: bool,
     ruff_format_config: str | os.PathLike | None,
-    ruff_format_package: PackageType,
+    ruff_format_package: PackageTypeOrList,
     # ruff autofix:
     run_ruff_autofix: bool,
     ruff_autofix_config: str | os.PathLike | None,
-    ruff_autofix_package: PackageType,
+    ruff_autofix_package: PackageTypeOrList,
     ruff_autofix_select: list[str],
 ) -> None:
     """
@@ -283,20 +285,20 @@ def add_formatters(
     def compose_dependencies() -> list[PackageType]:
         deps = []
         if run_isort:
-            deps.append(isort_package)
+            deps.extend(normalize_package_type(isort_package))
         if run_black or run_black_modules:
-            deps.append(black_package)
+            deps.extend(normalize_package_type(black_package))
         if (
             run_ruff_format
             and run_ruff_autofix
             and ruff_format_package == ruff_autofix_package
         ):
-            deps.append(ruff_format_package)
+            deps.extend(normalize_package_type(ruff_format_package))
         else:
             if run_ruff_format:
-                deps.append(ruff_format_package)
+                deps.extend(normalize_package_type(ruff_format_package))
             if run_ruff_autofix:
-                deps.append(ruff_autofix_package)
+                deps.extend(normalize_package_type(ruff_autofix_package))
         return deps
 
     def formatters(session: nox.Session) -> None:
@@ -376,17 +378,17 @@ def add_codeqa(  # noqa: C901
     # ruff check:
     run_ruff_check: bool,
     ruff_check_config: str | os.PathLike | None,
-    ruff_check_package: PackageType,
+    ruff_check_package: PackageTypeOrList,
     # flake8:
     run_flake8: bool,
     flake8_config: str | os.PathLike | None,
-    flake8_package: PackageType,
+    flake8_package: PackageTypeOrList,
     # pylint:
     run_pylint: bool,
     pylint_rcfile: str | os.PathLike | None,
     pylint_modules_rcfile: str | os.PathLike | None,
-    pylint_package: PackageType,
-    pylint_ansible_core_package: PackageType | None,
+    pylint_package: PackageTypeOrList,
+    pylint_ansible_core_package: PackageTypeOrList | None,
     pylint_extra_deps: list[str],
 ) -> None:
     """
@@ -396,13 +398,12 @@ def add_codeqa(  # noqa: C901
     def compose_dependencies() -> list[PackageType]:
         deps = []
         if run_ruff_check:
-            deps.append(ruff_check_package)
+            deps.extend(normalize_package_type(ruff_check_package))
         if run_flake8:
-            deps.append(flake8_package)
+            deps.extend(normalize_package_type(flake8_package))
         if run_pylint:
-            deps.append(pylint_package)
-            if pylint_ansible_core_package is not None:
-                deps.append(pylint_ansible_core_package)
+            deps.extend(normalize_package_type(pylint_package))
+            deps.extend(normalize_package_type(pylint_ansible_core_package))
             if os.path.isdir("tests/unit"):
                 deps.append("pytest")
                 if os.path.isfile("tests/unit/requirements.txt"):
@@ -548,8 +549,8 @@ def add_yamllint(
     yamllint_config_plugins: str | os.PathLike | None,
     yamllint_config_plugins_examples: str | os.PathLike | None,
     yamllint_config_extra_docs: str | os.PathLike | None,
-    yamllint_package: PackageType,
-    yamllint_antsibull_docutils_package: PackageType,
+    yamllint_package: PackageTypeOrList,
+    yamllint_antsibull_docutils_package: PackageTypeOrList,
 ) -> None:
     """
     Add yamllint session for linting YAML files and plugin/module docs.
@@ -558,7 +559,8 @@ def add_yamllint(
     def compose_dependencies() -> list[PackageType]:
         deps = []
         if run_yamllint:
-            deps.extend([yamllint_package, yamllint_antsibull_docutils_package])
+            deps.extend(normalize_package_type(yamllint_package))
+            deps.extend(normalize_package_type(yamllint_antsibull_docutils_package))
         return deps
 
     def to_str(config: str | os.PathLike | None) -> str | None:
@@ -701,8 +703,8 @@ def add_typing(
     extra_code_files: list[str],
     run_mypy: bool,
     mypy_config: str | os.PathLike | None,
-    mypy_package: PackageType,
-    mypy_ansible_core_package: PackageType | None,
+    mypy_package: PackageTypeOrList,
+    mypy_ansible_core_package: PackageTypeOrList | None,
     mypy_extra_deps: list[str],
 ) -> None:
     """
@@ -712,9 +714,9 @@ def add_typing(
     def compose_dependencies() -> list[PackageType]:
         deps = []
         if run_mypy:
-            deps.append(mypy_package)
+            deps.extend(normalize_package_type(mypy_package))
             if mypy_ansible_core_package is not None:
-                deps.append(mypy_ansible_core_package)
+                deps.extend(normalize_package_type(mypy_ansible_core_package))
             if os.path.isdir("tests/unit"):
                 deps.append("pytest")
                 if os.path.isfile("tests/unit/requirements.txt"):
@@ -814,35 +816,35 @@ def add_lint_sessions(
     # isort:
     run_isort: bool = True,
     isort_config: str | os.PathLike | None = None,
-    isort_package: PackageType = "isort",
+    isort_package: PackageTypeOrList = "isort",
     # black:
     run_black: bool = True,
     run_black_modules: bool | None = None,
     black_config: str | os.PathLike | None = None,
-    black_package: PackageType = "black",
+    black_package: PackageTypeOrList = "black",
     # ruff format:
     run_ruff_format: bool = False,
     ruff_format_config: str | os.PathLike | None = None,
-    ruff_format_package: PackageType = "ruff",
+    ruff_format_package: PackageTypeOrList = "ruff",
     # ruff autofix:
     run_ruff_autofix: bool = False,
     ruff_autofix_config: str | os.PathLike | None = None,
-    ruff_autofix_package: PackageType = "ruff",
+    ruff_autofix_package: PackageTypeOrList = "ruff",
     ruff_autofix_select: list[str] | None = None,
     # ruff check:
     run_ruff_check: bool = False,
     ruff_check_config: str | os.PathLike | None = None,
-    ruff_check_package: PackageType = "ruff",
+    ruff_check_package: PackageTypeOrList = "ruff",
     # flake8:
     run_flake8: bool = True,
     flake8_config: str | os.PathLike | None = None,
-    flake8_package: PackageType = "flake8",
+    flake8_package: PackageTypeOrList = "flake8",
     # pylint:
     run_pylint: bool = True,
     pylint_rcfile: str | os.PathLike | None = None,
     pylint_modules_rcfile: str | os.PathLike | None = None,
-    pylint_package: PackageType = "pylint",
-    pylint_ansible_core_package: PackageType | None = "ansible-core",
+    pylint_package: PackageTypeOrList = "pylint",
+    pylint_ansible_core_package: PackageTypeOrList | None = "ansible-core",
     pylint_extra_deps: list[str] | None = None,
     # yamllint:
     run_yamllint: bool = False,
@@ -850,13 +852,13 @@ def add_lint_sessions(
     yamllint_config_plugins: str | os.PathLike | None = None,
     yamllint_config_plugins_examples: str | os.PathLike | None = None,
     yamllint_config_extra_docs: str | os.PathLike | None = None,
-    yamllint_package: PackageType = "yamllint",
-    yamllint_antsibull_docutils_package: PackageType = "antsibull-docutils",
+    yamllint_package: PackageTypeOrList = "yamllint",
+    yamllint_antsibull_docutils_package: PackageTypeOrList = "antsibull-docutils",
     # mypy:
     run_mypy: bool = True,
     mypy_config: str | os.PathLike | None = None,
-    mypy_package: PackageType = "mypy",
-    mypy_ansible_core_package: PackageType | None = "ansible-core",
+    mypy_package: PackageTypeOrList = "mypy",
+    mypy_ansible_core_package: PackageTypeOrList | None = "ansible-core",
     mypy_extra_deps: list[str] | None = None,
     # antsibull-nox config lint:
     run_antsibullnox_config_lint: bool = True,

@@ -164,8 +164,9 @@ For many sessions, the package names of tools that are used / installed can be c
 These options usually end with `_package`.
 These options are all annotated as `PackageType` in the configuration reference below.
 
-Package names may be simple strings or a special dictionary to install an
-editable dependency or a requirements file.
+Package names may be simple strings, a special dictionary to install an
+editable dependency, a requirements file, or a constraints file,
+or a list of strings or such dictionaries to provide multiple of these.
 
 Using the `ruff_package` config option as an example, the following examples
 show the valid formats for specifying package names throughout the configuration:
@@ -182,7 +183,18 @@ ruff_package = {type = "package", name = "ruff"}
 ruff_package = {type = "editable", name = "./path-to-editable-package"}
 
 # Requirements file
-ruff_package = {type = "requirements", name = "requirements/ruff.txt"}
+ruff_package = {type = "requirements", file = "requirements/ruff.txt"}
+
+# Constraints file
+# (Note that by itself, this doesn't make any sense.)
+ruff_package = {type = "constraints", file = "requirements/ruff-constraints.txt"}
+
+# A package together with a requirements file and a constraints file
+ruff_package = [
+  "ruff",
+  {type = "requirements", file = "requirements/ruff-extra.txt"},
+  {type = "constraints", file = "requirements/ruff-constraints.txt"},
+]
 ```
 
 !!! note
