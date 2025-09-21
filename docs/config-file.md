@@ -1304,8 +1304,8 @@ You explicitly have to list all sessions in `antsibull-nox.toml`.
 * `groups: list[SessionAnsibleTestIntegrationGroup]` (default: `[]`)
   Defines groups of session templates for ansible-test integration test sessions.
 
-  Groups can be used to group similar templates together by sharing some definitions.
-  They also allow to create a dedicated meta session that will run all sessions created from this group.
+    Groups can be used to group similar templates together by sharing some definitions.
+    They also allow to create a dedicated meta session that will run all sessions created from this group.
 
     Every group is an object and will result in one or more sessions.
     It should be defined in a new section `[[sessions.ansible_test_integration.groups]]`.
@@ -1488,7 +1488,7 @@ docker = "ubuntu2404"
 ansible_vars = { github_latest_detection = "latest-release" }
 ```
 
-### Run ansible-lint
+## Run ansible-lint
 
 The [ansible-lint](https://ansible.readthedocs.io/projects/lint/) session is added with the `[sessions.ansible_lint]` section in `antsibull-nox.toml`.
 The added session is called `ansible-lint`. The section can contain the following configurations:
@@ -1515,7 +1515,7 @@ exclude_paths:
 to your ansible-lint configuration file.
 Otherwise ansible-lint might try to lint collection dependencies that antsibull-nox installed.
 
-#### Example code
+### Example code
 
 This example is from `felixfontein.acme`.
 It simply runs `ansible-lint`.
