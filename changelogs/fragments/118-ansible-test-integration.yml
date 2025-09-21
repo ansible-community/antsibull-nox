@@ -1,0 +1,2 @@
+minor_changes:
+  - "Allow to specify individual ansible-test integration sessions with the new ``[sessions.ansible_test_integration]`` config setting (https://github.com/ansible-community/antsibull-nox/issues/114, https://github.com/ansible-community/antsibull-nox/pull/118)."

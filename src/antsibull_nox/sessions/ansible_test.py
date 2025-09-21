@@ -10,6 +10,8 @@ Create nox ansible-test sessions.
 
 from __future__ import annotations
 
+import dataclasses
+import itertools
 import os
 import typing as t
 from collections.abc import Callable
@@ -32,9 +34,13 @@ from ..utils import Version
 from .collections import prepare_collections
 from .utils import (
     AnsibleValue,
+    AnsibleValueExplicit,
     install,
     register,
 )
+
+if t.TYPE_CHECKING:
+    DevelLikeBranch = tuple[str | None, str]
 
 
 def get_ansible_test_env() -> dict[str, str]:
@@ -235,7 +241,7 @@ def add_all_ansible_test_sanity_test_sessions(
     default: bool = False,
     include_devel: bool = False,
     include_milestone: bool = False,
-    add_devel_like_branches: list[tuple[str | None, str]] | None = None,
+    add_devel_like_branches: list[DevelLikeBranch] | None = None,
     min_version: Version | str | None = None,
     max_version: Version | str | None = None,
     except_versions: list[AnsibleCoreVersion | str] | None = None,
@@ -344,7 +350,7 @@ def add_all_ansible_test_unit_test_sessions(
     default: bool = False,
     include_devel: bool = False,
     include_milestone: bool = False,
-    add_devel_like_branches: list[tuple[str | None, str]] | None = None,
+    add_devel_like_branches: list[DevelLikeBranch] | None = None,
     min_version: Version | str | None = None,
     max_version: Version | str | None = None,
     except_versions: list[AnsibleCoreVersion | str] | None = None,
@@ -440,7 +446,7 @@ def add_ansible_test_integration_sessions_default_container(
     *,
     include_devel: bool = False,
     include_milestone: bool = False,
-    add_devel_like_branches: list[tuple[str | None, str]] | None = None,
+    add_devel_like_branches: list[DevelLikeBranch] | None = None,
     min_version: Version | str | None = None,
     max_version: Version | str | None = None,
     except_versions: list[AnsibleCoreVersion | str] | None = None,
@@ -451,7 +457,7 @@ def add_ansible_test_integration_sessions_default_container(
     ansible_vars_from_env_vars: dict[str, str] | None = None,
     ansible_vars: dict[str, AnsibleValue] | None = None,
     default: bool = False,
-) -> None:
+) -> list[str]:
     """
     Add ansible-test integration tests using the default Docker container.
 
@@ -568,7 +574,7 @@ def add_ansible_test_integration_sessions_default_container(
             nox.session(
                 name=name,
                 requires=integration_sessions_core,
-                default=False,
+                default=default,
             )(run_integration_tests)
     if add_devel_like_branches:
         for repo_name, branch_name in add_devel_like_branches:
@@ -593,29 +599,343 @@ def add_ansible_test_integration_sessions_default_container(
                 nox.session(
                     name=name,
                     requires=integration_sessions_core,
-                    default=False,
+                    default=default,
                 )(run_integration_tests_for_branch)
 
-    def ansible_test_integration(
-        session: nox.Session,  # pylint: disable=unused-argument
-    ) -> None:
-        pass
+    return integration_sessions
 
-    ansible_test_integration.__doc__ = (
-        "Meta session for running all ansible-test-integration-* sessions."
+
+@dataclasses.dataclass
+class AnsibleTestIntegrationSessionTemplate:
+    """
+    A template for an ansible-test integration test session.
+    """
+
+    ansible_core: list[AnsibleCoreVersion]
+    docker: list[str | None]
+    remote: list[str | None]
+    python_version: list[Version | None]
+    target: list[str | None]
+    gha_container: list[str | None]
+
+    devel_like_branch: DevelLikeBranch | None
+
+    ansible_vars: dict[str, AnsibleValue]
+    session_name_template: str
+    display_name_template: str
+    description_template: str
+
+
+@dataclasses.dataclass
+class AnsibleTestIntegrationSessionTemplateGroup:
+    """
+    A template for an ansible-test integration test session.
+    """
+
+    session_name: str | None
+    description: str | None
+    ansible_vars: dict[str, AnsibleValue]
+    session_templates: list[AnsibleTestIntegrationSessionTemplate]
+
+
+@dataclasses.dataclass
+class AnsibleTestIntegrationSession:
+    """
+    A template for an ansible-test integration test session.
+    """
+
+    source: str
+    part_of_group: bool
+
+    ansible_core: AnsibleCoreVersion
+    ansible_core_repo_name: str | None
+    ansible_core_branch_name: str | None
+    docker: str | None
+    remote: str | None
+    python_version: Version | None
+    target: str | None
+    gha_container: str | None
+
+    ansible_vars: dict[str, AnsibleValue]
+    session_name: str
+    display_name: str
+    description: str
+
+    def get_ansible_vars_callback(self) -> t.Callable[[], None] | None:
+        """
+        Create before-callback for ansible-test.
+        """
+        if not self.ansible_vars:
+            return None
+
+        def callback_before() -> None:
+            write_integration_config(self.ansible_vars)
+
+        return callback_before
+
+
+@dataclasses.dataclass
+class AnsibleTestIntegrationSessionGroup:
+    """
+    A template for an ansible-test integration test session.
+    """
+
+    session_name: str | None
+    description: str | None
+    sessions: list[AnsibleTestIntegrationSession]
+
+
+def _get_templator(**kwargs: t.Any) -> t.Callable[[str], str]:
+    template_vars = {}
+    for k, v in kwargs.items():
+        val = str(v) if v else ""
+        template_vars[k] = val
+        template_vars[f"{k}_dash"] = f"{val}-" if val else ""
+        template_vars[f"dash_{k}"] = f"-{val}" if val else ""
+        template_vars[f"{k}_plus"] = f"{val}+" if val else ""
+        template_vars[f"plus_{k}"] = f"+{val}" if val else ""
+        template_vars[f"{k}_comma"] = f"{val}, " if val else ""
+        template_vars[f"comma_{k}"] = f", {val}" if val else ""
+
+    def tmpl(template: str) -> str:
+        try:
+            return template.format(**template_vars)
+        except KeyError as exc:
+            raise ValueError(
+                f"Error when templating {template!r}: unknown variable {str(exc)!r}"
+            ) from None
+
+    return tmpl
+
+
+def _template_session(
+    session_template: AnsibleTestIntegrationSessionTemplate,
+    source: str,
+    part_of_group: bool,
+    ansible_vars: list[dict[str, AnsibleValue] | None],
+) -> t.Generator[AnsibleTestIntegrationSession]:
+    session_ansible_vars = {}
+    for ansible_vars_item in ansible_vars:
+        if ansible_vars_item:
+            session_ansible_vars.update(ansible_vars_item)
+    session_ansible_vars.update(session_template.ansible_vars)
+    vars_values = {}
+    for var, value in session_ansible_vars.items():
+        if isinstance(value, AnsibleValueExplicit):
+            vars_values[var] = value.value
+    for (
+        ansible_core,
+        docker,
+        remote,
+        python_version,
+        target,
+        gha_container,
+    ) in itertools.product(
+        session_template.ansible_core,
+        session_template.docker,
+        session_template.remote,
+        session_template.python_version,
+        session_template.target,
+        session_template.gha_container,
+    ):
+        gha_arm = gha_container and "-arm" in gha_container
+        vars_values.update(
+            {
+                "ansible_core": ansible_core,
+                "docker": docker,
+                "docker_short": (
+                    (
+                        docker.removeprefix(
+                            "quay.io/ansible-community/test-image:"
+                        ).removeprefix("localhost/test-image:")
+                    )
+                    if docker
+                    else None
+                ),
+                "remote": remote,
+                "python_version": python_version,
+                "py_python_version": f"py{python_version}" if python_version else None,
+                "target": target,
+                "target_dashized": (
+                    target.replace("/", "-").strip("-") if target else None
+                ),
+                "gha_container": gha_container,
+                "gha_arm": "ARM" if gha_arm else None,
+                "gha_arm_lower": "arm" if gha_arm else None,
+            }
+        )
+        tmpl = _get_templator(**vars_values)
+        yield AnsibleTestIntegrationSession(
+            source=source,
+            part_of_group=part_of_group,
+            ansible_core=ansible_core,
+            ansible_core_repo_name=(
+                session_template.devel_like_branch[0]
+                if ansible_core == "devel" and session_template.devel_like_branch
+                else None
+            ),
+            ansible_core_branch_name=(
+                session_template.devel_like_branch[1]
+                if ansible_core == "devel" and session_template.devel_like_branch
+                else None
+            ),
+            docker=docker,
+            remote=remote,
+            python_version=python_version,
+            target=target,
+            gha_container=gha_container,
+            ansible_vars=session_ansible_vars,
+            session_name=tmpl(session_template.session_name_template),
+            display_name=tmpl(session_template.display_name_template),
+            description=tmpl(session_template.description_template),
+        )
+
+
+def _template_sessions(
+    session_templates: list[AnsibleTestIntegrationSessionTemplate],
+    session_template_groups: list[AnsibleTestIntegrationSessionTemplateGroup],
+    ansible_vars: dict[str, AnsibleValue] | None = None,
+) -> tuple[
+    list[AnsibleTestIntegrationSession], list[AnsibleTestIntegrationSessionGroup]
+]:
+    result: list[AnsibleTestIntegrationSession] = []
+    result_groups: list[AnsibleTestIntegrationSessionGroup] = []
+    for index, template in enumerate(session_templates):
+        for session in _template_session(
+            template, f"session template #{index + 1}", False, [ansible_vars]
+        ):
+            result.append(session)
+    for group_index, group in enumerate(session_template_groups):
+        group_sessions: list[AnsibleTestIntegrationSession] = []
+        for index, template in enumerate(group.session_templates):
+            for session in _template_session(
+                template,
+                f"session template #{index + 1} of group #{group_index + 1}",
+                True,
+                [ansible_vars, group.ansible_vars],
+            ):
+                result.append(session)
+                group_sessions.append(session)
+        result_groups.append(
+            AnsibleTestIntegrationSessionGroup(
+                session_name=group.session_name,
+                description=group.description,
+                sessions=group_sessions,
+            )
+        )
+    return result, result_groups
+
+
+def add_ansible_test_integration_sessions(
+    *,
+    session_templates: list[AnsibleTestIntegrationSessionTemplate] | None = None,
+    session_template_groups: (
+        list[AnsibleTestIntegrationSessionTemplateGroup] | None
+    ) = None,
+    ansible_vars: dict[str, AnsibleValue] | None = None,
+    default: bool = False,
+) -> list[str]:
+    """
+    Add ansible-test integration tests.
+    """
+    sessions, groups = _template_sessions(
+        session_templates or [], session_template_groups or [], ansible_vars
     )
-    nox.session(
-        name="ansible-test-integration",
-        requires=integration_sessions,
-        default=default,
-    )(ansible_test_integration)
+    session_by_name: dict[str, AnsibleTestIntegrationSession] = {}
+    for session in sessions:
+        # nox does not warn/error on duplicate session names
+        # (https://github.com/wntrblm/nox/issues/998)
+        if session.session_name in session_by_name:
+            raise ValueError(
+                f"Collision: {session.source} and {session_by_name[session.session_name].source}"
+                f" both generated the same session name {session.session_name!r}"
+            )
+        session_by_name[session.session_name] = session
+
+    for _, session in sorted(session_by_name.items()):
+        cmd = [
+            "integration",
+            "--color",
+            "-v",
+        ]
+        if session.docker:
+            cmd.extend(
+                [
+                    "--docker",
+                    session.docker,
+                ]
+            )
+        if session.remote:
+            cmd.extend(
+                [
+                    "--remote",
+                    session.remote,
+                ]
+            )
+        if session.python_version:
+            cmd.extend(
+                [
+                    "--python",
+                    str(session.python_version),
+                ]
+            )
+        if session.target:
+            cmd.append(session.target)
+        extra_data = {
+            "display-name": session.display_name,
+        }
+        if session.gha_container is not None:
+            extra_data["gha-container"] = session.gha_container
+        add_ansible_test_session(
+            name=session.session_name,
+            description=session.description,
+            ansible_test_params=cmd,
+            extra_deps_files=["tests/integration/requirements.yml"],
+            ansible_core_version=session.ansible_core,
+            ansible_core_repo_name=session.ansible_core_repo_name,
+            ansible_core_branch_name=session.ansible_core_repo_name,
+            callback_before=session.get_ansible_vars_callback(),
+            default=default and not session.part_of_group,
+            register_name="integration",
+            register_extra_data=extra_data,
+        )
+
+    def add_group_session(
+        session_name: str, description: str, session_names: list[str]
+    ) -> None:
+        def ansible_test_group(
+            session: nox.Session,  # pylint: disable=unused-argument
+        ) -> None:
+            pass
+
+        ansible_test_group.__doc__ = description
+        nox.session(
+            name=session_name,
+            requires=sorted(session_names),
+            default=default,
+        )(ansible_test_group)
+
+    for group in groups:
+        if group.session_name is None:
+            continue
+        add_group_session(
+            group.session_name,
+            group.description
+            or "Meta session for running some ansible-test integration test sessions.",
+            [session.session_name for session in group.sessions],
+        )
+
+    return sorted(session_by_name)
 
 
 __all__ = [
+    "AnsibleTestIntegrationSessionTemplate",
+    "AnsibleTestIntegrationSessionTemplateGroup",
     "add_ansible_test_session",
     "add_ansible_test_sanity_test_session",
     "add_all_ansible_test_sanity_test_sessions",
     "add_ansible_test_unit_test_session",
     "add_all_ansible_test_unit_test_sessions",
     "add_ansible_test_integration_sessions_default_container",
+    "add_ansible_test_integration_sessions",
 ]
