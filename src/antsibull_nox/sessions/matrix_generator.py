@@ -10,13 +10,62 @@ Generate job matrix for use in CI systems.
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
+import typing as t
 
 import nox
 
-from .utils import get_registered_sessions
+from ..ansible import get_actual_ansible_core_version, parse_ansible_core_version
+from ..utils import Version
+from .utils import get_registered_sessions, parse_args
+
+
+def _create_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="nox -e matrix-generator --",
+        description="Generate matrix for CI systems.",
+        exit_on_error=False,
+    )
+
+    parser.add_argument("--min-ansible-core", help="Minimum ansible-core version")
+    parser.add_argument("--max-ansible-core", help="Maximum ansible-core version")
+
+    return parser
+
+
+def _parse_version(
+    version: str | None, *, option_name: str, session: nox.Session
+) -> Version | None:
+    if version is None:
+        return None
+    try:
+        return get_actual_ansible_core_version(parse_ansible_core_version(version))
+    except ValueError as exc:
+        return session.error(f"{option_name}: {exc}")
+
+
+def _filter(
+    sessions: list[dict[str, t.Any]],
+    *,
+    min_ansible_core: Version | None,
+    max_ansible_core: Version | None,
+) -> list[dict[str, t.Any]]:
+    result = []
+    for session in sessions:
+        ansible_core = session.get("ansible-core")
+        if isinstance(ansible_core, str):
+            version = get_actual_ansible_core_version(
+                parse_ansible_core_version(ansible_core)
+            )
+            if min_ansible_core is not None and version < min_ansible_core:
+                continue
+            if max_ansible_core is not None and version > max_ansible_core:
+                continue
+        result.append(session)
+    return result
 
 
 def add_matrix_generator() -> None:
@@ -25,9 +74,27 @@ def add_matrix_generator() -> None:
     """
 
     def matrix_generator(
-        session: nox.Session,  # pylint: disable=unused-argument
+        session: nox.Session,
     ) -> None:
+        parser = _create_parser()
+        args = parse_args(parser=parser, session=session)
+        if args is None:
+            return
+
+        min_ansible_core = _parse_version(
+            args.min_ansible_core, option_name="--min-ansible-core", session=session
+        )
+        max_ansible_core = _parse_version(
+            args.max_ansible_core, option_name="--max-ansible-core", session=session
+        )
+
         registered_sessions = get_registered_sessions()
+        for key, sessions in list(registered_sessions.items()):
+            registered_sessions[key] = _filter(
+                sessions,
+                min_ansible_core=min_ansible_core,
+                max_ansible_core=max_ansible_core,
+            )
 
         json_output = os.environ.get("ANTSIBULL_NOX_MATRIX_JSON")
         if json_output:

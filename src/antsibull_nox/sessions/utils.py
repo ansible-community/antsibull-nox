@@ -10,6 +10,7 @@ Utils for creating nox sessions.
 
 from __future__ import annotations
 
+import argparse
 import dataclasses
 import json
 import logging
@@ -357,6 +358,33 @@ def compose_description(
             add(f"({value})")
 
     return "".join(parts)
+
+
+def parse_args(
+    *,
+    session: nox.Session,
+    parser: argparse.ArgumentParser,
+) -> argparse.Namespace | None:
+    """
+    Parse arguments for a session.
+
+    The ``ArgumentParser`` object should be created with ``exit_on_error=False``.
+
+    Return ``None`` if the session should exit immediately, or a ``argparse.Namespace``
+    object with the parsed arguments.
+    """
+    try:
+        return parser.parse_args(session.posargs)
+    except argparse.ArgumentError as exc:
+        # session.error() never returns, but pylint doesn't seem to know that,
+        # so we use the 'return function()' pattern...
+        return session.error(str(exc))
+    except SystemExit as exc:
+        if exc.code in (0, None):
+            return None
+        if isinstance(exc.code, str):
+            session.error(exc.code)
+        return session.error("Error")
 
 
 __all__ = [
