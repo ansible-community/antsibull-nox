@@ -74,6 +74,9 @@ def _run_subprocess(args: list[str]) -> tuple[bytes, bytes]:
     return p.stdout, p.stderr
 
 
+# NOTE: This is publicly documented API!
+# Any change to the API must not be breaking, and must be
+# updated in docs/reference.md!
 def prepare_collections(
     session: nox.Session,
     *,

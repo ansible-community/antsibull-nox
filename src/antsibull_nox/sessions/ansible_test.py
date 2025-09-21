@@ -65,6 +65,9 @@ def get_ansible_test_env() -> dict[str, str]:
     return {}
 
 
+# NOTE: This is publicly documented API!
+# Any change to the API must not be breaking, and must be
+# updated in docs/reference.md!
 def add_ansible_test_session(
     *,
     name: str,
