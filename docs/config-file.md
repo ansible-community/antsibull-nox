@@ -855,8 +855,8 @@ Sanity tests will always be run using ansible-test's `default` container.
 The function supports the following parameters:
 
 * `default: bool` (default `false`):
-  Whether the session should be made default.
-  This means that when a user just runs `nox` without specifying sessions, this session will run.
+  Whether the sessions should be made default.
+  This means that when a user just runs `nox` without specifying sessions, these sessions will run.
 
 * `include_devel: bool` (default `false`):
   Whether ansible-core's `devel` branch should also be used.
@@ -946,8 +946,8 @@ using ansible-test's `default` container.
 The function supports the following parameters:
 
 * `default: bool` (default `false`):
-  Whether the session should be made default.
-  This means that when a user just runs `nox` without specifying sessions, this session will run.
+  Whether the sessions should be made default.
+  This means that when a user just runs `nox` without specifying sessions, these sessions will run.
 
 * `include_devel: bool` (default `false`):
   Whether ansible-core's `devel` branch should also be used.
@@ -1023,8 +1023,8 @@ The tests will all be run using ansible-test's `default` container.
 It is possible to restrict the Python versions used to run the tests per ansible-core version.
 
 * `default: bool` (default `false`):
-  Whether the session should be made default.
-  This means that when a user just runs `nox` without specifying sessions, this session will run.
+  Whether the sessions should be made default.
+  This means that when a user just runs `nox` without specifying sessions, these sessions will run.
 
 * `include_devel: bool` (default `false`):
   Whether ansible-core's `devel` branch should also be used.
@@ -1159,6 +1159,333 @@ This allows to download files from other GitHub repositories while avoiding stri
       Authorization: "{{ ('Bearer ' ~ github_token) if github_token is defined and github_token else '' }}"
     url: https://raw.githubusercontent.com/getsops/sops/master/pgp/sops_functional_tests_key.asc
     dest: "{{ _tempfile.path }}"
+```
+
+### Add integration test sessions by explicitly listing all sessions
+
+The `ansible-test integration --docker` and `ansible-test integration --remote` sessions are added
+with the `[sessions.ansible_test_integration]` section in `antsibull-nox.toml`.
+You explicitly have to list all sessions in `antsibull-nox.toml`.
+
+* `default: bool` (default `false`):
+  Whether the sessions should be made default.
+  This means that when a user just runs `nox` without specifying sessions, these sessions will run.
+
+* `ansible_vars: dict[str, AnsibleValue]` (default `{}`):
+  If given, will create an integration test config file which for every `key=value` pair.
+  If the value is a string, number, or boolean, the value will be taken literally.
+  If the value is a dictionary, it must be one of the following `type` entries:
+  Note that this can also be specified in individual sessions.
+  Variables defined there with the same name override the values defined here.
+
+  * `value`: specify a literal value.
+    The dictionary can have the following fields:
+
+    * `value: Any` (**required**): The value to store in the variable.
+
+  * `env_var`: specify the name of an environment variable, whose value will be taken.
+    The dictionary can have the following fields:
+
+    * `name: str` (**required**): The name of the environment variable to use.
+
+    * `fallback: Any` (default `""`): The value to store in the variable if the environment variable is not set.
+      Will be ignored if `unset_if_not_set=true`.
+
+    * `unset_if_not_set: bool` (default: `false`): Whether to not define the Ansible variable in case the environment variable is not set.
+
+* `session_name_template: str` (default: `"ansible-test-integration-{target_dash}{ansible_core}{dash_docker_short}{dash_remote}{dash_python_version}"`)
+  The template to use for the session name.
+  Formatting will be done with Python's `str.format()`.
+  See below for the available variables.
+  This can also be overriden for specific sessions.
+
+* `display_name_template: str` (default: `"Ⓐ{ansible_core}{plus_py_python_version}{plus_docker_short}{plus_remote}"`)
+  The template to use for the session's display name that is used in CI systems.
+  Formatting will be done with Python's `str.format()`.
+  See below for the available variables.
+  This can also be overriden for specific sessions.
+
+* `description_template: str` (default: `"Run integration tests with ansible-core {ansible_core}, {docker_short}{remote}"`)
+  The template to use for the session's description.
+  Formatting will be done with Python's `str.format()`.
+  See below for the available variables.
+  This can also be overriden for specific sessions.
+
+* `sessions: list[SessionAnsibleTestIntegrationSession]` (default: `[]`)
+  Defines session templates for ansible-test integration test sessions.
+
+    Every session template is an object and will result in one or more sessions.
+    It should be defined in a new section `[[sessions.ansible_test_integration.sessions]]`.
+    (See [Array of Tables](https://toml.io/en/v1.0.0#array-of-tables) in the TOML Specification.)
+
+    Session templates have two kind of properties.
+    The first kind specifies one or more sessions by providing one or multiple values for a parameter.
+    If multiple parameters are provided, one session is created for every possible combination of these parameters.
+    These properties are the following:
+
+    * `ansible_core: AnsibleCoreVersion | list[AnsibleCoreVersion]` (**required**)
+      The ansible-core version to use.
+
+    * `docker: str | list[str] | None` (default: `None`)
+      The Docker image to run the tests in.
+      Exactly one of `docker` and `remote` must be provided.
+
+    * `remote: str | list[str] | None` (default: `None`)
+      The remote VM to run the tests in.
+      Note that ansible-test's `--remote` feature uses Ansible's CI infrastructure and requires an account.
+      Exactly one of `docker` and `remote` must be provided.
+
+    * `python_version: Version | list[Version] | None` (default: `None`)
+      The Python version to run the tests with.
+      This should only be provided when using the `default` Docker image,
+      or when using custom Docker images that ansible-test does not know,
+      or when a Docker image or remote VM offers more than one possible Python version to use.
+
+    * `target: str | list[str] | None` (default: `None`)
+      The target to run.
+      This can be a string like `shippable/posix/group3/` (as used by the ansible/ansible CI),
+      `azp/posix/1/` (as used in the community.general CI),
+      or `gha/main/` (as used in the community.sops CI).
+      Note that a trailing slash indicates a *group* of targets.
+      Targets are associated to tests in the `aliases` file.
+
+    * `gha_container: str | list[str] | None` (default: `None`)
+      The `gha-container` variable.
+      This is not used directly,
+      but passed on through the `matrix-generator` session
+      to the shared GitHub Actions workflow, for example.
+      When the shared workflow is used,
+      you can for example use `ubuntu-24.04-arm`
+      to run tests in an ARM VM instead of the default `ubuntu-latest` x86 VM.
+
+    The other properties allow to define common things for all sessions generated from this template.
+
+    * `devel_like_branch: DevelLikeBranch | None` (default: `None`)
+      This can only be used if `ansible_core == "devel"`.
+      In that case, it allows to specify another branch from potentially another repository
+      than `github.com/ansible/ansible` to use.
+      This can be used for testing ansible-core features or bugfixes
+      that are still under development.
+      Please note that branches are usually deleted upon merging,
+      so you have to remove them again from your `noxfile.py` to avoid CI breaking.
+
+      ```toml
+      # To add the Data Tagging PR (https://github.com/ansible/ansible/pull/84621)
+      # to CI, we can either use the special GitHub reference refs/pull/84621/head
+      # to refer to the PR's HEAD:
+      devel_like_branch = { branch = "refs/pull/84621/head" }
+
+      # We can also just specify a branch as a string:
+      devel_like_branch = "refs/pull/84621/head"
+
+      # Alternatively, we can specify a GitHub repository and a branch in that
+      # repository. The Data Tagging PR is based on a branch in nitzmahone's fork
+      # of ansible/ansible:
+      devel_like_branch = { repository = "nitzmahone/ansible", branch = "data_tagging_219" }
+
+      # We can also provide a two-element list with repository name and branch:
+      devel_like_branch = ["nitzmahone/ansible", "data_tagging_219"]
+      ```
+
+    * `ansible_vars: dict[str, AnsibleValueField]` (default: `{}
+      If given, will create an integration test config file which for every `key=value` pair.
+      A key here will override a key of the same name in `[sessions.ansible_test_integration.ansible_vars]`.
+      See the documentation of `[sessions.ansible_test_integration.ansible_vars]` for how to use this.
+
+    * `session_name_template: str | None` (default: `None`)
+      If given, will overwrite `[sessions.ansible_test_integration.session_name_template]`.
+
+    * `display_name_template: str | None` (default: `None`)
+      If given, will overwrite `[sessions.ansible_test_integration.display_name_template]`.
+
+    * `description_template: str | None` (default: `None`)
+      If given, will overwrite `[sessions.ansible_test_integration.description_template]`.
+
+* `groups: list[SessionAnsibleTestIntegrationGroup]` (default: `[]`)
+  Defines groups of session templates for ansible-test integration test sessions.
+
+  Groups can be used to group similar templates together by sharing some definitions.
+  They also allow to create a dedicated meta session that will run all sessions created from this group.
+
+    Every group is an object and will result in one or more sessions.
+    It should be defined in a new section `[[sessions.ansible_test_integration.groups]]`.
+    (See [Array of Tables](https://toml.io/en/v1.0.0#array-of-tables) in the TOML Specification.)
+    Groups have the following properties:
+
+    * `session_name: str | None` (default: `None`)
+      If specified, a meta session will be created that allows to run all sessions defined within this group.
+
+    * `description: str | None` (default: `None`)
+      If `session_name` is specified, will provide the description for the meta session.
+      If `description` is not specified, a generic description will be used.
+
+    * `docker: str | list[str] | None` (default: `None`)
+      Allows to provide one or more Docker images.
+      This can be overridden in each session template.
+    * `remote: str | list[str] | None` (default: `None`)
+      Allows to provide one or more remote VM name.
+      This can be overridden in each session template.
+    * `python_version: Version | list[Version] | None` (default: `None`)
+      Allows to provide one or more Python versions.
+      This can be overridden in each session template.
+    * `target: str | list[str] | None` (default: `None`)
+      Allows to provide one or more target names.
+      This can be overridden in each session template.
+    * `gha_container: str | list[str] | None` (default: `None`)
+      Allows to provide one or more GHA container names.
+      This can be overridden in each session template.
+
+    * `ansible_vars: dict[str, AnsibleValueField]` (default: `{}`)
+      Allows to provide Ansible variables.
+      This will override `[sessions.ansible_test_integration.ansible_vars]`,
+      and will be overridden by `[sessions.ansible_test_integration.groups.sessions.ansible_vars]`.
+    * `sessions: list[SessionAnsibleTestIntegrationSession]` (default: `[]`)
+      A list of session templates.
+      Uses the exact same format as `[sessions.ansible_test_integration.sessions]`.
+
+    * `session_name_template: str | None` (default: `None`)
+      Allows to provide a session name template that overrides the global one `[sessions.ansible_test_integration.session_name_template]`.
+      This can be overridden in each session template.
+    * `display_name_template: str | None` (default: `None`)
+      Allows to provide a session's display name template that overrides the global one `[sessions.ansible_test_integration.display_name_template]`.
+      This can be overridden in each session template.
+    * `description_template: str | None` (default: `None`)
+      Allows to provide a session's description template that overrides the global one `[sessions.ansible_test_integration.description_template]`.
+      This can be overridden in each session template.
+
+#### Templating
+
+The session name, display name, and description of a session are templated with Python's `str.format()`.
+A list of variables that can be used is generated from a base list of variables:
+
+* `ansible_core`: The ansible-core version.
+* `docker`: The Docker image name, or empty if not provided.
+* `docker_short`: A shortened Docker image name, or empty if not provided.
+  The prefixes `"quay.io/ansible-community/test-image:"` and `"localhost/test-image:"` will be removed from Docker images.
+* `remote`: The remote VM name, or empty if not provided.
+* `python_version`: The Python version, or empty if not provided.
+* `py_python_version`: The Python version prefixed by `"py"`, or empty if not provided.
+* `target`: The target, or empty if not provided.
+* `target_dashized`: The target with `/` replaced by `-`, and trailing `-` removed.
+  Empty if no target is provided.
+* `gha_container`: The value of `gha_container`, or empty if not provided.
+* `gha_arm`: `"ARM"` if `gha_container` references to an ARM image.
+* `gha_arm_lower`: `arm` if `gha_container` references to an ARM image.
+
+Additionally, every variable defined for the session that is explicitly provided is made available under the variable's name.
+
+For a variable name `var` listed above, the following variables are also defined:
+
+* `var_dash`: The content of `var` followed by a dash (`-`) if `var` is not empty, or an empty string otherwise.
+* `dash_var`: The content of `var` preceeded by a dash (`-`) if `var` is not empty, or an empty string otherwise.
+* `var_plus`: The content of `var` followed by a plus sign (`+`) if `var` is not empty, or an empty string otherwise.
+* `plus_var`: The content of `var` preceeded by a plus sign (`+`) if `var` is not empty, or an empty string otherwise.
+* `var_comma`: The content of `var` followed by a comma and space (`, `) if `var` is not empty, or an empty string otherwise.
+* `comma_var`: The content of `var` preceeded by a comma and space (`, `) if `var` is not empty, or an empty string otherwise.
+
+#### Example code
+
+This example is a subset of the sessions defined for `community.sops`.
+
+```toml
+[sessions.ansible_test_integration]
+
+[sessions.ansible_test_integration.ansible_vars]
+github_token = { type = "env", name = "GITHUB_TOKEN", unset_if_not_set = true }
+
+[[sessions.ansible_test_integration.groups]]
+session_name = "ansible-test-integration-main"
+description = "Meta-session for all ansible-test-integration-main-* sessions."
+session_name_template = "ansible-test-integration-main-{ansible_core}{dash_docker_short}{dash_override_sops_version}{dash_gha_arm_lower}"
+display_name_template = "main+Ⓐ{ansible_core}+SOPS-{override_sops_version}{plus_docker_short}{plus_py_python_version}{plus_gha_arm}"
+description_template = "Run main integration tests with ansible-core {ansible_core}, {docker_short}, SOPS {override_sops_version}{comma_gha_arm}"
+target = "gha/main/"
+gha_container = "ubuntu-latest"
+
+[[sessions.ansible_test_integration.groups.sessions]]
+ansible_core = "devel"
+docker = ["ubuntu2204", "ubuntu2404", "fedora42"]
+ansible_vars = { override_sops_version = "3.5.0" }
+
+[[sessions.ansible_test_integration.groups.sessions]]
+ansible_core = "2.15"
+docker = "ubuntu2004"
+ansible_vars = { override_sops_version = "3.10.0" }
+
+[[sessions.ansible_test_integration.groups.sessions]]
+ansible_core = "2.15"
+docker = "quay.io/ansible-community/test-image:debian-bullseye"
+python_version = "3.9"
+ansible_vars = { override_sops_version = "latest" }
+
+[[sessions.ansible_test_integration.groups.sessions]]
+ansible_core = "devel"
+docker = "ubuntu2404"
+gha_container = "ubuntu-24.04-arm"
+ansible_vars = { override_sops_version = "latest" }
+
+[[sessions.ansible_test_integration.groups]]
+session_name = "ansible-test-integration-install-1"
+description = "Meta-session for all ansible-test-integration-install-1-* sessions."
+session_name_template = "ansible-test-integration-install-1-{ansible_core}{dash_docker_short}{dash_gha_arm_lower}"
+display_name_template = "install-1+Ⓐ{ansible_core}{plus_docker_short}{plus_py_python_version}{plus_gha_arm}"
+description_template = "Run install role integration tests (specific SOPS version) with ansible-core {ansible_core}, {docker_short}{comma_gha_arm}"
+target = "gha/install/1/"
+gha_container = "ubuntu-latest"
+
+[[sessions.ansible_test_integration.groups.sessions]]
+ansible_core = "2.17"
+docker = ["ubuntu2204", "fedora39"]
+
+[[sessions.ansible_test_integration.groups.sessions]]
+ansible_core = "devel"
+docker = "ubuntu2404"
+gha_container = "ubuntu-24.04-arm"
+ansible_vars = { github_latest_detection = "auto" }
+
+[[sessions.ansible_test_integration.groups]]
+session_name = "ansible-test-integration-install-2"
+description = "Meta-session for all ansible-test-integration-install-2-* sessions."
+session_name_template = "ansible-test-integration-install-2-{ansible_core}{dash_docker_short}{dash_gha_arm_lower}"
+display_name_template = "install-2+Ⓐ{ansible_core}{plus_docker_short}{plus_py_python_version}{plus_gha_arm}"
+description_template = "Run install role integration tests (localhost vs. remote host) with ansible-core {ansible_core}, {docker_short}{comma_gha_arm}"
+target = "gha/install/2/"
+gha_container = "ubuntu-latest"
+
+[[sessions.ansible_test_integration.groups.sessions]]
+ansible_core = "devel"
+docker = "ubuntu2204"
+
+[[sessions.ansible_test_integration.groups.sessions]]
+ansible_core = "devel"
+docker = "ubuntu2204"
+gha_container = "ubuntu-24.04-arm"
+ansible_vars = { github_latest_detection = "auto" }
+
+[[sessions.ansible_test_integration.groups]]
+session_name = "ansible-test-integration-install-3"
+description = "Meta-session for all ansible-test-integration-install-3-* sessions."
+session_name_template = "ansible-test-integration-install-3-{ansible_core}{dash_docker_short}{dash_gha_arm_lower}"
+display_name_template = "install-3+Ⓐ{ansible_core}{plus_docker_short}{plus_py_python_version}{plus_gha_arm}"
+description_template = "Run install role integration tests (latest SOPS version) with ansible-core {ansible_core}, {docker_short}{comma_gha_arm}"
+target = "gha/install/3/"
+gha_container = "ubuntu-latest"
+
+[[sessions.ansible_test_integration.groups.sessions]]
+ansible_core = "devel"
+docker = "quay.io/ansible-community/test-image:archlinux"
+python_version = "3.13"
+ansible_vars = { github_latest_detection = "auto" }
+
+[[sessions.ansible_test_integration.groups.sessions]]
+ansible_core = "devel"
+docker = "ubuntu2204"
+ansible_vars = { github_latest_detection = "api" }
+
+[[sessions.ansible_test_integration.groups.sessions]]
+ansible_core = "devel"
+docker = "ubuntu2404"
+ansible_vars = { github_latest_detection = "latest-release" }
 ```
 
 ### Run ansible-lint

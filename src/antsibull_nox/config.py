@@ -610,6 +610,64 @@ class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
         return self
 
 
+class SessionAnsibleTestIntegrationSession(_BaseModel):
+    """
+    Explicit ansible-test integration test session(s).
+    """
+
+    # The following fields allow one or more value; if multiple values are
+    # specified, one session is created for every combination of values
+    ansible_core: t.Union[PAnsibleCoreVersion, list[PAnsibleCoreVersion]]
+    docker: t.Union[str, list[str], None] = None
+    remote: t.Union[str, list[str], None] = None
+    python_version: t.Union[PVersion, list[PVersion], None] = None
+    target: t.Union[str, list[str], None] = None
+    gha_container: t.Union[str, list[str], None] = None
+
+    # Can only be used if ansible_core == "devel"
+    devel_like_branch: t.Union[DevelLikeBranch, None] = None
+
+    ansible_vars: dict[str, AnsibleValueField] = {}
+    session_name_template: t.Union[str, None] = None
+    display_name_template: t.Union[str, None] = None
+    description_template: t.Union[str, None] = None
+
+    @p.model_validator(mode="after")
+    def _validate_after(self) -> t.Self:
+        has_docker = self.docker is not None
+        has_remote = self.remote is not None
+        if has_docker == has_remote:
+            raise ValueError("Exactly one of remote and docker must be specified")
+
+        if self.devel_like_branch is not None and self.ansible_core != ["devel"]:
+            raise ValueError(
+                "devel_like_branch can only be used if ansible_core is set to 'devel'"
+            )
+        return self
+
+
+class SessionAnsibleTestIntegrationGroup(_BaseModel):
+    """
+    Group of explicit ansible-test integration tests.
+    """
+
+    session_name: t.Union[str, None] = None
+    description: t.Union[str, None] = None
+
+    docker: t.Union[str, list[str], None] = None
+    remote: t.Union[str, list[str], None] = None
+    python_version: t.Union[PVersion, list[PVersion], None] = None
+    target: t.Union[str, list[str], None] = None
+    gha_container: t.Union[str, list[str], None] = None
+
+    ansible_vars: dict[str, AnsibleValueField] = {}
+    sessions: list[SessionAnsibleTestIntegrationSession] = []
+
+    session_name_template: t.Union[str, None] = None
+    display_name_template: t.Union[str, None] = None
+    description_template: t.Union[str, None] = None
+
+
 class SessionAnsibleTestIntegration(_BaseModel):
     """
     Explicit ansible-test integration tests.
@@ -618,6 +676,19 @@ class SessionAnsibleTestIntegration(_BaseModel):
     default: bool = False
 
     ansible_vars: dict[str, AnsibleValueField] = {}
+    sessions: list[SessionAnsibleTestIntegrationSession] = []
+    groups: list[SessionAnsibleTestIntegrationGroup] = []
+
+    session_name_template: str = (
+        "ansible-test-integration-{target_dash}{ansible_core}"
+        "{dash_docker_short}{dash_remote}{dash_python_version}"
+    )
+    display_name_template: str = (
+        "Ⓐ{ansible_core}{plus_py_python_version}{plus_docker_short}{plus_remote}"
+    )
+    description_template: str = (
+        "Run integration tests with ansible-core {ansible_core}, {docker_short}{remote}"
+    )
 
 
 class SessionAnsibleLint(_BaseModel):
@@ -646,6 +717,7 @@ class Sessions(_BaseModel):
     ansible_test_integration_w_default_container: t.Optional[
         SessionAnsibleTestIntegrationWDefaultContainer
     ] = None
+    ansible_test_integration: t.Optional[SessionAnsibleTestIntegration] = None
     ansible_lint: t.Optional[SessionAnsibleLint] = None
     ee_check: t.Optional[SessionExecutionEnvironmentCheck] = None
 

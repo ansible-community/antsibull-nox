@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import typing as t
 
+import nox
+
 from .ansible import AnsibleCoreVersion
 from .collection import CollectionSource, setup_collection_sources
 from .config import ActionGroup as ConfigActionGroup
@@ -24,8 +26,11 @@ from .config import (
 )
 from .sessions.ansible_lint import add_ansible_lint
 from .sessions.ansible_test import (
+    AnsibleTestIntegrationSessionTemplate,
+    AnsibleTestIntegrationSessionTemplateGroup,
     add_all_ansible_test_sanity_test_sessions,
     add_all_ansible_test_unit_test_sessions,
+    add_ansible_test_integration_sessions,
     add_ansible_test_integration_sessions_default_container,
 )
 from .sessions.build_import_check import add_build_import_check
@@ -44,6 +49,8 @@ from .sessions.lint import add_lint_sessions
 from .sessions.matrix_generator import add_matrix_generator
 from .sessions.utils import PackageType as RuntimePackageType
 from .utils import Version
+
+_T = t.TypeVar("_T", bound=object)
 
 
 def _interpret_config(config: Config) -> None:
@@ -104,6 +111,14 @@ def _convert_avoid_character_groups(
     ]
 
 
+def _convert_devel_like_branch(
+    devel_like_branch: DevelLikeBranch | None,
+) -> tuple[str | None, str] | None:
+    if devel_like_branch is None:
+        return None
+    return devel_like_branch.repository, devel_like_branch.branch
+
+
 def _convert_devel_like_branches(
     devel_like_branches: list[DevelLikeBranch] | None,
 ) -> list[tuple[str | None, str]] | None:
@@ -143,6 +158,207 @@ def _convert_package_name(
     if package_name is None:
         return None
     return package_name.to_utils_instance()
+
+
+def _ensure_list(value: _T | list[_T]) -> list[_T]:
+    if isinstance(value, list):
+        return value
+    return [value]
+
+
+def _ensure_list_w_none(value: _T | list[_T] | None) -> list[_T | None]:
+    if isinstance(value, list):
+        return value  # type: ignore
+    return [value]
+
+
+def _coalesce(*values: _T) -> _T | None:
+    for value in values:
+        if value is not None:
+            return value
+    return None
+
+
+def _add_ansible_test_sessions(sessions: Sessions) -> None:
+    if sessions.ansible_test_sanity:
+        add_all_ansible_test_sanity_test_sessions(
+            default=sessions.ansible_test_sanity.default,
+            include_devel=sessions.ansible_test_sanity.include_devel,
+            include_milestone=sessions.ansible_test_sanity.include_milestone,
+            add_devel_like_branches=_convert_devel_like_branches(
+                sessions.ansible_test_sanity.add_devel_like_branches
+            ),
+            min_version=sessions.ansible_test_sanity.min_version,
+            max_version=sessions.ansible_test_sanity.max_version,
+            except_versions=_convert_except_versions(
+                sessions.ansible_test_sanity.except_versions
+            ),
+            skip_tests=sessions.ansible_test_sanity.skip_tests,
+            allow_disabled=sessions.ansible_test_sanity.allow_disabled,
+            enable_optional_errors=sessions.ansible_test_sanity.enable_optional_errors,
+        )
+    if sessions.ansible_test_units:
+        add_all_ansible_test_unit_test_sessions(
+            default=sessions.ansible_test_units.default,
+            include_devel=sessions.ansible_test_units.include_devel,
+            include_milestone=sessions.ansible_test_units.include_milestone,
+            add_devel_like_branches=_convert_devel_like_branches(
+                sessions.ansible_test_units.add_devel_like_branches
+            ),
+            min_version=sessions.ansible_test_units.min_version,
+            max_version=sessions.ansible_test_units.max_version,
+            except_versions=_convert_except_versions(
+                sessions.ansible_test_units.except_versions
+            ),
+        )
+
+    # Handle integration tests
+    integration_defaults: list[bool] = []
+    if sessions.ansible_test_integration_w_default_container:
+        integration_defaults.append(
+            sessions.ansible_test_integration_w_default_container.default
+        )
+    if sessions.ansible_test_integration:
+        integration_defaults.append(sessions.ansible_test_integration.default)
+
+    default_per_int_session = len(set(integration_defaults)) == 2
+
+    integration_sessions: list[str] = []
+    if sessions.ansible_test_integration_w_default_container:
+        cfg = sessions.ansible_test_integration_w_default_container
+        integration_sessions.extend(
+            add_ansible_test_integration_sessions_default_container(
+                default=default_per_int_session and cfg.default,
+                include_devel=cfg.include_devel,
+                include_milestone=(cfg.include_milestone),
+                add_devel_like_branches=_convert_devel_like_branches(
+                    cfg.add_devel_like_branches
+                ),
+                min_version=cfg.min_version,
+                max_version=cfg.max_version,
+                except_versions=_convert_except_versions(cfg.except_versions),
+                core_python_versions=_convert_core_python_versions(
+                    cfg.core_python_versions
+                ),
+                controller_python_versions_only=cfg.controller_python_versions_only,
+                ansible_vars_from_env_vars=cfg.ansible_vars_from_env_vars,
+                ansible_vars={
+                    k: v.to_utils_instance() for k, v in cfg.ansible_vars.items()
+                },
+            )
+        )
+    if sessions.ansible_test_integration:
+        integration_sessions.extend(
+            add_ansible_test_integration_sessions(
+                default=default_per_int_session
+                and sessions.ansible_test_integration.default,
+                ansible_vars={
+                    k: v.to_utils_instance()
+                    for k, v in sessions.ansible_test_integration.ansible_vars.items()
+                },
+                session_templates=[
+                    AnsibleTestIntegrationSessionTemplate(
+                        ansible_core=_ensure_list(session.ansible_core),
+                        docker=_ensure_list_w_none(session.docker),
+                        remote=_ensure_list_w_none(session.remote),
+                        python_version=_ensure_list_w_none(session.python_version),
+                        target=_ensure_list_w_none(session.target),
+                        gha_container=_ensure_list_w_none(session.gha_container),
+                        devel_like_branch=_convert_devel_like_branch(
+                            session.devel_like_branch
+                        ),
+                        ansible_vars={
+                            k: v.to_utils_instance()
+                            for k, v in session.ansible_vars.items()
+                        },
+                        session_name_template=session.session_name_template
+                        or sessions.ansible_test_integration.session_name_template,
+                        display_name_template=session.display_name_template
+                        or sessions.ansible_test_integration.display_name_template,
+                        description_template=session.description_template
+                        or sessions.ansible_test_integration.description_template,
+                    )
+                    for session in sessions.ansible_test_integration.sessions
+                ],
+                session_template_groups=[
+                    AnsibleTestIntegrationSessionTemplateGroup(
+                        session_name=group.session_name,
+                        description=group.description,
+                        ansible_vars={
+                            k: v.to_utils_instance()
+                            for k, v in group.ansible_vars.items()
+                        },
+                        session_templates=[
+                            AnsibleTestIntegrationSessionTemplate(
+                                ansible_core=_ensure_list(session.ansible_core),
+                                docker=_ensure_list_w_none(
+                                    _coalesce(session.docker, group.docker)
+                                ),
+                                remote=_ensure_list_w_none(
+                                    _coalesce(session.remote, group.remote)
+                                ),
+                                python_version=_ensure_list_w_none(
+                                    _coalesce(
+                                        session.python_version, group.python_version
+                                    )
+                                ),
+                                target=_ensure_list_w_none(
+                                    _coalesce(session.target, group.target)
+                                ),
+                                gha_container=_ensure_list_w_none(
+                                    _coalesce(
+                                        session.gha_container, group.gha_container
+                                    )
+                                ),
+                                devel_like_branch=_convert_devel_like_branch(
+                                    session.devel_like_branch
+                                ),
+                                ansible_vars={
+                                    k: v.to_utils_instance()
+                                    for k, v in session.ansible_vars.items()
+                                },
+                                session_name_template=session.session_name_template
+                                or group.session_name_template
+                                or sessions.ansible_test_integration.session_name_template,
+                                display_name_template=session.display_name_template
+                                or group.display_name_template
+                                or sessions.ansible_test_integration.display_name_template,
+                                description_template=session.description_template
+                                or group.description_template
+                                or sessions.ansible_test_integration.description_template,
+                            )
+                            for session in group.sessions
+                        ],
+                    )
+                    for group in sessions.ansible_test_integration.groups
+                ],
+            )
+        )
+
+    if integration_defaults:
+        duplicates_check: set[str] = set()
+        for name in integration_sessions:
+            # nox does not warn/error on duplicate session names
+            # (https://github.com/wntrblm/nox/issues/998)
+            if name in duplicates_check:
+                raise ValueError(
+                    f"Two integration test sessions with name {name} were added!"
+                )
+            duplicates_check.add(name)
+
+        def ansible_test_integration(
+            session: nox.Session,  # pylint: disable=unused-argument
+        ) -> None:
+            pass
+
+        ansible_test_integration.__doc__ = (
+            "Meta session for running all ansible-test-integration-* sessions."
+        )
+        nox.session(
+            name="ansible-test-integration",
+            requires=integration_sessions,
+            default=False if default_per_int_session else integration_defaults[0],
+        )(ansible_test_integration)
 
 
 def _add_sessions(sessions: Sessions) -> None:
@@ -292,58 +508,7 @@ def _add_sessions(sessions: Sessions) -> None:
                 sessions.build_import_check.galaxy_importer_always_show_logs
             ),
         )
-    if sessions.ansible_test_sanity:
-        add_all_ansible_test_sanity_test_sessions(
-            default=sessions.ansible_test_sanity.default,
-            include_devel=sessions.ansible_test_sanity.include_devel,
-            include_milestone=sessions.ansible_test_sanity.include_milestone,
-            add_devel_like_branches=_convert_devel_like_branches(
-                sessions.ansible_test_sanity.add_devel_like_branches
-            ),
-            min_version=sessions.ansible_test_sanity.min_version,
-            max_version=sessions.ansible_test_sanity.max_version,
-            except_versions=_convert_except_versions(
-                sessions.ansible_test_sanity.except_versions
-            ),
-            skip_tests=sessions.ansible_test_sanity.skip_tests,
-            allow_disabled=sessions.ansible_test_sanity.allow_disabled,
-            enable_optional_errors=sessions.ansible_test_sanity.enable_optional_errors,
-        )
-    if sessions.ansible_test_units:
-        add_all_ansible_test_unit_test_sessions(
-            default=sessions.ansible_test_units.default,
-            include_devel=sessions.ansible_test_units.include_devel,
-            include_milestone=sessions.ansible_test_units.include_milestone,
-            add_devel_like_branches=_convert_devel_like_branches(
-                sessions.ansible_test_units.add_devel_like_branches
-            ),
-            min_version=sessions.ansible_test_units.min_version,
-            max_version=sessions.ansible_test_units.max_version,
-            except_versions=_convert_except_versions(
-                sessions.ansible_test_units.except_versions
-            ),
-        )
-    if sessions.ansible_test_integration_w_default_container:
-        cfg = sessions.ansible_test_integration_w_default_container
-        add_ansible_test_integration_sessions_default_container(
-            default=cfg.default,
-            include_devel=cfg.include_devel,
-            include_milestone=(cfg.include_milestone),
-            add_devel_like_branches=_convert_devel_like_branches(
-                cfg.add_devel_like_branches
-            ),
-            min_version=cfg.min_version,
-            max_version=cfg.max_version,
-            except_versions=_convert_except_versions(cfg.except_versions),
-            core_python_versions=_convert_core_python_versions(
-                cfg.core_python_versions
-            ),
-            controller_python_versions_only=cfg.controller_python_versions_only,
-            ansible_vars_from_env_vars=cfg.ansible_vars_from_env_vars,
-            ansible_vars={
-                k: v.to_utils_instance() for k, v in cfg.ansible_vars.items()
-            },
-        )
+    _add_ansible_test_sessions(sessions)
     if sessions.ansible_lint:
         add_ansible_lint(
             make_ansible_lint_default=sessions.ansible_lint.default,
