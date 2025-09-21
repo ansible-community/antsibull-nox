@@ -145,7 +145,7 @@ def get_ansible_core_info(
     if core_version == "devel":
         version = _CURRENT_DEVEL_VERSION
     elif core_version == "milestone":
-        version = _CURRENT_MILESTONE_VERSION
+        return _SUPPORTED_CORE_VERSIONS["milestone"]
     else:
         version = core_version
     if version in _SUPPORTED_CORE_VERSIONS:
