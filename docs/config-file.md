@@ -1101,6 +1101,27 @@ It is possible to restrict the Python versions used to run the tests per ansible
   If given, will create an integration test config file which for every `key=value` pair,
   contains an Ansible variable `key` with the value of the environment variable `value`.
   If the environment variable is not defined, the Ansible variable will not be defined either.
+  If the same variable is defined in `ansible_vars`, the value defined in `ansible_vars` will be used.
+
+* `ansible_vars: dict[str, AnsibleValue]` (default `{}`):
+  If given, will create an integration test config file which for every `key=value` pair.
+  If the value is a string, number, or boolean, the value will be taken literally.
+  If the value is a dictionary, it must be one of the following `type` entries:
+
+  * `value`: specify a literal value.
+    The dictionary can have the following fields:
+
+    * `value: Any` (**required**): The value to store in the variable.
+
+  * `env_var`: specify the name of an environment variable, whose value will be taken.
+    The dictionary can have the following fields:
+
+    * `name: str` (**required**): The name of the environment variable to use.
+
+    * `fallback: Any` (default `""`): The value to store in the variable if the environment variable is not set.
+      Will be ignored if `unset_if_not_set=true`.
+
+    * `unset_if_not_set: bool` (default: `false`): Whether to not define the Ansible variable in case the environment variable is not set.
 
 #### Example code
 

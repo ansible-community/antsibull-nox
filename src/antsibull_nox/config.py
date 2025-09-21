@@ -21,6 +21,8 @@ from ._pydantic import forbid_extras, get_formatted_error_messages
 from .ansible import AnsibleCoreVersion
 
 # from .sessions.utils import PackageConstraints as _PackageConstraints
+from .sessions.utils import AnsibleValueExplicit as _AnsibleValueExplicit
+from .sessions.utils import AnsibleValueFromEnv as _AnsibleValueFromEnv
 from .sessions.utils import PackageEditable as _PackageEditable
 from .sessions.utils import PackageName as _PackageName
 from .sessions.utils import PackageRequirements as _PackageRequirements
@@ -154,7 +156,7 @@ def package_name_validator(value: t.Any) -> t.Any:
         if "type" not in value or value["type"] not in _ValidPackageTypeNames:
             raise ValueError(
                 "Must provide a valid 'type' when specifying a package."
-                + f" Valid types are: {_ValidPackageTypeNames}"
+                + f" Valid types are: {', '.join(_ValidPackageTypeNames)}"
             )
     return value
 
@@ -506,6 +508,76 @@ class SessionAnsibleTestUnits(_BaseModel):
     except_versions: list[PAnsibleCoreVersion] = []
 
 
+class AnsibleValueExplicit(p.BaseModel):
+    """
+    An explicit value.
+    """
+
+    type: t.Literal["value"] = "value"
+    value: t.Any
+
+    def to_utils_instance(self) -> _AnsibleValueExplicit:
+        """
+        Convert config object to runtime Ansible value object.
+        """
+        return _AnsibleValueExplicit(value=self.value)
+
+
+class AnsibleValueFromEnv(p.BaseModel):
+    """
+    A value taken from an environment variable
+    """
+
+    type: t.Literal["env"] = "env"
+    name: str
+    fallback: t.Any = None
+    unset_if_not_set: bool = False
+
+    def to_utils_instance(self) -> _AnsibleValueFromEnv:
+        """
+        Convert config object to runtime Ansible value object.
+        """
+        return _AnsibleValueFromEnv(
+            name=self.name,
+            fallback=self.fallback,
+            unset_if_not_set=self.unset_if_not_set,
+        )
+
+
+AnsibleValue = t.Union[
+    AnsibleValueExplicit,
+    AnsibleValueFromEnv,
+]
+
+
+_ValidAnsibleValueTypeNames = tuple(
+    p.model_fields["type"].default for p in t.get_args(AnsibleValue)
+)
+
+
+def ansible_value_validator(value: t.Any) -> t.Any:
+    """
+    Convert non-dicts into AnsibleValueExplicit instances.
+    """
+    if isinstance(value, (str, int, float, bool)):
+        return AnsibleValueExplicit(value=value)
+    if isinstance(value, dict):
+        # Special-casing for "type" to provide a clean error message
+        if "type" not in value or value["type"] not in _ValidAnsibleValueTypeNames:
+            raise ValueError(
+                "Must provide a valid 'type' when specifying a value."
+                + f" Valid types are: {', '.join(_ValidAnsibleValueTypeNames)}"
+            )
+    return value
+
+
+AnsibleValueField = t.Annotated[
+    AnsibleValue,
+    p.Field(discriminator="type"),
+    p.BeforeValidator(ansible_value_validator),
+]
+
+
 class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
     """
     Ansible-test integration tests with default container session config.
@@ -522,6 +594,7 @@ class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
     core_python_versions: dict[t.Union[PAnsibleCoreVersion, str], list[PVersion]] = {}
     controller_python_versions_only: bool = False
     ansible_vars_from_env_vars: dict[str, str] = {}
+    ansible_vars: dict[str, AnsibleValueField] = {}
 
     @p.model_validator(mode="after")
     def _validate_core_keys(self) -> t.Self:
@@ -535,6 +608,16 @@ class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
                 f"Unknown ansible-core version or branch name {key!r} in core_python_versions"
             )
         return self
+
+
+class SessionAnsibleTestIntegration(_BaseModel):
+    """
+    Explicit ansible-test integration tests.
+    """
+
+    default: bool = False
+
+    ansible_vars: dict[str, AnsibleValueField] = {}
 
 
 class SessionAnsibleLint(_BaseModel):

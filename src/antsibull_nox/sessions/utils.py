@@ -387,7 +387,56 @@ def parse_args(
         return session.error("Error")
 
 
+@dataclasses.dataclass
+class AnsibleValueExplicit:
+    """
+    An explicit value.
+    """
+
+    value: t.Any
+
+    def get_value(self) -> tuple[t.Any, bool]:
+        """
+        Get the current value, together with a boolean whether this value should be set.
+        """
+        return self.value, True
+
+
+@dataclasses.dataclass
+class AnsibleValueFromEnv:
+    """
+    A value taken from an environment variable
+    """
+
+    name: str
+    fallback: t.Any = None
+    unset_if_not_set: bool = False
+
+    def get_value(self) -> tuple[t.Any, bool]:
+        """
+        Get the current value, together with a boolean whether this value should be set.
+        """
+        if self.name in os.environ:
+            return os.environ[self.name], True
+        if self.unset_if_not_set:
+            return None, False
+        return self.fallback, True
+
+
+AnsibleValue = t.Union[
+    AnsibleValueExplicit,
+    AnsibleValueFromEnv,
+]
+
+
 __all__ = [
+    "PackageName",
+    "PackageEditable",
+    "PackageRequirements",
+    "PackageType",
+    "AnsibleValueExplicit",
+    "AnsibleValueFromEnv",
+    "AnsibleValue",
     "ci_group",
     "compose_description",
     "get_package_version",

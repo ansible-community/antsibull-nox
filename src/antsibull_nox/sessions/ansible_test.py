@@ -31,6 +31,7 @@ from ..python import get_installed_python_versions
 from ..utils import Version
 from .collections import prepare_collections
 from .utils import (
+    AnsibleValue,
     install,
     register,
 )
@@ -409,6 +410,32 @@ def add_all_ansible_test_unit_test_sessions(
     )(run_all_unit_tests)
 
 
+def write_integration_config(
+    *ansible_vars: dict[str, AnsibleValue] | None,
+    ansible_vars_from_env_vars: dict[str, str] | None = None,
+) -> None:
+    """
+    Write tests/integration/integration_config.yml with the provided values.
+    """
+    path = Path("tests", "integration", "integration_config.yml")
+    content: dict[str, t.Any] = {}
+
+    if ansible_vars_from_env_vars:
+        for ans_var, env_var in ansible_vars_from_env_vars.items():
+            value = os.environ.get(env_var)
+            if value is not None:
+                content[ans_var] = env_var
+
+    for one_ansible_vars in ansible_vars:
+        if one_ansible_vars:
+            for ans_var, ans_value in one_ansible_vars.items():
+                val, store = ans_value.get_value()
+                if store:
+                    content[ans_var] = val
+
+    store_yaml_file(path, content, nice=True, sort_keys=True)
+
+
 def add_ansible_test_integration_sessions_default_container(
     *,
     include_devel: bool = False,
@@ -422,6 +449,7 @@ def add_ansible_test_integration_sessions_default_container(
     ) = None,
     controller_python_versions_only: bool = False,
     ansible_vars_from_env_vars: dict[str, str] | None = None,
+    ansible_vars: dict[str, AnsibleValue] | None = None,
     default: bool = False,
 ) -> None:
     """
@@ -435,16 +463,12 @@ def add_ansible_test_integration_sessions_default_container(
     """
 
     def callback_before() -> None:
-        if not ansible_vars_from_env_vars:
+        if not ansible_vars_from_env_vars and not ansible_vars:
             return
 
-        path = Path("tests", "integration", "integration_config.yml")
-        content: dict[str, t.Any] = {}
-        for ans_var, env_var in ansible_vars_from_env_vars.items():
-            value = os.environ.get(env_var)
-            if value is not None:
-                content[ans_var] = env_var
-        store_yaml_file(path, content, nice=True, sort_keys=True)
+        write_integration_config(
+            ansible_vars, ansible_vars_from_env_vars=ansible_vars_from_env_vars
+        )
 
     def add_integration_tests(
         ansible_core_version: AnsibleCoreVersion,

@@ -1,0 +1,4 @@
+minor_changes:
+  - "Allow to specify Ansible variables in integration tests directly or through environment variables
+     with new ``ansible_vars`` config directive
+     (https://github.com/ansible-community/antsibull-nox/pull/117)."
