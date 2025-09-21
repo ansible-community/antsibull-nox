@@ -15,6 +15,18 @@ name: Run sanity, unit, and integration tests
           Whether code coverage should be collected and uploaded to codecov.io.
         required: false
         default: false
+      min-ansible-core:
+        type: string
+        description: >-
+          Minimum ansible-core version the matrix should include.
+        required: false
+        default: ""
+      max-ansible-core:
+        type: string
+        description: >-
+          Maximum ansible-core version the matrix should include.
+        required: false
+        default: ""
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -38,6 +50,9 @@ jobs:
         id: generate-matrix
         with:
           sessions: matrix-generator
+          extra-args: >-
+            ${{ inputs.min-ansible-core && '--min-ansible-core ' || '' }}${{ inputs.min-ansible-core }}
+            ${{ inputs.max-ansible-core && '--max-ansible-core ' || '' }}${{ inputs.max-ansible-core }}
 
   # Sessions with coverage
 

@@ -135,6 +135,19 @@ _SUPPORTED_CORE_VERSIONS: dict[Version | t.Literal["milestone"], AnsibleCoreInfo
 }
 
 
+def get_actual_ansible_core_version(
+    core_version: AnsibleCoreVersion,
+) -> Version:
+    """
+    Retrieve actual ansible-core version.
+    """
+    if core_version == "devel":
+        return _CURRENT_DEVEL_VERSION
+    if core_version == "milestone":
+        return _CURRENT_MILESTONE_VERSION
+    return core_version
+
+
 def get_ansible_core_info(
     core_version: AnsibleCoreVersion,
 ) -> AnsibleCoreInfo:

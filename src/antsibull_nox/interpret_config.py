@@ -22,7 +22,6 @@ from .config import (
     PackageType,
     Sessions,
 )
-from .sessions import add_matrix_generator
 from .sessions.ansible_lint import add_ansible_lint
 from .sessions.ansible_test import (
     add_all_ansible_test_sanity_test_sessions,
@@ -42,6 +41,7 @@ from .sessions.extra_checks import (
 )
 from .sessions.license_check import add_license_check
 from .sessions.lint import add_lint_sessions
+from .sessions.matrix_generator import add_matrix_generator
 from .sessions.utils import PackageType as RuntimePackageType
 from .utils import Version
 
