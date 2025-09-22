@@ -136,6 +136,31 @@ by adding a `[collection_sources_per_ansible.'2.16']` section (note the quotes!)
 "community.crypto" = "git+https://github.com/ansible-collections/community.crypto.git,stable-2"
 ```
 
+## Source Control Management configuration
+
+For features such as Change Detection, some information on the Source Control Management (SCM) system needs to be known.
+This can be configured in `[scm]`.
+The following options are available:
+
+* `scm: "git"` (**required**)
+  The SCM used.
+  Currently only `git` is available.
+
+* `development_branch: str` (**required**)
+  The name of the main development branch.
+  This is usually `"main"`.
+
+* `stable_branches: list[str]` (default: `[]`)
+  A list of branches considered stable,
+  like for releasing from them for older versions.
+  Wildcards can be used,
+  see [Python's fnmatch module](https://docs.python.org/3/library/fnmatch.html) for available wildcards.
+
+* `other_cd_branches: list[str]` (default: `[]`)
+  A list of other branches that can be used for finding the base branch for change detection.
+  Wildcards can be used,
+  see [Python's fnmatch module](https://docs.python.org/3/library/fnmatch.html) for available wildcards.
+
 ## Package names
 
 For many sessions, the package names of tools that are used / installed can be configured.
@@ -1572,7 +1597,7 @@ The `[sessions.ee_check]` section is optional and accepts the following options:
     * `description: str | None` (default `None`):
       Adds a description for the `ee-check` session.
 
-    * `version: t.Literal[3]` (default `3`):
+    * `version: 3` (default `3`):
       Configures the schema version for the EE definition.
 
     * `base_image_name: str` (default `"registry.fedoraproject.org/fedora-toolbox:latest"`):
