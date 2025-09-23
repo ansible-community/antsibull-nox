@@ -737,17 +737,16 @@ class CollectionSource(_BaseModel):
         return values
 
 
-class SCM(_BaseModel):
+class VCS(_BaseModel):
     """
-    Source Control Management configuration.
+    Version Control System configuration.
     """
 
-    scm: t.Literal["git"]
+    vcs: t.Literal["git"]
     development_branch: str
     # Wildcards are allowed in the lists:
     # (https://docs.python.org/3/library/fnmatch.html)
     stable_branches: list[str] = []
-    other_cd_branches: list[str] = []
 
 
 class Config(_BaseModel):
@@ -759,7 +758,7 @@ class Config(_BaseModel):
     collection_sources_per_ansible: dict[
         PAnsibleCoreVersion, dict[CollectionName, CollectionSource]
     ] = {}
-    scm: t.Optional[SCM] = None
+    vcs: t.Optional[VCS] = None
     sessions: Sessions = Sessions()
 
 

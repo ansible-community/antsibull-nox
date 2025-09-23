@@ -136,15 +136,17 @@ by adding a `[collection_sources_per_ansible.'2.16']` section (note the quotes!)
 "community.crypto" = "git+https://github.com/ansible-collections/community.crypto.git,stable-2"
 ```
 
-## Source Control Management configuration
+## Version Control System configuration
 
-For features such as Change Detection, some information on the Source Control Management (SCM) system needs to be known.
-This can be configured in `[scm]`.
+For features such as Change Detection, some information on the Version Control System (VCS) system needs to be known.
+This can be configured in `[vcs]`.
 The following options are available:
 
-* `scm: "git"` (**required**)
-  The SCM used.
-  Currently only `git` is available.
+* `vcs: "git"` (**required**)
+  The VCS used.
+  Currently only `git` is supported.
+  If you are interested in support for other VCS,
+  please [create an issue](https://github.com/ansible-community/antsibull-nox/issues/new).
 
 * `development_branch: str` (**required**)
   The name of the main development branch.
@@ -153,11 +155,6 @@ The following options are available:
 * `stable_branches: list[str]` (default: `[]`)
   A list of branches considered stable,
   like for releasing from them for older versions.
-  Wildcards can be used,
-  see [Python's fnmatch module](https://docs.python.org/3/library/fnmatch.html) for available wildcards.
-
-* `other_cd_branches: list[str]` (default: `[]`)
-  A list of other branches that can be used for finding the base branch for change detection.
   Wildcards can be used,
   see [Python's fnmatch module](https://docs.python.org/3/library/fnmatch.html) for available wildcards.
 
