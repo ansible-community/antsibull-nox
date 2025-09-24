@@ -45,7 +45,13 @@ _CD_INITIALIZED = False
 _CD_CONFIG: _CDConfig | None = None
 
 
-def init_cd(*, config: Config, config_path: Path, force: bool = False) -> None:
+def init_cd(
+    *,
+    config: Config,
+    config_path: Path,
+    force: bool = False,
+    ignore_previous_calls: bool = False,
+) -> None:
     """
     Initialize data structures so that the other change detection
     functionality works.
@@ -53,7 +59,7 @@ def init_cd(*, config: Config, config_path: Path, force: bool = False) -> None:
     # We want global context due to the way nox works.
     global _CD_INITIALIZED, _CD_CONFIG  # pylint: disable=global-statement
 
-    if _CD_INITIALIZED:
+    if _CD_INITIALIZED and not ignore_previous_calls:
         raise ValueError("init_cd() has already been called!")
 
     if config.vcs is None:

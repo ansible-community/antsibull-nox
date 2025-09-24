@@ -29,7 +29,7 @@ def load_antsibull_nox_toml() -> None:
     """
     config_path = Path(CONFIG_FILENAME)
     config = load_config_from_toml(config_path)
-    init_cd(config=config, config_path=config_path)
+    init_cd(config=config, config_path=config_path, ignore_previous_calls=True)
     interpret_config(config)
 
 
