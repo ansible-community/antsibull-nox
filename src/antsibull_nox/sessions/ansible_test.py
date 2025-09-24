@@ -27,6 +27,7 @@ from ..ansible import (
     get_supported_core_versions,
     parse_ansible_core_version,
 )
+from ..cd import get_base_branch, get_vcs_name
 from ..container import get_container_engine_preference
 from ..paths import copy_directory_tree_into
 from ..python import get_installed_python_versions
@@ -85,6 +86,7 @@ def add_ansible_test_session(
     register_extra_data: dict[str, t.Any] | None = None,
     callback_before: Callable[[], None] | None = None,
     callback_after: Callable[[], None] | None = None,
+    support_cd: bool = False,
 ) -> None:
     """
     Add generic ansible-test session.
@@ -122,6 +124,10 @@ def add_ansible_test_session(
                 callback_before()
 
             command = ["ansible-test"] + ansible_test_params
+            if support_cd and get_vcs_name() == "git":
+                base_branch = get_base_branch()
+                if base_branch is not None:
+                    command.extend(["--changed", "--base-branch", base_branch])
             if add_posargs and session.posargs:
                 command.extend(session.posargs)
             session.run(*command, env=get_ansible_test_env())
@@ -221,6 +227,7 @@ def add_ansible_test_sanity_test_session(
         ansible_core_branch_name=ansible_core_branch_name,
         register_name="sanity",
         register_extra_data=register_extra_data,
+        support_cd=True,
     )
 
 
@@ -345,6 +352,7 @@ def add_ansible_test_unit_test_session(
         ansible_core_branch_name=ansible_core_branch_name,
         register_name="units",
         register_extra_data=register_extra_data,
+        support_cd=True,
     )
 
 
@@ -546,6 +554,7 @@ def add_ansible_test_integration_sessions_default_container(
                 register_extra_data={
                     "display-name": f"Ⓐ{ansible_core_version}+py{py_version}+default"
                 },
+                support_cd=True,
             )
             integration_sessions_core.append(name)
         return integration_sessions_core
@@ -901,6 +910,7 @@ def add_ansible_test_integration_sessions(
             default=default and not session.part_of_group,
             register_name="integration",
             register_extra_data=extra_data,
+            support_cd=True,
         )
 
     def add_group_session(

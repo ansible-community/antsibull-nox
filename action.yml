@@ -36,6 +36,17 @@ inputs:
       Should be the directory where the collection's `galaxy.yml` is in, and where the `noxfile.py` is in.
     required: false
     default: .
+  change-detection:
+    description: |-
+      Whether to enable change detection.
+      Set to `true` to enable it.
+      Note that this requires the VCS configuration in `antsibull-nox.toml`,
+      and is not available for all kind of tests.
+    default: "false"
+  change-detection-base-branch:
+    description: |-
+      Allows to explicitly set the base branch for change detection.
+    default: ""
 outputs:
   run-nox:
     description: Output of the 'run nox' step.
@@ -76,5 +87,7 @@ runs:
       env:
         FORCE_COLOR: "1"
         ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS: "true"
+        ANTSIBULL_CHANGE_DETECTION: "${{ inputs.change-detection }}"
+        ANTSIBULL_BASE_BRANCH: "${{ inputs.change-detection-base-branch }}"
       shell: bash
       working-directory: "${{ inputs.working-directory }}"

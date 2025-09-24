@@ -15,8 +15,11 @@ import os
 import os.path
 import sys
 from collections.abc import Callable
+from pathlib import Path
 
 from . import __version__
+from .cd import get_base_branch, get_changes, init_cd, supports_cd
+from .config import CONFIG_FILENAME, load_config_from_toml
 from .init import create_initial_config as _create_initial_config
 from .lint_config import lint_config as _lint_config
 
@@ -50,11 +53,44 @@ def create_initial_config(_: argparse.Namespace) -> int:
     return 0
 
 
+def show_changes(_: argparse.Namespace) -> int:
+    """
+    Show changes.
+    """
+    config_path = Path(CONFIG_FILENAME)
+    try:
+        config = load_config_from_toml(config_path)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        print(f"Error: {exc}", file=sys.stderr)
+        return 3
+
+    try:
+        init_cd(config=config, config_path=config_path, force=True)
+        if not supports_cd():
+            print(f"{config_path} does not support change detection.", file=sys.stderr)
+            return 3
+
+        base_branch = get_base_branch()
+        changes = get_changes()
+    except ValueError as exc:
+        print(f"Error while fetching changes: {exc}", file=sys.stderr)
+        return 3
+
+    print(f"Changes with respect to {base_branch} branch:")
+    if changes:
+        for file in changes:
+            print(f" * {file}")
+    else:
+        print("  (no changes found)")
+    return 0
+
+
 # Mapping from command line subcommand names to functions which implement those.
 # The functions need to take a single argument, the processed list of args.
 ARGS_MAP: dict[str, Callable[[argparse.Namespace], int]] = {
     "lint-config": lint_config,
     "init": create_initial_config,
+    "show-changes": show_changes,
 }
 
 
@@ -93,6 +129,8 @@ def parse_args(program_name: str, args: list[str]) -> argparse.Namespace:
         "init",
         description="Create noxfile and antsibull-nox configuration file",
     )
+
+    subparsers.add_parser("show-changes", description="Show changed files")
 
     # This must come after all parser setup
     if HAS_ARGCOMPLETE:

@@ -737,6 +737,18 @@ class CollectionSource(_BaseModel):
         return values
 
 
+class VCS(_BaseModel):
+    """
+    Version Control System configuration.
+    """
+
+    vcs: t.Literal["git"]
+    development_branch: str
+    # Wildcards are allowed in the lists:
+    # (https://docs.python.org/3/library/fnmatch.html)
+    stable_branches: list[str] = []
+
+
 class Config(_BaseModel):
     """
     The contents of a antsibull-nox config file.
@@ -746,6 +758,7 @@ class Config(_BaseModel):
     collection_sources_per_ansible: dict[
         PAnsibleCoreVersion, dict[CollectionName, CollectionSource]
     ] = {}
+    vcs: t.Optional[VCS] = None
     sessions: Sessions = Sessions()
 
 
