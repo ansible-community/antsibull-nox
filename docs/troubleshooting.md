@@ -62,3 +62,11 @@ to pin specific versions of the linters.
 
 !!! note
     If you pin specific versions, you yourself are responsible for bumping these versions from time to time.
+
+## Change detection does not work
+
+1. Did you configure [the Version Control System in antsibull-nox.toml](config-file.md#version-control-system-configuration)?
+1. Did you set the environment variable `ANTSIBULL_CHANGE_DETECTION` to `true`?
+1. Did you set `ANTSIBULL_BASE_BRANCH` to the base branch, if it is not the main development branch of your collection?
+1. Try to run `antsibull-nox show-changes` to see what change detection finds.
+1. Does the test you run actually [support change detection](change-detection.md#supported-tests)?

@@ -1,0 +1,12 @@
+minor_changes:
+  - |-
+    Antsibull-nox now supports VCS configuration and basic change detection.
+    At the moment, the following tests support change detection:
+    
+    * All ansible-test tests configured through ``antsibull-nox.toml``;
+    * All ansible-test tests configured through ``noxfile.py`` that explicitly allow change detection.
+
+    Change detection can be enabled with the environment variable ``ANTSIBULL_CHANGE_DETECTION``.
+    The base branch can explicitly set with the environment variable ``ANTSIBULL_BASE_BRANCH``
+    (https://github.com/ansible-community/antsibull-nox/issues/112,
+    https://github.com/ansible-community/antsibull-nox/pull/120).

@@ -35,6 +35,7 @@ nav:
   - Running nox in CI: nox-in-ci.md
   - Config file reference: config-file.md
   - noxfile reference: reference.md
+  - change-detection.md
   - Troubleshooting: troubleshooting.md
   - Community: community.md
   - Release notes: changelog.md

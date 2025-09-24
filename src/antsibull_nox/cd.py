@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .config import VCS as VCSConfig
 from .config import Config
-from .vcs import VcsProvider
+from .vcs import VCS, VcsProvider
 from .vcs.factory import get_vcs_provider
 
 _ENABLE_CD_ENV_VAR = "ANTSIBULL_CHANGE_DETECTION"
@@ -24,16 +24,18 @@ _BASE_BRANCH_ENV_VAR = "ANTSIBULL_BASE_BRANCH"
 
 
 class _CDConfig:
+    vcs: VCS
     provider: VcsProvider
     repo: Path
     base_branch: str
 
     def __init__(self, *, config_path: Path, vcs_config: VCSConfig) -> None:
-        self.provider = get_vcs_provider(vcs_config.vcs)
+        self.vcs = vcs_config.vcs
+        self.provider = get_vcs_provider(self.vcs)
         path = config_path.parent
         repo = self.provider.find_repo_path(path=path)
         if repo is None:
-            raise ValueError(f"Cannot find {vcs_config.vcs} repository for {path}")
+            raise ValueError(f"Cannot find {self.vcs} repository for {path}")
         self.repo = repo
         self.base_branch = vcs_config.development_branch
         env_base_branch = os.environ.get(_BASE_BRANCH_ENV_VAR)
@@ -89,6 +91,16 @@ def supports_cd() -> bool:
     """
     _check_initialized()
     return _CD_CONFIG is not None
+
+
+def get_vcs_name() -> VCS | None:
+    """
+    Provide the configured CVS for change detection.
+
+    Returns ``None`` if ``supports_cd() == False``.
+    """
+    _check_initialized()
+    return _CD_CONFIG.vcs if _CD_CONFIG else None
 
 
 def get_base_branch() -> str | None:

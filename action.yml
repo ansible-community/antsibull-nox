@@ -36,6 +36,13 @@ inputs:
       Should be the directory where the collection's `galaxy.yml` is in, and where the `noxfile.py` is in.
     required: false
     default: .
+  change-detection:
+    description: |-
+      Whether to enable change detection.
+      Set to `true` to enable it.
+      Note that this requires the VCS configuration in `antsibull-nox.toml`,
+      and is not available for all kind of tests.
+    default: "false"
 outputs:
   run-nox:
     description: Output of the 'run nox' step.

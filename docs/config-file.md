@@ -138,21 +138,21 @@ by adding a `[collection_sources_per_ansible.'2.16']` section (note the quotes!)
 
 ## Version Control System configuration
 
-For features such as Change Detection, some information on the Version Control System (VCS) system needs to be known.
+For features such as [Change Detection](change-detection.md), some information on the Version Control System (VCS) system needs to be known.
 This can be configured in `[vcs]`.
 The following options are available:
 
-* `vcs: "git"` (**required**)
+* `vcs: "git"` (**required**):
   The VCS used.
   Currently only `git` is supported.
   If you are interested in support for other VCS,
   please [create an issue](https://github.com/ansible-community/antsibull-nox/issues/new).
 
-* `development_branch: str` (**required**)
+* `development_branch: str` (**required**):
   The name of the main development branch.
   This is usually `"main"`.
 
-* `stable_branches: list[str]` (default: `[]`)
+* `stable_branches: list[str]` (default: `[]`):
   A list of branches considered stable,
   like for releasing from them for older versions.
   Wildcards can be used,
