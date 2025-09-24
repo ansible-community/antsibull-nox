@@ -212,3 +212,6 @@ class GitProvider(VcsProvider):
 
         all_files = untracked + committed + staged + unstaged
         return [Path(file) for file in sorted(set(all_files))]
+
+
+__all__ = ("GitProvider",)

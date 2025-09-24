@@ -10,6 +10,9 @@ Antsibull Nox Helper.
 
 from __future__ import annotations
 
+from pathlib import Path
+
+from .cd import init_cd
 from .config import (
     CONFIG_FILENAME,
     load_config_from_toml,
@@ -24,7 +27,9 @@ def load_antsibull_nox_toml() -> None:
     """
     Load and interpret antsibull-nox.toml config file.
     """
-    config = load_config_from_toml(CONFIG_FILENAME)
+    config_path = Path(CONFIG_FILENAME)
+    config = load_config_from_toml(config_path)
+    init_cd(config=config, config_path=config_path)
     interpret_config(config)
 
 
