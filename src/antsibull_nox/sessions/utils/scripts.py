@@ -21,6 +21,7 @@ from ...paths import (
     find_data_directory,
     list_all_files,
 )
+from ..paths import filter_files_cd
 
 
 def run_bare_script(
@@ -32,12 +33,18 @@ def run_bare_script(
     files: list[Path] | None = None,
     extra_data: dict[str, t.Any] | None = None,
     silent: bool = False,
+    with_cd: bool = False,
 ) -> str | None:
     """
     Run a bare script included in antsibull-nox's data directory.
     """
     if files is None:
         files = list_all_files()
+    if with_cd:
+        files = filter_files_cd(files)
+        if not files:
+            session.warn(f"Skipping {name} (no files to process)")
+            return None
     data = prepare_data_script(
         session,
         base_name=name,
