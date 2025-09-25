@@ -28,6 +28,7 @@ class _CDConfig:
     provider: VcsProvider
     repo: Path
     base_branch: str
+    config_dir_is_repo_dir: bool
 
     def __init__(self, *, config_path: Path, vcs_config: VCSConfig) -> None:
         self.vcs = vcs_config.vcs
@@ -37,6 +38,7 @@ class _CDConfig:
         if repo is None:
             raise ValueError(f"Cannot find {self.vcs} repository for {path}")
         self.repo = repo
+        self.config_dir_is_repo_dir = repo.absolute() == config_path.parent.absolute()
         self.base_branch = vcs_config.development_branch
         env_base_branch = os.environ.get(_BASE_BRANCH_ENV_VAR)
         if env_base_branch:
@@ -111,6 +113,17 @@ def get_base_branch() -> str | None:
     """
     _check_initialized()
     return _CD_CONFIG.base_branch if _CD_CONFIG else None
+
+
+def is_config_dir_the_repo_dir() -> bool | None:
+    """
+    Figure out whether the config dir (the directory containing
+    ``antsibull-nox.toml``) is the repository's root directory.
+
+    Returns ``None`` if ``supports_cd() == False``.
+    """
+    _check_initialized()
+    return _CD_CONFIG.config_dir_is_repo_dir if _CD_CONFIG else None
 
 
 @functools.cache

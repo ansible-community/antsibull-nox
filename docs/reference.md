@@ -101,6 +101,10 @@ The function `antsibull_nox.sessions.prepare_collections()` accepts the followin
   An explicit list of collections (form `<namespace>.<name>`)
   that should be copied into the tree structure.
 
+* `copy_repo_structure: bool` (default `False`):
+  Copy the repository structure (if detected) of the current collection.
+  This requires that the collection's root directory is the repository's root.
+
 The function returns `antsibull_nox.sessions.CollectionSetup | None`.
 If the return value is `None`, the `ansible_collections` tree was not created for some reason.
 Otherwise, an `antsibull_nox.sessions.CollectionSetup` object is returned,

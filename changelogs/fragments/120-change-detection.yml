@@ -9,4 +9,8 @@ minor_changes:
     Change detection can be enabled with the environment variable ``ANTSIBULL_CHANGE_DETECTION``.
     The base branch can explicitly set with the environment variable ``ANTSIBULL_BASE_BRANCH``
     (https://github.com/ansible-community/antsibull-nox/issues/112,
-    https://github.com/ansible-community/antsibull-nox/pull/120).
+    https://github.com/ansible-community/antsibull-nox/pull/120,
+    https://github.com/ansible-community/antsibull-nox/pull/122).
+  - |-
+    antsibull-nox now depends on antsibull-fileutils >= 1.5.0
+    (https://github.com/ansible-community/antsibull-nox/pull/122).

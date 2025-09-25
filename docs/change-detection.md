@@ -47,3 +47,7 @@ Right now, the following tests are supported:
 
     !!! note
         Ansible-test only works with git.
+        Additionally the collection's root directory (the directory containing `galaxy.yml` and `antsibull-nox.toml`)
+        must be the repository's root (the directory containing the `.git` subdirectory).
+        The latter restriction is necessary since antsibull-nox copies the repository into a temporary place
+        and cannot consider directories further up.
