@@ -90,6 +90,10 @@ jobs:
     uses: ansible-community/antsibull-nox/.github/workflows/reusable-nox-matrix.yml@main
     with:
       upload-codecov: true
+      # You can also enable change detection in PRs,
+      # but that will disable codecov uploading in PRs.
+      # To enable it, simply add:
+      #   change-detection-in-prs: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 ```
