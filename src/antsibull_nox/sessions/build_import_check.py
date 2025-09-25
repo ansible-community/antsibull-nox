@@ -20,12 +20,14 @@ from ..collection import (
     build_collection,
 )
 from .utils import (
-    PackageType,
     ci_group,
     compose_description,
-    install,
     nox_has_verbosity,
     silence_run_verbosity,
+)
+from .utils.packages import (
+    PackageType,
+    install,
 )
 
 

@@ -34,10 +34,14 @@ from ..python import get_installed_python_versions
 from ..utils import Version
 from .collections import prepare_collections
 from .utils import (
+    register,
+)
+from .utils.packages import (
+    install,
+)
+from .utils.values import (
     AnsibleValue,
     AnsibleValueExplicit,
-    install,
-    register,
 )
 
 if t.TYPE_CHECKING:

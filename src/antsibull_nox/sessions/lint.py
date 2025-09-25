@@ -31,11 +31,15 @@ from .paths import (
 )
 from .utils import (
     IN_CI,
-    PackageType,
     compose_description,
-    install,
-    run_bare_script,
     silence_run_verbosity,
+)
+from .utils.packages import (
+    PackageType,
+    install,
+)
+from .utils.scripts import (
+    run_bare_script,
 )
 
 CODE_FILES = [

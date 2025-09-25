@@ -13,9 +13,13 @@ from __future__ import annotations
 import nox
 
 from .utils import (
-    PackageType,
     compose_description,
+)
+from .utils.packages import (
+    PackageType,
     install,
+)
+from .utils.scripts import (
     run_bare_script,
 )
 

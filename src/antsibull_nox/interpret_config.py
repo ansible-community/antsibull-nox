@@ -47,7 +47,7 @@ from .sessions.extra_checks import (
 from .sessions.license_check import add_license_check
 from .sessions.lint import add_lint_sessions
 from .sessions.matrix_generator import add_matrix_generator
-from .sessions.utils import PackageType as RuntimePackageType
+from .sessions.utils.packages import PackageType as RuntimePackageType
 from .utils import Version
 
 _T = t.TypeVar("_T", bound=object)
