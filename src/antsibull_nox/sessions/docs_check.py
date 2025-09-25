@@ -22,11 +22,15 @@ from .collections import (
     CollectionSetup,
     prepare_collections,
 )
-from .utils import (
-    PackageType,
+from .utils.package_versions import (
     get_package_version,
-    install,
     is_new_enough,
+)
+from .utils.packages import (
+    PackageType,
+    install,
+)
+from .utils.scripts import (
     run_bare_script,
 )
 

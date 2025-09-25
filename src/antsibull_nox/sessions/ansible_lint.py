@@ -13,7 +13,10 @@ from __future__ import annotations
 import nox
 
 from .collections import prepare_collections
-from .utils import PackageType, install
+from .utils.packages import (
+    PackageType,
+    install,
+)
 
 
 def add_ansible_lint(

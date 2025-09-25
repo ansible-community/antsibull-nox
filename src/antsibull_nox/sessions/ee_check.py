@@ -21,7 +21,11 @@ from antsibull_nox.paths import get_outside_temp_directory
 
 from ..collection import CollectionData, build_collection
 from ..container import get_container_engine_preference, get_preferred_container_engine
-from .utils import PackageType, install, register
+from .utils import register
+from .utils.packages import (
+    PackageType,
+    install,
+)
 
 
 @dataclass

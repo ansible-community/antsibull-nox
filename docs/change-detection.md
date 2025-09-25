@@ -51,3 +51,7 @@ Right now, the following tests are supported:
         must be the repository's root (the directory containing the `.git` subdirectory).
         The latter restriction is necessary since antsibull-nox copies the repository into a temporary place
         and cannot consider directories further up.
+
+* All `lint` sessions (`formatters`, `codeqa`, `yamllint`, `typing`).
+* The `extra-checks` session and all its tests.
+* All tests but `reuse` from the `license-check` session.

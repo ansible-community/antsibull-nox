@@ -13,9 +13,13 @@ from __future__ import annotations
 import nox
 
 from .utils import (
-    PackageType,
     compose_description,
+)
+from .utils.packages import (
+    PackageType,
     install,
+)
+from .utils.scripts import (
     run_bare_script,
 )
 
@@ -49,6 +53,7 @@ def add_license_check(
                 extra_data={
                     "extra_ignore_paths": license_check_extra_ignore_paths or [],
                 },
+                with_cd=True,
             )
 
     license_check.__doc__ = compose_description(

@@ -19,13 +19,13 @@ from antsibull_nox.ee_config import create_ee_config
 
 from ._pydantic import forbid_extras, get_formatted_error_messages
 from .ansible import AnsibleCoreVersion
+from .sessions.utils.packages import PackageEditable as _PackageEditable
+from .sessions.utils.packages import PackageName as _PackageName
+from .sessions.utils.packages import PackageRequirements as _PackageRequirements
 
-# from .sessions.utils import PackageConstraints as _PackageConstraints
-from .sessions.utils import AnsibleValueExplicit as _AnsibleValueExplicit
-from .sessions.utils import AnsibleValueFromEnv as _AnsibleValueFromEnv
-from .sessions.utils import PackageEditable as _PackageEditable
-from .sessions.utils import PackageName as _PackageName
-from .sessions.utils import PackageRequirements as _PackageRequirements
+# from .sessions.utils.packages import PackageConstraints as _PackageConstraints
+from .sessions.utils.values import AnsibleValueExplicit as _AnsibleValueExplicit
+from .sessions.utils.values import AnsibleValueFromEnv as _AnsibleValueFromEnv
 from .utils import Version
 
 try:

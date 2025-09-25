@@ -16,6 +16,8 @@ import nox
 
 from .utils import (
     compose_description,
+)
+from .utils.scripts import (
     run_bare_script,
 )
 
@@ -108,6 +110,7 @@ def add_extra_checks(
                 or ["plugins/test/", "plugins/filter/"],
                 "allow_symlinks": no_unwanted_files_allow_symlinks,
             },
+            with_cd=True,
         )
 
     def execute_action_groups(session: nox.Session) -> None:
@@ -120,6 +123,7 @@ def add_extra_checks(
             extra_data={
                 "config": [asdict(cfg) for cfg in action_groups_config],
             },
+            with_cd=True,
         )
 
     def execute_no_trailing_whitespace(session: nox.Session) -> None:
@@ -130,6 +134,7 @@ def add_extra_checks(
                 "skip_paths": no_trailing_whitespace_skip_paths or [],
                 "skip_directories": no_trailing_whitespace_skip_directories or [],
             },
+            with_cd=True,
         )
 
     def execute_avoid_characters(session: nox.Session) -> None:
@@ -142,6 +147,7 @@ def add_extra_checks(
             extra_data={
                 "config": [asdict(cfg) for cfg in avoid_character_group],
             },
+            with_cd=True,
         )
 
     def extra_checks(session: nox.Session) -> None:
