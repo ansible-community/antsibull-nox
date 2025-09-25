@@ -21,7 +21,7 @@ from ...paths import (
     find_data_directory,
     list_all_files,
 )
-from ..paths import filter_files_cd
+from .paths import filter_files_cd
 
 
 def run_bare_script(

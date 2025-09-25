@@ -13,9 +13,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from pathlib import Path
 
-from ..cd import get_changes
-from ..paths import filter_paths as _filter_paths
-from ..paths import (
+from ...cd import get_changes
+from ...paths import filter_paths as _filter_paths
+from ...paths import (
     restrict_paths,
 )
 

@@ -25,10 +25,6 @@ from .collections import (
     prepare_collections,
 )
 from .docs_check import find_extra_docs_rst_files
-from .paths import (
-    filter_files_cd,
-    filter_paths,
-)
 from .utils import (
     IN_CI,
     compose_description,
@@ -37,6 +33,10 @@ from .utils import (
 from .utils.packages import (
     PackageType,
     install,
+)
+from .utils.paths import (
+    filter_files_cd,
+    filter_paths,
 )
 from .utils.scripts import (
     run_bare_script,
