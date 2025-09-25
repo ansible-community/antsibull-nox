@@ -85,6 +85,7 @@ def prepare_collections(
     extra_deps_files: list[str | os.PathLike] | None = None,
     extra_collections: list[str] | None = None,
     install_out_of_tree: bool = False,  # can not be used with install_in_site_packages=True
+    copy_repo_structure: bool = False,
 ) -> CollectionSetup | None:
     """
     Install collections in site-packages.
@@ -132,7 +133,9 @@ def prepare_collections(
         with_current=False,
         global_cache_dir=session.cache_dir,
     )
-    current_setup = setup_current_tree(place, setup.current_collection)
+    current_setup = setup_current_tree(
+        place, setup.current_collection, copy_repo_structure=copy_repo_structure
+    )
     return CollectionSetup(
         collections_root=setup.root,
         current_place=place,

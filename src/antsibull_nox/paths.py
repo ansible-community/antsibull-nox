@@ -164,7 +164,9 @@ def remove_path(path: Path) -> None:
         path.unlink()
 
 
-def copy_collection(source: Path, destination: Path) -> None:
+def copy_collection(
+    source: Path, destination: Path, *, copy_repo_structure: bool = False
+) -> None:
     """
     Copy a collection from source to destination.
 
@@ -174,10 +176,11 @@ def copy_collection(source: Path, destination: Path) -> None:
     if destination.exists():
         remove_path(destination)
     vcs = detect_vcs(source)
-    copier = {
-        "none": Copier,
-        "git": GitCopier,
-    }.get(vcs, Copier)()
+    copier: Copier
+    if vcs == "git":
+        copier = GitCopier(copy_repo_structure=copy_repo_structure)
+    else:
+        copier = Copier()
     copier.copy(source, destination, exclude_root=[".nox", ".tox"])
 
 

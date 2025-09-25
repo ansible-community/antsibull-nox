@@ -27,7 +27,7 @@ from ..ansible import (
     get_supported_core_versions,
     parse_ansible_core_version,
 )
-from ..cd import get_base_branch, get_vcs_name
+from ..cd import get_base_branch, get_vcs_name, is_config_dir_the_repo_dir
 from ..container import get_container_engine_preference
 from ..paths import copy_directory_tree_into
 from ..python import get_installed_python_versions
@@ -108,12 +108,25 @@ def add_ansible_test_session(
 
     def run_ansible_test(session: nox.Session) -> None:
         install(session, *compose_dependencies())
+
+        change_detection_args: list[str] | None = None
+        if support_cd and get_vcs_name() == "git" and is_config_dir_the_repo_dir():
+            base_branch = get_base_branch()
+            if base_branch is not None:
+                change_detection_args = [
+                    "--changed",
+                    "--untracked",
+                    "--base-branch",
+                    base_branch,
+                ]
+
         prepared_collections = prepare_collections(
             session,
             ansible_core_version=parsed_ansible_core_version,
             install_in_site_packages=False,
             extra_deps_files=extra_deps_files,
             install_out_of_tree=True,
+            copy_repo_structure=change_detection_args is not None,
         )
         if not prepared_collections:
             session.warn("Skipping ansible-test...")
@@ -124,10 +137,8 @@ def add_ansible_test_session(
                 callback_before()
 
             command = ["ansible-test"] + ansible_test_params
-            if support_cd and get_vcs_name() == "git":
-                base_branch = get_base_branch()
-                if base_branch is not None:
-                    command.extend(["--changed", "--base-branch", base_branch])
+            if change_detection_args is not None:
+                command.extend(change_detection_args)
             if add_posargs and session.posargs:
                 command.extend(session.posargs)
             session.run(*command, env=get_ansible_test_env())

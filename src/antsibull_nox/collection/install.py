@@ -585,8 +585,12 @@ def setup_collections(
     )
 
 
-def _copy_collection(collection: CollectionData, path: Path) -> None:
-    _paths_copy_collection(collection.path, path)
+def _copy_collection(
+    collection: CollectionData, path: Path, *, copy_repo_structure: bool = False
+) -> None:
+    _paths_copy_collection(
+        collection.path, path, copy_repo_structure=copy_repo_structure
+    )
 
 
 def _copy_collection_rsync_hard_links(
@@ -609,7 +613,10 @@ def _copy_collection_rsync_hard_links(
 
 
 def setup_current_tree(
-    place: str | os.PathLike, current_collection: CollectionData
+    place: str | os.PathLike,
+    current_collection: CollectionData,
+    *,
+    copy_repo_structure: bool = False,
 ) -> SetupResult:
     """
     Setup a tree structure with the current collection in it.
@@ -621,7 +628,9 @@ def setup_current_tree(
     namespace = root / current_collection.namespace
     namespace.mkdir(exist_ok=True)
     collection = namespace / current_collection.name
-    _copy_collection(current_collection, collection)
+    _copy_collection(
+        current_collection, collection, copy_repo_structure=copy_repo_structure
+    )
     # _copy_collection_rsync_hard_links(current_collection, collection, runner)
     return SetupResult(
         root=root,
