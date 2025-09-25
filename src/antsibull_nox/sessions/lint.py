@@ -111,7 +111,11 @@ def _execute_isort(
     if isort_config is not None:
         command.extend(["--settings-file", str(isort_config)])
     command.extend(session.posargs)
-    command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+    files = filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files)
+    if not files:
+        session.warn("Skipping isort (no files to process)")
+        return
+    command.extend(files)
     session.run(*command)
 
 
@@ -121,8 +125,10 @@ def _execute_black_for(
     paths: list[str],
     run_check: bool,
     black_config: str | os.PathLike | None,
+    what_for: str = "",
 ) -> None:
     if not paths:
+        session.warn(f"Skipping black{what_for} (no files to process)")
         return
     command = ["black"]
     if run_check:
@@ -162,7 +168,11 @@ def _execute_black(
             + extra_code_files
         )
         _execute_black_for(
-            session, paths=paths, run_check=run_check, black_config=black_config
+            session,
+            paths=paths,
+            run_check=run_check,
+            black_config=black_config,
+            what_for=" for other plugins",
         )
     if run_black_modules:
         paths = filter_paths(
@@ -171,7 +181,11 @@ def _execute_black(
             extensions=[".py"],
         )
         _execute_black_for(
-            session, paths=paths, run_check=run_check, black_config=black_config
+            session,
+            paths=paths,
+            run_check=run_check,
+            black_config=black_config,
+            what_for=" for modules and module utils",
         )
 
 
@@ -191,7 +205,11 @@ def _execute_ruff_format(
     if ruff_format_config is not None:
         command.extend(["--config", str(ruff_format_config)])
     command.extend(session.posargs)
-    command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+    files = filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files)
+    if not files:
+        session.warn("Skipping ruff format (no files to process)")
+        return
+    command.extend(files)
     session.run(*command)
 
 
@@ -214,7 +232,11 @@ def _execute_ruff_autofix(
     if ruff_autofix_select:
         command.extend(["--select", ",".join(ruff_autofix_select)])
     command.extend(session.posargs)
-    command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+    files = filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files)
+    if not files:
+        session.warn("Skipping ruff autofix (no files to process)")
+        return
+    command.extend(files)
     session.run(*command)
 
 
@@ -386,7 +408,11 @@ def add_codeqa(  # noqa: C901
         if ruff_check_config is not None:
             command.extend(["--config", str(ruff_check_config)])
         command.extend(session.posargs)
-        command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+        files = filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files)
+        if not files:
+            session.warn("Skipping ruff check (no files to process)")
+            return
+        command.extend(files)
         session.run(*command)
 
     def execute_flake8(session: nox.Session) -> None:
@@ -396,7 +422,11 @@ def add_codeqa(  # noqa: C901
         if flake8_config is not None:
             command.extend(["--config", str(flake8_config)])
         command.extend(session.posargs)
-        command.extend(filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files))
+        files = filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files)
+        if not files:
+            session.warn("Skipping flake8 (no files to process)")
+            return
+        command.extend(files)
         session.run(*command)
 
     def execute_pylint_impl(
@@ -437,10 +467,19 @@ def add_codeqa(  # noqa: C901
             other_paths = filter_paths(
                 CODE_FILES, remove=MODULE_PATHS, extensions=[".py"]
             )
+            if not module_paths:
+                session.warn("Skipping pylint for modules (no files to process)")
+            if not other_paths:
+                session.warn("Skipping pylint for other files (no files to process)")
+            if not module_paths and not other_paths:
+                return
         else:
             # Otherwise run it only once using the general configuration
             module_paths = []
             other_paths = filter_paths(CODE_FILES)
+            if not other_paths:
+                session.warn("Skipping pylint (no files to process)")
+                return
 
         with session.chdir(prepared_collections.current_place):
             if module_paths:
@@ -688,9 +727,13 @@ def add_typing(
             command.append("--explicit-package-bases")
             command.extend(["--output", "json"])
             command.extend(session.posargs)
-            command.extend(
-                prepared_collections.prefix_current_paths(CODE_FILES + extra_code_files)
+            files = prepared_collections.prefix_current_paths(
+                CODE_FILES + extra_code_files
             )
+            if not files:
+                session.warn("Skipping mypy (no files to process)")
+                return
+            command.extend(files)
             with silence_run_verbosity():
                 output = session.run(
                     *command,
