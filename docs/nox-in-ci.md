@@ -14,12 +14,6 @@ and separating environment setup from actually running the environments.
 
 The following GitHub workflow demonstrates how the action can be used.
 It is taken from the community.dns collection.
-It checks out the collection in `ansible_collections/community/dns`,
-installs needed collections in the same tree structure (`-p .` parameter of `ansible-galaxy collection install`),
-and runs nox inside the collection checkout directory (`ansible_collections/community/dns`).
-
-Note that you have to install the needed collections yourself,
-antsibull-nox is currently not doing that for you.
 
 ```yaml
 ---
@@ -43,24 +37,16 @@ jobs:
       - name: Check out collection
         uses: actions/checkout@v4
         with:
-          path: ansible_collections/community/dns
           persist-credentials: false
-      - name: Check out dependent collections
-        run: >-
-          ansible-galaxy collection install -p .
-          git+https://github.com/ansible-collections/community.internal_test_tools.git,main
-          git+https://github.com/ansible-collections/community.library_inventory_filtering.git,stable-1
       - name: Run nox
         uses: ansible-community/antsibull-nox@main
-        with:
-          working-directory: ansible_collections/community/dns
 ```
 
 !!! info
     The workflow uses the `main` branch of the `ansible-community/antsibull-nox` action.
     This is generally not a good idea, since there can be breaking changes any time.
-    Once antsibull-nox stabilizes we will provide stable branches that you can use
-    that should not introduce breaking changes.
+    You can use the `stable-1` branch to get updates less often,
+    but only after they have been tested on `main` for some time.
 
 ### Running ansible-test CI matrix from nox
 
