@@ -28,7 +28,9 @@ from .utils.package_versions import (
 )
 from .utils.packages import (
     PackageType,
+    PackageTypeOrList,
     install,
+    normalize_package_type,
 )
 from .utils.scripts import (
     run_bare_script,
@@ -52,15 +54,15 @@ def find_extra_docs_rst_files() -> list[Path]:
 def add_docs_check(
     *,
     make_docs_check_default: bool = True,
-    antsibull_docs_package: PackageType = "antsibull-docs",
-    ansible_core_package: PackageType = "ansible-core",
+    antsibull_docs_package: PackageTypeOrList = "antsibull-docs",
+    ansible_core_package: PackageTypeOrList = "ansible-core",
     validate_collection_refs: t.Literal["self", "dependent", "all"] | None = None,
     extra_collections: list[str] | None = None,
     codeblocks_restrict_types: list[str] | None = None,
     codeblocks_restrict_type_exact_case: bool = True,
     codeblocks_allow_without_type: bool = True,
     codeblocks_allow_literal_blocks: bool = True,
-    antsibull_docutils_package: PackageType = "antsibull-docutils",
+    antsibull_docutils_package: PackageTypeOrList = "antsibull-docutils",
 ) -> None:
     """
     Add docs-check session for linting.
@@ -72,9 +74,11 @@ def add_docs_check(
     )
 
     def compose_dependencies() -> list[PackageType]:
-        deps = [antsibull_docs_package, ansible_core_package]
+        deps = []
+        deps.extend(normalize_package_type(antsibull_docs_package))
+        deps.extend(normalize_package_type(ansible_core_package))
         if run_extra_checks:
-            deps.append(antsibull_docutils_package)
+            deps.extend(normalize_package_type(antsibull_docutils_package))
         return deps
 
     def execute_extra_checks(session: nox.Session) -> None:

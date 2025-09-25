@@ -17,7 +17,9 @@ from .utils import (
 )
 from .utils.packages import (
     PackageType,
+    PackageTypeOrList,
     install,
+    normalize_package_type,
 )
 from .utils.scripts import (
     run_bare_script,
@@ -28,7 +30,7 @@ def add_license_check(
     *,
     make_license_check_default: bool = True,
     run_reuse: bool = True,
-    reuse_package: PackageType = "reuse",
+    reuse_package: PackageTypeOrList = "reuse",
     run_license_check: bool = True,
     license_check_extra_ignore_paths: list[str] | None = None,
 ) -> None:
@@ -39,7 +41,7 @@ def add_license_check(
     def compose_dependencies() -> list[PackageType]:
         deps = []
         if run_reuse:
-            deps.append(reuse_package)
+            deps.extend(normalize_package_type(reuse_package))
         return deps
 
     def license_check(session: nox.Session) -> None:
