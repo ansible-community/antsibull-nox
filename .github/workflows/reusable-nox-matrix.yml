@@ -112,8 +112,8 @@ jobs:
           extra-args: >-
             ${{ inputs.min-ansible-core && '--min-ansible-core ' || '' }}${{ inputs.min-ansible-core }}
             ${{ inputs.max-ansible-core && '--max-ansible-core ' || '' }}${{ inputs.max-ansible-core }}
-            ${{ inputs.include-tags && '--include-tags ' || '' }}${{ inputs.include-tags }}
-            ${{ inputs.exclude-tags && '--exclude-tags ' || '' }}${{ inputs.exclude-tags }}
+            ${{ inputs.include-tags && '--include-tags "' || '' }}${{ inputs.include-tags }}${{ inputs.include-tags && '"' || '' }}
+            ${{ inputs.exclude-tags && '--exclude-tags "' || '' }}${{ inputs.exclude-tags }}${{ inputs.exclude-tags && '"' || '' }}
           sessions: matrix-generator
 
   # Sessions with coverage
