@@ -716,7 +716,7 @@ class AnsibleTestIntegrationSessionGroup:
 def _get_templator(**kwargs: t.Any) -> t.Callable[[str], str]:
     template_vars = {}
     for k, v in kwargs.items():
-        val = str(v) if v else ""
+        val = str(v) if v is not None else ""
         template_vars[k] = val
         template_vars[f"{k}_dash"] = f"{val}-" if val else ""
         template_vars[f"dash_{k}"] = f"-{val}" if val else ""
@@ -747,9 +747,11 @@ def _template_session(
         if ansible_vars_item:
             session_ansible_vars.update(ansible_vars_item)
     session_ansible_vars.update(session_template.ansible_vars)
-    vars_values = {}
+    vars_values: dict[str, t.Any] = {}
     for var, value in session_ansible_vars.items():
-        if isinstance(value, AnsibleValueExplicit):
+        if value.template_value is not None:
+            vars_values[var] = value.template_value
+        elif isinstance(value, AnsibleValueExplicit):
             vars_values[var] = value.value
     for (
         ansible_core,
@@ -813,7 +815,9 @@ def _template_session(
             target=target,
             gha_container=gha_container,
             ansible_vars=session_ansible_vars,
-            session_name=normalize_session_name(tmpl(session_template.session_name_template)),
+            session_name=normalize_session_name(
+                tmpl(session_template.session_name_template)
+            ),
             display_name=tmpl(session_template.display_name_template),
             description=tmpl(session_template.description_template),
         )
