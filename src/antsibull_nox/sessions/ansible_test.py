@@ -89,6 +89,7 @@ def add_ansible_test_session(
     handle_coverage: t.Literal["never", "always", "auto"] = "auto",
     register_name: str | None = None,
     register_extra_data: dict[str, t.Any] | None = None,
+    register_tags: Sequence[str] | None = None,
     callback_before: Callable[[], None] | None = None,
     callback_after: Callable[[], None] | None = None,
     support_cd: bool = False,
@@ -204,6 +205,8 @@ def add_ansible_test_session(
         }
         if register_extra_data:
             data.update(register_extra_data)
+        if register_tags:
+            data["tags"] = sorted(register_tags)
         register(register_name, data)
 
 
@@ -243,6 +246,7 @@ def add_ansible_test_sanity_test_session(
         ansible_core_branch_name=ansible_core_branch_name,
         register_name="sanity",
         register_extra_data=register_extra_data,
+        register_tags=["sanity", "docker"],
         support_cd=True,
     )
 
@@ -368,6 +372,7 @@ def add_ansible_test_unit_test_session(
         ansible_core_branch_name=ansible_core_branch_name,
         register_name="units",
         register_extra_data=register_extra_data,
+        register_tags=["units", "docker"],
         support_cd=True,
     )
 
@@ -570,6 +575,7 @@ def add_ansible_test_integration_sessions_default_container(
                 register_extra_data={
                     "display-name": f"Ⓐ{ansible_core_version}+py{py_version}+default"
                 },
+                register_tags=["integration", "docker", "docker-default"],
                 support_cd=True,
             )
             integration_sessions_core.append(name)
@@ -885,6 +891,7 @@ def add_ansible_test_integration_sessions(
         session_by_name[session.session_name] = session
 
     for _, session in sorted(session_by_name.items()):
+        register_tags = ["integration"]
         cmd = [
             "integration",
             "--color",
@@ -897,6 +904,7 @@ def add_ansible_test_integration_sessions(
                     session.docker,
                 ]
             )
+            register_tags.extend(["docker", f"docker-{session.docker}"])
         if session.remote:
             cmd.extend(
                 [
@@ -904,6 +912,7 @@ def add_ansible_test_integration_sessions(
                     session.remote,
                 ]
             )
+            register_tags.extend(["remote", f"remote-{session.remote}"])
         if session.python_version:
             cmd.extend(
                 [
@@ -911,6 +920,7 @@ def add_ansible_test_integration_sessions(
                     str(session.python_version),
                 ]
             )
+            register_tags.extend(["python", f"python-{session.python_version}"])
         if session.target:
             cmd.append(session.target)
         extra_data = {
@@ -930,6 +940,7 @@ def add_ansible_test_integration_sessions(
             default=default and not session.part_of_group,
             register_name="integration",
             register_extra_data=extra_data,
+            register_tags=register_tags,
             support_cd=True,
         )
 
