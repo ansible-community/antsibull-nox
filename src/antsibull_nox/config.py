@@ -516,7 +516,7 @@ class AnsibleValueExplicit(p.BaseModel):
     type: t.Literal["value"] = "value"
     value: t.Any
 
-    template_value: str | None = None
+    template_value: t.Optional[str] = None
 
     def to_utils_instance(self) -> _AnsibleValueExplicit:
         """
@@ -538,7 +538,7 @@ class AnsibleValueFromEnv(p.BaseModel):
     fallback: t.Any = None
     unset_if_not_set: bool = False
 
-    template_value: str | None = None
+    template_value: t.Optional[str] = None
 
     def to_utils_instance(self) -> _AnsibleValueFromEnv:
         """
