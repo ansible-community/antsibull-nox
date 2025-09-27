@@ -658,6 +658,7 @@ class AnsibleTestIntegrationSessionTemplate:
     session_name_template: str
     display_name_template: str
     description_template: str
+    tags: list[str]
 
 
 @dataclasses.dataclass
@@ -670,6 +671,7 @@ class AnsibleTestIntegrationSessionTemplateGroup:
     description: str | None
     ansible_vars: dict[str, AnsibleValue]
     session_templates: list[AnsibleTestIntegrationSessionTemplate]
+    tags: list[str]
 
 
 @dataclasses.dataclass
@@ -694,6 +696,7 @@ class AnsibleTestIntegrationSession:
     session_name: str
     display_name: str
     description: str
+    tags: list[str]
 
     def get_ansible_vars_callback(self) -> t.Callable[[], None] | None:
         """
@@ -747,6 +750,7 @@ def _template_session(
     source: str,
     part_of_group: bool,
     ansible_vars: list[dict[str, AnsibleValue] | None],
+    tags: set[str] | list[str],
 ) -> t.Generator[AnsibleTestIntegrationSession]:
     session_ansible_vars = {}
     for ansible_vars_item in ansible_vars:
@@ -759,6 +763,9 @@ def _template_session(
             vars_values[var] = value.template_value
         elif isinstance(value, AnsibleValueExplicit):
             vars_values[var] = value.value
+    session_tags = set(tags)
+    session_tags.update(session_template.tags)
+    tags_list = sorted(session_tags)
     for (
         ansible_core,
         docker,
@@ -826,13 +833,15 @@ def _template_session(
             ),
             display_name=tmpl(session_template.display_name_template),
             description=tmpl(session_template.description_template),
+            tags=tags_list,
         )
 
 
 def _template_sessions(
     session_templates: list[AnsibleTestIntegrationSessionTemplate],
     session_template_groups: list[AnsibleTestIntegrationSessionTemplateGroup],
-    ansible_vars: dict[str, AnsibleValue] | None = None,
+    ansible_vars: dict[str, AnsibleValue],
+    tags: list[str],
 ) -> tuple[
     list[AnsibleTestIntegrationSession], list[AnsibleTestIntegrationSessionGroup]
 ]:
@@ -840,17 +849,20 @@ def _template_sessions(
     result_groups: list[AnsibleTestIntegrationSessionGroup] = []
     for index, template in enumerate(session_templates):
         for session in _template_session(
-            template, f"session template #{index + 1}", False, [ansible_vars]
+            template, f"session template #{index + 1}", False, [ansible_vars], tags
         ):
             result.append(session)
     for group_index, group in enumerate(session_template_groups):
         group_sessions: list[AnsibleTestIntegrationSession] = []
+        group_tags = set(tags)
+        group_tags.update(group.tags)
         for index, template in enumerate(group.session_templates):
             for session in _template_session(
                 template,
                 f"session template #{index + 1} of group #{group_index + 1}",
                 True,
                 [ansible_vars, group.ansible_vars],
+                group_tags,
             ):
                 result.append(session)
                 group_sessions.append(session)
@@ -871,13 +883,17 @@ def add_ansible_test_integration_sessions(
         list[AnsibleTestIntegrationSessionTemplateGroup] | None
     ) = None,
     ansible_vars: dict[str, AnsibleValue] | None = None,
+    global_tags: list[str] | None = None,
     default: bool = False,
 ) -> list[str]:
     """
     Add ansible-test integration tests.
     """
     sessions, groups = _template_sessions(
-        session_templates or [], session_template_groups or [], ansible_vars
+        session_templates or [],
+        session_template_groups or [],
+        ansible_vars or {},
+        global_tags or [],
     )
     session_by_name: dict[str, AnsibleTestIntegrationSession] = {}
     for session in sessions:
@@ -891,7 +907,7 @@ def add_ansible_test_integration_sessions(
         session_by_name[session.session_name] = session
 
     for _, session in sorted(session_by_name.items()):
-        register_tags = ["integration"]
+        register_tags = ["integration"] + session.tags
         cmd = [
             "integration",
             "--color",
@@ -940,7 +956,7 @@ def add_ansible_test_integration_sessions(
             default=default and not session.part_of_group,
             register_name="integration",
             register_extra_data=extra_data,
-            register_tags=register_tags,
+            register_tags=sorted(register_tags),
             support_cd=True,
         )
 

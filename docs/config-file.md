@@ -1241,6 +1241,10 @@ You explicitly have to list all sessions in `antsibull-nox.toml`.
   See below for the available variables.
   This can also be overriden for specific sessions.
 
+* `tags: list[str]` (default: `[]`):
+  A list of tags to add to all sessions.
+  These tags can be used when filtering sessions for CI matrix generation.
+
 * `sessions: list[SessionAnsibleTestIntegrationSession]` (default: `[]`)
   Defines session templates for ansible-test integration test sessions.
 
@@ -1331,6 +1335,10 @@ You explicitly have to list all sessions in `antsibull-nox.toml`.
     * `description_template: str | None` (default: `None`)
       If given, will overwrite `[sessions.ansible_test_integration.description_template]`.
 
+    * `tags: list[str]` (default: `[]`):
+      A list of tags to add to all sessions for this session template.
+      These tags can be used when filtering sessions for CI matrix generation.
+
 * `groups: list[SessionAnsibleTestIntegrationGroup]` (default: `[]`)
   Defines groups of session templates for ansible-test integration test sessions.
 
@@ -1382,6 +1390,9 @@ You explicitly have to list all sessions in `antsibull-nox.toml`.
     * `description_template: str | None` (default: `None`)
       Allows to provide a session's description template that overrides the global one `[sessions.ansible_test_integration.description_template]`.
       This can be overridden in each session template.
+    * `tags: list[str]` (default: `[]`):
+      A list of tags to add to all sessions for this group template.
+      These tags can be used when filtering sessions for CI matrix generation.
 
 #### Templating
 

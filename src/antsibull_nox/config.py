@@ -640,6 +640,9 @@ class SessionAnsibleTestIntegrationSession(_BaseModel):
     display_name_template: t.Union[str, None] = None
     description_template: t.Union[str, None] = None
 
+    # Tags for session registration; can be used by matrix generator
+    tags: list[str] = []
+
     @p.model_validator(mode="after")
     def _validate_after(self) -> t.Self:
         has_docker = self.docker is not None
@@ -675,6 +678,9 @@ class SessionAnsibleTestIntegrationGroup(_BaseModel):
     display_name_template: t.Union[str, None] = None
     description_template: t.Union[str, None] = None
 
+    # Tags for session registration; can be used by matrix generator
+    tags: list[str] = []
+
 
 class SessionAnsibleTestIntegration(_BaseModel):
     """
@@ -697,6 +703,9 @@ class SessionAnsibleTestIntegration(_BaseModel):
     description_template: str = (
         "Run integration tests with ansible-core {ansible_core}, {docker_short}{remote}"
     )
+
+    # Tags for session registration; can be used by matrix generator
+    tags: list[str] = []
 
 
 class SessionAnsibleLint(_BaseModel):

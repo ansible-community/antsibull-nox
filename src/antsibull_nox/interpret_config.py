@@ -256,6 +256,7 @@ def _add_ansible_test_sessions(sessions: Sessions) -> None:
                     k: v.to_utils_instance()
                     for k, v in sessions.ansible_test_integration.ansible_vars.items()
                 },
+                global_tags=sessions.ansible_test_integration.tags,
                 session_templates=[
                     AnsibleTestIntegrationSessionTemplate(
                         ansible_core=_ensure_list(session.ansible_core),
@@ -277,6 +278,7 @@ def _add_ansible_test_sessions(sessions: Sessions) -> None:
                         or sessions.ansible_test_integration.display_name_template,
                         description_template=session.description_template
                         or sessions.ansible_test_integration.description_template,
+                        tags=session.tags,
                     )
                     for session in sessions.ansible_test_integration.sessions
                 ],
@@ -288,6 +290,7 @@ def _add_ansible_test_sessions(sessions: Sessions) -> None:
                             k: v.to_utils_instance()
                             for k, v in group.ansible_vars.items()
                         },
+                        tags=group.tags,
                         session_templates=[
                             AnsibleTestIntegrationSessionTemplate(
                                 ansible_core=_ensure_list(session.ansible_core),
@@ -326,6 +329,7 @@ def _add_ansible_test_sessions(sessions: Sessions) -> None:
                                 description_template=session.description_template
                                 or group.description_template
                                 or sessions.ansible_test_integration.description_template,
+                                tags=session.tags,
                             )
                             for session in group.sessions
                         ],
