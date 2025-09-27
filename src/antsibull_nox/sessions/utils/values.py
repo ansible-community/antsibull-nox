@@ -23,6 +23,8 @@ class AnsibleValueExplicit:
 
     value: t.Any
 
+    template_value: str | None = None
+
     def get_value(self) -> tuple[t.Any, bool]:
         """
         Get the current value, together with a boolean whether this value should be set.
@@ -39,6 +41,8 @@ class AnsibleValueFromEnv:
     name: str
     fallback: t.Any = None
     unset_if_not_set: bool = False
+
+    template_value: str | None = None
 
     def get_value(self) -> tuple[t.Any, bool]:
         """

@@ -516,11 +516,16 @@ class AnsibleValueExplicit(p.BaseModel):
     type: t.Literal["value"] = "value"
     value: t.Any
 
+    template_value: t.Optional[str] = None
+
     def to_utils_instance(self) -> _AnsibleValueExplicit:
         """
         Convert config object to runtime Ansible value object.
         """
-        return _AnsibleValueExplicit(value=self.value)
+        return _AnsibleValueExplicit(
+            value=self.value,
+            template_value=self.template_value,
+        )
 
 
 class AnsibleValueFromEnv(p.BaseModel):
@@ -533,6 +538,8 @@ class AnsibleValueFromEnv(p.BaseModel):
     fallback: t.Any = None
     unset_if_not_set: bool = False
 
+    template_value: t.Optional[str] = None
+
     def to_utils_instance(self) -> _AnsibleValueFromEnv:
         """
         Convert config object to runtime Ansible value object.
@@ -541,6 +548,7 @@ class AnsibleValueFromEnv(p.BaseModel):
             name=self.name,
             fallback=self.fallback,
             unset_if_not_set=self.unset_if_not_set,
+            template_value=self.template_value,
         )
 
 

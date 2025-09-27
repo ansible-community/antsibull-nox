@@ -1133,17 +1133,25 @@ It is possible to restrict the Python versions used to run the tests per ansible
   * `value`: specify a literal value.
     The dictionary can have the following fields:
 
-    * `value: Any` (**required**): The value to store in the variable.
+    * `value: Any` (**required**):
+      The value to store in the variable.
+
+    * `value_template: str | None` (default `None`):
+      If set, show this value insead of the real value in templates (see further below).
 
   * `env_var`: specify the name of an environment variable, whose value will be taken.
     The dictionary can have the following fields:
 
-    * `name: str` (**required**): The name of the environment variable to use.
+    * `name: str` (**required**):
+      The name of the environment variable to use.
 
     * `fallback: Any` (default `""`): The value to store in the variable if the environment variable is not set.
       Will be ignored if `unset_if_not_set=true`.
 
     * `unset_if_not_set: bool` (default: `false`): Whether to not define the Ansible variable in case the environment variable is not set.
+
+    * `value_template: str | None` (default `None`):
+      If set, show this value insead of the real value in templates (see further below).
 
 #### Example code
 
@@ -1394,7 +1402,7 @@ A list of variables that can be used is generated from a base list of variables:
 * `gha_arm`: `"ARM"` if `gha_container` references to an ARM image.
 * `gha_arm_lower`: `arm` if `gha_container` references to an ARM image.
 
-Additionally, every variable defined for the session that is explicitly provided is made available under the variable's name.
+Additionally, every variable defined for the session that is explicitly provided, or that has `template_value` set, is made available under the variable's name.
 
 For a variable name `var` listed above, the following variables are also defined:
 
