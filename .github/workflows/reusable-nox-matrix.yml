@@ -34,6 +34,19 @@ name: Run sanity, unit, and integration tests
           Note that this will automatically disable code coverage collection.
         required: false
         default: false
+      include-tags:
+        type: string
+        description: >-
+          Comma-separated list of tags that should be included from the matrix.
+        default: ""
+      exclude-tags:
+        type: string
+        description: |-
+          Comma-separated list of tags that should be excluded from the matrix.
+
+          By default, `remote` excludes all integration test sessions that require a remote VM,
+          and `no-gha` excludes all sessions that declare not to work on GHA.
+        default: remote, no-gha
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -99,6 +112,8 @@ jobs:
           extra-args: >-
             ${{ inputs.min-ansible-core && '--min-ansible-core ' || '' }}${{ inputs.min-ansible-core }}
             ${{ inputs.max-ansible-core && '--max-ansible-core ' || '' }}${{ inputs.max-ansible-core }}
+            ${{ inputs.include-tags && '--include-tags ' || '' }}${{ inputs.include-tags }}
+            ${{ inputs.exclude-tags && '--exclude-tags ' || '' }}${{ inputs.exclude-tags }}
           sessions: matrix-generator
 
   # Sessions with coverage

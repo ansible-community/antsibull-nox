@@ -270,6 +270,11 @@ It accepts the following parameters:
   Supply additional data when registering a session.
   Values that are used by the shared workflow are `display-name` (shown to the user) and `gha-container` (used for `runs-on`).
 
+* `register_tags: Sequence[str] | None` (default: `None`):
+  A sequence of tags.
+  Will be added to the register extra data as `tags`.
+  This can be used to filter by tags in the matrix generation.
+
 * `callback_before: Callable[[], None] | None` (default `None`):
   Callback that will be run before `ansible-test` is run in the temporary directory.
   Can be used to set-up files like `tests/integration/integration_config.yml`.

@@ -35,7 +35,7 @@ jobs:
     name: "Run nox"
     steps:
       - name: Check out collection
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Run nox
@@ -56,7 +56,8 @@ then you can use the shared workflow
 [ansible-community/antsibull-nox/.github/workflows/reusable-nox-matrix.yml@main](https://github.com/ansible-community/antsibull-nox/blob/main/.github/workflows/reusable-nox-matrix.yml)
 to generate a CI matrix and run the `ansible-test` jobs:
 
-The following example is taken from community.dns:
+The following example is taken from community.dns,
+with comments indicating further options:
 ```yaml
 ---
 name: nox
@@ -80,6 +81,13 @@ jobs:
       # but that will disable codecov uploading in PRs.
       # To enable it, simply add:
       #   change-detection-in-prs: true
+      # You can limit the ansible-core version with:
+      #   min-ansible-core: "2.15"
+      #   max-ansible-core: "2.18"
+      # You can limit to all the given tags being present:
+      #   include-tags: tag1, tag2, tag3
+      # You can limit to all the given tags being absent:
+      #   exclude-tags: tag1, tag2, tag3
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 ```

@@ -227,6 +227,7 @@ def add_execution_environment_session(
     data = {
         "name": session_name,
         "description": execution_environment.description,
+        "tags": ["ee", "docker"],
     }
     register("execution-environment", data)
 
