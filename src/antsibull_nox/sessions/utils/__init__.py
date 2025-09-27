@@ -159,10 +159,19 @@ def parse_args(
         return session.error("Error")
 
 
+def normalize_session_name(name: str) -> str:
+    """
+    Replace/remove not allowed characters in session names.
+    """
+    # So far, I'm only aware of '/'.
+    return name.replace("/", "-")
+
+
 __all__ = [
     "ci_group",
     "compose_description",
     "get_registered_sessions",
+    "normalize_session_name",
     "nox_has_verbosity",
     "register",
     "silence_run_verbosity",

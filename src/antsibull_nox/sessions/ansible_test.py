@@ -34,6 +34,7 @@ from ..python import get_installed_python_versions
 from ..utils import Version
 from .collections import prepare_collections
 from .utils import (
+    normalize_session_name,
     register,
 )
 from .utils.packages import (
@@ -812,7 +813,7 @@ def _template_session(
             target=target,
             gha_container=gha_container,
             ansible_vars=session_ansible_vars,
-            session_name=tmpl(session_template.session_name_template),
+            session_name=normalize_session_name(tmpl(session_template.session_name_template)),
             display_name=tmpl(session_template.display_name_template),
             description=tmpl(session_template.description_template),
         )
@@ -947,7 +948,7 @@ def add_ansible_test_integration_sessions(
         if group.session_name is None:
             continue
         add_group_session(
-            group.session_name,
+            normalize_session_name(group.session_name),
             group.description
             or "Meta session for running some ansible-test integration test sessions.",
             [session.session_name for session in group.sessions],
