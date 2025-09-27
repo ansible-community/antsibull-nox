@@ -14,7 +14,7 @@ import dataclasses
 import itertools
 import os
 import typing as t
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 import nox
@@ -194,7 +194,7 @@ def add_ansible_test_session(
     )(run_ansible_test)
 
     if register_name:
-        data = {
+        data: dict[str, t.Any] = {
             "name": name,
             "ansible-core": (
                 str(ansible_core_branch_name)

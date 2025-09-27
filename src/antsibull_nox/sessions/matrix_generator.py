@@ -15,6 +15,7 @@ import json
 import os
 import sys
 import typing as t
+from collections.abc import Sequence
 
 import nox
 
@@ -32,6 +33,12 @@ def _create_parser() -> argparse.ArgumentParser:
 
     parser.add_argument("--min-ansible-core", help="Minimum ansible-core version")
     parser.add_argument("--max-ansible-core", help="Maximum ansible-core version")
+    parser.add_argument(
+        "--include-tags", help="Comma-separated list of tags that have to be present"
+    )
+    parser.add_argument(
+        "--exclude-tags", help="Comma-separated list of tags that must not be present"
+    )
 
     return parser
 
@@ -47,11 +54,21 @@ def _parse_version(
         return session.error(f"{option_name}: {exc}")
 
 
+def _ensure_sequence(value: str | Sequence[str] | None) -> Sequence[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, Sequence):
+        return value
+    return []
+
+
 def _filter(
     sessions: list[dict[str, t.Any]],
     *,
     min_ansible_core: Version | None,
     max_ansible_core: Version | None,
+    include_tags: list[str] | None,
+    exclude_tags: list[str] | None,
 ) -> list[dict[str, t.Any]]:
     result = []
     for session in sessions:
@@ -64,8 +81,22 @@ def _filter(
                 continue
             if max_ansible_core is not None and version > max_ansible_core:
                 continue
+        tags = _ensure_sequence(session.get("tags"))
+        if include_tags and not all(tag in tags for tag in include_tags):
+            continue
+        if exclude_tags and any(tag in tags for tag in exclude_tags):
+            continue
         result.append(session)
     return result
+
+
+def _split(tag_string: str | None) -> t.Generator[str]:
+    if tag_string is None:
+        return
+    for part in tag_string.split(","):
+        part = part.strip()
+        if part:
+            yield part
 
 
 def add_matrix_generator() -> None:
@@ -87,6 +118,9 @@ def add_matrix_generator() -> None:
         max_ansible_core = _parse_version(
             args.max_ansible_core, option_name="--max-ansible-core", session=session
         )
+        include_tags = list(_split(args.include_tags))
+        exclude_tags = list(_split(args.exclude_tags))
+        print(include_tags, exclude_tags)
 
         registered_sessions = get_registered_sessions()
         for key, sessions in list(registered_sessions.items()):
@@ -94,6 +128,8 @@ def add_matrix_generator() -> None:
                 sessions,
                 min_ansible_core=min_ansible_core,
                 max_ansible_core=max_ansible_core,
+                include_tags=include_tags,
+                exclude_tags=exclude_tags,
             )
 
         json_output = os.environ.get("ANTSIBULL_NOX_MATRIX_JSON")
