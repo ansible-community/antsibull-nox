@@ -144,11 +144,11 @@ jobs:
           change-detection: ${{ needs.create-matrixes.outputs.change-detection }}
           change-detection-base-branch: ${{ needs.create-matrixes.outputs.change-detection-base-branch }}
           extra-python-versions: ${{ matrix.python }}
-          extra-args: ${{ needs.create-matrixes.outputs.upload-codecov && '--coverage' || '' }}
+          extra-args: ${{ needs.create-matrixes.outputs.upload-codecov == 'true' && '--coverage' || '' }}
           sessions: ${{ matrix.name }}
       - name: Upload coverage for final step
         if: >-
-          !matrix.skip && needs.create-matrixes.outputs.upload-codecov
+          !matrix.skip && needs.create-matrixes.outputs.upload-codecov == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-sanity-${{ matrix.name }}
@@ -195,11 +195,11 @@ jobs:
           change-detection: ${{ needs.create-matrixes.outputs.change-detection }}
           change-detection-base-branch: ${{ needs.create-matrixes.outputs.change-detection-base-branch }}
           extra-python-versions: ${{ matrix.python }}
-          extra-args: ${{ needs.create-matrixes.outputs.upload-codecov && '--coverage' || '' }}
+          extra-args: ${{ needs.create-matrixes.outputs.upload-codecov == 'true' && '--coverage' || '' }}
           sessions: ${{ matrix.name }}
       - name: Upload coverage for final step
         if: >-
-          !matrix.skip && needs.create-matrixes.outputs.upload-codecov
+          !matrix.skip && needs.create-matrixes.outputs.upload-codecov == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-units-${{ matrix.name }}
@@ -247,11 +247,11 @@ jobs:
           change-detection: ${{ needs.create-matrixes.outputs.change-detection }}
           change-detection-base-branch: ${{ needs.create-matrixes.outputs.change-detection-base-branch }}
           extra-python-versions: ${{ matrix.python }}
-          extra-args: ${{ needs.create-matrixes.outputs.upload-codecov && '--coverage' || '' }}
+          extra-args: ${{ needs.create-matrixes.outputs.upload-codecov == 'true' && '--coverage' || '' }}
           sessions: ${{ matrix.name }}
       - name: Upload coverage for final step
         if: >-
-          !matrix.skip && needs.create-matrixes.outputs.upload-codecov && (matrix.has-coverage != 'false')
+          !matrix.skip && needs.create-matrixes.outputs.upload-codecov == 'true' && (matrix.has-coverage != 'false')
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-integration-${{ matrix.name }}
@@ -259,7 +259,7 @@ jobs:
 
   upload-coverage:
     name: Upload coverage
-    if: needs.create-matrixes.outputs.upload-codecov
+    if: needs.create-matrixes.outputs.upload-codecov == 'true'
     needs:
       - sanity
       - units
