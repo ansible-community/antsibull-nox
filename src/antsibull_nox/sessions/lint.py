@@ -574,7 +574,7 @@ def add_yamllint(
             ],
         )
         if not all_yaml_filenames:
-            session.warn("Skipping yamllint since no YAML file was found...")
+            session.warn("Skipping yamllint (no files to process)")
             return
 
         run_bare_script(
@@ -606,10 +606,7 @@ def add_yamllint(
             ],
         )
         if not all_plugin_files:
-            session.warn(
-                "Skipping yamllint for modules/plugins since"
-                " no appropriate Python file was found..."
-            )
+            session.warn("Skipping yamllint for modules/plugins (no files to process)")
             return
         run_bare_script(
             session,
@@ -629,10 +626,7 @@ def add_yamllint(
     def execute_extra_docs_yamllint(session: nox.Session) -> None:
         all_extra_docs = filter_files_cd(find_extra_docs_rst_files())
         if not all_extra_docs:
-            session.warn(
-                "Skipping yamllint for extra docs since"
-                " no appropriate RST file was found..."
-            )
+            session.warn("Skipping yamllint for extra docs (no files to process)")
             return
         run_bare_script(
             session,
