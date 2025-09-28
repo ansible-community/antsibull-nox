@@ -7,7 +7,9 @@ minor_changes:
     * All ansible-test tests configured through ``noxfile.py`` that explicitly allow change detection;
     * All ``lint`` sessions (``formatters``, ``codeqa``, ``yamllint``, ``typing``);
     * The ``extra-checks`` session and all its tests;
-    * All tests but ``reuse`` from the ``license-check`` session.
+    * All tests but ``reuse`` from the ``license-check`` session;
+    * The `docs-check` sessions are restricted to changed files (for code-block tests),
+      or skipped if there are no appropriate changed files.
 
     Change detection can be enabled with the environment variable ``ANTSIBULL_CHANGE_DETECTION``.
     The base branch can explicitly set with the environment variable ``ANTSIBULL_BASE_BRANCH``
@@ -16,7 +18,8 @@ minor_changes:
     https://github.com/ansible-community/antsibull-nox/pull/122,
     https://github.com/ansible-community/antsibull-nox/pull/123,
     https://github.com/ansible-community/antsibull-nox/pull/124,
-    https://github.com/ansible-community/antsibull-nox/pull/129).
+    https://github.com/ansible-community/antsibull-nox/pull/129,
+    https://github.com/ansible-community/antsibull-nox/pull/130).
   - |-
     The GitHub antsibull-nox action and the shared workflow support change detection.
     To enable change detection for PRs, simply set the workflow parameter ``change-detection-in-prs``

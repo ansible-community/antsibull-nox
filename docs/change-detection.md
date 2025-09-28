@@ -55,3 +55,5 @@ Right now, the following tests are supported:
 * All `lint` sessions (`formatters`, `codeqa`, `yamllint`, `typing`).
 * The `extra-checks` session and all its tests.
 * All tests but `reuse` from the `license-check` session.
+* The `docs-check` sessions are restricted to changed files (for code-block tests),
+  or skipped if there are no appropriate changed files.
