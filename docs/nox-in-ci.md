@@ -48,6 +48,34 @@ jobs:
     You can use the `stable-1` branch to get updates less often,
     but only after they have been tested on `main` for some time.
 
+### Run extra sanity tests with change detection
+
+While the action provided by the antsibull-nox repository allows to do change detection,
+you will have to do the repository setup yourself.
+If you like a simple solution, you can use a provided shared workflow for this.
+
+```yaml
+---
+name: nox
+'on':
+  push:
+    branches:
+      - main
+      - stable-*
+  pull_request:
+  # Run CI once per day (at 07:30 UTC)
+  schedule:
+    - cron: '30 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  nox:
+    uses: ansible-community/antsibull-nox/.github/workflows/reusable-nox-run.yml@main
+    with:
+      session-name: Run extra sanity tests
+      change-detection-in-prs: true
+```
+
 ### Running ansible-test CI matrix from nox
 
 If you use the `[sessions.ansible_test_sanity]`, `[sessions.ansible_test_units]`, `[sessions.ansible_test_integration_w_default_container]`, or `[sessions.ee_check]` sections in `antsibull-nox.toml`,

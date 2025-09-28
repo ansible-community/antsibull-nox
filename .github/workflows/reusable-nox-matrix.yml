@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2025 Felix Fontein <felix@fontein.de>
 
-name: Run sanity, unit, and integration tests
+name: Run sanity, unit, integration, and EE tests
 
 "on":
   workflow_call:
