@@ -81,26 +81,29 @@ jobs:
         id: determine-parameters
         run: |
           # Compute job Python version
+          import json
           import os
           import pathlib
-          import json
           import shlex
-          import sys
 
           FILE_APPEND_MODE = "a"
           OUTPUTS_FILE_PATH = pathlib.Path(os.environ["GITHUB_OUTPUT"])
+
 
           def set_output(name, value):
               with OUTPUTS_FILE_PATH.open(FILE_APPEND_MODE) as outputs_file:
                   outputs_file.writelines(f"{name}={value}{os.linesep}")
 
-          change_detection_in_prs = os.environ["CHANGE_DETECTION_IN_PRS"].lower() == "true"
-          gha_pull_request_branch = os.environ["GHA_PULL_REQUEST_BASE_REF"]
-          upload_codecov = os.environ["UPLOAD_CODECOV"].lower() == "true"
-          min_ansible_core = os.environ["MIN_ANSIBLE_CORE"]
-          max_ansible_core = os.environ["MAX_ANSIBLE_CORE"]
-          include_tags = os.environ["INCLUDE_TAGS"]
-          exclude_tags = os.environ["EXCLUDE_TAGS"]
+
+          change_detection_in_prs = (
+              os.environ.get("CHANGE_DETECTION_IN_PRS", "").lower() == "true"
+          )
+          gha_pull_request_branch = os.environ.get("GHA_PULL_REQUEST_BASE_REF", "")
+          upload_codecov = os.environ.get("UPLOAD_CODECOV", "").lower() == "true"
+          min_ansible_core = os.environ.get("MIN_ANSIBLE_CORE", "")
+          max_ansible_core = os.environ.get("MAX_ANSIBLE_CORE", "")
+          include_tags = os.environ.get("INCLUDE_TAGS", "")
+          exclude_tags = os.environ.get("EXCLUDE_TAGS", "")
 
           change_detection = False
           change_detection_base_branch = ""
