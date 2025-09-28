@@ -52,6 +52,29 @@ def find_extra_docs_rst_files() -> list[Path]:
     ]
 
 
+def file_of_interest(file: Path) -> bool:
+    """
+    Determine whether the file is relevant for the docs build.
+    """
+    if file.is_relative_to("docs/docsite"):
+        return True
+    if file in (Path("meta/runtime.yml"), Path("galaxy.yml")):
+        return True
+    if file.is_relative_to("plugins"):
+        if file.is_relative_to("plugins/module_utils"):
+            return False
+        if file.is_relative_to("plugins/plugin_utils"):
+            return False
+        # Other Python and YAML plugin/ files often contain documentation.
+        # Other files do not.
+        return file.suffix in (".py", ".yml", ".yaml")
+    if file.is_relative_to("roles"):
+        # For roles, only files in <role>/meta/ are of interest for documentation.
+        return file.match("roles/*/meta/*")
+    # So far, no other files are of interest for documentation.
+    return False
+
+
 def add_docs_check(
     *,
     make_docs_check_default: bool = True,
@@ -101,36 +124,15 @@ def add_docs_check(
             with_cd=True,
         )
 
-
-    def file_of_interest(file: Path) -> bool:
-        """
-        Determine whether the file is relevant for the docs build.
-        """
-        if file.is_relative_to("docs/docsite"):
-            return True
-        if file in (Path("meta/runtime.yml"), Path("galaxy.yml")):
-            return True
-        if file.is_relative_to("plugins"):
-            if file.is_relative_to("plugins/module_utils"):
-                return False
-            if file.is_relative_to("plugins/plugin_utils"):
-                return False
-            # Other Python and YAML plugin/ files often contain documentation.
-            # Other files do not.
-            return file.suffix in (".py", ".yml", ".yaml")
-        if file.is_relative_to("roles"):
-            # For roles, only files in <role>/meta/ are of interest for documentation.
-            return file.match("roles/*/meta/*")
-        # So far, no other files are of interest for documentation.
-        return False
-
     def execute_antsibull_docs(
         session: nox.Session, prepared_collections: CollectionSetup
     ) -> None:
         changes = get_changes()
         if changes is not None:
             if not any(file_of_interest(file) for file in changes):
-                session.warn("Skip antsibull-docs lint-collection-docs (no files to process)")
+                session.warn(
+                    "Skip antsibull-docs lint-collection-docs (no files to process)"
+                )
                 return
         antsibull_docs_version = get_package_version(session, "antsibull-docs")
         if antsibull_docs_version is not None:

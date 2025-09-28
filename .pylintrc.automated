@@ -72,6 +72,7 @@ disable=
     too-many-lines,
     too-many-locals,
     too-many-positional-arguments,
+    too-many-return-statements,
     too-many-statements,
 
 # Enable the message, report, category or checker with the given id(s). You can
