@@ -1,0 +1,118 @@
+---
+# GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or
+# https://www.gnu.org/licenses/gpl-3.0.txt)
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025 Felix Fontein <felix@fontein.de>
+
+name: Run nox tests
+
+"on":
+  workflow_call:
+    inputs:
+      session-name:
+        type: string
+        description: >-
+          The sesison name.
+        required: true
+      change-detection-in-prs:
+        type: boolean
+        description: >-
+          Whether to use Change Detection in Pull Requests.
+          Note that this will automatically disable code coverage collection.
+        required: false
+        default: false
+      gha-container:
+        type: string
+        description: >-
+          The GHA container to run the session in.
+        required: false
+        default: ubuntu-latest
+      extra-python-version:
+        type: string
+        description: |-
+          Newline-separated list of Python versions to install as well.
+          Should be used if other Python versions are needed.
+        required: false
+        default: ""
+      extra-args:
+        type: string
+        description: |-
+          Additional arguments to pass to the nox run after `--`.
+        required: false
+        default: ""
+      sessions:
+        type: string
+        description: |-
+          Nox sessions to run. By default, all sessions are run.
+        required: false
+        default: ""
+
+jobs:
+  session:
+    name: ${{ inputs.session-name }}
+    runs-on: ${{ inputs.gha-container }}
+    steps:
+      - name: Determine parameters
+        shell: python
+        env:
+          CHANGE_DETECTION_IN_PRS: ${{ inputs.change-detection-in-prs }}
+          GHA_PULL_REQUEST_BASE_REF: ${{ github.event.pull_request.base.ref || '' }}
+        id: determine-parameters
+        run: |
+          # Compute job Python version
+          import json
+          import os
+          import pathlib
+          import shlex
+
+          FILE_APPEND_MODE = "a"
+          OUTPUTS_FILE_PATH = pathlib.Path(os.environ["GITHUB_OUTPUT"])
+
+
+          def set_output(name, value):
+              with OUTPUTS_FILE_PATH.open(FILE_APPEND_MODE) as outputs_file:
+                  outputs_file.writelines(f"{name}={value}{os.linesep}")
+
+
+          change_detection_in_prs = (
+              os.environ.get("CHANGE_DETECTION_IN_PRS", "").lower() == "true"
+          )
+          gha_pull_request_branch = os.environ.get("GHA_PULL_REQUEST_BASE_REF", "")
+
+          change_detection = False
+          change_detection_base_branch = ""
+          if change_detection_in_prs and gha_pull_request_branch:
+              change_detection = True
+              change_detection_base_branch = gha_pull_request_branch
+
+          set_output("change-detection", json.dumps(change_detection))
+          set_output("change-detection-base-branch", change_detection_base_branch)
+      - name: Check out collection
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: ${{ steps.determine-parameters.outputs.change-detection == 'true' && '0' || '1' }}
+      - name: Create branches for change detection
+        if: >-
+          steps.determine-parameters.outputs.change-detection == 'true'
+        env:
+          GHA_PR_NUMBER: ${{ github.event.pull_request.number }}
+          GHA_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          # Create a branch for the current HEAD, which happens to be a merge commit
+          git checkout -b "pull-request-${GHA_PR_NUMBER}"
+
+          # Name the target branch
+          git branch "${GHA_BASE_REF}" --track "origin/${GHA_BASE_REF}"
+
+          # Show branch information
+          git branch -vv
+        shell: bash
+      - name: Run nox
+        uses: ansible-community/antsibull-nox@main
+        with:
+          change-detection: ${{ steps.determine-parameters.outputs.change-detection }}
+          change-detection-base-branch: ${{ steps.determine-parameters.outputs.change-detection-base-branch }}
+          extra-python-versions: ${{ inputs.extra-python-version }}
+          extra-args: ${{ inputs.extra-args }}
+          sessions: ${{ inputs.sessions }}
