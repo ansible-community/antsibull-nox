@@ -7,8 +7,10 @@
 [sessions.lint]
 run_mypy = false
 
+[sessions.ansible_test_sanity]
+
 [sessions.ee_check]
-default = true
+default = false
 
 [[sessions.ee_check.execution_environments]]
 name = "minimal"

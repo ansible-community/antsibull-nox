@@ -47,6 +47,13 @@ name: Run sanity, unit, integration, and EE tests
           By default, `remote` excludes all integration test sessions that require a remote VM,
           and `no-gha` excludes all sessions that declare not to work on GHA.
         default: remote, no-gha
+      collection-root:
+        type: string
+        description: |-
+          The directory where the collection's `galaxy.yml` is in, and where the `noxfile.py` is in.
+          Note that change detection might not work for all sessions if this is not `.`.
+        required: false
+        default: .
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -134,6 +141,7 @@ jobs:
           change-detection-base-branch: ${{ steps.determine-parameters.outputs.change-detection-base-branch }}
           extra-args: ${{ steps.determine-parameters.outputs.extra-args }}
           sessions: matrix-generator
+          working-directory: ${{ inputs.collection-root }}
 
   # Sessions with coverage
 
@@ -180,13 +188,14 @@ jobs:
           extra-python-versions: ${{ matrix.python }}
           extra-args: ${{ needs.create-matrixes.outputs.upload-codecov == 'true' && '--coverage' || '' }}
           sessions: ${{ matrix.name }}
+          working-directory: ${{ inputs.collection-root }}
       - name: Upload coverage for final step
         if: >-
           !matrix.skip && needs.create-matrixes.outputs.upload-codecov == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-sanity-${{ matrix.name }}
-          path: tests/output/reports/coverage=sanity=*.xml
+          path: ${{ inputs.collection-root }}/tests/output/reports/coverage=sanity=*.xml
 
   units:
     name: ${{ matrix.skip && 'Skipping ' || '' }}Units (${{ matrix.display-name }})
@@ -231,13 +240,14 @@ jobs:
           extra-python-versions: ${{ matrix.python }}
           extra-args: ${{ needs.create-matrixes.outputs.upload-codecov == 'true' && '--coverage' || '' }}
           sessions: ${{ matrix.name }}
+          working-directory: ${{ inputs.collection-root }}
       - name: Upload coverage for final step
         if: >-
           !matrix.skip && needs.create-matrixes.outputs.upload-codecov == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-units-${{ matrix.name }}
-          path: tests/output/reports/coverage=units=*.xml
+          path: ${{ inputs.collection-root }}/tests/output/reports/coverage=units=*.xml
 
   integration:
     name: ${{ matrix.skip && 'Skipping ' || '' }}I (${{ matrix.display-name }})
@@ -283,13 +293,14 @@ jobs:
           extra-python-versions: ${{ matrix.python }}
           extra-args: ${{ needs.create-matrixes.outputs.upload-codecov == 'true' && '--coverage' || '' }}
           sessions: ${{ matrix.name }}
+          working-directory: ${{ inputs.collection-root }}
       - name: Upload coverage for final step
         if: >-
           !matrix.skip && needs.create-matrixes.outputs.upload-codecov == 'true' && (matrix.has-coverage != 'false')
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-integration-${{ matrix.name }}
-          path: tests/output/reports/coverage=integration=*.xml
+          path: ${{ inputs.collection-root }}/tests/output/reports/coverage=integration=*.xml
 
   upload-coverage:
     name: Upload coverage
@@ -311,11 +322,13 @@ jobs:
       - name: List all files
         run: find . -name 'coverage=*.xml'
         shell: bash
+        working-directory: ${{ inputs.collection-root }}
       - name: Upload coverage
         uses: codecov/codecov-action@v5
         with:
           files: coverage=*.xml
           token: ${{ secrets.CODECOV_TOKEN }}
+          working-directory: ${{ inputs.collection-root }}
 
   # Sessions without coverage
 
@@ -343,3 +356,4 @@ jobs:
         uses: ansible-community/antsibull-nox@main
         with:
           sessions: ${{ matrix.name }}
+          working-directory: ${{ inputs.collection-root }}

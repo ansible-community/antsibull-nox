@@ -223,6 +223,8 @@ def _read_requires_ansible() -> PckgSpecifierSet:
     except Exception as exc:
         raise ValueError(f"Cannot parse {path}: {exc}") from exc
 
+    if not isinstance(runtime_data, dict):
+        raise ValueError(f"{path} is not a dictionary")
     requires_ansible = runtime_data.get("requires_ansible")
     if not isinstance(requires_ansible, str):
         raise ValueError(f"{path} does not contain an 'requires_ansible' string")

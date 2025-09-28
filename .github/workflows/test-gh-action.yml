@@ -31,3 +31,16 @@ jobs:
         uses: ./
         with:
           working-directory: tests/test-collection/
+
+  nox:
+    uses: ./.github/workflows/reusable-nox-run.yml
+    with:
+      session-name: Run extra sanity tests
+      change-detection-in-prs: true
+      collection-root: tests/test-collection/
+
+  ansible-test:
+    uses: ./.github/workflows/reusable-nox-matrix.yml
+    with:
+      change-detection-in-prs: true
+      collection-root: tests/test-collection/
