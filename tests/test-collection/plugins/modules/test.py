@@ -23,6 +23,21 @@ notes:
   - Does not support C(check_mode).
 """
 
+EXAMPLES = r"""
+---
+- name: Test call
+  antsibull.test.test:
+"""
+
+RETURN = r"""
+---
+msg:
+  description:
+    - A nice message.
+  type: str
+  returned: always
+"""
+
 from ansible.module_utils.basic import (  # noqa: E402, pylint: disable=wrong-import-position
     AnsibleModule,
 )

@@ -46,6 +46,13 @@ name: Run nox tests
           Nox sessions to run. By default, all sessions are run.
         required: false
         default: ""
+      collection-root:
+        type: string
+        description: |-
+          The directory where the collection's `galaxy.yml` is in, and where the `noxfile.py` is in.
+          Note that change detection might not work for all sessions if this is not `.`.
+        required: false
+        default: .
 
 jobs:
   session:
@@ -116,3 +123,4 @@ jobs:
           extra-python-versions: ${{ inputs.extra-python-version }}
           extra-args: ${{ inputs.extra-args }}
           sessions: ${{ inputs.sessions }}
+          working-directory: ${{ inputs.collection-root }}
