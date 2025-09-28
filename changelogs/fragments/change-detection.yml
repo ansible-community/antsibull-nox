@@ -15,7 +15,8 @@ minor_changes:
     https://github.com/ansible-community/antsibull-nox/pull/120,
     https://github.com/ansible-community/antsibull-nox/pull/122,
     https://github.com/ansible-community/antsibull-nox/pull/123,
-    https://github.com/ansible-community/antsibull-nox/pull/124).
+    https://github.com/ansible-community/antsibull-nox/pull/124,
+    https://github.com/ansible-community/antsibull-nox/pull/129).
   - |-
     The GitHub antsibull-nox action and the shared workflow support change detection.
     To enable change detection for PRs, simply set the workflow parameter ``change-detection-in-prs``

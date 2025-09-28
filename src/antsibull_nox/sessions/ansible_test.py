@@ -448,6 +448,28 @@ def add_all_ansible_test_unit_test_sessions(
     )(run_all_unit_tests)
 
 
+def update_gitignore(gitignore_path: Path, *paths_to_add: Path) -> None:
+    """
+    Add the given paths to .gitignore.
+    """
+    if not paths_to_add:
+        return
+
+    existing: list[str]
+    try:
+        with open(gitignore_path, encoding="utf-8", mode="rt") as f:
+            existing = [f.read()]
+    except FileNotFoundError:
+        existing = [""]
+
+    for path in paths_to_add:
+        existing.append(f"/{path}")
+    existing.append("")
+
+    with open(gitignore_path, encoding="utf-8", mode="wt") as f:
+        f.write("\n".join(existing))
+
+
 def write_integration_config(
     *ansible_vars: dict[str, AnsibleValue] | None,
     ansible_vars_from_env_vars: dict[str, str] | None = None,
@@ -472,6 +494,11 @@ def write_integration_config(
                     content[ans_var] = val
 
     store_yaml_file(path, content, nice=True, sort_keys=True)
+
+    update_gitignore(
+        Path(".gitignore"),
+        path,
+    )
 
 
 def add_ansible_test_integration_sessions_default_container(
