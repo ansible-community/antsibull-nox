@@ -74,24 +74,36 @@ jobs:
           CHANGE_DETECTION_IN_PRS: ${{ inputs.change-detection-in-prs }}
           GHA_PULL_REQUEST_BASE_REF: ${{ github.event.pull_request.base.ref || '' }}
           UPLOAD_CODECOV: ${{ inputs.upload-codecov }}
+          MIN_ANSIBLE_CORE: ${{ inputs.min-ansible-core }}
+          MAX_ANSIBLE_CORE: ${{ inputs.max-ansible-core }}
+          INCLUDE_TAGS: ${{ inputs.include-tags }}
+          EXCLUDE_TAGS: ${{ inputs.exclude-tags }}
         id: determine-parameters
         run: |
           # Compute job Python version
+          import json
           import os
           import pathlib
-          import json
-          import sys
+          import shlex
 
           FILE_APPEND_MODE = "a"
           OUTPUTS_FILE_PATH = pathlib.Path(os.environ["GITHUB_OUTPUT"])
+
 
           def set_output(name, value):
               with OUTPUTS_FILE_PATH.open(FILE_APPEND_MODE) as outputs_file:
                   outputs_file.writelines(f"{name}={value}{os.linesep}")
 
-          change_detection_in_prs = os.environ["CHANGE_DETECTION_IN_PRS"].lower() == "true"
-          gha_pull_request_branch = os.environ["GHA_PULL_REQUEST_BASE_REF"]
-          upload_codecov = os.environ["UPLOAD_CODECOV"].lower() == "true"
+
+          change_detection_in_prs = (
+              os.environ.get("CHANGE_DETECTION_IN_PRS", "").lower() == "true"
+          )
+          gha_pull_request_branch = os.environ.get("GHA_PULL_REQUEST_BASE_REF", "")
+          upload_codecov = os.environ.get("UPLOAD_CODECOV", "").lower() == "true"
+          min_ansible_core = os.environ.get("MIN_ANSIBLE_CORE", "")
+          max_ansible_core = os.environ.get("MAX_ANSIBLE_CORE", "")
+          include_tags = os.environ.get("INCLUDE_TAGS", "")
+          exclude_tags = os.environ.get("EXCLUDE_TAGS", "")
 
           change_detection = False
           change_detection_base_branch = ""
@@ -100,20 +112,27 @@ jobs:
               change_detection_base_branch = gha_pull_request_branch
               upload_codecov = False
 
+          extra_args = []
+          if min_ansible_core:
+              extra_args.extend(["--min-ansible-core", shlex.quote(min_ansible_core)])
+          if max_ansible_core:
+              extra_args.extend(["--max-ansible-core", shlex.quote(max_ansible_core)])
+          if include_tags:
+              extra_args.extend(["--include-tags", shlex.quote(include_tags)])
+          if exclude_tags:
+              extra_args.extend(["--exclude-tags", shlex.quote(exclude_tags)])
+
           set_output("change-detection", json.dumps(change_detection))
           set_output("change-detection-base-branch", change_detection_base_branch)
           set_output("upload-codecov", json.dumps(upload_codecov))
+          set_output("extra-args", " ".join(extra_args))
       - name: Run nox
         uses: ansible-community/antsibull-nox@main
         id: generate-matrix
         with:
           change-detection: ${{ steps.determine-parameters.outputs.change-detection }}
           change-detection-base-branch: ${{ steps.determine-parameters.outputs.change-detection-base-branch }}
-          extra-args: >-
-            ${{ inputs.min-ansible-core && '--min-ansible-core ' || '' }}${{ inputs.min-ansible-core }}
-            ${{ inputs.max-ansible-core && '--max-ansible-core ' || '' }}${{ inputs.max-ansible-core }}
-            ${{ inputs.include-tags && '--include-tags "' || '' }}${{ inputs.include-tags }}${{ inputs.include-tags && '"' || '' }}
-            ${{ inputs.exclude-tags && '--exclude-tags "' || '' }}${{ inputs.exclude-tags }}${{ inputs.exclude-tags && '"' || '' }}
+          extra-args: ${{ steps.determine-parameters.outputs.extra-args }}
           sessions: matrix-generator
 
   # Sessions with coverage
