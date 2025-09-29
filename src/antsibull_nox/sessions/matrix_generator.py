@@ -124,13 +124,15 @@ def add_matrix_generator() -> None:
 
         registered_sessions = get_registered_sessions()
         for key, sessions in list(registered_sessions.items()):
-            registered_sessions[key] = _filter(
+            filtered_sessions = _filter(
                 sessions,
                 min_ansible_core=min_ansible_core,
                 max_ansible_core=max_ansible_core,
                 include_tags=include_tags,
                 exclude_tags=exclude_tags,
             )
+            if filtered_sessions:
+                registered_sessions[key] = filtered_sessions
 
         json_output = os.environ.get("ANTSIBULL_NOX_MATRIX_JSON")
         if json_output:
