@@ -105,6 +105,10 @@ jobs:
     uses: ansible-community/antsibull-nox/.github/workflows/reusable-nox-matrix.yml@main
     with:
       upload-codecov: true
+      # To explicitly disable codecov upload for specific events, you can set:
+      #   upload-codecov-pr: false
+      #   upload-codecov-schedule: false
+      #   upload-codecov-push: false
       # You can also enable change detection in PRs,
       # but that will disable codecov uploading in PRs.
       # To enable it, simply add:
