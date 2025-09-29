@@ -1,0 +1,2 @@
+minor_changes:
+  - "Make codecov upload for the shared nox workflow more flexible by allowing to disable it for specific event types (https://github.com/ansible-community/antsibull-nox/pull/132)."

@@ -15,6 +15,27 @@ name: Run sanity, unit, integration, and EE tests
           Whether code coverage should be collected and uploaded to codecov.io.
         required: false
         default: false
+      upload-codecov-pr:
+        type: boolean
+        description: >-
+          Whether code coverage should be uploaded for Pull Requests.
+          Only used if `upload-codecov` is set to `true`.
+        required: false
+        default: true
+      upload-codecov-schedule:
+        type: boolean
+        description: >-
+          Whether code coverage should be uploaded for scheduled CI runs.
+          Only used if `upload-codecov` is set to `true`.
+        required: false
+        default: true
+      upload-codecov-push:
+        type: boolean
+        description: >-
+          Whether code coverage should be uploaded for pushes.
+          Only used if `upload-codecov` is set to `true`.
+        required: false
+        default: true
       min-ansible-core:
         type: string
         description: >-
@@ -79,8 +100,12 @@ jobs:
         shell: python
         env:
           CHANGE_DETECTION_IN_PRS: ${{ inputs.change-detection-in-prs }}
+          GHA_EVENT_NAME: ${{ github.event_name }}
           GHA_PULL_REQUEST_BASE_REF: ${{ github.event.pull_request.base.ref || '' }}
           UPLOAD_CODECOV: ${{ inputs.upload-codecov }}
+          UPLOAD_CODECOV_PR: ${{ inputs.upload-codecov-pr }}
+          UPLOAD_CODECOV_SCHEDULE: ${{ inputs.upload-codecov-schedule }}
+          UPLOAD_CODECOV_PUSH: ${{ inputs.upload-codecov-push }}
           MIN_ANSIBLE_CORE: ${{ inputs.min-ansible-core }}
           MAX_ANSIBLE_CORE: ${{ inputs.max-ansible-core }}
           INCLUDE_TAGS: ${{ inputs.include-tags }}
@@ -97,16 +122,22 @@ jobs:
           OUTPUTS_FILE_PATH = pathlib.Path(os.environ["GITHUB_OUTPUT"])
 
 
-          def set_output(name, value):
+          def set_output(name: str, value: str, *, verbose: bool = True) -> None:
               with OUTPUTS_FILE_PATH.open(FILE_APPEND_MODE) as outputs_file:
                   outputs_file.writelines(f"{name}={value}{os.linesep}")
+              if verbose:
+                  print(f"Setting output {name} to: {value}")
 
 
           change_detection_in_prs = (
               os.environ.get("CHANGE_DETECTION_IN_PRS", "").lower() == "true"
           )
+          gha_event_name = os.environ.get("GHA_EVENT_NAME", "")
           gha_pull_request_branch = os.environ.get("GHA_PULL_REQUEST_BASE_REF", "")
           upload_codecov = os.environ.get("UPLOAD_CODECOV", "").lower() == "true"
+          upload_codecov_pr = os.environ.get("UPLOAD_CODECOV_PR", "").lower() == "true"
+          upload_codecov_schedule = os.environ.get("UPLOAD_CODECOV_SCHEDULE", "").lower() == "true"
+          upload_codecov_push = os.environ.get("UPLOAD_CODECOV_PUSH", "").lower() == "true"
           min_ansible_core = os.environ.get("MIN_ANSIBLE_CORE", "")
           max_ansible_core = os.environ.get("MAX_ANSIBLE_CORE", "")
           include_tags = os.environ.get("INCLUDE_TAGS", "")
@@ -114,10 +145,19 @@ jobs:
 
           change_detection = False
           change_detection_base_branch = ""
-          if change_detection_in_prs and gha_pull_request_branch:
-              change_detection = True
-              change_detection_base_branch = gha_pull_request_branch
-              upload_codecov = False
+          if gha_event_name == "pull_request" and gha_pull_request_branch:
+              if not upload_codecov_pr:
+                  upload_codecov = False
+              if change_detection_in_prs and gha_pull_request_branch:
+                  change_detection = True
+                  change_detection_base_branch = gha_pull_request_branch
+                  upload_codecov = False
+          if gha_event_name == "push":
+              if not upload_codecov_push:
+                  upload_codecov = False
+          if gha_event_name == "schedule":
+              if not upload_codecov_schedule:
+                  upload_codecov = False
 
           extra_args = []
           if min_ansible_core:
