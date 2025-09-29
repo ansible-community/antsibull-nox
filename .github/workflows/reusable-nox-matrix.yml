@@ -67,7 +67,7 @@ jobs:
       units-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).units }}
       integration-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).integration }}
       ee-matrix: ${{ fromJSON(steps.generate-matrix.outputs.run-nox).execution-environment }}
-      upload-codecov: ${{ steps.determine-parameters.outputs.change-detection }}
+      upload-codecov: ${{ steps.determine-parameters.outputs.upload-codecov }}
       change-detection: ${{ steps.determine-parameters.outputs.change-detection }}
       change-detection-base-branch: ${{ steps.determine-parameters.outputs.change-detection-base-branch }}
     steps:
@@ -154,6 +154,8 @@ jobs:
         include: >-
           ${{ fromJson(needs.create-matrixes.outputs.sanity-matrix || '[{"skip": true}]') }}
     runs-on: ${{ matrix.gha-container || 'ubuntu-latest' }}
+    outputs:
+      upload-codecov: ${{ needs.create-matrixes.outputs.upload-codecov }}
     steps:
       - name: Check out collection
         if: >-
@@ -206,6 +208,8 @@ jobs:
         include: >-
           ${{ fromJson(needs.create-matrixes.outputs.units-matrix || '[{"skip": true}]') }}
     runs-on: ${{ matrix.gha-container || 'ubuntu-latest' }}
+    outputs:
+      upload-codecov: ${{ needs.create-matrixes.outputs.upload-codecov }}
     steps:
       - name: Check out collection
         if: >-
@@ -259,6 +263,8 @@ jobs:
         include: >-
           ${{ fromJson(needs.create-matrixes.outputs.integration-matrix || '[{"skip": true}]') }}
     runs-on: ${{ matrix.gha-container || 'ubuntu-latest' }}
+    outputs:
+      upload-codecov: ${{ needs.create-matrixes.outputs.upload-codecov }}
     steps:
       - name: Check out collection
         if: >-
@@ -304,7 +310,7 @@ jobs:
 
   upload-coverage:
     name: Upload coverage
-    if: needs.create-matrixes.outputs.upload-codecov == 'true'
+    if: needs.sanity.outputs.upload-codecov == 'true'
     needs:
       - sanity
       - units
