@@ -133,6 +133,8 @@ def add_matrix_generator() -> None:
             )
             if filtered_sessions:
                 registered_sessions[key] = filtered_sessions
+            else:
+                del registered_sessions[key]
 
         json_output = os.environ.get("ANTSIBULL_NOX_MATRIX_JSON")
         if json_output:
