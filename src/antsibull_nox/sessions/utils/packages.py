@@ -152,7 +152,7 @@ def check_package_types(
             continue
         if package.name.startswith("-"):
             session.warn(
-                f"Deprecation warning: {arg_name} contains a package name"
+                f"DEPRECATION WARNING: {arg_name} contains a package name"
                 f" {package.name!r} starting with a dash."
                 " This behavior is deprecated and will stop working in a future release."
             )

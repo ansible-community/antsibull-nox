@@ -70,7 +70,7 @@ def _split_arg(
     #      package list arguments (do this in config.py) (in 2.x.0 likely).
     if args != [arg]:
         session.warn(
-            f"Deprecation warning: {arg_name}[{index + 1} is currently shell-split."
+            f"DEPRECATION WARNING: {arg_name}[{index + 1}] is currently shell-split."
             " This behavior is deprecated and will change in a future release."
             " Specify the dependency as a dictionary with 'type' to avoid ambiguity;"
             " see PackageType in the config file documentation for details."
@@ -78,7 +78,7 @@ def _split_arg(
     for part in args:
         if part.startswith("-"):
             session.warn(
-                f"Deprecation warning: {arg_name}[{index + 1} contains an argument"
+                f"DEPRECATION WARNING: {arg_name}[{index + 1}] contains an argument"
                 f" {part!r} starting with a dash."
                 " This behavior is deprecated and will stop working in a future release."
                 " Specify this dependency as a package type dictionary;"
