@@ -27,16 +27,18 @@ from .utils import (
 )
 from .utils.packages import (
     PackageType,
+    PackageTypeOrList,
     install,
+    normalize_package_type,
 )
 
 
 def add_build_import_check(
     *,
     make_build_import_check_default: bool = True,
-    ansible_core_package: PackageType = "ansible-core",
+    ansible_core_package: PackageTypeOrList = "ansible-core",
     run_galaxy_importer: bool = True,
-    galaxy_importer_package: PackageType = "galaxy-importer",
+    galaxy_importer_package: PackageTypeOrList = "galaxy-importer",
     galaxy_importer_config_path: (
         str | os.PathLike | None
     ) = None,  # https://github.com/ansible/galaxy-importer#configuration
@@ -47,9 +49,10 @@ def add_build_import_check(
     """
 
     def compose_dependencies() -> list[PackageType]:
-        deps = [ansible_core_package]
+        deps = []
+        deps.extend(normalize_package_type(ansible_core_package))
         if run_galaxy_importer:
-            deps.append(galaxy_importer_package)
+            deps.extend(normalize_package_type(galaxy_importer_package))
         return deps
 
     def build_import_check(session: nox.Session) -> None:

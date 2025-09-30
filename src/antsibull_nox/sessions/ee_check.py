@@ -24,7 +24,9 @@ from ..container import get_container_engine_preference, get_preferred_container
 from .utils import register
 from .utils.packages import (
     PackageType,
+    PackageTypeOrList,
     install,
+    normalize_package_type,
 )
 
 
@@ -138,18 +140,19 @@ def add_execution_environment_session(
     session_name: str,
     execution_environment: ExecutionEnvironmentData,
     default: bool = False,
-    ansible_builder_package: PackageType = "ansible-builder",
-    ansible_core_package: PackageType | None = None,
-    ansible_navigator_package: PackageType = "ansible-navigator",
+    ansible_builder_package: PackageTypeOrList = "ansible-builder",
+    ansible_core_package: PackageTypeOrList | None = None,
+    ansible_navigator_package: PackageTypeOrList = "ansible-navigator",
 ) -> None:
     """
     Build and test execution environments for the collection.
     """
 
     def compose_dependencies() -> list[PackageType]:
-        result = [ansible_builder_package, ansible_navigator_package]
-        if ansible_core_package is not None:
-            result.append(ansible_core_package)
+        result = []
+        result.extend(normalize_package_type(ansible_builder_package))
+        result.extend(normalize_package_type(ansible_navigator_package))
+        result.extend(normalize_package_type(ansible_core_package))
         return result
 
     def session_func(session: nox.Session) -> None:
@@ -236,9 +239,9 @@ def add_execution_environment_sessions(
     *,
     execution_environments: list[ExecutionEnvironmentData],
     default: bool = False,
-    ansible_builder_package: PackageType = "ansible-builder",
-    ansible_core_package: PackageType | None = None,
-    ansible_navigator_package: PackageType = "ansible-navigator",
+    ansible_builder_package: PackageTypeOrList = "ansible-builder",
+    ansible_core_package: PackageTypeOrList | None = None,
+    ansible_navigator_package: PackageTypeOrList = "ansible-navigator",
 ) -> None:
     """
     Build and test execution environments for the collection.

@@ -15,14 +15,16 @@ import nox
 from .collections import prepare_collections
 from .utils.packages import (
     PackageType,
+    PackageTypeOrList,
     install,
+    normalize_package_type,
 )
 
 
 def add_ansible_lint(
     *,
     make_ansible_lint_default: bool = True,
-    ansible_lint_package: PackageType = "ansible-lint",
+    ansible_lint_package: PackageTypeOrList = "ansible-lint",
     strict: bool = False,
 ) -> None:
     """
@@ -30,7 +32,7 @@ def add_ansible_lint(
     """
 
     def compose_dependencies() -> list[PackageType]:
-        return [ansible_lint_package]
+        return normalize_package_type(ansible_lint_package)
 
     def ansible_lint(session: nox.Session) -> None:
         install(session, *compose_dependencies())
