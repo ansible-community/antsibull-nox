@@ -32,6 +32,7 @@ from .utils.package_versions import (
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
+    check_package_types,
     install,
     normalize_package_type,
 )
@@ -99,12 +100,30 @@ def add_docs_check(
         or not codeblocks_allow_literal_blocks
     )
 
-    def compose_dependencies() -> list[PackageType]:
+    def compose_dependencies(session: nox.Session) -> list[PackageType]:
         deps = []
-        deps.extend(normalize_package_type(antsibull_docs_package))
-        deps.extend(normalize_package_type(ansible_core_package))
+        deps.extend(
+            check_package_types(
+                session,
+                "sessions.docs_check.antsibull_docs_package",
+                normalize_package_type(antsibull_docs_package),
+            )
+        )
+        deps.extend(
+            check_package_types(
+                session,
+                "sessions.docs_check.ansible_core_package",
+                normalize_package_type(ansible_core_package),
+            )
+        )
         if run_extra_checks:
-            deps.extend(normalize_package_type(antsibull_docutils_package))
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.docs_check.antsibull_docutils_package",
+                    normalize_package_type(antsibull_docutils_package),
+                )
+            )
         return deps
 
     def execute_extra_checks(session: nox.Session) -> None:
@@ -157,7 +176,7 @@ def add_docs_check(
             session.run(*command, env={"ANSIBLE_COLLECTIONS_PATH": collections_path})
 
     def docs_check(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(session))
         prepared_collections = prepare_collections(
             session,
             install_in_site_packages=False,

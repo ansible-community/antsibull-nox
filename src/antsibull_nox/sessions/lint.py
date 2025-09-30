@@ -33,6 +33,7 @@ from .utils import (
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
+    check_package_types,
     install,
     normalize_package_type,
 )
@@ -61,9 +62,9 @@ def _split_arg(
     session: nox.Session, arg: str | PackageType, arg_name: str, index: int
 ) -> list[str | PackageType]:
     if not isinstance(arg, str):
-        return [arg]
+        return check_package_types(session, arg_name, [arg])
     args = shlex.split(arg)
-    # TODO:
+    # How to resolve the deprecations:
     #   1. Eventually, make the following warnings errors (in 2.0.0 likely);
     #   2. Eventually, parse str as PackageName as for other
     #      package list arguments (do this in config.py) (in 2.x.0 likely).
@@ -311,27 +312,57 @@ def add_formatters(
         run_black_modules = run_black
     run_check = IN_CI
 
-    def compose_dependencies() -> list[PackageType]:
+    def compose_dependencies(session: nox.Session) -> list[PackageType]:
         deps = []
         if run_isort:
-            deps.extend(normalize_package_type(isort_package))
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.lint.isort_package",
+                    normalize_package_type(isort_package),
+                )
+            )
         if run_black or run_black_modules:
-            deps.extend(normalize_package_type(black_package))
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.lint.black_package",
+                    normalize_package_type(black_package),
+                )
+            )
         if (
             run_ruff_format
             and run_ruff_autofix
             and ruff_format_package == ruff_autofix_package
         ):
-            deps.extend(normalize_package_type(ruff_format_package))
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.lint.ruff_format_package",
+                    normalize_package_type(ruff_format_package),
+                )
+            )
         else:
             if run_ruff_format:
-                deps.extend(normalize_package_type(ruff_format_package))
+                deps.extend(
+                    check_package_types(
+                        session,
+                        "sessions.lint.ruff_format_package",
+                        normalize_package_type(ruff_format_package),
+                    )
+                )
             if run_ruff_autofix:
-                deps.extend(normalize_package_type(ruff_autofix_package))
+                deps.extend(
+                    check_package_types(
+                        session,
+                        "sessions.lint.ruff_autofix_package",
+                        normalize_package_type(ruff_autofix_package),
+                    )
+                )
         return deps
 
     def formatters(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(session))
         if run_isort:
             _execute_isort(
                 session,
@@ -427,18 +458,46 @@ def add_codeqa(  # noqa: C901
     def compose_dependencies(session: nox.Session) -> list[PackageType]:
         deps = []
         if run_ruff_check:
-            deps.extend(normalize_package_type(ruff_check_package))
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.lint.ruff_check_package",
+                    normalize_package_type(ruff_check_package),
+                )
+            )
         if run_flake8:
-            deps.extend(normalize_package_type(flake8_package))
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.lint.flake8_package",
+                    normalize_package_type(flake8_package),
+                )
+            )
         if run_pylint:
-            deps.extend(normalize_package_type(pylint_package))
-            deps.extend(normalize_package_type(pylint_ansible_core_package))
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.lint.pylint_package",
+                    normalize_package_type(pylint_package),
+                )
+            )
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.lint.pylint_ansible_core_package",
+                    normalize_package_type(pylint_ansible_core_package),
+                )
+            )
             if os.path.isdir("tests/unit"):
                 deps.append("pytest")
                 if os.path.isfile("tests/unit/requirements.txt"):
                     deps.extend(["-r", "tests/unit/requirements.txt"])
             for idx, extra_dep in enumerate(pylint_extra_deps):
-                deps.extend(_split_arg(session, extra_dep, "pylint_extra_deps", idx))
+                deps.extend(
+                    _split_arg(
+                        session, extra_dep, "sessions.lint.pylint_extra_deps", idx
+                    )
+                )
         return deps
 
     def execute_ruff_check(session: nox.Session) -> None:
@@ -585,11 +644,23 @@ def add_yamllint(
     Add yamllint session for linting YAML files and plugin/module docs.
     """
 
-    def compose_dependencies() -> list[PackageType]:
+    def compose_dependencies(session: nox.Session) -> list[PackageType]:
         deps = []
         if run_yamllint:
-            deps.extend(normalize_package_type(yamllint_package))
-            deps.extend(normalize_package_type(yamllint_antsibull_docutils_package))
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.lint.yamllint_package",
+                    normalize_package_type(yamllint_package),
+                )
+            )
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.lint.yamllint_antsibull_docutils_package",
+                    normalize_package_type(yamllint_antsibull_docutils_package),
+                )
+            )
         return deps
 
     def to_str(config: str | os.PathLike | None) -> str | None:
@@ -675,7 +746,7 @@ def add_yamllint(
         )
 
     def yamllint(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(session))
         if run_yamllint:
             execute_yamllint(session)
             execute_plugin_yamllint(session)
@@ -743,15 +814,29 @@ def add_typing(
     def compose_dependencies(session: nox.Session) -> list[PackageType]:
         deps = []
         if run_mypy:
-            deps.extend(normalize_package_type(mypy_package))
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.lint.mypy_package",
+                    normalize_package_type(mypy_package),
+                )
+            )
             if mypy_ansible_core_package is not None:
-                deps.extend(normalize_package_type(mypy_ansible_core_package))
+                deps.extend(
+                    check_package_types(
+                        session,
+                        "sessions.lint.mypy_ansible_core_package",
+                        normalize_package_type(mypy_ansible_core_package),
+                    )
+                )
             if os.path.isdir("tests/unit"):
                 deps.append("pytest")
                 if os.path.isfile("tests/unit/requirements.txt"):
                     deps.extend(["-r", "tests/unit/requirements.txt"])
             for idx, extra_dep in enumerate(mypy_extra_deps):
-                deps.extend(_split_arg(session, extra_dep, "mypy_extra_deps", idx))
+                deps.extend(
+                    _split_arg(session, extra_dep, "sessions.lint.mypy_extra_deps", idx)
+                )
         return deps
 
     def execute_mypy(

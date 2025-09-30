@@ -18,6 +18,7 @@ from .utils import (
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
+    check_package_types,
     install,
     normalize_package_type,
 )
@@ -38,14 +39,20 @@ def add_license_check(
     Add license-check session for license checks.
     """
 
-    def compose_dependencies() -> list[PackageType]:
+    def compose_dependencies(session: nox.Session) -> list[PackageType]:
         deps = []
         if run_reuse:
-            deps.extend(normalize_package_type(reuse_package))
+            deps.extend(
+                check_package_types(
+                    session,
+                    "sessions.license_check.reuse_package",
+                    normalize_package_type(reuse_package),
+                )
+            )
         return deps
 
     def license_check(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(session))
         if run_reuse:
             session.run("reuse", "lint")
         if run_license_check:

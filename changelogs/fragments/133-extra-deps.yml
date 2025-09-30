@@ -10,5 +10,9 @@ deprecated_features:
     (https://github.com/ansible-community/antsibull-nox/pull/133).
   - >-
     In ``[sessions.lint]``, using strings that start with dashes (``-``) is deprecated
-    and will stop working in future releases. Use package type dictionaries instead
+    and will stop working in future releases. Use appropriate package type dictionaries instead
+    (https://github.com/ansible-community/antsibull-nox/pull/133).
+  - >-
+    In all ``_package`` options, package names starting with dashes (``-``) are deprecated
+    and will stop working in future releases. Use appropriate package type dictionaries instead
     (https://github.com/ansible-community/antsibull-nox/pull/133).

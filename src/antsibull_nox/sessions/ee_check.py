@@ -25,6 +25,7 @@ from .utils import register
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
+    check_package_types,
     install,
     normalize_package_type,
 )
@@ -148,15 +149,33 @@ def add_execution_environment_session(
     Build and test execution environments for the collection.
     """
 
-    def compose_dependencies() -> list[PackageType]:
+    def compose_dependencies(session: nox.Session) -> list[PackageType]:
         result = []
-        result.extend(normalize_package_type(ansible_builder_package))
-        result.extend(normalize_package_type(ansible_navigator_package))
-        result.extend(normalize_package_type(ansible_core_package))
+        result.extend(
+            check_package_types(
+                session,
+                "sessions.ee_check.ansible_builder_package",
+                normalize_package_type(ansible_builder_package),
+            )
+        )
+        result.extend(
+            check_package_types(
+                session,
+                "sessions.ee_check.ansible_navigator_package",
+                normalize_package_type(ansible_navigator_package),
+            )
+        )
+        result.extend(
+            check_package_types(
+                session,
+                "sessions.ee_check.ansible_core_package",
+                normalize_package_type(ansible_core_package),
+            )
+        )
         return result
 
     def session_func(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(session))
 
         container_engine = get_preferred_container_engine()
         session.log(f"Using container engine {container_engine}")
