@@ -28,6 +28,7 @@ from .utils import (
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
+    check_package_types,
     install,
     normalize_package_type,
 )
@@ -48,15 +49,21 @@ def add_build_import_check(
     Add license-check session for license checks.
     """
 
-    def compose_dependencies() -> list[PackageType]:
+    def compose_dependencies(session: nox.Session) -> list[PackageType]:
         deps = []
-        deps.extend(normalize_package_type(ansible_core_package))
+        deps.extend(
+            check_package_types(
+                session,
+                "sessions.build_import_check.ansible_core_package",
+                normalize_package_type(ansible_core_package),
+            )
+        )
         if run_galaxy_importer:
             deps.extend(normalize_package_type(galaxy_importer_package))
         return deps
 
     def build_import_check(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(session))
 
         tarball, _, __ = build_collection(session)
 

@@ -141,11 +141,30 @@ def install(session: nox.Session, *args: PackageType, **kwargs):
     session.install(*new_args, "-U", **kwargs)
 
 
+def check_package_types(
+    session: nox.Session, arg_name: str, packages: list[PackageType]
+) -> list[PackageType]:
+    """
+    Given a list of packages, check for invalid package names.
+    """
+    for package in packages:
+        if not isinstance(package, (PackageName, PackageEditable)):
+            continue
+        if package.name.startswith("-"):
+            session.warn(
+                f"DEPRECATION WARNING: {arg_name} contains a package name"
+                f" {package.name!r} starting with a dash."
+                " This behavior is deprecated and will stop working in a future release."
+            )
+    return packages
+
+
 __all__ = [
     "PackageName",
     "PackageEditable",
     "PackageRequirements",
     "PackageType",
+    "check_package_types",
     "install",
     "normalize_package_type",
 ]

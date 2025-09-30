@@ -16,6 +16,7 @@ from .collections import prepare_collections
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
+    check_package_types,
     install,
     normalize_package_type,
 )
@@ -31,11 +32,15 @@ def add_ansible_lint(
     Add a session that runs ansible-lint.
     """
 
-    def compose_dependencies() -> list[PackageType]:
-        return normalize_package_type(ansible_lint_package)
+    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+        return check_package_types(
+            session,
+            "sessions.ansible_lint.ansible_lint_package",
+            normalize_package_type(ansible_lint_package),
+        )
 
     def ansible_lint(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(session))
         prepared_collections = prepare_collections(
             session,
             install_in_site_packages=False,
