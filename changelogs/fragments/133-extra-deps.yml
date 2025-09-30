@@ -1,0 +1,14 @@
+minor_changes:
+  - >-
+    In ``[sessions.lint]``, ``pylint_extra_deps`` and ``mypy_extra_deps`` can now use package type dictionaries like
+    ``{type = "requirements", file = "requirements/mypy-extra-deps.txt"}``
+    (https://github.com/ansible-community/antsibull-nox/pull/133).
+deprecated_features:
+  - >-
+    In ``[sessions.lint]``, shell splitting of strings in ``pylint_extra_deps`` and ``mypy_extra_deps`` is deprecated
+    and will stop working in future releases. Use package type dictionaries instead
+    (https://github.com/ansible-community/antsibull-nox/pull/133).
+  - >-
+    In ``[sessions.lint]``, using strings that start with dashes (``-``) is deprecated
+    and will stop working in future releases. Use package type dictionaries instead
+    (https://github.com/ansible-community/antsibull-nox/pull/133).

@@ -148,11 +148,13 @@ _ValidPackageTypeNames = tuple(
 )
 
 
-def package_name_validator(value: t.Any) -> t.Any:
+def _package_name_validator(value: t.Any, *, keep_strings: bool = False) -> t.Any:
     """
     Convert plain strings into PackageName instances.
     """
     if isinstance(value, str):
+        if keep_strings:
+            return value
         return PackageName(name=value)
     if isinstance(value, dict):
         # Special-casing for "type" to provide a clean error message
@@ -167,11 +169,30 @@ def package_name_validator(value: t.Any) -> t.Any:
 PackageField = t.Annotated[
     PackageType,
     p.Field(discriminator="type"),
-    p.BeforeValidator(package_name_validator),
+    p.BeforeValidator(_package_name_validator),
 ]
 
 
-def packages_discriminator(value: t.Any) -> t.Literal["list", "single"]:
+def _package_string_discriminator(value: t.Any) -> t.Literal["package_type", "string"]:
+    """
+    Discriminate between a string and a package type.
+    """
+    if isinstance(value, str):
+        return "string"
+    return "package_type"
+
+
+PackageFieldOrString = t.Annotated[
+    t.Union[
+        t.Annotated[PackageField, p.Tag("package_type")],
+        t.Annotated[str, p.Tag("string")],
+    ],
+    p.Field(discriminator=p.Discriminator(_package_string_discriminator)),
+    p.BeforeValidator(lambda value: _package_name_validator(value, keep_strings=True)),
+]
+
+
+def _packages_discriminator(value: t.Any) -> t.Literal["list", "single"]:
     """
     Discriminate between a list of package types and a single package type.
     """
@@ -185,7 +206,7 @@ Packages = t.Annotated[
         t.Annotated[PackageField, p.Tag("single")],
         t.Annotated[list[PackageField], p.Tag("list")],
     ],
-    p.Field(discriminator=p.Discriminator(packages_discriminator)),
+    p.Field(discriminator=p.Discriminator(_packages_discriminator)),
 ]
 
 
@@ -241,7 +262,7 @@ class SessionLint(_BaseModel):
     pylint_modules_rcfile: t.Optional[p.FilePath] = None
     pylint_package: Packages = PackageName(name="pylint")
     pylint_ansible_core_package: t.Optional[Packages] = PackageName(name="ansible-core")
-    pylint_extra_deps: list[str] = []
+    pylint_extra_deps: list[PackageFieldOrString] = []
 
     # yamllint:
     run_yamllint: bool = True
@@ -259,7 +280,7 @@ class SessionLint(_BaseModel):
     mypy_config: t.Optional[p.FilePath] = None
     mypy_package: Packages = PackageName(name="mypy")
     mypy_ansible_core_package: t.Optional[Packages] = PackageName(name="ansible-core")
-    mypy_extra_deps: list[str] = []
+    mypy_extra_deps: list[PackageFieldOrString] = []
 
     # antsibull-nox config lint:
     run_antsibullnox_config_lint: bool = True

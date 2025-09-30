@@ -162,17 +162,30 @@ def _convert_package_name(
 
 @t.overload
 def _convert_package_name(
+    package_name: list[PackageType | str],
+) -> list[RuntimePackageType | str]: ...
+
+
+@t.overload
+def _convert_package_name(
     package_name: PackageType | list[PackageType] | None,
 ) -> list[RuntimePackageType] | None: ...
 
 
 def _convert_package_name(
-    package_name: PackageType | list[PackageType] | None,
-) -> list[RuntimePackageType] | None:
+    package_name: (
+        PackageType | str | list[PackageType] | list[PackageType | str] | None
+    ),
+) -> list[RuntimePackageType | str] | None:
     if package_name is None:
         return None
-    package_name = _ensure_list(package_name)
-    return [pkg.to_utils_instance() for pkg in package_name]
+    package_name_list: list[PackageType] | list[PackageType | str] = _ensure_list(
+        package_name
+    )  # type: ignore
+    return [
+        pkg if isinstance(pkg, str) else pkg.to_utils_instance()
+        for pkg in package_name_list
+    ]
 
 
 def _coalesce(*values: _T) -> _T | None:
@@ -409,7 +422,7 @@ def _add_sessions(sessions: Sessions) -> None:
             pylint_ansible_core_package=_convert_package_name(
                 sessions.lint.pylint_ansible_core_package
             ),
-            pylint_extra_deps=sessions.lint.pylint_extra_deps,
+            pylint_extra_deps=_convert_package_name(sessions.lint.pylint_extra_deps),
             run_yamllint=sessions.lint.run_yamllint,
             yamllint_config=sessions.lint.yamllint_config,
             yamllint_config_plugins=sessions.lint.yamllint_config_plugins,
@@ -425,7 +438,7 @@ def _add_sessions(sessions: Sessions) -> None:
             mypy_ansible_core_package=_convert_package_name(
                 sessions.lint.mypy_ansible_core_package
             ),
-            mypy_extra_deps=sessions.lint.mypy_extra_deps,
+            mypy_extra_deps=_convert_package_name(sessions.lint.mypy_extra_deps),
             run_antsibullnox_config_lint=sessions.lint.run_antsibullnox_config_lint,
         )
     if sessions.docs_check:

@@ -164,6 +164,9 @@ For many sessions, the package names of tools that are used / installed can be c
 These options usually end with `_package`.
 These options are all annotated as `PackageType` in the configuration reference below.
 
+Some options ending with `_extra_deps` are using `list[str | SinglePackageType]`.
+There, `SinglePackageType` is one single element of a `PackageType` list.
+
 Package names may be simple strings, a special dictionary to install an
 editable dependency, a requirements file, or a constraints file,
 or a list of strings or such dictionaries to provide multiple of these.
@@ -403,8 +406,14 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to pin the version,
   or to install the package from a local repository.
 
-* `pylint_extra_deps: list[str]` (default `[]`):
+* `pylint_extra_deps: list[str | SinglePackageType]` (default `[]`):
   Specify further packages to install in this session.
+
+    Note that currently, strings are shell splitted.
+    This behavoir is deprecated and will be disallowed in a future release.
+    Split these arguments up into multiple list elements,
+    and/or use package type dictionaries like `{type = "requirements", file = "requirements/pylint-extra-deps.txt"}`
+    depending on what you are trying to achieve.
 
 ### `yamllint` (part of the `yamllint` session)
 
@@ -473,9 +482,15 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   or to pin the version,
   or to install the package from a local repository.
 
-* `mypy_extra_deps: list[str]` (default `[]`):
+* `mypy_extra_deps: list[str | SinglePackageType]` (default `[]`):
   Specify further packages to install in this session.
   This can be used for typing stubs like `types-PyYAML`, `types-mock`, and so on.
+
+    Note that currently, strings are shell splitted.
+    This behavoir is deprecated and will be disallowed in a future release.
+    Split these arguments up into multiple list elements,
+    and/or use package type dictionaries like `{type = "requirements", file = "requirements/mypy-extra-deps.txt"}`
+    depending on what you are trying to achieve.
 
 ### `antsibull-nox-config` (part of `lint` session)
 

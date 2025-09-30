@@ -57,6 +57,35 @@ MODULE_PATHS = [
 ]
 
 
+def _split_arg(
+    session: nox.Session, arg: str | PackageType, arg_name: str, index: int
+) -> list[str | PackageType]:
+    if not isinstance(arg, str):
+        return [arg]
+    args = shlex.split(arg)
+    # TODO:
+    #   1. Eventually, make the following warnings errors (in 2.0.0 likely);
+    #   2. Eventually, parse str as PackageName as for other
+    #      package list arguments (do this in config.py) (in 2.x.0 likely).
+    if args != [arg]:
+        session.warn(
+            f"Deprecation warning: {arg_name}[{index + 1} is currently shell-split."
+            " This behavior is deprecated and will change in a future release."
+            " Specify the dependency as a dictionary with 'type' to avoid ambiguity;"
+            " see PackageType in the config file documentation for details."
+        )
+    for part in args:
+        if part.startswith("-"):
+            session.warn(
+                f"Deprecation warning: {arg_name}[{index + 1} contains an argument"
+                f" {part!r} starting with a dash."
+                " This behavior is deprecated and will stop working in a future release."
+                " Specify this dependency as a package type dictionary;"
+                " see PackageType in the config file documentation for details."
+            )
+    return args  # type: ignore
+
+
 def add_lint(
     *,
     make_lint_default: bool,
@@ -389,13 +418,13 @@ def add_codeqa(  # noqa: C901
     pylint_modules_rcfile: str | os.PathLike | None,
     pylint_package: PackageTypeOrList,
     pylint_ansible_core_package: PackageTypeOrList | None,
-    pylint_extra_deps: list[str],
+    pylint_extra_deps: list[str | PackageType],
 ) -> None:
     """
     Add nox session for codeqa.
     """
 
-    def compose_dependencies() -> list[PackageType]:
+    def compose_dependencies(session: nox.Session) -> list[PackageType]:
         deps = []
         if run_ruff_check:
             deps.extend(normalize_package_type(ruff_check_package))
@@ -408,8 +437,8 @@ def add_codeqa(  # noqa: C901
                 deps.append("pytest")
                 if os.path.isfile("tests/unit/requirements.txt"):
                     deps.extend(["-r", "tests/unit/requirements.txt"])
-            for extra_dep in pylint_extra_deps:
-                deps.extend(shlex.split(extra_dep))
+            for idx, extra_dep in enumerate(pylint_extra_deps):
+                deps.extend(_split_arg(session, extra_dep, "pylint_extra_deps", idx))
         return deps
 
     def execute_ruff_check(session: nox.Session) -> None:
@@ -512,7 +541,7 @@ def add_codeqa(  # noqa: C901
                 )
 
     def codeqa(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(session))
         prepared_collections: CollectionSetup | None = None
         if run_pylint:
             prepared_collections = prepare_collections(
@@ -705,13 +734,13 @@ def add_typing(
     mypy_config: str | os.PathLike | None,
     mypy_package: PackageTypeOrList,
     mypy_ansible_core_package: PackageTypeOrList | None,
-    mypy_extra_deps: list[str],
+    mypy_extra_deps: list[str | PackageType],
 ) -> None:
     """
     Add nox session for typing.
     """
 
-    def compose_dependencies() -> list[PackageType]:
+    def compose_dependencies(session: nox.Session) -> list[PackageType]:
         deps = []
         if run_mypy:
             deps.extend(normalize_package_type(mypy_package))
@@ -721,8 +750,8 @@ def add_typing(
                 deps.append("pytest")
                 if os.path.isfile("tests/unit/requirements.txt"):
                     deps.extend(["-r", "tests/unit/requirements.txt"])
-            for extra_dep in mypy_extra_deps:
-                deps.extend(shlex.split(extra_dep))
+            for idx, extra_dep in enumerate(mypy_extra_deps):
+                deps.extend(_split_arg(session, extra_dep, "mypy_extra_deps", idx))
         return deps
 
     def execute_mypy(
@@ -763,7 +792,7 @@ def add_typing(
                 process_mypy_errors(session, prepared_collections, output)
 
     def typing(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
+        install(session, *compose_dependencies(session))
         prepared_collections = prepare_collections(
             session,
             install_in_site_packages=False,
@@ -845,7 +874,7 @@ def add_lint_sessions(
     pylint_modules_rcfile: str | os.PathLike | None = None,
     pylint_package: PackageTypeOrList = "pylint",
     pylint_ansible_core_package: PackageTypeOrList | None = "ansible-core",
-    pylint_extra_deps: list[str] | None = None,
+    pylint_extra_deps: list[str | PackageType] | None = None,
     # yamllint:
     run_yamllint: bool = False,
     yamllint_config: str | os.PathLike | None = None,
@@ -859,7 +888,7 @@ def add_lint_sessions(
     mypy_config: str | os.PathLike | None = None,
     mypy_package: PackageTypeOrList = "mypy",
     mypy_ansible_core_package: PackageTypeOrList | None = "ansible-core",
-    mypy_extra_deps: list[str] | None = None,
+    mypy_extra_deps: list[str | PackageType] | None = None,
     # antsibull-nox config lint:
     run_antsibullnox_config_lint: bool = True,
 ) -> None:
