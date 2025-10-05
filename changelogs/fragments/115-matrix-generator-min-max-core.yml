@@ -1,2 +1,0 @@
-minor_changes:
-  - "Allow to specify minimum/maximum ansible-core version to ``matrix-generator`` session and shared workflow (https://github.com/ansible-community/antsibull-nox/issues/113, https://github.com/ansible-community/antsibull-nox/pull/115, https://github.com/ansible-community/antsibull-nox/pull/126)."

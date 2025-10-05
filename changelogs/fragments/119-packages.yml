@@ -1,3 +1,0 @@
-minor_changes:
-  - "Allow to specify a list of packages, requirement files, and constraint files for every ``_package`` key in the config
-     (https://github.com/ansible-community/antsibull-nox/issues/108, https://github.com/ansible-community/antsibull-nox/pull/119)."
