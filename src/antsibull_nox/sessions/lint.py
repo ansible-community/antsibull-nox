@@ -17,6 +17,9 @@ from pathlib import Path
 
 import nox
 
+from ..collection import (
+    load_collection_data_from_disk,
+)
 from ..paths import (
     list_all_files,
 )
@@ -138,24 +141,37 @@ def add_lint(
 def _execute_isort(
     session: nox.Session,
     *,
+    root_dir: Path,
+    collection_dir: Path,
     run_check: bool,
     extra_code_files: list[str],
     isort_config: str | os.PathLike | None,
 ) -> None:
     command: list[str] = [
         "isort",
+        "--src",
+        ".",
     ]
     if run_check:
         command.append("--check")
     if isort_config is not None:
-        command.extend(["--settings-file", str(isort_config)])
+        command.extend(
+            [
+                "--settings-file",
+                str(Path(isort_config).resolve().relative_to(root_dir, walk_up=True)),
+            ]
+        )
     command.extend(session.posargs)
     files = filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files, with_cd=True)
     if not files:
         session.warn("Skipping isort (no files to process)")
         return
-    command.extend(files)
-    session.run(*command)
+
+    relative_dir = collection_dir.relative_to(root_dir)
+    with session.chdir(root_dir):
+        for file in files:
+            command.append(str(relative_dir / file))
+        session.run(*command)
 
 
 def _execute_black_for(
@@ -364,8 +380,21 @@ def add_formatters(
     def formatters(session: nox.Session) -> None:
         install(session, *compose_dependencies(session))
         if run_isort:
+            cwd = Path.cwd()
+            cd = load_collection_data_from_disk(cwd)
+            root_dir = Path(session.create_tmp()).resolve() / "collection-root"
+            namespace_dir = root_dir / "ansible_collections" / cd.namespace
+            namespace_dir.mkdir(parents=True, exist_ok=True)
+            collection_path = namespace_dir / cd.name
+            if not collection_path.exists():
+                collection_path.symlink_to(
+                    cwd.relative_to(namespace_dir, walk_up=True),
+                    target_is_directory=True,
+                )
             _execute_isort(
                 session,
+                root_dir=root_dir,
+                collection_dir=collection_path,
                 run_check=run_check,
                 extra_code_files=extra_code_files,
                 isort_config=isort_config,
