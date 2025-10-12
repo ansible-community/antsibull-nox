@@ -45,8 +45,8 @@ class _CDConfig:
             self.base_branch = env_base_branch
 
 
-_CD_INITIALIZED = False
-_CD_CONFIG: _CDConfig | None = None
+_cd_initialized = False
+_cd_config: _CDConfig | None = None
 
 
 def init_cd(
@@ -61,29 +61,29 @@ def init_cd(
     functionality works.
     """
     # We want global context due to the way nox works.
-    global _CD_INITIALIZED, _CD_CONFIG  # pylint: disable=global-statement
+    global _cd_initialized, _cd_config  # pylint: disable=global-statement
 
-    if _CD_INITIALIZED and not ignore_previous_calls:
+    if _cd_initialized and not ignore_previous_calls:
         raise ValueError("init_cd() has already been called!")
 
     if config.vcs is None:
-        _CD_CONFIG = None
-        _CD_INITIALIZED = True
+        _cd_config = None
+        _cd_initialized = True
         return
 
     if not force:
         value = (os.environ.get(_ENABLE_CD_ENV_VAR) or "").lower()
         if value != "true":
-            _CD_CONFIG = None
-            _CD_INITIALIZED = True
+            _cd_config = None
+            _cd_initialized = True
             return
 
-    _CD_CONFIG = _CDConfig(config_path=config_path, vcs_config=config.vcs)
-    _CD_INITIALIZED = True
+    _cd_config = _CDConfig(config_path=config_path, vcs_config=config.vcs)
+    _cd_initialized = True
 
 
 def _check_initialized() -> None:
-    if not _CD_INITIALIZED:
+    if not _cd_initialized:
         raise RuntimeError("Internal error: init_cd() has not been called!")
 
 
@@ -92,7 +92,7 @@ def supports_cd() -> bool:
     Determines whether a antsibull-nox configuration supports CD.
     """
     _check_initialized()
-    return _CD_CONFIG is not None
+    return _cd_config is not None
 
 
 def get_vcs_name() -> VCS | None:
@@ -102,7 +102,7 @@ def get_vcs_name() -> VCS | None:
     Returns ``None`` if ``supports_cd() == False``.
     """
     _check_initialized()
-    return _CD_CONFIG.vcs if _CD_CONFIG else None
+    return _cd_config.vcs if _cd_config else None
 
 
 def get_base_branch() -> str | None:
@@ -112,7 +112,7 @@ def get_base_branch() -> str | None:
     Returns ``None`` if ``supports_cd() == False``.
     """
     _check_initialized()
-    return _CD_CONFIG.base_branch if _CD_CONFIG else None
+    return _cd_config.base_branch if _cd_config else None
 
 
 def is_config_dir_the_repo_dir() -> bool | None:
@@ -123,7 +123,7 @@ def is_config_dir_the_repo_dir() -> bool | None:
     Returns ``None`` if ``supports_cd() == False``.
     """
     _check_initialized()
-    return _CD_CONFIG.config_dir_is_repo_dir if _CD_CONFIG else None
+    return _cd_config.config_dir_is_repo_dir if _cd_config else None
 
 
 @functools.cache
@@ -136,7 +136,7 @@ def get_changes(*, relative_to: Path | None = None) -> list[Path] | None:
     Returned paths are relative to ``relative_to``, or CWD if ``relative_to is None``.
     """
     _check_initialized()
-    cd_config = _CD_CONFIG
+    cd_config = _cd_config
     if not cd_config:
         return None
     changes = cd_config.provider.get_changes_compared_to(
