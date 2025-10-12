@@ -1,3 +1,0 @@
-bugfixes:
-  - "Fix ``mypy`` invocation in ``typing`` session. For some reason the file list always ended up empty and ``mypy`` got skipped
-     (https://github.com/ansible-community/antsibull-nox/pull/137)."

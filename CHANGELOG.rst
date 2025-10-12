@@ -4,6 +4,20 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.3.1
+======
+
+Release Summary
+---------------
+
+Bugfix release.
+
+Bugfixes
+--------
+
+- Fix ``mypy`` invocation in ``typing`` session. For some reason the file list always ended up empty and ``mypy`` got skipped (https://github.com/ansible-community/antsibull-nox/pull/137).
+- isort invocation - make sure to pass ``--src`` in an appropriate directory structure to ensure correct and more consistent sorting (https://github.com/ansible-community/antsibull-nox/issues/134, https://github.com/ansible-community/antsibull-nox/pull/136).
+
 v1.3.0
 ======
 
