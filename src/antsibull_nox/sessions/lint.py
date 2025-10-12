@@ -872,13 +872,12 @@ def add_typing(
         session: nox.Session, prepared_collections: CollectionSetup
     ) -> None:
         # Run mypy
-        files = prepared_collections.prefix_current_paths(
-            filter_paths(CODE_FILES + extra_code_files, with_cd=True)
-        )
-        if not files:
-            session.warn("Skipping mypy (no files to process)")
-            return
+        files = filter_paths(CODE_FILES + extra_code_files, with_cd=True)
         with session.chdir(prepared_collections.current_place):
+            files = prepared_collections.prefix_current_paths(files)
+            if not files:
+                session.warn("Skipping mypy (no files to process)")
+                return
             command = ["mypy"]
             if mypy_config is not None:
                 command.extend(
