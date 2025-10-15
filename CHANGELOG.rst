@@ -4,6 +4,19 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.3.2
+======
+
+Release Summary
+---------------
+
+Maintenance release.
+
+Minor Changes
+-------------
+
+- Antsibull-nox's ansible-core ``devel`` and ``milestone`` branch versions have been updated to 2.21. This means that ``stable-2.20`` will now be added to CI matrices if ``max_version`` has not been explicitly specified (https://github.com/ansible-community/antsibull-nox/pull/91).
+
 v1.3.1
 ======
 

@@ -422,3 +422,14 @@ releases:
       - 136-isort.yml
       - 137-typing-fix.yml
     release_date: '2025-10-12'
+  1.3.2:
+    changes:
+      minor_changes:
+        - Antsibull-nox's ansible-core ``devel`` and ``milestone`` branch versions
+          have been updated to 2.21. This means that ``stable-2.20`` will now be added
+          to CI matrices if ``max_version`` has not been explicitly specified (https://github.com/ansible-community/antsibull-nox/pull/91).
+      release_summary: Maintenance release.
+    fragments:
+      - 1.3.2.yml
+      - 139-devel-milestone.yml
+    release_date: '2025-10-15'
