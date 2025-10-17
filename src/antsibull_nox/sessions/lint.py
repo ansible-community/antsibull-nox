@@ -447,16 +447,22 @@ def process_pylint_errors(
     """
     Process errors reported by pylint in 'json2' format.
     """
-    data = json.loads(output)
     found_error = False
-    if data["messages"]:
-        for message in data["messages"]:
-            path = os.path.relpath(
-                message["absolutePath"], prepared_collections.current_path
-            )
-            prefix = f"{path}:{message['line']}:{message['column']}: [{message['messageId']}]"
-            print(f"{prefix} {message['message']} [{message['symbol']}]")
-            found_error = True
+    try:
+        data = json.loads(output)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        session.warn(f"Cannot parse pylint output: {exc}")
+        print(output)
+        found_error = True
+    else:
+        if data["messages"]:
+            for message in data["messages"]:
+                path = os.path.relpath(
+                    message["absolutePath"], prepared_collections.current_path
+                )
+                prefix = f"{path}:{message['line']}:{message['column']}: [{message['messageId']}]"
+                print(f"{prefix} {message['message']} [{message['symbol']}]")
+                found_error = True
     if found_error:
         session.error("Pylint failed")
 

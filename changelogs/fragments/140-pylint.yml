@@ -1,0 +1,2 @@
+bugfixes:
+  - If pylint's output is not valid JSON, show output instead of crashing (https://github.com/ansible-community/antsibull-nox/pull/140).
