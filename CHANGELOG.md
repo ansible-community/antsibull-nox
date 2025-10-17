@@ -70,7 +70,7 @@ Maintenance release\.
 <a id="minor-changes"></a>
 ### Minor Changes
 
-* Antsibull\-nox\'s ansible\-core <code>devel</code> and <code>milestone</code> branch versions have been updated to 2\.21\. This means that <code>stable\-2\.20</code> will now be added to CI matrices if <code>max\_version</code> has not been explicitly specified \([https\://github\.com/ansible\-community/antsibull\-nox/pull/91](https\://github\.com/ansible\-community/antsibull\-nox/pull/91)\)\.
+* Antsibull\-nox\'s ansible\-core <code>devel</code> and <code>milestone</code> branch versions have been updated to 2\.21\. This means that <code>stable\-2\.20</code> will now be added to CI matrices if <code>max\_version</code> has not been explicitly specified \([https\://github\.com/ansible\-community/antsibull\-nox/pull/139](https\://github\.com/ansible\-community/antsibull\-nox/pull/139)\)\.
 
 <a id="v1-3-1"></a>
 ## v1\.3\.1
