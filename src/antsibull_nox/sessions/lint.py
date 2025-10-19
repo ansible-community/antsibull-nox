@@ -544,7 +544,8 @@ def add_codeqa(  # noqa: C901
             command.extend(["--config", str(ruff_check_config)])
         command.extend(session.posargs)
         files = filter_paths(
-            CODE_FILES + ["noxfile.py"] + extra_code_files, with_cd=True
+            CODE_FILES + ["noxfile.py"] + extra_code_files,
+            with_cd=True,
         )
         if not files:
             session.warn("Skipping ruff check (no files to process)")
@@ -601,10 +602,18 @@ def add_codeqa(  # noqa: C901
         if pylint_modules_rcfile is not None and pylint_modules_rcfile != pylint_rcfile:
             # Only run pylint twice when using different configurations
             module_paths = filter_paths(
-                CODE_FILES, restrict=MODULE_PATHS, extensions=[".py"], with_cd=True
+                CODE_FILES,
+                restrict=MODULE_PATHS,
+                extensions=[".py"],
+                with_cd=True,
+                cd_add_python_deps="importing-changed",
             )
             other_paths = filter_paths(
-                CODE_FILES, remove=MODULE_PATHS, extensions=[".py"], with_cd=True
+                CODE_FILES,
+                remove=MODULE_PATHS,
+                extensions=[".py"],
+                with_cd=True,
+                cd_add_python_deps="importing-changed",
             )
             if not module_paths:
                 session.warn("Skipping pylint for modules (no files to process)")
@@ -615,7 +624,9 @@ def add_codeqa(  # noqa: C901
         else:
             # Otherwise run it only once using the general configuration
             module_paths = []
-            other_paths = filter_paths(CODE_FILES, with_cd=True)
+            other_paths = filter_paths(
+                CODE_FILES, with_cd=True, cd_add_python_deps="importing-changed"
+            )
             if not other_paths:
                 session.warn("Skipping pylint (no files to process)")
                 return
@@ -878,7 +889,11 @@ def add_typing(
         session: nox.Session, prepared_collections: CollectionSetup
     ) -> None:
         # Run mypy
-        files = filter_paths(CODE_FILES + extra_code_files, with_cd=True)
+        files = filter_paths(
+            CODE_FILES + extra_code_files,
+            with_cd=True,
+            cd_add_python_deps="importing-changed",
+        )
         with session.chdir(prepared_collections.current_place):
             files = prepared_collections.prefix_current_paths(files)
             if not files:
