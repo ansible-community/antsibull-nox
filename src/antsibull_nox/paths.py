@@ -87,6 +87,7 @@ def _scan_remove_paths(
                 result.append(filepath)
         for directory in list(dirs):
             if directory == "__pycache__":
+                dirs.remove(directory)
                 continue
             dirpath = os.path.normpath(os.path.join(root, directory))
             if match_path(dirpath, False, remove):
