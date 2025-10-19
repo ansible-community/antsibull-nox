@@ -11,7 +11,7 @@ import os
 import typing as t
 from pathlib import Path
 
-from antsibull_nox.python import get_installed_python_versions
+from antsibull_nox.python.versions import get_installed_python_versions
 from antsibull_nox.utils import Version
 
 
