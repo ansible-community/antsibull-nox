@@ -24,12 +24,11 @@ from ...python.python_dependencies import get_python_dependency_info
 PythonDependencies = t.Literal["none", "imported-by-changed", "importing-changed"]
 
 
-def add_python_deps(files: list[Path], *, forward: bool) -> None:
+def add_python_deps(files: list[Path], *, forward: bool, cwd: Path) -> None:
     """
     Given a list of files, add all Python files that (transitively) import
     these (``forward == False``) or are imported by them (``forward == True``).
     """
-    cwd = Path.cwd()
     deps_info = get_python_dependency_info()
     next_modules_dict = (
         deps_info.file_to_imported_modules
@@ -73,11 +72,14 @@ def filter_paths(
     Modifies a list of paths by restricting to and/or removing paths.
     """
     if with_cd:
-        changed_files = get_changes(relative_to=Path.cwd())
+        cwd = Path.cwd()
+        changed_files = get_changes(relative_to=cwd)
         if changed_files is not None:
             if cd_add_python_deps != "none":
                 add_python_deps(
-                    changed_files, forward=cd_add_python_deps == "imported-by-changed"
+                    changed_files,
+                    forward=cd_add_python_deps == "imported-by-changed",
+                    cwd=cwd,
                 )
             restrict_cd = [str(file) for file in changed_files]
             paths = restrict_paths(paths, restrict_cd)
