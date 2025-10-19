@@ -119,7 +119,9 @@ def get_module_path(relative_path: Path) -> tuple[str, ...]:
     """
     Given a relative path to a Python file form the source root, extract the module's path.
     """
-    module_path = tuple(parent.name for parent in reversed(relative_path.parents[:-1]))
+    module_path = tuple(
+        parent.name for parent in reversed(tuple(relative_path.parents)[:-1])
+    )
     if relative_path.name == "__init__.py":
         return module_path
     return module_path + (relative_path.name.removesuffix(".py"),)
