@@ -15,7 +15,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from .utils import Version
+from ..utils import Version
 
 # The following contains Python version candidates
 _PYTHON_VERSIONS_TO_TRY: tuple[Version, ...] = tuple(
@@ -37,6 +37,9 @@ _PYTHON_VERSIONS_TO_TRY: tuple[Version, ...] = tuple(
         "3.14",
         # "3.15",
         # "3.16",
+        # "3.17",
+        # "3.18",
+        # "3.19",
     ]
 )
 

@@ -23,7 +23,7 @@ from antsibull_nox.ansible import (
     get_ansible_core_package_name,
     get_supported_core_versions,
 )
-from antsibull_nox.python import _PYTHON_VERSIONS_TO_TRY
+from antsibull_nox.python.versions import _PYTHON_VERSIONS_TO_TRY
 from antsibull_nox.utils import Version, version_range
 
 from .utils import chdir
