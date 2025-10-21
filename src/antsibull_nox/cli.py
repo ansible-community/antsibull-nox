@@ -22,6 +22,7 @@ from .cd import get_base_branch, get_changes, init_cd, supports_cd
 from .config import CONFIG_FILENAME, load_config_from_toml
 from .init import create_initial_config as _create_initial_config
 from .lint_config import lint_config as _lint_config
+from .sessions.utils.paths import PythonDependencies, add_python_deps
 
 try:
     import argcomplete
@@ -53,11 +54,14 @@ def create_initial_config(_: argparse.Namespace) -> int:
     return 0
 
 
-def show_changes(_: argparse.Namespace) -> int:
+def show_changes(args: argparse.Namespace) -> int:
     """
     Show changes.
     """
+    add_python_deps_opt: PythonDependencies = args.add_python_deps
+
     config_path = Path(CONFIG_FILENAME)
+    cwd = Path.cwd()
     try:
         config = load_config_from_toml(config_path)
     except Exception as exc:  # pylint: disable=broad-exception-caught
@@ -71,15 +75,33 @@ def show_changes(_: argparse.Namespace) -> int:
             return 3
 
         base_branch = get_base_branch()
-        changes = get_changes()
+        changes = get_changes(relative_to=cwd) or []
     except ValueError as exc:
         print(f"Error while fetching changes: {exc}", file=sys.stderr)
         return 3
 
+    original = set(changes)
+    python_deps: set[Path] = set()
+    python_appendum = ""
+
+    changes_ex = list(changes)
+    if add_python_deps_opt != "none":
+        forward = add_python_deps_opt == "imported-by-changed"
+        if forward:
+            python_appendum = "transitive import by changed Python file"
+        else:
+            python_appendum = "transitively imports changed Python file"
+        add_python_deps(changes_ex, forward=forward, cwd=cwd)
+        python_deps = set(changes_ex) - original
+
     print(f"Changes with respect to {base_branch} branch:")
-    if changes:
-        for file in changes:
-            print(f" * {file}")
+    if changes_ex:
+        for file in sorted(changes_ex):
+            appendums = []
+            if file in python_deps:
+                appendums.append(python_appendum)
+            appendum = f" ({', '.join(appendums)})" if appendums else ""
+            print(f" * {file}{appendum}")
     else:
         print("  (no changes found)")
     return 0
@@ -130,7 +152,18 @@ def parse_args(program_name: str, args: list[str]) -> argparse.Namespace:
         description="Create noxfile and antsibull-nox configuration file",
     )
 
-    subparsers.add_parser("show-changes", description="Show changed files")
+    show_changes_parser = subparsers.add_parser(
+        "show-changes", description="Show changed files"
+    )
+    show_changes_parser.add_argument(
+        "--add-python-deps",
+        default="none",
+        choices=["none", "imported-by-changed", "importing-changed"],
+        help="Include Python dependencies (forward or backward) for changed Python files."
+        " If set to 'imported-by-changed', all Python files (transitively) importing"
+        " changed files will be added ('backward'). If set to 'importing-changed', all"
+        " Python files (transitively) imported by changed files will be added ('foward').",
+    )
 
     # This must come after all parser setup
     if HAS_ARGCOMPLETE:

@@ -10,6 +10,7 @@ Path utils for creating nox sessions.
 
 from __future__ import annotations
 
+import typing as t
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -18,6 +19,44 @@ from ...paths import filter_paths as _filter_paths
 from ...paths import (
     restrict_paths,
 )
+from ...python.python_dependencies import get_python_dependency_info
+
+PythonDependencies = t.Literal["none", "imported-by-changed", "importing-changed"]
+
+
+def add_python_deps(files: list[Path], *, forward: bool, cwd: Path) -> None:
+    """
+    Given a list of files, add all Python files that (transitively) import
+    these (``forward == False``) or are imported by them (``forward == True``).
+    """
+    deps_info = get_python_dependency_info()
+    next_modules_dict = (
+        deps_info.file_to_imported_modules
+        if forward
+        else deps_info.file_to_imported_by_modules
+    )
+    added = {
+        (file if file.is_absolute() else cwd / file)
+        for file in files
+        if file.name.endswith(".py")
+    }
+    processed = set()
+    to_process = set(added)
+    while to_process:
+        elt = to_process.pop()
+        if elt in processed:
+            continue
+        processed.add(elt)
+        if elt not in added:
+            if elt.is_relative_to(cwd):
+                files.append(elt.relative_to(cwd))
+                added.add(elt)
+        next_module_paths = next_modules_dict.get(elt)
+        if next_module_paths is None:
+            continue
+        for next_module in next_module_paths[1]:
+            if next_module not in added and next_module not in processed:
+                to_process.add(next_module)
 
 
 def filter_paths(
@@ -27,13 +66,21 @@ def filter_paths(
     restrict: list[str] | None = None,
     extensions: list[str] | None = None,
     with_cd: bool = False,
+    cd_add_python_deps: PythonDependencies = "none",
 ) -> list[str]:
     """
     Modifies a list of paths by restricting to and/or removing paths.
     """
     if with_cd:
-        changed_files = get_changes(relative_to=Path.cwd())
+        cwd = Path.cwd()
+        changed_files = get_changes(relative_to=cwd)
         if changed_files is not None:
+            if cd_add_python_deps != "none":
+                add_python_deps(
+                    changed_files,
+                    forward=cd_add_python_deps == "imported-by-changed",
+                    cwd=cwd,
+                )
             restrict_cd = [str(file) for file in changed_files]
             paths = restrict_paths(paths, restrict_cd)
     return _filter_paths(paths, remove=remove, restrict=restrict, extensions=extensions)
@@ -55,6 +102,7 @@ def filter_files_cd(files: Sequence[Path]) -> list[Path]:
 
 
 __all__ = [
+    "add_python_deps",
     "filter_files_cd",
     "filter_paths",
 ]
