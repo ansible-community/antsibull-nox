@@ -199,12 +199,16 @@ def _fs_list_local_collections() -> Iterator[CollectionData]:
     # Determine potential root
     cwd = Path.cwd()
     parents: Sequence[Path] = cwd.parents
+    # The ignore below is because of https://github.com/pylint-dev/astroid/issues/2864
+    # pylint: disable-next=no-member
     if len(parents) > 2 and parents[1].name == "ansible_collections":
         root = parents[1]
 
     # Current collection
     try:
         current = load_collection_data_from_disk(cwd, root=root, current=True)
+        # The ignore below is because of https://github.com/pylint-dev/astroid/issues/2864
+        # pylint: disable-next=no-member
         if root and current.namespace == parents[0].name and current.name == cwd.name:
             yield current
         else:
