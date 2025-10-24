@@ -162,7 +162,9 @@ def _execute_isort(
             ]
         )
     command.extend(session.posargs)
-    files = filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files, with_cd=True)
+    files = filter_paths(
+        CODE_FILES + ["noxfile.py"] + extra_code_files, extensions=[".py"], with_cd=True
+    )
     if not files:
         session.warn("Skipping isort (no files to process)")
         return
@@ -208,7 +210,9 @@ def _execute_black(
         _execute_black_for(
             session,
             paths=filter_paths(
-                CODE_FILES + ["noxfile.py"] + extra_code_files, with_cd=True
+                CODE_FILES + ["noxfile.py"] + extra_code_files,
+                extensions=[".py"],
+                with_cd=True,
             ),
             run_check=run_check,
             black_config=black_config,
@@ -264,7 +268,9 @@ def _execute_ruff_format(
     if ruff_format_config is not None:
         command.extend(["--config", str(ruff_format_config)])
     command.extend(session.posargs)
-    files = filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files, with_cd=True)
+    files = filter_paths(
+        CODE_FILES + ["noxfile.py"] + extra_code_files, extensions=[".py"], with_cd=True
+    )
     if not files:
         session.warn("Skipping ruff format (no files to process)")
         return
@@ -291,7 +297,9 @@ def _execute_ruff_autofix(
     if ruff_autofix_select:
         command.extend(["--select", ",".join(ruff_autofix_select)])
     command.extend(session.posargs)
-    files = filter_paths(CODE_FILES + ["noxfile.py"] + extra_code_files, with_cd=True)
+    files = filter_paths(
+        CODE_FILES + ["noxfile.py"] + extra_code_files, extensions=[".py"], with_cd=True
+    )
     if not files:
         session.warn("Skipping ruff autofix (no files to process)")
         return
@@ -545,6 +553,7 @@ def add_codeqa(  # noqa: C901
         command.extend(session.posargs)
         files = filter_paths(
             CODE_FILES + ["noxfile.py"] + extra_code_files,
+            extensions=[".py"],
             with_cd=True,
         )
         if not files:
@@ -561,7 +570,9 @@ def add_codeqa(  # noqa: C901
             command.extend(["--config", str(flake8_config)])
         command.extend(session.posargs)
         files = filter_paths(
-            CODE_FILES + ["noxfile.py"] + extra_code_files, with_cd=True
+            CODE_FILES + ["noxfile.py"] + extra_code_files,
+            extensions=[".py"],
+            with_cd=True,
         )
         if not files:
             session.warn("Skipping flake8 (no files to process)")
@@ -625,7 +636,10 @@ def add_codeqa(  # noqa: C901
             # Otherwise run it only once using the general configuration
             module_paths = []
             other_paths = filter_paths(
-                CODE_FILES, with_cd=True, cd_add_python_deps="importing-changed"
+                CODE_FILES,
+                extensions=[".py"],
+                with_cd=True,
+                cd_add_python_deps="importing-changed",
             )
             if not other_paths:
                 session.warn("Skipping pylint (no files to process)")
@@ -891,6 +905,7 @@ def add_typing(
         # Run mypy
         files = filter_paths(
             CODE_FILES + extra_code_files,
+            extensions=[".py"],
             with_cd=True,
             cd_add_python_deps="importing-changed",
         )

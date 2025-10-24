@@ -10,6 +10,7 @@ Path utils for creating nox sessions.
 
 from __future__ import annotations
 
+import os
 import typing as t
 from collections.abc import Sequence
 from pathlib import Path
@@ -82,6 +83,12 @@ def filter_paths(
                     cwd=cwd,
                 )
             restrict_cd = [str(file) for file in changed_files]
+            if extensions:
+                restrict_cd = [
+                    file
+                    for file in restrict_cd
+                    if os.path.splitext(file)[1] in extensions
+                ]
             paths = restrict_paths(paths, restrict_cd)
     return _filter_paths(paths, remove=remove, restrict=restrict, extensions=extensions)
 
