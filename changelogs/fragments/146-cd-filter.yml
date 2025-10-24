@@ -1,0 +1,2 @@
+bugfixes:
+  - "When determining which files to run various Python linters on when change detection is enabled, ensure to restrict to Python files (https://github.com/ansible-community/antsibull-nox/pull/146)."
