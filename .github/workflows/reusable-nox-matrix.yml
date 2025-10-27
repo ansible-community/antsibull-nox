@@ -234,7 +234,7 @@ jobs:
       - name: Upload coverage for final step
         if: >-
           !matrix.skip && needs.create-matrixes.outputs.upload-codecov == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: code-coverage-sanity-${{ matrix.name }}
           path: ${{ inputs.collection-root }}/tests/output/reports/coverage=sanity=*.xml
@@ -288,7 +288,7 @@ jobs:
       - name: Upload coverage for final step
         if: >-
           !matrix.skip && needs.create-matrixes.outputs.upload-codecov == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: code-coverage-units-${{ matrix.name }}
           path: ${{ inputs.collection-root }}/tests/output/reports/coverage=units=*.xml
@@ -343,7 +343,7 @@ jobs:
       - name: Upload coverage for final step
         if: >-
           !matrix.skip && needs.create-matrixes.outputs.upload-codecov == 'true' && (matrix.has-coverage != 'false')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: code-coverage-integration-${{ matrix.name }}
           path: ${{ inputs.collection-root }}/tests/output/reports/coverage=integration=*.xml
@@ -362,7 +362,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Download coverage from previous steps
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: code-coverage-*
       - name: List all files
