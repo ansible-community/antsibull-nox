@@ -54,11 +54,11 @@ run_isort = false
 run_black = false
 
 # Add more configuration settings here to adjust to your collection;
-# see https://ansible.readthedocs.io/projects/antsibull-nox/config-file/#basic-linting-sessions
+# see https://docs.ansible.com/projects/antsibull-nox/config-file/#basic-linting-sessions
 
 [sessions.docs_check]
 # Add configuration settings here to adjust to your collection;
-# see https://ansible.readthedocs.io/projects/antsibull-nox/config-file/#collection-documentation-check
+# see https://docs.ansible.com/projects/antsibull-nox/config-file/#collection-documentation-check
 """
 
 

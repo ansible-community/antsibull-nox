@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 site_name: antsibull-nox – Antsibull Nox Helper
-site_url: https://ansible.readthedocs.io/projects/antsibull-nox
+site_url: https://docs.ansible.com/projects/antsibull-nox
 repo_url: https://github.com/ansible-community/antsibull-nox
 theme:
   name: ansible
