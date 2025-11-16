@@ -68,13 +68,11 @@ def _validate_collection_name(value: str) -> str:
     return value
 
 
-# pylint: disable=invalid-name
 CollectionName = t.Annotated[str, p.AfterValidator(_validate_collection_name)]
 PVersion = t.Annotated[Version, p.BeforeValidator(_parse_version)]
 PAnsibleCoreVersion = t.Annotated[
     AnsibleCoreVersion, p.BeforeValidator(_parse_ansible_core_version)
 ]
-# pylint: enable=invalid-name
 
 
 class PackageName(p.BaseModel):
@@ -145,8 +143,7 @@ PackageType = t.Union[
 ]
 
 
-# pylint: disable-next=invalid-name
-_ValidPackageTypeNames = tuple(
+_VALID_PACKAGE_TYPE_NAMES = tuple(
     p.model_fields["type"].default for p in t.get_args(PackageType)
 )
 
@@ -161,15 +158,14 @@ def _package_name_validator(value: t.Any, *, keep_strings: bool = False) -> t.An
         return PackageName(name=value)
     if isinstance(value, dict):
         # Special-casing for "type" to provide a clean error message
-        if "type" not in value or value["type"] not in _ValidPackageTypeNames:
+        if "type" not in value or value["type"] not in _VALID_PACKAGE_TYPE_NAMES:
             raise ValueError(
                 "Must provide a valid 'type' when specifying a package."
-                + f" Valid types are: {', '.join(_ValidPackageTypeNames)}"
+                + f" Valid types are: {', '.join(_VALID_PACKAGE_TYPE_NAMES)}"
             )
     return value
 
 
-# pylint: disable-next=invalid-name
 PackageField = t.Annotated[
     PackageType,
     p.Field(discriminator="type"),
@@ -186,7 +182,6 @@ def _package_string_discriminator(value: t.Any) -> t.Literal["package_type", "st
     return "package_type"
 
 
-# pylint: disable-next=invalid-name
 PackageFieldOrString = t.Annotated[
     t.Union[
         t.Annotated[PackageField, p.Tag("package_type")],
@@ -206,7 +201,6 @@ def _packages_discriminator(value: t.Any) -> t.Literal["list", "single"]:
     return "single"
 
 
-# pylint: disable-next=invalid-name
 Packages = t.Annotated[
     t.Union[
         t.Annotated[PackageField, p.Tag("single")],
@@ -602,8 +596,7 @@ AnsibleValue = t.Union[
 ]
 
 
-# pylint: disable-next=invalid-name
-_ValidAnsibleValueTypeNames = tuple(
+_VALID_ANSIBLE_VALUE_TYPE_NAMES = tuple(
     p.model_fields["type"].default for p in t.get_args(AnsibleValue)
 )
 
@@ -616,15 +609,14 @@ def ansible_value_validator(value: t.Any) -> t.Any:
         return AnsibleValueExplicit(value=value)
     if isinstance(value, dict):
         # Special-casing for "type" to provide a clean error message
-        if "type" not in value or value["type"] not in _ValidAnsibleValueTypeNames:
+        if "type" not in value or value["type"] not in _VALID_ANSIBLE_VALUE_TYPE_NAMES:
             raise ValueError(
                 "Must provide a valid 'type' when specifying a value."
-                + f" Valid types are: {', '.join(_ValidAnsibleValueTypeNames)}"
+                + f" Valid types are: {', '.join(_VALID_ANSIBLE_VALUE_TYPE_NAMES)}"
             )
     return value
 
 
-# pylint: disable-next=invalid-name
 AnsibleValueField = t.Annotated[
     AnsibleValue,
     p.Field(discriminator="type"),
