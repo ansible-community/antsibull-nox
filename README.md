@@ -5,20 +5,20 @@ SPDX-License-Identifier: GPL-3.0-or-later
 -->
 
 # antsibull-nox -- Antsibull Nox Helper
-[![Documentation](https://img.shields.io/badge/docs-brightgreen.svg)](https://ansible.readthedocs.io/projects/antsibull-nox/)
+[![Documentation](https://img.shields.io/badge/docs-brightgreen.svg)](https://docs.ansible.com/projects/antsibull-nox/)
 [![Discuss on Matrix at #antsibull:ansible.com](https://img.shields.io/matrix/antsibull:ansible.com.svg?server_fqdn=ansible-accounts.ems.host&label=Discuss%20on%20Matrix%20at%20%23antsibull:ansible.com&logo=matrix)](https://matrix.to/#/#antsibull:ansible.com)
 [![Nox badge](https://github.com/ansible-community/antsibull-nox/actions/workflows/nox.yml/badge.svg)](https://github.com/ansible-community/antsibull-nox/actions?query=workflow%3A%22nox%22+branch%3Amain)
 [![Codecov badge](https://img.shields.io/codecov/c/github/ansible-community/antsibull-nox)](https://codecov.io/gh/ansible-community/antsibull-nox)
 [![REUSE status](https://api.reuse.software/badge/github.com/ansible-community/antsibull-nox)](https://api.reuse.software/info/github.com/ansible-community/antsibull-nox)
 
 A [nox](https://nox.thea.codes/en/stable/) helper for Ansible collections.
-Please check out the [documentation](https://ansible.readthedocs.io/projects/antsibull-nox/) for more information.
+Please check out the [documentation](https://docs.ansible.com/projects/antsibull-nox/) for more information.
 
-antsibull-nox is covered by the [Ansible Code of Conduct](https://docs.ansible.com/ansible/latest/community/code_of_conduct.html).
+antsibull-nox is covered by the [Ansible Code of Conduct](https://docs.ansible.com/projects/ansible/latest/community/code_of_conduct.html).
 
 ## Community
 
-Need help or want to discuss the project? See our [Community guide](https://ansible.readthedocs.io/projects/antsibull-nox/community/) to learn how to join the conversation!
+Need help or want to discuss the project? See our [Community guide](https://docs.ansible.com/projects/antsibull-nox/community/) to learn how to join the conversation!
 
 ## Installation
 
@@ -28,9 +28,9 @@ It can be installed with pip:
 
 ## Versioning and compatibility
 
-From version 1.0.0 on, antsibull-nox sticks to semantic versioning and aims at providing no backwards compatibility breaking changes [**to the documented API**](https://ansible.readthedocs.io/projects/antsibull-nox/reference/) during a major release cycle. We might make exceptions from this in case of security fixes for vulnerabilities that are severe enough.
+From version 1.0.0 on, antsibull-nox sticks to semantic versioning and aims at providing no backwards compatibility breaking changes [**to the documented API**](https://docs.ansible.com/projects/antsibull-nox/reference/) during a major release cycle. We might make exceptions from this in case of security fixes for vulnerabilities that are severe enough.
 
-Interfaces and functions that are not [documented in the API reference](https://ansible.readthedocs.io/projects/antsibull-nox/reference/) are exempt from this and might break even in bugfix releases!
+Interfaces and functions that are not [documented in the API reference](https://docs.ansible.com/projects/antsibull-nox/reference/) are exempt from this and might break even in bugfix releases!
 
 ## Development
 
