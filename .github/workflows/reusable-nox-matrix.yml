@@ -93,7 +93,7 @@ jobs:
       change-detection-base-branch: ${{ steps.determine-parameters.outputs.change-detection-base-branch }}
     steps:
       - name: Check out collection
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Determine parameters
@@ -200,7 +200,7 @@ jobs:
       - name: Check out collection
         if: >-
           !matrix.skip
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
           fetch-depth: ${{ needs.create-matrixes.outputs.change-detection == 'true' && '0' || '1' }}
@@ -254,7 +254,7 @@ jobs:
       - name: Check out collection
         if: >-
           !matrix.skip
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
           fetch-depth: ${{ needs.create-matrixes.outputs.change-detection == 'true' && '0' || '1' }}
@@ -309,7 +309,7 @@ jobs:
       - name: Check out collection
         if: >-
           !matrix.skip
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
           fetch-depth: ${{ needs.create-matrixes.outputs.change-detection == 'true' && '0' || '1' }}
@@ -358,7 +358,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out collection
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Download coverage from previous steps
@@ -393,7 +393,7 @@ jobs:
       - name: Check out collection
         if: >-
           !matrix.skip
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Run nox

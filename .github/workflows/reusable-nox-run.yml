@@ -95,7 +95,7 @@ jobs:
           set_output("change-detection", json.dumps(change_detection))
           set_output("change-detection-base-branch", change_detection_base_branch)
       - name: Check out collection
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
           fetch-depth: ${{ steps.determine-parameters.outputs.change-detection == 'true' && '0' || '1' }}
