@@ -24,7 +24,7 @@ jobs:
     name: "Run nox"
     steps:
       - name: Check out antsibull-nox
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Run nox action in subdirectory
