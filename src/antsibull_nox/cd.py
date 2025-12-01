@@ -45,8 +45,8 @@ class _CDConfig:
             self.base_branch = env_base_branch
 
 
-_cd_initialized = False
-_cd_config: _CDConfig | None = None
+_cd_initialized = False  # pylint: disable=invalid-name
+_cd_config: _CDConfig | None = None  # pylint: disable=invalid-name
 
 
 def init_cd(
