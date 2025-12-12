@@ -24,9 +24,9 @@ from antsibull_fileutils.yaml import load_yaml_file
 from ..ansible import AnsibleCoreVersion
 from .data import CollectionData
 
-# Function that runs a command (and fails on non-zero return code)
-# and returns a tuple (stdout, stderr)
-Runner = t.Callable[[list[str]], tuple[bytes, bytes]]
+# Function that runs a command (and fails on non-zero return code if the boolen parameter is True)
+# and returns a tuple (stdout, stderr, rc)
+Runner = t.Callable[[list[str], bool], tuple[bytes, bytes, int]]
 
 
 GALAXY_YML = "galaxy.yml"
@@ -243,7 +243,9 @@ def _fs_list_global_cache(global_cache_dir: Path) -> Iterator[CollectionData]:
 
 def _galaxy_list_collections(runner: Runner) -> Iterator[CollectionData]:
     try:
-        stdout, _ = runner(["ansible-galaxy", "collection", "list", "--format", "json"])
+        stdout, _stderr, _rc = runner(
+            ["ansible-galaxy", "collection", "list", "--format", "json"], True
+        )
         data = json.loads(stdout)
         for collections_root_path, collections in data.items():
             root = Path(collections_root_path)

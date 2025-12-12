@@ -69,9 +69,9 @@ class CollectionSetup:
         return result
 
 
-def _run_subprocess(args: list[str]) -> tuple[bytes, bytes]:
-    p = subprocess.run(args, check=True, capture_output=True)
-    return p.stdout, p.stderr
+def _run_subprocess(args: list[str], check: bool) -> tuple[bytes, bytes, int]:
+    p = subprocess.run(args, check=check, capture_output=True)
+    return p.stdout, p.stderr, p.returncode
 
 
 # NOTE: This is publicly documented API!

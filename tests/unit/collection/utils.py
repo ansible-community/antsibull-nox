@@ -81,13 +81,16 @@ def create_collection_w_shallow_dir(
     return path
 
 
-def create_once_runner(args: list[str], stdout: bytes, stderr: bytes = b"") -> Runner:
+def create_once_runner(
+    args: list[str], stdout: bytes, stderr: bytes = b"", rc: int = 0
+) -> Runner:
     call_counter = [0]
 
-    def runner(call_args: list[str]) -> tuple[bytes, bytes]:
+    def runner(call_args: list[str], check: bool) -> tuple[bytes, bytes, int]:
         assert call_counter[0] == 0
         assert call_args == args
+        assert check is True
         call_counter[0] += 1
-        return stdout, stderr
+        return stdout, stderr, rc
 
     return runner

@@ -27,13 +27,10 @@ from .data import CollectionData, CollectionSource, SetupResult
 from .extract import extract_tarball
 from .search import (
     CollectionList,
+    Runner,
     _update_collection_list,
     get_collection_list,
 )
-
-# Function that runs a command (and fails on non-zero return code)
-# and returns a tuple (stdout, stderr)
-Runner = t.Callable[[list[str]], tuple[bytes, bytes]]
 
 
 class _CollectionSources:
@@ -133,7 +130,7 @@ class _CollectionDownloadCache:
                 "--",
                 *(source.source for source in sources),
             ]
-            runner(command)
+            _stdout, _stderr, _rc = runner(command, True)
             for file in tempdir.iterdir():
                 if file.name.endswith(_TARBALL_EXTENSION) and file.is_file():
                     namespace, name, version = self._parse_galaxy_filename(file)
@@ -614,7 +611,7 @@ def _copy_collection(
 def _copy_collection_rsync_hard_links(
     collection: CollectionData, path: Path, runner: Runner
 ) -> None:
-    _, __ = runner(
+    _stdout, _stderr, _rc = runner(
         [
             "rsync",
             "-av",
@@ -626,7 +623,8 @@ def _copy_collection_rsync_hard_links(
             "--",
             str(collection.path) + "/",
             str(path) + "/",
-        ]
+        ],
+        True,
     )
 
 

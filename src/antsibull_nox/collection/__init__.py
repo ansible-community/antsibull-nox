@@ -13,12 +13,11 @@ from __future__ import annotations
 from .build import build_collection
 from .data import CollectionData, CollectionSource, SetupResult
 from .install import (
-    Runner,
     setup_collection_sources,
     setup_collections,
     setup_current_tree,
 )
-from .search import CollectionList, load_collection_data_from_disk
+from .search import CollectionList, Runner, load_collection_data_from_disk
 from .utils import force_collection_version
 
 __all__ = [
