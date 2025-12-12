@@ -370,6 +370,7 @@ def test__galaxy_list_collections(
             .replace("<ROOT2>", str(root2))
             .replace("<ROOT3>", str(root3))
             .encode("utf-8"),
+            expect_check=False,
         )
     )
     res = sorted(result, key=lambda c: c.full_name)
@@ -389,7 +390,27 @@ def test__galaxy_list_collections_fail() -> None:
                 create_once_runner(
                     ["ansible-galaxy", "collection", "list", "--format", "json"],
                     stdout=b"{",
-                )
+                    expect_check=False,
+                ),
+            )
+        )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "^Error while loading collection list: "
+            "Unexpected return code 123 when listing collections. Standard error output: foo$"
+        ),
+    ):
+        list(
+            _galaxy_list_collections(
+                create_once_runner(
+                    ["ansible-galaxy", "collection", "list", "--format", "json"],
+                    stdout=b"bar",
+                    stderr=b"foo",
+                    expect_check=False,
+                    rc=123,
+                ),
             )
         )
 
@@ -429,6 +450,7 @@ def test_get_collection_list(tmp_path) -> None:
         .replace("<ROOT2>", str(root2))
         .replace("<ROOT3>", str(root3))
         .encode("utf-8"),
+        expect_check=False,
     )
 
     with chdir(root3 / "foo" / "bar"):
