@@ -1,0 +1,2 @@
+bugfixes:
+  - "Work around `bug in ansible-galaxy when no collections are found <https://github.com/ansible/ansible/issues/73127>`__ (https://github.com/ansible-community/antsibull-nox/pull/154)."
