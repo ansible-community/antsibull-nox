@@ -21,6 +21,7 @@ import nox
 from ..ansible import AnsibleCoreVersion, parse_ansible_core_version
 from ..collection import (
     CollectionData,
+    Runner,
     setup_collections,
     setup_current_tree,
 )
@@ -72,6 +73,27 @@ class CollectionSetup:
 def _run_subprocess(args: list[str], check: bool) -> tuple[bytes, bytes, int]:
     p = subprocess.run(args, check=check, capture_output=True)
     return p.stdout, p.stderr, p.returncode
+
+
+def _find_executable(command: str, paths: list[str]) -> str | None:
+    for path in paths:
+        p = Path(path)
+        if p.is_dir():
+            bp = p / command
+            if bp.exists():
+                return str(bp)
+    return None
+
+
+def _create_venv_run_subprocess(session: nox.Session) -> Runner:
+    def run(args: list[str], check: bool) -> tuple[bytes, bytes, int]:
+        if args and session.bin_paths:
+            executable = _find_executable(args[0], session.bin_paths)
+            if executable is not None:
+                args = [executable] + args[1:]
+        return _run_subprocess(args, check)
+
+    return run
 
 
 # NOTE: This is publicly documented API!
@@ -126,7 +148,7 @@ def prepare_collections(
     place.mkdir(exist_ok=True)
     setup = setup_collections(
         place,
-        _run_subprocess,
+        _create_venv_run_subprocess(session),
         ansible_core_version=parsed_ansible_core_version,
         extra_deps_files=extra_deps_files,
         extra_collections=extra_collections,
