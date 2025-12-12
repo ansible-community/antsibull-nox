@@ -252,6 +252,11 @@ def _galaxy_list_collections(runner: Runner) -> Iterator[CollectionData]:
             # (This has not been fixed for almost five years now...)
             # https://github.com/ansible/ansible/issues/73127
             return
+        if rc != 0:
+            raise ValueError(
+                f"Unexpected return code {rc} when listing collections."
+                f" Standard error output: {stderr.decode('utf-8')}"
+            )
         data = json.loads(stdout)
         for collections_root_path, collections in data.items():
             root = Path(collections_root_path)
