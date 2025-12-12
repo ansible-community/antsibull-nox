@@ -199,7 +199,9 @@ def add_execution_environment_session(
         )
 
         playbook_dir = Path.cwd()
-        temp_dir = get_outside_temp_directory(playbook_dir.absolute())
+        temp_dir = get_outside_temp_directory(
+            [playbook_dir.absolute(), playbook_dir.resolve()]
+        )
 
         for playbook in execution_environment.test_playbooks:
             env = {"TMPDIR": str(temp_dir)}

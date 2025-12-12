@@ -445,9 +445,9 @@ def _add_all_dependencies(
 
 
 def _install_collection(collection: CollectionData, path: Path) -> None:
-    # Compute relative path
-    sym_path = collection.path.absolute().relative_to(path.parents[0], walk_up=True)
-    # Ensure that path is symlink with this relative path
+    # Compute absolute path
+    sym_path = collection.path.absolute()
+    # Ensure that path is symlink with this absolute path
     if path.is_symlink():
         if path.readlink() == sym_path:
             return
@@ -457,7 +457,9 @@ def _install_collection(collection: CollectionData, path: Path) -> None:
     path.symlink_to(sym_path)
 
 
-def _install_current_collection(collection: CollectionData, path: Path) -> None:
+def _install_current_collection(
+    collection: CollectionData, path: Path, *, use_relative_symlinks: bool
+) -> None:
     if path.exists() and (path.is_symlink() or not path.is_dir()):
         path.unlink()
     path.mkdir(exist_ok=True)
@@ -467,8 +469,12 @@ def _install_current_collection(collection: CollectionData, path: Path) -> None:
             continue
         dest_entry = path / source_entry.name
         # Compute relative path
-        sym_path = source_entry.relative_to(path, walk_up=True)
-        # Ensure that dest_entry is symlink with this relative path
+        sym_path = (
+            source_entry.relative_to(path, walk_up=True)
+            if use_relative_symlinks
+            else source_entry
+        )
+        # Ensure that dest_entry is symlink with this relative/absolute path
         if source_entry.name in present:
             present.remove(source_entry.name)
             if dest_entry.is_symlink() and dest_entry.readlink() == sym_path:
@@ -481,7 +487,11 @@ def _install_current_collection(collection: CollectionData, path: Path) -> None:
 
 
 def _install_collections(
-    collections: Iterable[CollectionData], root: Path, *, with_current: bool
+    collections: Iterable[CollectionData],
+    root: Path,
+    *,
+    with_current: bool,
+    use_relative_symlinks_for_current: bool = True,
 ) -> None:
     for collection in collections:
         namespace_dir = root / collection.namespace
@@ -490,7 +500,11 @@ def _install_collections(
         if not collection.current:
             _install_collection(collection, path)
         elif with_current:
-            _install_current_collection(collection, path)
+            _install_current_collection(
+                collection,
+                path,
+                use_relative_symlinks=use_relative_symlinks_for_current,
+            )
 
 
 def _extract_collections_from_extra_deps_file(path: str | os.PathLike) -> list[str]:
@@ -529,6 +543,7 @@ def setup_collections(
     extra_deps_files: list[str | os.PathLike] | None = None,
     global_cache_dir: Path,
     with_current: bool = True,
+    use_relative_symlinks_for_current: bool = True,
 ) -> SetupResult:
     """
     Setup all collections in a tree structure inside the destination directory.
@@ -572,7 +587,10 @@ def setup_collections(
             missing.remove(collection_data.full_name)
         missing.raise_error()
     _install_collections(
-        collections_to_install.values(), destination_root, with_current=with_current
+        collections_to_install.values(),
+        destination_root,
+        with_current=with_current,
+        use_relative_symlinks_for_current=use_relative_symlinks_for_current,
     )
     return SetupResult(
         root=destination_root,

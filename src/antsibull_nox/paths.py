@@ -14,6 +14,7 @@ import atexit
 import functools
 import os
 import shutil
+from collections.abc import Sequence
 from pathlib import Path
 
 from antsibull_fileutils.copier import Copier, GitCopier
@@ -185,24 +186,27 @@ def copy_collection(
     copier.copy(source, destination, exclude_root=[".nox", ".tox"])
 
 
-def _is_acceptable_tempdir(directory: Path, exclude: Path) -> bool:
+def _is_acceptable_tempdir(directory: Path, excludes: Sequence[Path]) -> bool:
     # Avoid being inside an ansible_collections tree
     if not is_acceptable_tempdir(directory):
         return False
-    # Avoid something that's inside exclude
-    if directory.is_relative_to(exclude):
-        return False
+    # Avoid something that's inside one of the excludes
+    for exclude in excludes:
+        if directory.is_relative_to(exclude):
+            return False
     return True
 
 
-def get_outside_temp_directory(exclude: Path | None = None) -> Path:
+def get_outside_temp_directory(exclude: Sequence[Path] | Path | None = None) -> Path:
     """
     Find a temporary directory root that's outside the provided path.
 
     Raises ``ValueError`` in case no candidate was found.
     """
     if exclude is None:
-        exclude = Path.cwd()
+        exclude = [Path.cwd()]
+    elif isinstance(exclude, Path):
+        exclude = [exclude]
     return find_tempdir(lambda path: _is_acceptable_tempdir(path, exclude))
 
 
