@@ -1571,6 +1571,14 @@ The added session is called `ansible-lint`. The section can contain the followin
   or to pin the version,
   or to install the package from a local repository.
 
+* `additional_requirements_files: list[str]` (default `[]`):
+  Additional list of `requirements.yml` files for collections to install
+  before running `ansible-lint --offline`.
+
+  Note that antsibull-nox knows about
+  [the locations ansible-lint looks for `requirements.yml` in](https://github.com/ansible/ansible-lint/blob/main/src/ansiblelint/rules/syntax_check.md#syntax-checkunknown-module)
+  and already makes sure that collections from these requirement files are present.
+
 * `strict: bool` (default `false`):
   Whether the `--strict` parameter should be passed to ansible-lint.
   This treats warnings as errors.

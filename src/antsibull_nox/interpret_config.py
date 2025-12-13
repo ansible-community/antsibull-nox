@@ -535,6 +535,7 @@ def _add_sessions(sessions: Sessions) -> None:
             ansible_lint_package=_convert_package_name(
                 sessions.ansible_lint.ansible_lint_package
             ),
+            additional_requirements_files=sessions.ansible_lint.additional_requirements_files,
             strict=sessions.ansible_lint.strict,
         )
     if sessions.ee_check:
