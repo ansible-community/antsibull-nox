@@ -46,7 +46,7 @@ def add_ansible_lint(
             install_in_site_packages=False,
             install_out_of_tree=True,
             # List taken from
-            # https://github.com/ansible/ansible-lint/blob/main/src/ansiblelint/rules/syntax_check.md#syntax-checkunknown-module
+            # https://github.com/ansible/ansible-compat/blob/main/src/ansible_compat/constants.py#L6-L14
             extra_deps_files=[
                 "requirements.yml",
                 "roles/requirements.yml",
