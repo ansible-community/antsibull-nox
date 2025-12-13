@@ -241,11 +241,52 @@ def _fs_list_global_cache(global_cache_dir: Path) -> Iterator[CollectionData]:
     yield from _list_adjacent_collections_outside_tree(global_cache_dir)
 
 
+def _galaxy_list_collections_compat(runner: Runner) -> Iterator[CollectionData]:
+    try:
+        stdout, stderr, rc = runner(["ansible-galaxy", "collection", "list"], False)
+        if rc == 5 and b"None of the provided paths were usable." in stderr:
+            # Due to a bug in ansible-galaxy collection list, ansible-galaxy
+            # fails with an error if no collection can be found.
+            return
+        if rc != 0:
+            raise ValueError(
+                f"Unexpected return code {rc} when listing collections."
+                f" Standard error output: {stderr.decode('utf-8')}"
+            )
+        root: Path | None = None
+        for line in stdout.decode("utf-8").splitlines():
+            parts = line.split(maxsplit=1)
+            if len(parts) < 2:
+                continue
+            if parts[0] == "#":
+                root = Path(parts[1])
+            elif root is not None:
+                collection_name = parts[0]
+                if "." in collection_name:
+                    namespace, name = collection_name.split(".", 2)
+                    try:
+                        yield load_collection_data_from_disk(
+                            root / namespace / name,
+                            namespace=namespace,
+                            name=name,
+                            root=root,
+                            current=False,
+                        )
+                    except:  # noqa: E722, pylint: disable=bare-except
+                        # Looks like Ansible passed crap on to us...
+                        pass
+    except Exception as exc:
+        raise ValueError(f"Error while loading collection list: {exc}") from exc
+
+
 def _galaxy_list_collections(runner: Runner) -> Iterator[CollectionData]:
     try:
         stdout, stderr, rc = runner(
             ["ansible-galaxy", "collection", "list", "--format", "json"], False
         )
+        if rc == 2 and b"error: unrecognized arguments: --format" in stderr:
+            yield from _galaxy_list_collections_compat(runner)
+            return
         if rc == 5 and b"None of the provided paths were usable." in stderr:
             # Due to a bug in ansible-galaxy collection list, ansible-galaxy
             # fails with an error if no collection can be found.
