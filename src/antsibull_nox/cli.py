@@ -162,7 +162,7 @@ def parse_args(program_name: str, args: list[str]) -> argparse.Namespace:
         help="Include Python dependencies (forward or backward) for changed Python files."
         " If set to 'imported-by-changed', all Python files (transitively) importing"
         " changed files will be added ('backward'). If set to 'importing-changed', all"
-        " Python files (transitively) imported by changed files will be added ('foward').",
+        " Python files (transitively) imported by changed files will be added ('forward').",
     )
 
     # This must come after all parser setup
