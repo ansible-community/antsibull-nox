@@ -24,9 +24,13 @@ from antsibull_fileutils.yaml import load_yaml_file
 from ..ansible import AnsibleCoreVersion
 from .data import CollectionData
 
+
 # Function that runs a command (and fails on non-zero return code if the boolen parameter is True)
 # and returns a tuple (stdout, stderr, rc)
-Runner = t.Callable[[list[str], bool], tuple[bytes, bytes, int]]
+class Runner(t.Protocol):
+    def __call__(
+        self, args: list[str], *, check: bool = True
+    ) -> tuple[bytes, bytes, int]: ...
 
 
 GALAXY_YML = "galaxy.yml"
@@ -243,7 +247,9 @@ def _fs_list_global_cache(global_cache_dir: Path) -> Iterator[CollectionData]:
 
 def _galaxy_list_collections_compat(runner: Runner) -> Iterator[CollectionData]:
     try:
-        stdout, stderr, rc = runner(["ansible-galaxy", "collection", "list"], False)
+        stdout, stderr, rc = runner(
+            ["ansible-galaxy", "collection", "list"], check=False
+        )
         if rc == 5 and b"None of the provided paths were usable." in stderr:
             # Due to a bug in ansible-galaxy collection list, ansible-galaxy
             # fails with an error if no collection can be found.
@@ -282,7 +288,7 @@ def _galaxy_list_collections_compat(runner: Runner) -> Iterator[CollectionData]:
 def _galaxy_list_collections(runner: Runner) -> Iterator[CollectionData]:
     try:
         stdout, stderr, rc = runner(
-            ["ansible-galaxy", "collection", "list", "--format", "json"], False
+            ["ansible-galaxy", "collection", "list", "--format", "json"], check=False
         )
         if rc == 2 and b"error: unrecognized arguments: --format" in stderr:
             yield from _galaxy_list_collections_compat(runner)

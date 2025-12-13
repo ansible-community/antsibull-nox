@@ -70,7 +70,7 @@ class CollectionSetup:
         return result
 
 
-def _run_subprocess(args: list[str], check: bool) -> tuple[bytes, bytes, int]:
+def _run_subprocess(args: list[str], *, check: bool = True) -> tuple[bytes, bytes, int]:
     p = subprocess.run(args, check=check, capture_output=True)
     return p.stdout, p.stderr, p.returncode
 
@@ -86,12 +86,12 @@ def _find_executable(command: str, paths: list[str]) -> str | None:
 
 
 def _create_venv_run_subprocess(session: nox.Session) -> Runner:
-    def run(args: list[str], check: bool) -> tuple[bytes, bytes, int]:
+    def run(args: list[str], *, check: bool = True) -> tuple[bytes, bytes, int]:
         if args and session.bin_paths:
             executable = _find_executable(args[0], session.bin_paths)
             if executable is not None:
                 args = [executable] + args[1:]
-        return _run_subprocess(args, check)
+        return _run_subprocess(args, check=check)
 
     return run
 
