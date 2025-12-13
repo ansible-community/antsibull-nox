@@ -1,2 +1,0 @@
-bugfixes:
-  - "When computing Python 3 only paths for black or pylint, do not recurse into ``__pycache__`` (https://github.com/ansible-community/antsibull-nox/pull/143)."

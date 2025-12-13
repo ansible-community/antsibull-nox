@@ -1,2 +1,0 @@
-bugfixes:
-  - "Adjust URLs for antsibull-nox in new templated noxfiles (https://github.com/ansible-community/antsibull-nox/pull/148)."

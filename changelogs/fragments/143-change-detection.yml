@@ -1,3 +1,0 @@
-minor_changes:
-  - "When determining changed files for pylint and mypy, also consider files that (transitively) import the changed files
-     (https://github.com/ansible-community/antsibull-nox/pull/143)."

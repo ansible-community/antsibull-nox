@@ -1,2 +1,0 @@
-minor_changes:
-  - "Add Python 3.15 to Python version search list (https://github.com/ansible-community/antsibull-nox/pull/142)."

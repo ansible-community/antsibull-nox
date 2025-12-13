@@ -1,3 +1,0 @@
-bugfixes:
-  - "Avoid using relative symlinks to link from temporary collection root to collections. This can cause problems with non-canonical paths
-     (https://github.com/ansible-community/antsibull-nox/issues/152, https://github.com/ansible-community/antsibull-nox/pull/153)."

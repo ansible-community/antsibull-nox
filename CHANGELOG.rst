@@ -4,6 +4,35 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.4.0
+======
+
+Release Summary
+---------------
+
+New bugfix and feature release.
+
+Minor Changes
+-------------
+
+- Add Python 3.15 to Python version search list (https://github.com/ansible-community/antsibull-nox/pull/142).
+- Allow to specify extra ``requirements.yml`` files for ansible-lint (https://github.com/ansible-community/antsibull-nox/issues/156, https://github.com/ansible-community/antsibull-nox/issues/161).
+- Also look for needed collections before running ansible-lint `in other places that ansible-lint searches for requirements.yml <https://github.com/ansible/ansible-lint/blob/main/src/ansiblelint/rules/syntax_check.md#syntax-checkunknown-module>`__ (https://github.com/ansible-community/antsibull-nox/issues/156, https://github.com/ansible-community/antsibull-nox/pull/159).
+- Declare support for Python 3.14 (https://github.com/ansible-community/antsibull-nox/pull/141).
+- Use Python 3.14 for antsibull-nox action (https://github.com/ansible-community/antsibull-nox/pull/141).
+- When determining changed files for pylint and mypy, also consider files that (transitively) import the changed files (https://github.com/ansible-community/antsibull-nox/pull/143).
+- When running ansible-galaxy to list, download, or install collections, look in the current session's venv first (https://github.com/ansible-community/antsibull-nox/pull/155, https://github.com/ansible-community/antsibull-nox/pull/157, https://github.com/ansible-community/antsibull-nox/pull/158, https://github.com/ansible-community/antsibull-nox/pull/160).
+
+Bugfixes
+--------
+
+- Adjust URLs for antsibull-nox in new templated noxfiles (https://github.com/ansible-community/antsibull-nox/pull/148).
+- Avoid using relative symlinks to link from temporary collection root to collections. This can cause problems with non-canonical paths (https://github.com/ansible-community/antsibull-nox/issues/152, https://github.com/ansible-community/antsibull-nox/pull/153).
+- If pylint's output is not valid JSON, show output instead of crashing (https://github.com/ansible-community/antsibull-nox/pull/140).
+- When computing Python 3 only paths for black or pylint, do not recurse into ``__pycache__`` (https://github.com/ansible-community/antsibull-nox/pull/143).
+- When determining which files to run various Python linters on when change detection is enabled, ensure to restrict to Python files (https://github.com/ansible-community/antsibull-nox/pull/146).
+- Work around `bug in ansible-galaxy when no collections are found <https://github.com/ansible/ansible/issues/73127>`__ (https://github.com/ansible-community/antsibull-nox/pull/154).
+
 v1.3.2
 ======
 
