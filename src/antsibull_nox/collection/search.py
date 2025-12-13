@@ -253,6 +253,8 @@ def _fs_list_global_cache(global_cache_dir: Path) -> Iterator[CollectionData]:
 
 
 def _galaxy_list_collections_compat(runner: Runner) -> Iterator[CollectionData]:
+    # Handle ansible-core 2.10 and other old ansible-core verisons
+    # that do not know about '--format json'.
     try:
         stdout, stderr, rc = runner(
             ["ansible-galaxy", "collection", "list"], check=False
@@ -289,14 +291,28 @@ def _galaxy_list_collections_compat(runner: Runner) -> Iterator[CollectionData]:
                         # Looks like Ansible passed crap on to us...
                         pass
     except Exception as exc:
-        raise ValueError(f"Error while loading collection list: {exc}") from exc
+        raise ValueError(
+            f"Error while loading collection list with compatibility handling: {exc}"
+        ) from exc
 
 
-def _galaxy_list_collections(runner: Runner) -> Iterator[CollectionData]:
+def _galaxy_list_collections(
+    runner: Runner, *, use_venv_if_present: bool = True
+) -> Iterator[CollectionData]:
     try:
         stdout, stderr, rc = runner(
             ["ansible-galaxy", "collection", "list", "--format", "json"], check=False
         )
+        if (
+            use_venv_if_present
+            and rc == 2
+            and b"error: argument COLLECTION_ACTION: invalid choice: 'list'" in stderr
+        ):
+            # This happens for Ansible 2.9, where there is no 'list' command at all.
+            # Avoid using ansible-galaxy from the virtual environment, and hope it is
+            # installed somewhere more globally...
+            yield from _galaxy_list_collections(runner, use_venv_if_present=False)
+            return
         if rc == 2 and b"error: unrecognized arguments: --format" in stderr:
             yield from _galaxy_list_collections_compat(runner)
             return
