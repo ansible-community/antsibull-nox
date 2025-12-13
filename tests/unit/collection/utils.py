@@ -86,14 +86,18 @@ def create_once_runner(
     stdout: bytes,
     stderr: bytes = b"",
     expect_check: bool = True,
+    expect_use_venv_if_present: bool = True,
     rc: int = 0,
 ) -> Runner:
     call_counter = [0]
 
-    def runner(args: list[str], *, check: bool = True) -> tuple[bytes, bytes, int]:
+    def runner(
+        args: list[str], *, check: bool = True, use_venv_if_present: bool = True
+    ) -> tuple[bytes, bytes, int]:
         assert call_counter[0] == 0
         assert args == expected_args
         assert check is expect_check
+        assert use_venv_if_present is expect_use_venv_if_present
         call_counter[0] += 1
         return stdout, stderr, rc
 

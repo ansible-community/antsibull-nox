@@ -25,11 +25,18 @@ from ..ansible import AnsibleCoreVersion
 from .data import CollectionData
 
 
-# Function that runs a command (and fails on non-zero return code if the boolen parameter is True)
-# and returns a tuple (stdout, stderr, rc)
 class Runner(t.Protocol):
+    """
+    Function that runs a command and returns a tuple (stdout, stderr, rc).
+
+    If ``check`` is ``True``, will fail if ``rc != 0``.
+
+    If ``use_venv_if_present`` is ``True``, will prefer executables
+    from the current virtual environment (if present) for ``args[0]``.
+    """
+
     def __call__(
-        self, args: list[str], *, check: bool = True
+        self, args: list[str], *, check: bool = True, use_venv_if_present: bool = True
     ) -> tuple[bytes, bytes, int]: ...
 
 
