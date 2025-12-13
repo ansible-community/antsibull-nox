@@ -1,0 +1,4 @@
+minor_changes:
+  - "Also look for needed collections before running ansible-lint
+     `in other places that ansible-lint searches for requirements.yml <https://github.com/ansible/ansible-lint/blob/main/src/ansiblelint/rules/syntax_check.md#syntax-checkunknown-module>`__
+     (https://github.com/ansible-community/antsibull-nox/issues/156, https://github.com/ansible-community/antsibull-nox/pull/159)."
