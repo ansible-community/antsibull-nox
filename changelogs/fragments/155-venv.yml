@@ -1,2 +1,3 @@
 minor_changes:
-  - "When running ansible-galaxy to list, download, or install collections, look in the current session's venv first (https://github.com/ansible-community/antsibull-nox/pull/155, https://github.com/ansible-community/antsibull-nox/pull/156)."
+  - "When running ansible-galaxy to list, download, or install collections, look in the current session's venv first
+     (https://github.com/ansible-community/antsibull-nox/pull/155, https://github.com/ansible-community/antsibull-nox/pull/157, https://github.com/ansible-community/antsibull-nox/pull/158)."

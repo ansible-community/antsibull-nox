@@ -130,7 +130,7 @@ class _CollectionDownloadCache:
                 "--",
                 *(source.source for source in sources),
             ]
-            _stdout, _stderr, _rc = runner(command, True)
+            _stdout, _stderr, _rc = runner(command, check=True)
             for file in tempdir.iterdir():
                 if file.name.endswith(_TARBALL_EXTENSION) and file.is_file():
                     namespace, name, version = self._parse_galaxy_filename(file)
@@ -624,7 +624,7 @@ def _copy_collection_rsync_hard_links(
             str(collection.path) + "/",
             str(path) + "/",
         ],
-        True,
+        check=True,
     )
 
 
