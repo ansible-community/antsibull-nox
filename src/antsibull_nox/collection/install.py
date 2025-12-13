@@ -130,7 +130,23 @@ class _CollectionDownloadCache:
                 "--",
                 *(source.source for source in sources),
             ]
-            _stdout, _stderr, _rc = runner(command, check=True)
+            _stdout, stderr, rc = runner(command, check=False)
+            if (
+                rc == 2
+                and b"error: argument COLLECTION_ACTION: invalid choice: 'download'"
+                in stderr
+            ):
+                # This happens for Ansible 2.9, where there is no 'download' command.
+                # Avoid using ansible-galaxy from the virtual environment, and hope it is
+                # installed somewhere more globally...
+                _stdout, stderr, rc = runner(
+                    command, check=False, use_venv_if_present=False
+                )
+            if rc != 0:
+                raise ValueError(
+                    f"Exit code {rc} while running {command}."
+                    f" Standard error output: {stderr.decode('utf-8')}"
+                )
             for file in tempdir.iterdir():
                 if file.name.endswith(_TARBALL_EXTENSION) and file.is_file():
                     namespace, name, version = self._parse_galaxy_filename(file)
