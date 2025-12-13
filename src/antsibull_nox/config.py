@@ -754,6 +754,7 @@ class SessionAnsibleLint(_BaseModel):
     default: bool = True
 
     ansible_lint_package: Packages = PackageName(name="ansible-lint")
+    additional_requirements_files: list[str] = []
     strict: bool = False
 
 

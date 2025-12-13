@@ -1,0 +1,2 @@
+minor_changes:
+  - "Allow to specify extra ``requirements.yml`` files for ansible-lint (https://github.com/ansible-community/antsibull-nox/issues/156, https://github.com/ansible-community/antsibull-nox/issues/161)."

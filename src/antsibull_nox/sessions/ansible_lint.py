@@ -10,6 +10,9 @@ Create nox ansible-lint session.
 
 from __future__ import annotations
 
+import os
+from collections.abc import Sequence
+
 import nox
 
 from .collections import prepare_collections
@@ -26,6 +29,7 @@ def add_ansible_lint(
     *,
     make_ansible_lint_default: bool = True,
     ansible_lint_package: PackageTypeOrList = "ansible-lint",
+    additional_requirements_files: Sequence[str | os.PathLike] | None = None,
     strict: bool = False,
 ) -> None:
     """
@@ -41,20 +45,23 @@ def add_ansible_lint(
 
     def ansible_lint(session: nox.Session) -> None:
         install(session, *compose_dependencies(session))
+        extra_deps_files: list[str | os.PathLike] = [
+            "requirements.yml",
+            "roles/requirements.yml",
+            "collections/requirements.yml",
+            "tests/requirements.yml",
+            "tests/integration/requirements.yml",
+            "tests/unit/requirements.yml",
+        ]
+        if additional_requirements_files:
+            extra_deps_files.extend(additional_requirements_files)
         prepared_collections = prepare_collections(
             session,
             install_in_site_packages=False,
             install_out_of_tree=True,
             # List taken from
             # https://github.com/ansible/ansible-compat/blob/main/src/ansible_compat/constants.py#L6-L14
-            extra_deps_files=[
-                "requirements.yml",
-                "roles/requirements.yml",
-                "collections/requirements.yml",
-                "tests/requirements.yml",
-                "tests/integration/requirements.yml",
-                "tests/unit/requirements.yml",
-            ],
+            extra_deps_files=extra_deps_files,
         )
         if not prepared_collections:
             session.warn("Skipping ansible-lint...")
