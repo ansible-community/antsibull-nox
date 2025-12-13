@@ -45,7 +45,16 @@ def add_ansible_lint(
             session,
             install_in_site_packages=False,
             install_out_of_tree=True,
-            extra_deps_files=["tests/integration/requirements.yml"],
+            # List taken from
+            # https://github.com/ansible/ansible-compat/blob/main/src/ansible_compat/constants.py#L6-L14
+            extra_deps_files=[
+                "requirements.yml",
+                "roles/requirements.yml",
+                "collections/requirements.yml",
+                "tests/requirements.yml",
+                "tests/integration/requirements.yml",
+                "tests/unit/requirements.yml",
+            ],
         )
         if not prepared_collections:
             session.warn("Skipping ansible-lint...")
