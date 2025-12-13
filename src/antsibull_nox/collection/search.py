@@ -301,7 +301,9 @@ def _galaxy_list_collections(
 ) -> Iterator[CollectionData]:
     try:
         stdout, stderr, rc = runner(
-            ["ansible-galaxy", "collection", "list", "--format", "json"], check=False
+            ["ansible-galaxy", "collection", "list", "--format", "json"],
+            check=False,
+            use_venv_if_present=use_venv_if_present,
         )
         if (
             use_venv_if_present
