@@ -1,0 +1,2 @@
+bugfixes:
+  - "Make sure to set ``ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS`` in the GitHub Action also while setting up the nox environment(s) (https://github.com/ansible-community/antsibull-nox/pull/166)."
