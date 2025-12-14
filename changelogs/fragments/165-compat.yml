@@ -1,0 +1,2 @@
+bugfixes:
+  - "Avoid construct that does not work with Pythons before 3.12 (https://github.com/ansible-community/antsibull-nox/pull/165)."
