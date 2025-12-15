@@ -126,6 +126,7 @@ def test(session: nox.Session):
         "--cov=antsibull_nox",
         "--cov-report",
         "term-missing",
+        "--ignore=tests/coverage-collection/",
         *more_args,
         *session.posargs,
         env={"COVERAGE_FILE": f"{covfile}", **session.env},
