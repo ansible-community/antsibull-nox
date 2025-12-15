@@ -1,0 +1,2 @@
+bugfixes:
+  - "Fix compatibility with Python 3.9 (https://github.com/ansible-community/antsibull-nox/pull/168)."
