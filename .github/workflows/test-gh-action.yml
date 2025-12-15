@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     name: "Run all tests with Py${{ matrix.python }}"
     strategy:
+      fail-fast: false
       matrix:
         python:
           - "3.9"
