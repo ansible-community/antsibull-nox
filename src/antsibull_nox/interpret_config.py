@@ -137,7 +137,7 @@ def _convert_core_python_versions(
     core_python_versions: dict[AnsibleCoreVersion | str, list[Version]] | None,
 ) -> dict[str | AnsibleCoreVersion, list[str | Version]] | None:
     return t.cast(
-        t.Optional[dict[str | AnsibleCoreVersion, list[str | Version]]],
+        t.Optional[dict[t.Union[str, AnsibleCoreVersion], list[t.Union[str, Version]]]],
         core_python_versions,
     )
 
