@@ -109,6 +109,9 @@ source = [
     "*/site-packages",
 ]
 
+[tool.mypy]
+exclude = "^tests/[^/]+-collection/"
+
 [[tool.mypy.overrides]]
 module = [
     "ansible.module_utils.basic",
