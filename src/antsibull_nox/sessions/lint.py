@@ -22,6 +22,7 @@ from ..collection import (
 )
 from ..paths import (
     list_all_files,
+    relative_to_walk_up,
 )
 from .collections import (
     CollectionSetup,
@@ -158,7 +159,7 @@ def _execute_isort(
         command.extend(
             [
                 "--settings-file",
-                str(Path(isort_config).resolve().relative_to(root_dir, walk_up=True)),
+                str(relative_to_walk_up(Path(isort_config).resolve(), root_dir)),
             ]
         )
     command.extend(session.posargs)
@@ -396,7 +397,7 @@ def add_formatters(
             collection_path = namespace_dir / cd.name
             if not collection_path.exists():
                 collection_path.symlink_to(
-                    cwd.relative_to(namespace_dir, walk_up=True),
+                    relative_to_walk_up(cwd, namespace_dir),
                     target_is_directory=True,
                 )
             _execute_isort(

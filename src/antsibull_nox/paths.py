@@ -14,6 +14,7 @@ import atexit
 import functools
 import os
 import shutil
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -239,6 +240,16 @@ def copy_directory_tree_into(source: Path, destination: Path) -> None:
             dest = path / file
             remove_path(dest)
             shutil.copy2(root / file, dest, follow_symlinks=False)
+
+
+def relative_to_walk_up(path: Path, relative_to: Path) -> Path:
+    """
+    Path.relative_to()'s walk_up kwarg was only added in Python 3.12.
+    This function provides a compatibility shim for older Python versions.
+    """
+    if sys.version_info < (3, 12):
+        return Path(os.path.relpath(path, relative_to))
+    return path.relative_to(relative_to, walk_up=True)
 
 
 __all__ = [

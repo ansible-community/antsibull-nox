@@ -16,6 +16,7 @@ from pathlib import Path
 
 from .config import VCS as VCSConfig
 from .config import Config
+from .paths import relative_to_walk_up
 from .vcs import VCS, VcsProvider
 from .vcs.factory import get_vcs_provider
 
@@ -146,10 +147,7 @@ def get_changes(*, relative_to: Path | None = None) -> list[Path] | None:
     if relative_to is None:
         relative_to = Path.cwd()
 
-    return [
-        (cd_config.repo / path).relative_to(relative_to, walk_up=True)
-        for path in changes
-    ]
+    return [relative_to_walk_up(cd_config.repo / path, relative_to) for path in changes]
 
 
 __all__ = (
