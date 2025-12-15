@@ -47,7 +47,7 @@ def setup() -> tuple[list[str], dict[str, t.Any]]:
     return sys.stdin.read().splitlines(), {}
 
 
-if sys.version_info < (3, 12):
+if sys.version_info < (3, 13):
     _T = t.TypeVar("_T")
 else:
     _T = t.TypeVar("_T", default=None)
