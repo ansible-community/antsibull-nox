@@ -233,7 +233,8 @@ def copy_directory_tree_into(source: Path, destination: Path) -> None:
     if not source.is_dir():
         return
     destination.mkdir(parents=True, exist_ok=True)
-    for root, _, files in source.walk():
+    for root_, _, files in os.walk(source):
+        root = Path(root_)
         path = destination / root.relative_to(source)
         path.mkdir(exist_ok=True)
         for file in files:
