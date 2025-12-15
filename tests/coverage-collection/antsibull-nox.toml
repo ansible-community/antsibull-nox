@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2025 Felix Fontein <felix@fontein.de>
 
+[collection_sources]
+"community.internal_test_tools" = "git+https://github.com/ansible-collections/community.internal_test_tools.git,main"
+
 [vcs]
 vcs = "git"
 development_branch = "main"
