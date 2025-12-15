@@ -6,6 +6,8 @@
 
 """Tool to create initial configuration."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 from .collection.search import GALAXY_YML

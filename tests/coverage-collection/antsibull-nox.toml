@@ -1,0 +1,95 @@
+# GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or https://www.gnu.org/licenses/gpl-3.0.txt)
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2025 Felix Fontein <felix@fontein.de>
+
+[collection_sources]
+"community.internal_test_tools" = "git+https://github.com/ansible-collections/community.internal_test_tools.git,main"
+
+[vcs]
+vcs = "git"
+development_branch = "main"
+stable_branches = [ "stable-*" ]
+
+[sessions]
+
+[sessions.lint]
+default = true
+run_isort = true
+run_black = true
+run_ruff_format = true
+run_ruff_autofix = true
+run_ruff_check = true
+run_flake8 = true
+run_pylint = true
+run_yamllint = true
+run_mypy = true
+run_antsibullnox_config_lint = true
+
+[sessions.docs_check]
+default = true
+
+[sessions.license_check]
+default = true
+run_reuse = true
+run_license_check = true
+
+[sessions.extra_checks]
+default = true
+run_no_unwanted_files = true
+run_action_groups = true
+
+run_no_trailing_whitespace = true
+run_avoid_characters = true
+
+[[sessions.extra_checks.action_groups_config]]
+name = "foo"
+pattern = ".*"
+doc_fragment = "antsibull.coverage.ag"
+
+[[sessions.extra_checks.avoid_character_group]]
+regex = "FOOBAR"
+skip_paths = [ "antsibull-nox.toml" ]
+
+[sessions.build_import_check]
+default = true
+run_galaxy_importer = true
+
+[sessions.ansible_test_sanity]
+default = true
+include_devel = true
+min_version = "2.100"
+
+[sessions.ansible_test_units]
+default = true
+include_devel = true
+min_version = "2.100"
+
+[sessions.ansible_test_integration_w_default_container]
+default = true
+include_devel = true
+min_version = "2.100"
+controller_python_versions_only = true
+
+[sessions.ansible_test_integration_w_default_container.ansible_vars]
+foo = { type = "value", value = 123 }
+bar = { type = "env", name = "BAR" }
+
+[sessions.ansible_test_integration]
+default = true
+
+[[sessions.ansible_test_integration.sessions]]
+ansible_core = "devel"
+docker = "default"
+python_version = "3.14"
+
+[sessions.ansible_lint]
+default = true
+
+[sessions.ee_check]
+default = true
+
+[[sessions.ee_check.execution_environments]]
+name = "minimal"
+test_playbooks = ["ee.yml"]
+ansible_core_package = "ansible-core"
+ansible_runner_package = "ansible-runner"

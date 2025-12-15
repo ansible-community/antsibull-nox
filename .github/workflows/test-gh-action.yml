@@ -19,6 +19,38 @@ env:
   FORCE_COLOR: "1"
 
 jobs:
+  coverage-test:
+    runs-on: ubuntu-latest
+    name: "Run all tests with Py${{ matrix.python }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+    steps:
+      - name: Check out antsibull-nox
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Run nox action in subdirectory
+        uses: ./
+        with:
+          working-directory: tests/coverage-collection/
+          python-version: ${{ matrix.python }}
+      - name: Run matrix generator
+        id: run-nox
+        run: |
+          nox --verbose --reuse-existing-virtualenvs --no-install --sessions matrix-generator 2>&1
+        env:
+          FORCE_COLOR: "1"
+        shell: bash
+        working-directory: tests/coverage-collection/
+
   test-gh-action:
     runs-on: ubuntu-latest
     name: "Run nox"

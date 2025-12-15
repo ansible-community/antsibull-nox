@@ -14,6 +14,7 @@ import atexit
 import functools
 import os
 import shutil
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -232,13 +233,24 @@ def copy_directory_tree_into(source: Path, destination: Path) -> None:
     if not source.is_dir():
         return
     destination.mkdir(parents=True, exist_ok=True)
-    for root, _, files in source.walk():
+    for root_, _, files in os.walk(source):
+        root = Path(root_)
         path = destination / root.relative_to(source)
         path.mkdir(exist_ok=True)
         for file in files:
             dest = path / file
             remove_path(dest)
             shutil.copy2(root / file, dest, follow_symlinks=False)
+
+
+def relative_to_walk_up(path: Path, relative_to: Path) -> Path:
+    """
+    Path.relative_to()'s walk_up kwarg was only added in Python 3.12.
+    This function provides a compatibility shim for older Python versions.
+    """
+    if sys.version_info < (3, 12):
+        return Path(os.path.relpath(path, relative_to))
+    return path.relative_to(relative_to, walk_up=True)
 
 
 __all__ = [

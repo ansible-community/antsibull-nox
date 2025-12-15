@@ -130,14 +130,14 @@ def _convert_devel_like_branches(
 def _convert_except_versions(
     except_versions: list[AnsibleCoreVersion] | None,
 ) -> list[AnsibleCoreVersion | str] | None:
-    return t.cast(t.Optional[list[AnsibleCoreVersion | str]], except_versions)
+    return t.cast(t.Optional[list[t.Union[AnsibleCoreVersion, str]]], except_versions)
 
 
 def _convert_core_python_versions(
     core_python_versions: dict[AnsibleCoreVersion | str, list[Version]] | None,
 ) -> dict[str | AnsibleCoreVersion, list[str | Version]] | None:
     return t.cast(
-        t.Optional[dict[str | AnsibleCoreVersion, list[str | Version]]],
+        t.Optional[dict[t.Union[str, AnsibleCoreVersion], list[t.Union[str, Version]]]],
         core_python_versions,
     )
 

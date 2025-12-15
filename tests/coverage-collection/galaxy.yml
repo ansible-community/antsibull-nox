@@ -1,0 +1,16 @@
+---
+# Copyright (c) Ansible Project
+# GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt
+# or https://www.gnu.org/licenses/gpl-3.0.txt)
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+namespace: antsibull
+name: coverage
+version: 1.2.3
+readme: README.md
+authors:
+  - Felix Fontein
+license:
+  - GPL-3.0-or-later
+repository: https://github.com/ansible-community/antsibull-nox
+description: Another test collection for antisbull-nox sessions.
