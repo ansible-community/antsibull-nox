@@ -478,3 +478,17 @@ releases:
       - 159-ansible-lint-requirements.yml
       - 161-ansible-lint.yml
     release_date: '2025-12-13'
+  1.4.1:
+    changes:
+      bugfixes:
+        - Avoid construct that does not work with Pythons before 3.13 (https://github.com/ansible-community/antsibull-nox/pull/165).
+        - Fix compatibility with Python 3.9, and for Python versions < 3.12 (https://github.com/ansible-community/antsibull-nox/pull/168).
+        - Make sure to set ``ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS`` in the GitHub
+          Action also while setting up the nox environment(s) (https://github.com/ansible-community/antsibull-nox/pull/166).
+      release_summary: Bugfix release.
+    fragments:
+      - 1.4.1.yml
+      - 165-compat.yml
+      - 166-action.yml
+      - 168-compat.yml
+    release_date: '2025-12-16'

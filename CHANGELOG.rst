@@ -4,6 +4,21 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.4.1
+======
+
+Release Summary
+---------------
+
+Bugfix release.
+
+Bugfixes
+--------
+
+- Avoid construct that does not work with Pythons before 3.13 (https://github.com/ansible-community/antsibull-nox/pull/165).
+- Fix compatibility with Python 3.9, and for Python versions < 3.12 (https://github.com/ansible-community/antsibull-nox/pull/168).
+- Make sure to set ``ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS`` in the GitHub Action also while setting up the nox environment(s) (https://github.com/ansible-community/antsibull-nox/pull/166).
+
 v1.4.0
 ======
 

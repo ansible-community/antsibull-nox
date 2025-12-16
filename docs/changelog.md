@@ -1,9 +1,24 @@
 # Antsibull Nox Helper Release Notes
 
+<a id="v1-4-1"></a>
+## v1\.4\.1
+
+<a id="release-summary"></a>
+### Release Summary
+
+Bugfix release\.
+
+<a id="bugfixes"></a>
+### Bugfixes
+
+* Avoid construct that does not work with Pythons before 3\.13 \([https\://github\.com/ansible\-community/antsibull\-nox/pull/165](https\://github\.com/ansible\-community/antsibull\-nox/pull/165)\)\.
+* Fix compatibility with Python 3\.9\, and for Python versions \< 3\.12 \([https\://github\.com/ansible\-community/antsibull\-nox/pull/168](https\://github\.com/ansible\-community/antsibull\-nox/pull/168)\)\.
+* Make sure to set <code>ANTSIBULL\_NOX\_IGNORE\_INSTALLED\_COLLECTIONS</code> in the GitHub Action also while setting up the nox environment\(s\) \([https\://github\.com/ansible\-community/antsibull\-nox/pull/166](https\://github\.com/ansible\-community/antsibull\-nox/pull/166)\)\.
+
 <a id="v1-4-0"></a>
 ## v1\.4\.0
 
-<a id="release-summary"></a>
+<a id="release-summary-1"></a>
 ### Release Summary
 
 New bugfix and feature release\.
@@ -19,7 +34,7 @@ New bugfix and feature release\.
 * When determining changed files for pylint and mypy\, also consider files that \(transitively\) import the changed files \([https\://github\.com/ansible\-community/antsibull\-nox/pull/143](https\://github\.com/ansible\-community/antsibull\-nox/pull/143)\)\.
 * When running ansible\-galaxy to list\, download\, or install collections\, look in the current session\'s venv first \([https\://github\.com/ansible\-community/antsibull\-nox/pull/155](https\://github\.com/ansible\-community/antsibull\-nox/pull/155)\, [https\://github\.com/ansible\-community/antsibull\-nox/pull/157](https\://github\.com/ansible\-community/antsibull\-nox/pull/157)\, [https\://github\.com/ansible\-community/antsibull\-nox/pull/158](https\://github\.com/ansible\-community/antsibull\-nox/pull/158)\, [https\://github\.com/ansible\-community/antsibull\-nox/pull/160](https\://github\.com/ansible\-community/antsibull\-nox/pull/160)\)\.
 
-<a id="bugfixes"></a>
+<a id="bugfixes-1"></a>
 ### Bugfixes
 
 * Adjust URLs for antsibull\-nox in new templated noxfiles \([https\://github\.com/ansible\-community/antsibull\-nox/pull/148](https\://github\.com/ansible\-community/antsibull\-nox/pull/148)\)\.
@@ -32,7 +47,7 @@ New bugfix and feature release\.
 <a id="v1-3-2"></a>
 ## v1\.3\.2
 
-<a id="release-summary-1"></a>
+<a id="release-summary-2"></a>
 ### Release Summary
 
 Maintenance release\.
@@ -45,12 +60,12 @@ Maintenance release\.
 <a id="v1-3-1"></a>
 ## v1\.3\.1
 
-<a id="release-summary-2"></a>
+<a id="release-summary-3"></a>
 ### Release Summary
 
 Bugfix release\.
 
-<a id="bugfixes-1"></a>
+<a id="bugfixes-2"></a>
 ### Bugfixes
 
 * Fix <code>mypy</code> invocation in <code>typing</code> session\. For some reason the file list always ended up empty and <code>mypy</code> got skipped \([https\://github\.com/ansible\-community/antsibull\-nox/pull/137](https\://github\.com/ansible\-community/antsibull\-nox/pull/137)\)\.
@@ -59,7 +74,7 @@ Bugfix release\.
 <a id="v1-3-0"></a>
 ## v1\.3\.0
 
-<a id="release-summary-3"></a>
+<a id="release-summary-4"></a>
 ### Release Summary
 
 Feature and bugfix release\.
@@ -114,7 +129,7 @@ Feature and bugfix release\.
 <a id="v1-2-0"></a>
 ## v1\.2\.0
 
-<a id="release-summary-4"></a>
+<a id="release-summary-5"></a>
 ### Release Summary
 
 Maintenance and feature release\.
@@ -124,7 +139,7 @@ Maintenance and feature release\.
 
 * Allow to install packages editably and from requirement files \([https\://github\.com/ansible\-community/antsibull\-nox/pull/106](https\://github\.com/ansible\-community/antsibull\-nox/pull/106)\)\.
 
-<a id="bugfixes-2"></a>
+<a id="bugfixes-3"></a>
 ### Bugfixes
 
 * The <code>action\-groups</code> extra check failed if <code>plugins/modules/</code> does not exist \([https\://github\.com/ansible\-community/antsibull\-nox/pull/104](https\://github\.com/ansible\-community/antsibull\-nox/pull/104)\)\.
@@ -133,12 +148,12 @@ Maintenance and feature release\.
 <a id="v1-1-1"></a>
 ## v1\.1\.1
 
-<a id="release-summary-5"></a>
+<a id="release-summary-6"></a>
 ### Release Summary
 
 Maintenance release\.
 
-<a id="bugfixes-3"></a>
+<a id="bugfixes-4"></a>
 ### Bugfixes
 
 * Update supported Python versions for ansible\-core devel \([https\://github\.com/ansible\-community/antsibull\-nox/pull/102](https\://github\.com/ansible\-community/antsibull\-nox/pull/102)\)\.
@@ -146,7 +161,7 @@ Maintenance release\.
 <a id="v1-1-0"></a>
 ## v1\.1\.0
 
-<a id="release-summary-6"></a>
+<a id="release-summary-7"></a>
 ### Release Summary
 
 Feature release\.
@@ -163,7 +178,7 @@ Feature release\.
 <a id="v1-0-0"></a>
 ## v1\.0\.0
 
-<a id="release-summary-7"></a>
+<a id="release-summary-8"></a>
 ### Release Summary
 
 First stable release\.
@@ -176,7 +191,7 @@ First stable release\.
 <a id="v0-7-0"></a>
 ## v0\.7\.0
 
-<a id="release-summary-8"></a>
+<a id="release-summary-9"></a>
 ### Release Summary
 
 Feature release\.
@@ -190,7 +205,7 @@ Feature release\.
 <a id="v0-6-0"></a>
 ## v0\.6\.0
 
-<a id="release-summary-9"></a>
+<a id="release-summary-10"></a>
 ### Release Summary
 
 Bugfix and feature release\.
@@ -205,7 +220,7 @@ Bugfix and feature release\.
 * Support running <code>ruff format</code> in the <code>formatters</code> session by setting <code>run\_ruff\_format\=true</code> in the config \([https\://github\.com/ansible\-community/antsibull\-nox/issues/70](https\://github\.com/ansible\-community/antsibull\-nox/issues/70)\, [https\://github\.com/ansible\-community/antsibull\-nox/pull/82](https\://github\.com/ansible\-community/antsibull\-nox/pull/82)\)\.
 * The <code>yamllint</code> test now also checks YAML and YAML\+Jinja code blocks in extra documentation \(<code>\.rst</code> files in <code>docs/docsite/rst/</code>\) \([https\://github\.com/ansible\-community/antsibull\-nox/pull/87](https\://github\.com/ansible\-community/antsibull\-nox/pull/87)\)\.
 
-<a id="bugfixes-4"></a>
+<a id="bugfixes-5"></a>
 ### Bugfixes
 
 * Do not fail if an unexpected action group is found that only contains a metadata entry \([https\://github\.com/ansible\-community/antsibull\-nox/pull/81](https\://github\.com/ansible\-community/antsibull\-nox/pull/81)\)\.
@@ -216,7 +231,7 @@ Bugfix and feature release\.
 <a id="v0-5-0"></a>
 ## v0\.5\.0
 
-<a id="release-summary-10"></a>
+<a id="release-summary-11"></a>
 ### Release Summary
 
 Feature and bugfix release\.
@@ -226,7 +241,7 @@ Feature and bugfix release\.
 
 * Allow to pass environment variables as Ansible variables for integration tests with the new <code>ansible\_vars\_from\_env\_vars</code> option for <code>sessions\.ansible\_test\_integration\_w\_default\_container</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/78](https\://github\.com/ansible\-community/antsibull\-nox/pull/78)\)\.
 
-<a id="bugfixes-5"></a>
+<a id="bugfixes-6"></a>
 ### Bugfixes
 
 * Fix action group test\. No errors were reported due to a bug in the test \([https\://github\.com/ansible\-community/antsibull\-nox/pull/80](https\://github\.com/ansible\-community/antsibull\-nox/pull/80)\)\.
@@ -234,7 +249,7 @@ Feature and bugfix release\.
 <a id="v0-4-0"></a>
 ## v0\.4\.0
 
-<a id="release-summary-11"></a>
+<a id="release-summary-12"></a>
 ### Release Summary
 
 Feature and bugfix release\.
@@ -253,7 +268,7 @@ Feature and bugfix release\.
 * The yamllint session now ignores <code>RETURN</code> documentation with values <code>\#</code> and \`\` \# \`\` \([https\://github\.com/ansible\-community/antsibull\-nox/pull/71](https\://github\.com/ansible\-community/antsibull\-nox/pull/71)\)\.
 * The yamllint test no longer shows all filenames in the command line \([https\://github\.com/ansible\-community/antsibull\-nox/pull/72](https\://github\.com/ansible\-community/antsibull\-nox/pull/72)\)\.
 
-<a id="bugfixes-6"></a>
+<a id="bugfixes-7"></a>
 ### Bugfixes
 
 * Adjust yamllint test to no longer use the user\'s global config\, but only the project\'s config \([https\://github\.com/ansible\-community/antsibull\-nox/pull/72](https\://github\.com/ansible\-community/antsibull\-nox/pull/72)\)\.
@@ -261,7 +276,7 @@ Feature and bugfix release\.
 <a id="v0-3-0"></a>
 ## v0\.3\.0
 
-<a id="release-summary-12"></a>
+<a id="release-summary-13"></a>
 ### Release Summary
 
 Feature release that is stabilizing the API\.
@@ -288,7 +303,7 @@ unless a critical problem is found that cannot be solved in any other way\.
 
 * Removed all deprecated functions from <code>antsibull\_nox\.\*\*</code> that generate sessions\. The only functions left that are public API are <code>antsibull\_nox\.load\_antsibull\_nox\_toml\(\)</code>\, <code>antsibull\_nox\.add\_ansible\_test\_session\(\)</code>\, and <code>antsibull\_nox\.sessions\.prepare\_collections\(\)</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/54](https\://github\.com/ansible\-community/antsibull\-nox/pull/54)\)\.
 
-<a id="bugfixes-7"></a>
+<a id="bugfixes-8"></a>
 ### Bugfixes
 
 * Action groups extra test no longer fails if <code>action\_groups</code> does not exist in <code>meta/runtime\.yml</code>\. It can now be used to ensure that there is no action group present in <code>meta/runtime\.yml</code> \([https\://github\.com/ansible\-community/antsibull\-nox/pull/60](https\://github\.com/ansible\-community/antsibull\-nox/pull/60)\)\.
@@ -299,7 +314,7 @@ unless a critical problem is found that cannot be solved in any other way\.
 <a id="v0-2-0"></a>
 ## v0\.2\.0
 
-<a id="release-summary-13"></a>
+<a id="release-summary-14"></a>
 ### Release Summary
 
 Major extension and overhaul with many breaking changes\. The next minor release is expected to bring more stabilization\.
@@ -335,7 +350,7 @@ Major extension and overhaul with many breaking changes\. The next minor release
 <a id="v0-1-0"></a>
 ## v0\.1\.0
 
-<a id="release-summary-14"></a>
+<a id="release-summary-15"></a>
 ### Release Summary
 
 Feature release\.
@@ -359,7 +374,7 @@ Feature release\.
 
 * The nox workflow now by default runs all sessions\, unless restricted with the <code>sessions</code> parameter \([https\://github\.com/ansible\-community/antsibull\-nox/pull/14](https\://github\.com/ansible\-community/antsibull\-nox/pull/14)\)\.
 
-<a id="bugfixes-8"></a>
+<a id="bugfixes-9"></a>
 ### Bugfixes
 
 * Make sure that black in CI checks formatting instead of just reformatting \([https\://github\.com/ansible\-community/antsibull\-nox/pull/14](https\://github\.com/ansible\-community/antsibull\-nox/pull/14)\)\.
@@ -367,7 +382,7 @@ Feature release\.
 <a id="v0-0-1"></a>
 ## v0\.0\.1
 
-<a id="release-summary-15"></a>
+<a id="release-summary-16"></a>
 ### Release Summary
 
 Initial alpha release\.
