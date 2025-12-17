@@ -1,0 +1,2 @@
+bugfixes:
+  - "Fix ``antsibull-nox-config`` session in case antsibull-nox has not been installed in ``$PATH`` (https://github.com/ansible-community/antsibull-nox/pull/169)."
