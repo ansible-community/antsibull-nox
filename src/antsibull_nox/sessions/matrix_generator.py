@@ -99,6 +99,24 @@ def _split(tag_string: str | None) -> t.Generator[str]:
             yield part
 
 
+def _azpify(name: str) -> str:
+    return name.replace("-", "_").replace(" ", "_")
+
+
+def _get_azp_output(
+    registered_sessions: dict[str, list[dict[str, t.Any]]],
+) -> list[tuple[str, dict[str, dict[str, t.Any]]]]:
+    output: list[tuple[str, dict[str, dict[str, t.Any]]]] = []
+    for name, sessions in registered_sessions.items():
+        azp_sessions = {}
+        for data in sessions:
+            new_data = {_azpify(key): value for key, value in data.items()}
+            new_data.pop("tags", None)
+            azp_sessions[_azpify(data["name"])] = new_data
+        output.append((name, azp_sessions))
+    return output
+
+
 def add_matrix_generator() -> None:
     """
     Add a session that generates matrixes for CI systems.
@@ -148,6 +166,15 @@ def add_matrix_generator() -> None:
             with open(github_output, "at", encoding="utf-8") as f:
                 for name, sessions in registered_sessions.items():
                     f.write(f"{name}={json.dumps(sessions)}\n")
+
+        azp_stdout = os.environ.get("AZP_STDOUT")
+        if azp_stdout == "true":
+            print("Writing AZP output to stdout...")
+            for name, azp_sessions in _get_azp_output(registered_sessions):
+                print(
+                    f"##vso[task.setVariable variable={name};isOutput=true]"
+                    f"{json.dumps(azp_sessions)}"
+                )
 
         for name, sessions in sorted(registered_sessions.items()):
             print(f"{name} ({len(sessions)}):")
