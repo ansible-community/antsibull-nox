@@ -10,7 +10,6 @@ Create nox lint sessions.
 
 from __future__ import annotations
 
-import json
 import os
 import shlex
 import sys
@@ -30,7 +29,13 @@ from .collections import (
     prepare_collections,
 )
 from .docs_check import find_extra_docs_rst_files
-from .errors import process_pylint_json2_errors, process_ruff_check_errors
+from .errors import (
+    Message,
+    parse_mypy_errors,
+    parse_pylint_json2_errors,
+    parse_ruff_check_errors,
+    print_messages,
+)
 from .utils import (
     IN_CI,
     compose_description,
@@ -566,10 +571,13 @@ def add_codeqa(  # noqa: C901
             output = session.run(*command, silent=True, success_codes=[0, 1])
 
         if output:
-            process_ruff_check_errors(
+            print_messages(
                 session=session,
-                source_path=prepared_collections.current_path,
-                output=output,
+                messages=parse_ruff_check_errors(
+                    source_path=prepared_collections.current_path,
+                    output=output,
+                ),
+                fail_msg="Ruff failed",
             )
 
     def execute_flake8(session: nox.Session) -> None:
@@ -595,7 +603,7 @@ def add_codeqa(  # noqa: C901
         prepared_collections: CollectionSetup,
         config: os.PathLike | str | None,
         paths: list[str],
-    ) -> None:
+    ) -> list[Message]:
         command = ["pylint"]
         if config is not None:
             command.extend(
@@ -614,12 +622,14 @@ def add_codeqa(  # noqa: C901
                 *command, silent=True, success_codes=list(range(0, 32))
             )
 
-        if output:
-            process_pylint_json2_errors(
-                session=session,
+        return (
+            parse_pylint_json2_errors(
                 source_path=prepared_collections.current_path,
                 output=output,
             )
+            if output
+            else []
+        )
 
     def execute_pylint(
         session: nox.Session, prepared_collections: CollectionSetup
@@ -660,18 +670,25 @@ def add_codeqa(  # noqa: C901
                 return
 
         with session.chdir(prepared_collections.current_place):
+            messages = []
             if module_paths:
-                execute_pylint_impl(
-                    session,
-                    prepared_collections,
-                    pylint_modules_rcfile or pylint_rcfile,
-                    module_paths,
+                messages.extend(
+                    execute_pylint_impl(
+                        session,
+                        prepared_collections,
+                        pylint_modules_rcfile or pylint_rcfile,
+                        module_paths,
+                    )
                 )
 
             if other_paths:
-                execute_pylint_impl(
-                    session, prepared_collections, pylint_rcfile, other_paths
+                messages.extend(
+                    execute_pylint_impl(
+                        session, prepared_collections, pylint_rcfile, other_paths
+                    )
                 )
+
+            print_messages(session=session, messages=messages, fail_msg="Pylint failed")
 
     def codeqa(session: nox.Session) -> None:
         install(session, *compose_dependencies(session))
@@ -838,40 +855,6 @@ def add_yamllint(
     nox.session(name="yamllint", default=False)(yamllint)
 
 
-def process_mypy_errors(
-    session: nox.Session,
-    prepared_collections: CollectionSetup,
-    output: str,
-) -> None:
-    """
-    Process errors reported by mypy in 'json' format.
-    """
-    found_error = False
-    for line in output.splitlines():
-        if not line.strip():
-            continue
-        try:
-            data = json.loads(line)
-            path = os.path.relpath(
-                prepared_collections.current_place / data["file"],
-                prepared_collections.current_path,
-            )
-            prefix = f"{path}:{data['line']}:{data['column']}: [{data['severity']}]"
-            if data["code"]:
-                print(f"{prefix} {data['message']} [{data['code']}]")
-            else:
-                print(f"{prefix} {data['message']}")
-            if data["hint"]:
-                prefix = " " * len(prefix)
-                for hint in data["hint"].splitlines():
-                    print(f"{prefix} {hint}")
-        except Exception:  # pylint: disable=broad-exception-caught
-            session.warn(f"Cannot parse mypy output: {line}")
-        found_error = True
-    if found_error:
-        session.error("Type checking failed")
-
-
 def add_typing(
     *,
     extra_code_files: list[str],
@@ -952,7 +935,15 @@ def add_typing(
                 )
 
             if output:
-                process_mypy_errors(session, prepared_collections, output)
+                print_messages(
+                    session=session,
+                    messages=parse_mypy_errors(
+                        root_path=prepared_collections.current_place,
+                        source_path=prepared_collections.current_path,
+                        output=output,
+                    ),
+                    fail_msg="Mypy failed",
+                )
 
     def typing(session: nox.Session) -> None:
         install(session, *compose_dependencies(session))

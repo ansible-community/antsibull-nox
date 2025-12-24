@@ -65,8 +65,8 @@ class Message:
     A linter output message.
     """
 
-    file: str
-    position: Location
+    file: str | None
+    position: Location | None
     end_position: Location | None
     level: Level
     id: str | None
@@ -78,8 +78,10 @@ class Message:
     def __get_tuple(
         self,
     ) -> tuple[
+        bool,
         str,
-        Location,
+        bool,
+        Location | None,
         bool,
         Location | None,
         Level,
@@ -95,7 +97,9 @@ class Message:
     ]:
         """Helper for comparison functions."""
         return (
-            self.file,
+            self.file is not None,
+            self.file or "",
+            self.position is not None,
             self.position,
             self.end_position is not None,
             self.end_position,
@@ -136,17 +140,22 @@ def print_messages(
     """
     found_error = False
     for message in sorted(messages):
-        prefix = (
-            f"{message.file}:{message.position.line}:{message.position.column or 0}: "
-        )
+        loc_line = 0
+        loc_column = 0
+        if message.position is not None:
+            loc_line = message.position.line
+            loc_column = message.position.column or 0
+        prefix = f"{message.file or ''}:{loc_line}:{loc_column}:"
         if message.id is not None:
             prefix = f"{prefix} [{message.id}]"
         content = message.message
         if message.symbol is not None:
             content = f"{content} [{message.symbol}]"
+        if message.hint is not None:
+            content = f"{content}\n{message.hint}"
         first = True
         for line in content.splitlines():
-            print(f"{prefix}{line}")
+            print(f"{prefix} {line}")
             if first:
                 first = False
                 prefix = " " * len(prefix)
@@ -156,22 +165,27 @@ def print_messages(
         session.error(fail_msg)
 
 
-def process_pylint_json2_errors(
+def parse_pylint_json2_errors(
     *,
-    session: nox.Session,
     source_path: Path,
     output: str,
-    fail_msg: str = "Pylint failed",
-) -> None:
+) -> list[Message]:
     """
-    Process errors reported by pylint in 'json2' format.
+    Parse errors reported by pylint in 'json2' format.
     """
     try:
         data = json.loads(output)
     except Exception as exc:  # pylint: disable=broad-exception-caught
-        session.warn(f"Cannot parse pylint output: {exc}")
-        print(output)
-        session.error(fail_msg)
+        return [
+            Message(
+                file=None,
+                position=None,
+                end_position=None,
+                level=Level.ERROR,
+                id=None,
+                message=f"Cannot parse pylint output: {exc}\n{output}",
+            )
+        ]
 
     messages = []
     if data["messages"]:
@@ -188,25 +202,30 @@ def process_pylint_json2_errors(
                     message=message["message"],
                 )
             )
-    print_messages(session=session, messages=messages, fail_msg=fail_msg)
+    return messages
 
 
-def process_ruff_check_errors(
+def parse_ruff_check_errors(
     *,
-    session: nox.Session,
     source_path: Path,
     output: str,
-    fail_msg: str = "Ruff failed",
-) -> None:
+) -> list[Message]:
     """
-    Process errors reported by ruff check in 'json' format.
+    Parse errors reported by ruff check in 'json' format.
     """
     try:
         data = json.loads(output)
     except Exception as exc:  # pylint: disable=broad-exception-caught
-        session.warn(f"Cannot parse ruff check output: {exc}")
-        print(output)
-        session.error(fail_msg)
+        return [
+            Message(
+                file=None,
+                position=None,
+                end_position=None,
+                level=Level.ERROR,
+                id=None,
+                message=f"Cannot parse ruff check output: {exc}\n{output}",
+            )
+        ]
 
     messages = []
     for message in data:
@@ -234,4 +253,56 @@ def process_ruff_check_errors(
                 url=message["url"],
             )
         )
-    print_messages(session=session, messages=messages, fail_msg=fail_msg)
+    return messages
+
+
+def parse_mypy_errors(
+    *,
+    root_path: Path,  # prepared_collections.current_place
+    source_path: Path,  # prepared_collections.current_path
+    output: str,
+) -> list[Message]:
+    """
+    Process errors reported by mypy in 'json' format.
+    """
+    messages = []
+    _mypy_severity = {
+        "error": Level.ERROR,
+        "note": Level.INFO,
+    }
+    for line in output.splitlines():
+        if not line.strip():
+            continue
+        try:
+            data = json.loads(line)
+            path = os.path.relpath(
+                root_path / data["file"],
+                source_path,
+            )
+            level = _mypy_severity.get(data["severity"], Level.ERROR)
+            messages.append(
+                Message(
+                    file=path,
+                    position=Location(
+                        line=data["line"],
+                        column=data["column"],
+                    ),
+                    end_position=None,
+                    level=level,
+                    id=data["code"],
+                    message=data["message"],
+                    hint=data["hint"],
+                )
+            )
+        except Exception:  # pylint: disable=broad-exception-caught
+            messages.append(
+                Message(
+                    file=None,
+                    position=None,
+                    end_position=None,
+                    level=Level.ERROR,
+                    id=None,
+                    message=f"Cannot parse mypy output: {line}",
+                )
+            )
+    return messages
