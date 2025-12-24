@@ -13,12 +13,17 @@ import os
 import re
 import sys
 
-from antsibull_nox.data.antsibull_nox_data_util import setup
+from antsibull_nox.data.antsibull_nox_data_util import (
+    Location,
+    Message,
+    report_result,
+    setup,
+)
 from antsibull_nox.sessions.extra_checks import AvoidCharacterGroup
 
 
 def compile_patterns(
-    config: list[AvoidCharacterGroup], errors: list[str]
+    config: list[AvoidCharacterGroup], messages: list[Message]
 ) -> list[re.Pattern]:
     patterns: list[re.Pattern] = []
     for group in config:
@@ -51,7 +56,7 @@ def get_position(content: str, position: int) -> tuple[int, int]:
 
 
 def check(
-    file: File, group: AvoidCharacterGroup, pattern: re.Pattern, errors: list[str]
+    file: File, group: AvoidCharacterGroup, pattern: re.Pattern, messages: list[Message]
 ) -> None:
     # Check whether the file is included
     if group.match_extensions is not None:
@@ -90,13 +95,22 @@ def check(
 
     line, col = get_position(content, m.start())
 
-    errors.append(f"{file.path}:{line}:{col}: {error}")
+    messages.append(
+        Message(
+            file=file.path,
+            start=Location(line=line, column=col),
+            end=None,
+            level="error",
+            id=None,
+            message=error,
+        )
+    )
 
 
 def scan(
-    paths: list[str], config: list[AvoidCharacterGroup], errors: list[str]
+    paths: list[str], config: list[AvoidCharacterGroup], messages: list[Message]
 ) -> None:
-    patterns = compile_patterns(config, errors)
+    patterns = compile_patterns(config, messages)
 
     for path in paths:
         if not os.path.isfile(path):
@@ -105,11 +119,29 @@ def scan(
         try:
             file = File(path)
             for index, group in enumerate(config):
-                check(file, group, patterns[index], errors)
+                check(file, group, patterns[index], messages)
         except UnicodeDecodeError:
-            errors.append(f"{path}: cannot parse file as UTF-8")
+            messages.append(
+                Message(
+                    file=path,
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message="cannot parse file as UTF-8",
+                )
+            )
         except Exception as e:
-            errors.append(f"{path}: unexpected error: {e}")
+            messages.append(
+                Message(
+                    file=path,
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message=f"unexpected error: {e}",
+                )
+            )
 
 
 def main() -> int:
@@ -122,12 +154,10 @@ def main() -> int:
         raise ValueError("config is not a list of dictionaries")
     config = [AvoidCharacterGroup(**cfg) for cfg in extra_data["config"]]
 
-    errors: list[str] = []
-    scan(paths, config, errors)
+    messages: list[Message] = []
+    scan(paths, config, messages)
 
-    for error in sorted(errors):
-        print(error)
-    return len(errors) > 0
+    return report_result(messages)
 
 
 if __name__ == "__main__":

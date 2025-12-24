@@ -12,14 +12,20 @@ from __future__ import annotations
 import os
 import sys
 import traceback
-import typing as t
 
 from antsibull_docutils.rst_code_finder import find_code_blocks
-from antsibull_nox_data_util import get_bool, get_list_of_strings, setup  # type: ignore
+from antsibull_nox_data_util import (  # type: ignore
+    Location,
+    Message,
+    get_bool,
+    get_list_of_strings,
+    report_result,
+    setup,
+)
 
 
 def process_rst_file(
-    errors: list[dict[str, t.Any]],
+    messages: list[Message],
     path: str,
     *,
     codeblocks_restrict_types: list[str] | None,
@@ -31,34 +37,36 @@ def process_rst_file(
         with open(path, "rt", encoding="utf-8") as f:
             content = f.read()
     except Exception as exc:
-        errors.append(
-            {
-                "path": path,
-                "line": 1,
-                "col": 1,
-                "message": (
-                    f"Error while reading content: {type(exc)}:"
-                    f" {exc}; traceback: {traceback.format_exc()!r}"
-                ),
-            }
+        messages.append(
+            Message(
+                file=path,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message=f"Error while reading content: {type(exc)}:"
+                f" {exc}; traceback: {traceback.format_exc()!r}",
+            ),
         )
         return
 
     def warn_unknown_block(line: int | str, col: int, content: str) -> None:
         if not codeblocks_allow_literal_blocks:
-            errors.append(
-                {
-                    "path": path,
-                    "line": line,
-                    "col": col,
-                    "message": (
-                        "Warning: found unknown literal block! Check for double colons '::'."
+            messages.append(
+                Message(
+                    file=path,
+                    start=Location(line=line, column=col),
+                    end=None,
+                    level="warning",
+                    id=None,
+                    message=(
+                        "found unknown literal block! Check for double colons '::'."
                         " If that is not the cause, please report this warning."
                         " It might indicate a bug in the checker"
                         " or an unsupported Sphinx directive."
-                        f" Content: {content!r}"
+                        f"\nContent: {content!r}"
                     ),
-                }
+                )
             )
 
     for code_block in find_code_blocks(
@@ -67,13 +75,12 @@ def process_rst_file(
         root_prefix="docs/docsite/rst",
         warn_unknown_block=warn_unknown_block,
     ):
-        error_data = {
-            "path": path,
-            "line": code_block.row_offset + 1,
-            "col": code_block.col_offset + 1,
-        }
+        location = Location(
+            line=code_block.row_offset + 1, column=code_block.col_offset + 1
+        )
+        note: str | None = None
         if not code_block.position_exact:
-            error_data["note"] = (
+            note = (
                 "The code block could not be exactly located in the source file."
                 " The line/column numbers might be off."
             )
@@ -84,8 +91,17 @@ def process_rst_file(
                 if codeblocks_restrict_types is not None:
                     langs = ", ".join(sorted(codeblocks_restrict_types))
                     msg = f"{msg} Allowed languages are: {langs}"
-                error_data["message"] = msg
-                errors.append(error_data)
+                messages.append(
+                    Message(
+                        file=path,
+                        start=location,
+                        end=None,
+                        level="error",
+                        id=None,
+                        message=msg,
+                        note=note,
+                    )
+                )
             continue
 
         if codeblocks_restrict_types is None:
@@ -101,8 +117,17 @@ def process_rst_file(
                 f"Code block with disallowed language {code_block.language!r} found."
                 f" Allowed languages are: {langs}"
             )
-            error_data["message"] = msg
-            errors.append(error_data)
+            messages.append(
+                Message(
+                    file=path,
+                    start=location,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message=msg,
+                    note=note,
+                )
+            )
 
 
 def main() -> int:
@@ -129,12 +154,12 @@ def main() -> int:
             language.lower() for language in codeblocks_restrict_types
         ]
 
-    errors: list[dict[str, t.Any]] = []
+    messages: list[Message] = []
     for path in paths:
         if not os.path.isfile(path):
             continue
         process_rst_file(
-            errors,
+            messages,
             path,
             codeblocks_restrict_types=codeblocks_restrict_types,
             codeblocks_restrict_type_exact_case=codeblocks_restrict_type_exact_case,
@@ -142,25 +167,7 @@ def main() -> int:
             codeblocks_allow_literal_blocks=codeblocks_allow_literal_blocks,
         )
 
-    errors.sort(
-        key=lambda error: (
-            error["path"],
-            error["line"] if isinstance(error["line"], int) else 0,
-            error["col"],
-            error["message"],
-        )
-    )
-    for error in errors:
-        prefix = f"{error['path']}:{error['line']}:{error['col']}: "
-        msg = error["message"]
-        if "note" in error:
-            msg = f"{msg}\nNote: {error['note']}"
-        for i, line in enumerate(msg.splitlines()):
-            print(f"{prefix}{line}")
-            if i == 0:
-                prefix = " " * len(prefix)
-
-    return len(errors) > 0
+    return report_result(messages)
 
 
 if __name__ == "__main__":

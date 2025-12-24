@@ -10,7 +10,6 @@ Create nox lint sessions.
 
 from __future__ import annotations
 
-import json
 import os
 import shlex
 import sys
@@ -30,6 +29,13 @@ from .collections import (
     prepare_collections,
 )
 from .docs_check import find_extra_docs_rst_files
+from .errors import (
+    Message,
+    parse_mypy_errors,
+    parse_pylint_json2_errors,
+    parse_ruff_check_errors,
+    print_messages,
+)
 from .utils import (
     IN_CI,
     compose_description,
@@ -283,6 +289,8 @@ def _execute_ruff_format(
 def _execute_ruff_autofix(
     session: nox.Session,
     *,
+    root_dir: Path,
+    collection_dir: Path,
     run_check: bool,
     extra_code_files: list[str],
     ruff_autofix_config: str | os.PathLike | None,
@@ -295,7 +303,12 @@ def _execute_ruff_autofix(
     if not run_check:
         command.append("--fix")
     if ruff_autofix_config is not None:
-        command.extend(["--config", str(ruff_autofix_config)])
+        command.extend(
+            [
+                "--config",
+                str(relative_to_walk_up(Path(ruff_autofix_config).resolve(), root_dir)),
+            ]
+        )
     if ruff_autofix_select:
         command.extend(["--select", ",".join(ruff_autofix_select)])
     command.extend(session.posargs)
@@ -305,8 +318,12 @@ def _execute_ruff_autofix(
     if not files:
         session.warn("Skipping ruff autofix (no files to process)")
         return
-    command.extend(files)
-    session.run(*command)
+
+    relative_dir = collection_dir.relative_to(root_dir)
+    with session.chdir(root_dir):
+        for file in files:
+            command.append(str(relative_dir / file))
+        session.run(*command)
 
 
 def add_formatters(
@@ -389,7 +406,7 @@ def add_formatters(
 
     def formatters(session: nox.Session) -> None:
         install(session, *compose_dependencies(session))
-        if run_isort:
+        if run_isort or run_ruff_autofix:
             cwd = Path.cwd()
             cd = load_collection_data_from_disk(cwd)
             root_dir = Path(session.create_tmp()).resolve() / "collection-root"
@@ -401,6 +418,7 @@ def add_formatters(
                     relative_to_walk_up(cwd, namespace_dir),
                     target_is_directory=True,
                 )
+        if run_isort:
             _execute_isort(
                 session,
                 root_dir=root_dir,
@@ -428,6 +446,8 @@ def add_formatters(
         if run_ruff_autofix:
             _execute_ruff_autofix(
                 session,
+                root_dir=root_dir,
+                collection_dir=collection_path,
                 run_check=run_check,
                 extra_code_files=extra_code_files,
                 ruff_autofix_config=ruff_autofix_config,
@@ -447,34 +467,6 @@ def add_formatters(
         },
     )
     nox.session(name="formatters", default=False)(formatters)
-
-
-def process_pylint_errors(
-    session: nox.Session,
-    prepared_collections: CollectionSetup,
-    output: str,
-) -> None:
-    """
-    Process errors reported by pylint in 'json2' format.
-    """
-    found_error = False
-    try:
-        data = json.loads(output)
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        session.warn(f"Cannot parse pylint output: {exc}")
-        print(output)
-        found_error = True
-    else:
-        if data["messages"]:
-            for message in data["messages"]:
-                path = os.path.relpath(
-                    message["absolutePath"], prepared_collections.current_path
-                )
-                prefix = f"{path}:{message['line']}:{message['column']}: [{message['messageId']}]"
-                print(f"{prefix} {message['message']} [{message['symbol']}]")
-                found_error = True
-    if found_error:
-        session.error("Pylint failed")
 
 
 def add_codeqa(  # noqa: C901
@@ -545,13 +537,25 @@ def add_codeqa(  # noqa: C901
                 )
         return deps
 
-    def execute_ruff_check(session: nox.Session) -> None:
+    def execute_ruff_check(
+        session: nox.Session,
+        prepared_collections: CollectionSetup,
+    ) -> None:
         command: list[str] = [
             "ruff",
             "check",
+            "--no-respect-gitignore",
+            "--output-format=json",
         ]
         if ruff_check_config is not None:
-            command.extend(["--config", str(ruff_check_config)])
+            command.extend(
+                [
+                    "--config",
+                    os.path.join(
+                        prepared_collections.current_collection.path, ruff_check_config
+                    ),
+                ]
+            )
         command.extend(session.posargs)
         files = filter_paths(
             CODE_FILES + ["noxfile.py"] + extra_code_files,
@@ -561,8 +565,20 @@ def add_codeqa(  # noqa: C901
         if not files:
             session.warn("Skipping ruff check (no files to process)")
             return
-        command.extend(files)
-        session.run(*command)
+        with session.chdir(prepared_collections.current_place):
+            command.extend(prepared_collections.prefix_current_paths(files))
+            # https://docs.astral.sh/ruff/linter/#exit-codes
+            output = session.run(*command, silent=True, success_codes=[0, 1])
+
+        if output:
+            print_messages(
+                session=session,
+                messages=parse_ruff_check_errors(
+                    source_path=prepared_collections.current_path,
+                    output=output,
+                ),
+                fail_msg="Ruff failed",
+            )
 
     def execute_flake8(session: nox.Session) -> None:
         command: list[str] = [
@@ -587,7 +603,7 @@ def add_codeqa(  # noqa: C901
         prepared_collections: CollectionSetup,
         config: os.PathLike | str | None,
         paths: list[str],
-    ) -> None:
+    ) -> list[Message]:
         command = ["pylint"]
         if config is not None:
             command.extend(
@@ -606,8 +622,14 @@ def add_codeqa(  # noqa: C901
                 *command, silent=True, success_codes=list(range(0, 32))
             )
 
-        if output:
-            process_pylint_errors(session, prepared_collections, output)
+        return (
+            parse_pylint_json2_errors(
+                source_path=prepared_collections.current_path,
+                output=output,
+            )
+            if output
+            else []
+        )
 
     def execute_pylint(
         session: nox.Session, prepared_collections: CollectionSetup
@@ -648,23 +670,30 @@ def add_codeqa(  # noqa: C901
                 return
 
         with session.chdir(prepared_collections.current_place):
+            messages = []
             if module_paths:
-                execute_pylint_impl(
-                    session,
-                    prepared_collections,
-                    pylint_modules_rcfile or pylint_rcfile,
-                    module_paths,
+                messages.extend(
+                    execute_pylint_impl(
+                        session,
+                        prepared_collections,
+                        pylint_modules_rcfile or pylint_rcfile,
+                        module_paths,
+                    )
                 )
 
             if other_paths:
-                execute_pylint_impl(
-                    session, prepared_collections, pylint_rcfile, other_paths
+                messages.extend(
+                    execute_pylint_impl(
+                        session, prepared_collections, pylint_rcfile, other_paths
+                    )
                 )
+
+            print_messages(session=session, messages=messages, fail_msg="Pylint failed")
 
     def codeqa(session: nox.Session) -> None:
         install(session, *compose_dependencies(session))
         prepared_collections: CollectionSetup | None = None
-        if run_pylint:
+        if run_ruff_check or run_pylint:
             prepared_collections = prepare_collections(
                 session,
                 install_in_site_packages=False,
@@ -672,8 +701,8 @@ def add_codeqa(  # noqa: C901
             )
             if not prepared_collections:
                 session.warn("Skipping pylint...")
-        if run_ruff_check:
-            execute_ruff_check(session)
+        if run_ruff_check and prepared_collections:
+            execute_ruff_check(session, prepared_collections)
         if run_flake8:
             execute_flake8(session)
         if run_pylint and prepared_collections:
@@ -749,6 +778,7 @@ def add_yamllint(
             extra_data={
                 "config": to_str(yamllint_config),
             },
+            process_messages=True,
         )
 
     def execute_plugin_yamllint(session: nox.Session) -> None:
@@ -785,6 +815,7 @@ def add_yamllint(
                     or yamllint_config
                 ),
             },
+            process_messages=True,
         )
 
     def execute_extra_docs_yamllint(session: nox.Session) -> None:
@@ -805,6 +836,7 @@ def add_yamllint(
                     or yamllint_config
                 ),
             },
+            process_messages=True,
         )
 
     def yamllint(session: nox.Session) -> None:
@@ -824,40 +856,6 @@ def add_yamllint(
         },
     )
     nox.session(name="yamllint", default=False)(yamllint)
-
-
-def process_mypy_errors(
-    session: nox.Session,
-    prepared_collections: CollectionSetup,
-    output: str,
-) -> None:
-    """
-    Process errors reported by mypy in 'json' format.
-    """
-    found_error = False
-    for line in output.splitlines():
-        if not line.strip():
-            continue
-        try:
-            data = json.loads(line)
-            path = os.path.relpath(
-                prepared_collections.current_place / data["file"],
-                prepared_collections.current_path,
-            )
-            prefix = f"{path}:{data['line']}:{data['column']}: [{data['severity']}]"
-            if data["code"]:
-                print(f"{prefix} {data['message']} [{data['code']}]")
-            else:
-                print(f"{prefix} {data['message']}")
-            if data["hint"]:
-                prefix = " " * len(prefix)
-                for hint in data["hint"].splitlines():
-                    print(f"{prefix} {hint}")
-        except Exception:  # pylint: disable=broad-exception-caught
-            session.warn(f"Cannot parse mypy output: {line}")
-        found_error = True
-    if found_error:
-        session.error("Type checking failed")
 
 
 def add_typing(
@@ -940,7 +938,15 @@ def add_typing(
                 )
 
             if output:
-                process_mypy_errors(session, prepared_collections, output)
+                print_messages(
+                    session=session,
+                    messages=parse_mypy_errors(
+                        root_path=prepared_collections.current_place,
+                        source_path=prepared_collections.current_path,
+                        output=output,
+                    ),
+                    fail_msg="Mypy failed",
+                )
 
     def typing(session: nox.Session) -> None:
         install(session, *compose_dependencies(session))
@@ -979,6 +985,7 @@ def add_config_lint(
             run_bare_script(
                 session,
                 "antsibull-nox-lint-config",
+                process_messages=True,
             )
 
             cmd = [

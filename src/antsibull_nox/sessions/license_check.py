@@ -63,6 +63,7 @@ def add_license_check(
                     "extra_ignore_paths": license_check_extra_ignore_paths or [],
                 },
                 with_cd=True,
+                process_messages=True,
             )
 
     license_check.__doc__ = compose_description(

@@ -11,7 +11,8 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from .config import lint_config_toml
+from .config import lint_config_toml, lint_config_toml_messages
+from .data.antsibull_nox_data_util import Message
 
 NOXFILE_PY = "noxfile.py"
 
@@ -69,36 +70,77 @@ class _Walker:
             if isinstance(statement, ast.Expr):
                 self._check_expression(statement.value)
 
-    def walk(self, module: ast.Module) -> list[str]:
+    def walk(self, module: ast.Module) -> list[Message]:
         """
         Walk the noxfile's module and return a list of errors.
         """
         self._walk(module.body)
         errors = []
         if not self.imports:
-            errors.append(f"{self.path}: Found no antsibull_nox import")
+            errors.append(
+                Message(
+                    file=str(self.path),
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message="Found no antsibull_nox import",
+                )
+            )
         if not self.has_config_load:
             errors.append(
-                f"{self.path}: Found no call to antsibull_nox.load_antsibull_nox_toml()"
+                Message(
+                    file=str(self.path),
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message="Found no call to antsibull_nox.load_antsibull_nox_toml()",
+                )
             )
         return errors
 
 
-def lint_noxfile() -> list[str]:
+def lint_noxfile_messages() -> list[Message]:
     """
-    Do basic validation for noxfile.py. Return a list of errors.
+    Do basic validation for noxfile.py. Return a list of error messages.
     """
     path = Path(NOXFILE_PY)
     try:
         with open(path, "rt", encoding="utf-8") as f:
             root = ast.parse(f.read(), filename=path)
     except FileNotFoundError:
-        return [f"{path}: File does not exist"]
+        return [
+            Message(
+                file=str(path),
+                start=None,  # pylint: disable=R0801
+                end=None,
+                level="error",
+                id=None,
+                message="File does not exist",
+            )
+        ]
     except Exception as exc:  # pylint: disable=broad-exception-caught
-        return [f"{path}:Error while parsing Python code: {exc}"]
+        return [
+            Message(
+                file=str(path),
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message=f"Error while parsing Python code: {exc}",
+            )
+        ]
 
     walker = _Walker(path)
     return walker.walk(root)
+
+
+def lint_noxfile() -> list[str]:
+    """
+    Do basic validation for noxfile.py. Return a list of errors.
+    """
+    return [f"{message.file}: {message.message}" for message in lint_noxfile_messages()]
 
 
 def lint_config() -> list[str]:
@@ -108,6 +150,15 @@ def lint_config() -> list[str]:
     errors = lint_config_toml()
     errors.extend(lint_noxfile())
     return sorted(errors)
+
+
+def lint_config_messages() -> list[Message]:
+    """
+    Lint antsibull-nox config file.
+    """
+    errors = lint_config_toml_messages()
+    errors.extend(lint_noxfile_messages())
+    return errors
 
 
 __all__ = ["lint_config"]

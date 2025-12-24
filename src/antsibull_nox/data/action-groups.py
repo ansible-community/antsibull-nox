@@ -16,18 +16,29 @@ import typing as t
 
 import yaml
 
-from antsibull_nox.data.antsibull_nox_data_util import setup
+from antsibull_nox.data.antsibull_nox_data_util import (
+    Message,
+    report_result,
+    setup,
+)
 from antsibull_nox.sessions.extra_checks import ActionGroup
 
 
 def compile_patterns(
-    config: list[ActionGroup], errors: list[str]
+    config: list[ActionGroup], messages: list[Message]
 ) -> dict[str, re.Pattern] | None:
     patterns: dict[str, re.Pattern] = {}
     for action_group in config:
         if action_group.name in config:
-            errors.append(
-                f"noxfile.py: Action group {action_group.name!r} defined multiple times"
+            messages.append(
+                Message(
+                    file="noxfile.py",
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message="Action group {action_group.name!r} defined multiple times",
+                )
             )
             return None
         patterns[action_group.name] = re.compile(action_group.pattern)
@@ -35,7 +46,7 @@ def compile_patterns(
 
 
 def load_redirects(
-    config: list[ActionGroup], errors: list[str], meta_runtime: str
+    config: list[ActionGroup], messages: list[Message], meta_runtime: str
 ) -> dict[str, list[str]]:
     # Load redirects
     try:
@@ -43,17 +54,42 @@ def load_redirects(
             data = yaml.safe_load(f)
         action_groups = data.get("action_groups", {})
     except Exception as exc:
-        errors.append(f"{meta_runtime}: cannot load action groups: {exc}")
+        messages.append(
+            Message(
+                file=meta_runtime,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message=f"cannot load action groups: {exc}",
+            )
+        )
         return {}
 
     if not isinstance(action_groups, dict):
-        errors.append(f"{meta_runtime}: action_groups is not a dictionary")
+        messages.append(
+            Message(
+                file=meta_runtime,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message="action_groups is not a dictionary",
+            )
+        )
         return {}
     if not all(
         isinstance(k, str) and isinstance(v, list) for k, v in action_groups.items()
     ):
-        errors.append(
-            f"{meta_runtime}: action_groups is not a dictionary mapping strings to list of strings"
+        messages.append(
+            Message(
+                file=meta_runtime,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message="action_groups is not a dictionary mapping strings to list of strings",
+            )
         )
         return {}
 
@@ -65,9 +101,16 @@ def load_redirects(
                 # Special case: if an action group is there with a single metadata entry,
                 # we don't complain that it shouldn't be there.
                 continue
-            errors.append(
-                f"{meta_runtime}: found unknown action group"
-                f" {action_group!r}; likely noxfile needs updating"
+            messages.append(
+                Message(
+                    file=meta_runtime,
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message=f"found unknown action group {action_group!r};"
+                    " likely antsibull-nox.toml needs updating",
+                )
             )
         else:
             action_groups[action_group] = [
@@ -75,15 +118,22 @@ def load_redirects(
             ]
     for action_group in config:
         if action_group.name not in action_groups:
-            errors.append(
-                f"{meta_runtime}: cannot find action group"
-                f" {action_group.name!r}; likely noxfile needs updating"
+            messages.append(
+                Message(
+                    file=meta_runtime,
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message=f"cannot find action group {action_group.name!r};"
+                    " likely antsibull-nox.toml needs updating",
+                )
             )
 
     return action_groups
 
 
-def load_docs(path: str, errors: list[str]) -> dict[str, t.Any] | None:
+def load_docs(path: str, messages: list[Message]) -> dict[str, t.Any] | None:
     documentation = []
     in_docs = False
     with open(path, "r", encoding="utf-8") as f:
@@ -95,9 +145,27 @@ def load_docs(path: str, errors: list[str]) -> dict[str, t.Any] | None:
             elif in_docs:
                 documentation.append(line)
     if in_docs:
-        errors.append(f"{path}: cannot find DOCUMENTATION end")
+        messages.append(
+            Message(
+                file=path,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message="cannot find DOCUMENTATION end",
+            )
+        )
     if not documentation:
-        errors.append(f"{path}: cannot find DOCUMENTATION")
+        messages.append(
+            Message(
+                file=path,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message="cannot find DOCUMENTATION",
+            )
+        )
         return None
 
     try:
@@ -106,17 +174,26 @@ def load_docs(path: str, errors: list[str]) -> dict[str, t.Any] | None:
             raise Exception("is not a top-level dictionary")
         return docs
     except Exception as exc:
-        errors.append(f"{path}: cannot load DOCUMENTATION as YAML: {exc}")
+        messages.append(
+            Message(
+                file=path,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message=f"cannot load DOCUMENTATION as YAML: {exc}",
+            )
+        )
         return None
 
 
-def scan(config: list[ActionGroup], errors: list[str]) -> None:
-    patterns = compile_patterns(config, errors)
+def scan(config: list[ActionGroup], messages: list[Message]) -> None:
+    patterns = compile_patterns(config, messages)
     if patterns is None:
         return
 
     meta_runtime = "meta/runtime.yml"
-    action_groups = load_redirects(config, errors, meta_runtime)
+    action_groups = load_redirects(config, messages, meta_runtime)
 
     modules_directory = "plugins/modules/"
     modules_suffix = ".py"
@@ -134,9 +211,16 @@ def scan(config: list[ActionGroup], errors: list[str]) -> None:
 
             if not patterns[action_group.name].match(module_name):
                 if module_name in action_group_content:
-                    errors.append(
-                        f"{path}: module is in action group {action_group.name!r}"
-                        " despite not matching its pattern as defined in noxfile"
+                    messages.append(
+                        Message(
+                            file=path,
+                            start=None,
+                            end=None,
+                            level="error",
+                            id=None,
+                            message=f"module is in action group {action_group.name!r}"
+                            " despite not matching its pattern as defined in noxfile",
+                        )
                     )
                 continue
 
@@ -148,14 +232,21 @@ def scan(config: list[ActionGroup], errors: list[str]) -> None:
 
             if should_be_in_action_group:
                 if module_name not in action_group_content:
-                    errors.append(
-                        f"{meta_runtime}: module {module_name!r} is not part"
-                        f" of {action_group.name!r} action group"
+                    messages.append(
+                        Message(
+                            file=meta_runtime,
+                            start=None,
+                            end=None,
+                            level="error",
+                            id=None,
+                            message=f"module {module_name!r} is not part"
+                            f" of {action_group.name!r} action group",
+                        )
                     )
                 else:
                     action_group_content.remove(module_name)
 
-            docs = load_docs(path, errors)
+            docs = load_docs(path, messages)
             if docs is None:
                 continue
 
@@ -164,25 +255,46 @@ def scan(config: list[ActionGroup], errors: list[str]) -> None:
 
             if should_be_in_action_group != is_in_action_group:
                 if should_be_in_action_group:
-                    errors.append(
-                        f"{path}: module does not document itself as part of"
-                        f" action group {action_group.name!r}, but it should;"
-                        f" you need to add {action_group.doc_fragment} to"
-                        f' "extends_documentation_fragment" in DOCUMENTATION'
+                    messages.append(
+                        Message(
+                            file=path,
+                            start=None,
+                            end=None,
+                            level="error",
+                            id=None,
+                            message="module does not document itself as part of"
+                            f" action group {action_group.name!r}, but it should;"
+                            f" you need to add {action_group.doc_fragment} to"
+                            f' "extends_documentation_fragment" in DOCUMENTATION',
+                        )
                     )
                 else:
-                    errors.append(
-                        f"{path}: module documents itself as part of"
-                        f" action group {action_group.name!r}, but it should not be"
+                    messages.append(
+                        Message(
+                            file=path,
+                            start=None,
+                            end=None,
+                            level="error",
+                            id=None,
+                            message="module documents itself as part of"
+                            f" action group {action_group.name!r}, but it should not be",
+                        )
                     )
 
     for action_group in config:
         action_group_content = action_groups.get(action_group.name) or []
         for module_name in action_group_content:
-            errors.append(
-                f"{meta_runtime}: module {module_name} mentioned"
-                f" in {action_group.name!r} action group does not exist"
-                " or does not match pattern defined in noxfile"
+            messages.append(
+                Message(
+                    file=meta_runtime,
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message=f"module {module_name} mentioned"
+                    f" in {action_group.name!r} action group does not exist"
+                    " or does not match pattern defined in noxfile",
+                )
             )
 
 
@@ -196,12 +308,10 @@ def main() -> int:
         raise ValueError("config is not a list of dictionaries")
     config = [ActionGroup(**cfg) for cfg in extra_data["config"]]
 
-    errors: list[str] = []
-    scan(config, errors)
+    messages: list[Message] = []
+    scan(config, messages)
 
-    for error in sorted(errors):
-        print(error)
-    return len(errors) > 0
+    return report_result(messages)
 
 
 if __name__ == "__main__":
