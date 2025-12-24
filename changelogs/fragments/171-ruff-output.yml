@@ -4,3 +4,5 @@ minor_changes:
      (https://github.com/ansible-community/antsibull-nox/pull/171)."
   - "Improve output parsing and formatting for pylint and mypy checks
      (https://github.com/ansible-community/antsibull-nox/pull/171)."
+  - "Improve error reporting system used by internal scripts
+     (https://github.com/ansible-community/antsibull-nox/pull/171)."

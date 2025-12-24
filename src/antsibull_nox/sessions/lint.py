@@ -778,6 +778,7 @@ def add_yamllint(
             extra_data={
                 "config": to_str(yamllint_config),
             },
+            process_messages=True,
         )
 
     def execute_plugin_yamllint(session: nox.Session) -> None:
@@ -814,6 +815,7 @@ def add_yamllint(
                     or yamllint_config
                 ),
             },
+            process_messages=True,
         )
 
     def execute_extra_docs_yamllint(session: nox.Session) -> None:
@@ -834,6 +836,7 @@ def add_yamllint(
                     or yamllint_config
                 ),
             },
+            process_messages=True,
         )
 
     def yamllint(session: nox.Session) -> None:
@@ -982,6 +985,7 @@ def add_config_lint(
             run_bare_script(
                 session,
                 "antsibull-nox-lint-config",
+                process_messages=True,
             )
 
             cmd = [

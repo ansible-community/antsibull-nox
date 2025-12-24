@@ -111,6 +111,7 @@ def add_extra_checks(
                 "allow_symlinks": no_unwanted_files_allow_symlinks,
             },
             with_cd=True,
+            process_messages=True,
         )
 
     def execute_action_groups(session: nox.Session) -> None:
@@ -124,6 +125,7 @@ def add_extra_checks(
                 "config": [asdict(cfg) for cfg in action_groups_config],
             },
             with_cd=True,
+            process_messages=True,
         )
 
     def execute_no_trailing_whitespace(session: nox.Session) -> None:
@@ -135,6 +137,7 @@ def add_extra_checks(
                 "skip_directories": no_trailing_whitespace_skip_directories or [],
             },
             with_cd=True,
+            process_messages=True,
         )
 
     def execute_avoid_characters(session: nox.Session) -> None:
@@ -148,6 +151,7 @@ def add_extra_checks(
                 "config": [asdict(cfg) for cfg in avoid_character_group],
             },
             with_cd=True,
+            process_messages=True,
         )
 
     def extra_checks(session: nox.Session) -> None:

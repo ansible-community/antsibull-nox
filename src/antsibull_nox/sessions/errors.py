@@ -18,6 +18,10 @@ from pathlib import Path
 
 import nox
 
+from ..data.antsibull_nox_data_util import Level as _DataLevel
+from ..data.antsibull_nox_data_util import Location as _DataLocation
+from ..data.antsibull_nox_data_util import Message as _DataMessage
+
 
 class Level(enum.Enum):
     """
@@ -73,6 +77,7 @@ class Message:
     message: str
     symbol: str | None = None
     hint: str | None = None
+    note: str | None = None
     url: str | None = None
 
     def __get_tuple(
@@ -87,6 +92,8 @@ class Message:
         Level,
         bool,
         str,
+        str,
+        bool,
         str,
         bool,
         str,
@@ -111,6 +118,8 @@ class Message:
             self.symbol or "",
             self.hint is not None,
             self.hint or "",
+            self.note is not None,
+            self.note or "",
             self.url is not None,
             self.url or "",
         )
@@ -153,13 +162,15 @@ def print_messages(
             content = f"{content} [{message.symbol}]"
         if message.hint is not None:
             content = f"{content}\n{message.hint}"
+        if message.note is not None:
+            content = f"{content}\nNote: {message.note}"
         first = True
         for line in content.splitlines():
             print(f"{prefix} {line}")
             if first:
                 first = False
                 prefix = " " * len(prefix)
-        if message.level == Level.ERROR:
+        if message.level in (Level.WARNING, Level.ERROR):
             found_error = True
     if found_error:
         session.error(fail_msg)
@@ -305,4 +316,57 @@ def parse_mypy_errors(
                     message=f"Cannot parse mypy output: {line}",
                 )
             )
+    return messages
+
+
+def parse_bare_framework_errors(
+    *,
+    output: str,
+) -> list[Message]:
+    """
+    Process errors reported by tools from data with
+    antsibull_nox.data.antsibull_nox_data.util.report_result().
+    """
+    try:
+        data = json.loads(output)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return [
+            Message(
+                file=None,
+                position=None,
+                end_position=None,
+                level=Level.ERROR,
+                id=None,
+                message=f"Cannot parse output: {exc}\n{output}",
+            )
+        ]
+
+    def loc(data: _DataLocation | None) -> Location | None:
+        if data is None:
+            return None
+        return Location(line=data.line, column=data.column)
+
+    levels: dict[_DataLevel, Level] = {
+        "error": Level.ERROR,
+        "warning": Level.WARNING,
+        "info": Level.INFO,
+    }
+
+    messages = []
+    for message in data["messages"]:
+        msg = _DataMessage.from_json(message)
+        messages.append(
+            Message(
+                file=msg.file,
+                position=loc(msg.start),
+                end_position=loc(msg.end),
+                level=levels.get(msg.level, Level.ERROR),
+                id=msg.id,
+                message=msg.message,
+                symbol=msg.id,
+                hint=msg.hint,
+                note=msg.note,
+                url=msg.url,
+            )
+        )
     return messages

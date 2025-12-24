@@ -10,9 +10,11 @@ Utility code for scripts in data.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import sys
 import typing as t
+from collections.abc import Mapping
 
 
 def setup() -> tuple[list[str], dict[str, t.Any]]:
@@ -115,3 +117,54 @@ def get_bool(
     if not isinstance(value, bool):
         raise ValueError(f"{key!r} is not a bool, but {type(key)}")
     return value
+
+
+@dataclasses.dataclass
+class Location:
+    line: int
+    column: int | None = None
+
+    @staticmethod
+    def from_json(data: object) -> Location:
+        if not isinstance(data, Mapping):
+            raise ValueError(f"Expected mapping, got {type(data)}")
+        return Location(**data)
+
+
+Level = t.Literal["error", "warning", "info"]
+
+
+@dataclasses.dataclass
+class Message:
+    file: str | None
+    start: Location | None
+    end: Location | None
+    level: Level
+    id: str | None
+    message: str
+    symbol: str | None = None
+    hint: str | None = None
+    note: str | None = None
+    url: str | None = None
+
+    @staticmethod
+    def from_json(data: object) -> Message:
+        if not isinstance(data, Mapping):
+            raise ValueError(f"Expected mapping, got {type(data)}")
+        params = {k: v for k, v in data.items()}
+        start = params.pop("start", None)
+        end = params.pop("end", None)
+        if start is not None:
+            params["start"] = Location.from_json(start)
+        if end is not None:
+            params["end"] = Location.from_json(end)
+        return Message(**params)
+
+
+def report_result(messages: list[Message]) -> int:
+    has_error = any(message.level in ("warning", "error") for message in messages)
+    data = {
+        "messages": [dataclasses.asdict(message) for message in messages],
+    }
+    print(json.dumps(data))
+    return 1 if has_error else 0

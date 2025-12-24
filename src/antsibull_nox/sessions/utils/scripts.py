@@ -21,6 +21,7 @@ from ...paths import (
     find_data_directory,
     list_all_files,
 )
+from ..errors import parse_bare_framework_errors, print_messages
 from .paths import filter_files_cd
 
 
@@ -34,6 +35,7 @@ def run_bare_script(
     extra_data: dict[str, t.Any] | None = None,
     silent: bool = False,
     with_cd: bool = False,
+    process_messages: bool = False,
 ) -> str | None:
     """
     Run a bare script included in antsibull-nox's data directory.
@@ -56,7 +58,11 @@ def run_bare_script(
     if use_session_python:
         python = "python"
         env["PYTHONPATH"] = str(find_data_directory())
-    return session.run(
+    success_codes: tuple[int, ...] | None = None
+    if process_messages:
+        silent = True
+        success_codes = (0, 1)
+    output = session.run(
         python,
         find_data_directory() / f"{name}.py",
         "--data",
@@ -64,7 +70,19 @@ def run_bare_script(
         external=True,
         silent=silent,
         env=env,
+        success_codes=success_codes,
     )
+
+    if process_messages and output:
+        print_messages(
+            session=session,
+            messages=parse_bare_framework_errors(
+                output=output,
+            ),
+            fail_msg=f"{name} failed",
+        )
+
+    return output
 
 
 __all__ = [

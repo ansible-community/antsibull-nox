@@ -13,8 +13,10 @@ import os
 import sys
 
 from antsibull_nox.data.antsibull_nox_data_util import (
+    Message,
     get_bool,
     get_list_of_strings,
+    report_result,
     setup,
 )
 
@@ -81,7 +83,7 @@ def main() -> int:
 
     allow_symlinks = get_bool(extra_data, "allow_symlinks")
 
-    errors: list[str] = []
+    messages: list[Message] = []
     for path in paths:
         if not path.startswith("plugins/"):
             continue
@@ -94,9 +96,27 @@ def main() -> int:
 
         if os.path.islink(path):
             if not allow_symlinks:
-                errors.append("%s: is a symbolic link" % (path,))
+                messages.append(
+                    Message(
+                        file=path,
+                        start=None,
+                        end=None,
+                        level="error",
+                        id=None,
+                        message="is a symbolic link",
+                    )
+                )
         elif not os.path.isfile(path):
-            errors.append("%s: is not a regular file" % (path,))
+            messages.append(
+                Message(
+                    file=path,
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message="is not a regular file",
+                )
+            )
 
         ext = os.path.splitext(path)[1]
 
@@ -112,11 +132,18 @@ def main() -> int:
         )
 
         if ext not in extensions:
-            errors.append(f"{path}: extension must be one of: {', '.join(extensions)}")
+            messages.append(
+                Message(
+                    file=path,
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message=f"extension must be one of: {', '.join(extensions)}",
+                )
+            )
 
-    for error in sorted(errors):
-        print(error)
-    return len(errors) > 0
+    return report_result(messages)
 
 
 if __name__ == "__main__":

@@ -145,6 +145,7 @@ def add_docs_check(
                 "codeblocks_allow_literal_blocks": codeblocks_allow_literal_blocks,
             },
             with_cd=True,
+            process_messages=True,
         )
 
     def execute_antsibull_docs(

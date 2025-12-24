@@ -13,7 +13,10 @@ import os
 import sys
 
 from antsibull_nox.data.antsibull_nox_data_util import (
+    Location,
+    Message,
     get_list_of_strings,
+    report_result,
     setup,
 )
 
@@ -28,7 +31,7 @@ def main() -> int:
         get_list_of_strings(extra_data, "skip_directories", default=[])
     )
 
-    errors: list[str] = []
+    messages: list[Message] = []
     for path in paths:
         if path in skip_paths:
             continue
@@ -44,15 +47,40 @@ def main() -> int:
                 for i, line in enumerate(f):
                     line = line.rstrip("\n\r")
                     if line.rstrip() != line:
-                        errors.append(f"{path}:{i + 1}: found trailing whitespace")
+                        messages.append(
+                            Message(
+                                file=path,
+                                start=Location(line=i + 1),
+                                end=None,
+                                level="error",
+                                id=None,
+                                message="found trailing whitespace",
+                            )
+                        )
         except UnicodeDecodeError:
-            errors.append(f"{path}: cannot parse file as UTF-8")
+            messages.append(
+                Message(
+                    file=path,
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message="cannot parse file as UTF-8",
+                )
+            )
         except Exception as e:
-            errors.append(f"{path}: unexpected error: {e}")
+            messages.append(
+                Message(
+                    file=path,
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message=f"unexpected error: {e}",
+                )
+            )
 
-    for error in sorted(errors):
-        print(error)
-    return len(errors) > 0
+    return report_result(messages)
 
 
 if __name__ == "__main__":

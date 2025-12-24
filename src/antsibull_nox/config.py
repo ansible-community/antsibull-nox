@@ -19,6 +19,7 @@ from antsibull_nox.ee_config import create_ee_config
 
 from ._pydantic import forbid_extras, get_formatted_error_messages
 from .ansible import AnsibleCoreVersion
+from .data.antsibull_nox_data_util import Message
 from .sessions.utils.packages import PackageConstraints as _PackageConstraints
 from .sessions.utils.packages import PackageEditable as _PackageEditable
 from .sessions.utils.packages import PackageName as _PackageName
@@ -830,7 +831,7 @@ def load_config_from_toml(path: str | os.PathLike) -> Config:
     return Config.model_validate(data)
 
 
-def lint_config_toml() -> list[str]:
+def lint_config_toml_messages() -> list[Message]:
     """
     Lint config files
     """
@@ -843,11 +844,56 @@ def lint_config_toml() -> list[str]:
         Config.model_validate(data)
     except p.ValidationError as exc:
         for error in get_formatted_error_messages(exc):
-            errors.append(f"{path}:{error}")
+            errors.append(
+                Message(
+                    file=path,
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message=f"{error}",
+                )
+            )
     except ValueError as exc:
-        errors.append(f"{path}:{exc}")
+        errors.append(
+            Message(
+                file=path,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message=f"{exc}",
+            )
+        )
     except FileNotFoundError:
-        errors.append(f"{path}: File does not exist")
+        errors.append(
+            Message(
+                file=path,
+                start=None,  # pylint: disable=R0801
+                end=None,
+                level="error",
+                id=None,
+                message="File does not exist",
+            )
+        )
     except IOError as exc:
-        errors.append(f"{path}:{exc}")
+        errors.append(
+            Message(
+                file=path,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message=f"{exc}",
+            )
+        )
     return errors
+
+
+def lint_config_toml() -> list[str]:
+    """
+    Lint config files
+    """
+    return [
+        f"{message.file}: {message.message}" for message in lint_config_toml_messages()
+    ]

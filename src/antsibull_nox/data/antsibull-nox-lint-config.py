@@ -11,18 +11,19 @@ from __future__ import annotations
 
 import sys
 
-from antsibull_nox.data.antsibull_nox_data_util import setup
-from antsibull_nox.lint_config import lint_config
+from antsibull_nox.data.antsibull_nox_data_util import (
+    report_result,
+    setup,
+)
+from antsibull_nox.lint_config import lint_config_messages
 
 
 def main() -> int:
     """Main entry point."""
     _, __ = setup()
 
-    errors = lint_config()
-    for error in errors:
-        print(error)
-    return len(errors) > 0
+    messages = lint_config_messages()
+    return report_result(messages)
 
 
 if __name__ == "__main__":

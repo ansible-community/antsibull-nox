@@ -14,7 +14,13 @@ import os
 import stat
 import sys
 
-from antsibull_nox.data.antsibull_nox_data_util import get_list_of_strings, setup
+from antsibull_nox.data.antsibull_nox_data_util import (
+    Location,
+    Message,
+    get_list_of_strings,
+    report_result,
+    setup,
+)
 
 
 def format_license_list(licenses: list[str]) -> str:
@@ -23,20 +29,29 @@ def format_license_list(licenses: list[str]) -> str:
     return ", ".join([f'"{license}"' for license in licenses])
 
 
-def find_licenses(errors: list[str], filename: str, relax: bool = False) -> list[str]:
+def find_licenses(
+    messages: list[Message], filename: str, relax: bool = False
+) -> list[str]:
     spdx_license_identifiers: list[str] = []
     other_license_identifiers: list[str] = []
     has_copyright = False
     try:
         with open(filename, "r", encoding="utf-8") as f:
-            for line in f:
+            for i, line in enumerate(f):
                 line = line.rstrip()
                 if "Copyright " in line:
                     has_copyright = True
                 if "Copyright: " in line:
-                    errors.append(
-                        f'{filename}: found copyright line with "Copyright:".'
-                        " Please remove the colon."
+                    messages.append(
+                        Message(
+                            file=filename,
+                            start=Location(line=i + 1),
+                            end=None,
+                            level="error",
+                            id=None,
+                            message='found copyright line with "Copyright:".'
+                            " Please remove the colon.",
+                        )
                     )
                 if "SPDX-FileCopyrightText: " in line:
                     has_copyright = True
@@ -58,19 +73,53 @@ def find_licenses(errors: list[str], filename: str, relax: bool = False) -> list
                 if "MIT License" in line:
                     other_license_identifiers.append("MIT")
     except Exception as exc:
-        errors.append(f"{filename}: error while processing file: {exc}")
+        messages.append(
+            Message(
+                file=filename,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message=f"error while processing file: {exc}",
+            )
+        )
     if len(set(spdx_license_identifiers)) < len(spdx_license_identifiers):
-        errors.append(f"{filename}: found identical SPDX-License-Identifier values")
+        messages.append(
+            Message(
+                file=filename,
+                start=Location(line=i + 1),
+                end=None,
+                level="error",
+                id=None,
+                message="found identical SPDX-License-Identifier values",
+            )
+        )
     if other_license_identifiers and set(other_license_identifiers) != set(
         spdx_license_identifiers
     ):
-        errors.append(
-            f"{filename}: SPDX-License-Identifier yielded the license list"
-            f" {format_license_list(spdx_license_identifiers)}, while manual guessing"
-            f" yielded the license list {format_license_list(other_license_identifiers)}"
+        messages.append(
+            Message(
+                file=filename,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message="SPDX-License-Identifier yielded the license list"
+                f" {format_license_list(spdx_license_identifiers)}, while manual guessing"
+                f" yielded the license list {format_license_list(other_license_identifiers)}",
+            )
         )
     if not has_copyright and not relax:
-        errors.append(f"{filename}: found no copyright notice")
+        messages.append(
+            Message(
+                file=filename,
+                start=None,
+                end=None,
+                level="error",
+                id=None,
+                message="found no copyright notice",
+            )
+        )
     return sorted(spdx_license_identifiers)
 
 
@@ -102,7 +151,7 @@ def main() -> int:
         for license_file in glob.glob("LICENSES/*.txt")
     ]
 
-    errors: list[str] = []
+    messages: list[Message] = []
 
     for path in paths:
         if path.startswith("./"):
@@ -127,21 +176,35 @@ def main() -> int:
             valid_licenses_for_path = [
                 license for license in valid_licenses if license == "GPL-3.0-or-later"
             ]
-        licenses = find_licenses(errors, path, relax=path in no_comments_allowed)
+        licenses = find_licenses(messages, path, relax=path in no_comments_allowed)
         if not licenses:
             if path not in no_comments_allowed:
-                errors.append(f"{path}: must have at least one license")
+                messages.append(
+                    Message(
+                        file=path,
+                        start=None,
+                        end=None,
+                        level="error",
+                        id=None,
+                        message="must have at least one license",
+                    )
+                )
         else:
             for license in licenses:
                 if license not in valid_licenses_for_path:
-                    errors.append(
-                        f"{path}: found not allowed license {license!r}, must be one of"
-                        f" {format_license_list(valid_licenses_for_path)}"
+                    messages.append(
+                        Message(
+                            file=path,
+                            start=None,
+                            end=None,
+                            level="error",
+                            id=None,
+                            message=f"found not allowed license {license!r}, must be one of"
+                            f" {format_license_list(valid_licenses_for_path)}",
+                        )
                     )
 
-    for error in sorted(errors):
-        print(error)
-    return len(errors) > 0
+    return report_result(messages)
 
 
 if __name__ == "__main__":
