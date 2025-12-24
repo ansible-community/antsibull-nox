@@ -1,0 +1,2 @@
+bugfixes:
+  - "Remove superfluous call from the ``antsibull-nox-config`` session (https://github.com/ansible-community/antsibull-nox/pull/172)."

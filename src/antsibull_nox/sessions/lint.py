@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import os
 import shlex
-import sys
 from pathlib import Path
 
 import nox
@@ -987,14 +986,6 @@ def add_config_lint(
                 "antsibull-nox-lint-config",
                 process_messages=True,
             )
-
-            cmd = [
-                sys.executable,
-                "-m",
-                "antsibull_nox.cli",
-                "lint-config",
-            ]
-            session.run(*cmd)
 
     antsibull_nox_config.__doc__ = "Lint antsibull-nox config"
     nox.session(name="antsibull-nox-config", python=False, default=False)(
