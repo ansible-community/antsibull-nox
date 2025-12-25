@@ -370,3 +370,94 @@ def parse_bare_framework_errors(
             )
         )
     return messages
+
+
+_JSON_END: dict[str, str] = {
+    "{": "}",
+    "[": "]",
+}
+_JSON_START: tuple[str, ...] = tuple(_JSON_END.keys())
+
+
+def _find_json_line(output: str) -> str:
+    """
+    Given output of a program, find a JSON object or list in a single line.
+
+    This function assumes that the line containing the JSON only contains
+    whitespace before and after the JSON.
+    """
+    for line in output.splitlines():
+        line = line.strip()
+        if line.startswith(_JSON_START) and line.endswith(_JSON_END[line[0]]):
+            return line
+    return output
+
+
+def _find_json(output: str) -> str:
+    """
+    Given output of a program, find a JSON object or list in it.
+
+    This function assumes that the object starts and ends in a line that does not
+    have any noise preceeding / succeeding it.
+    """
+    lines = output.splitlines()
+    for start, line in enumerate(lines):
+        line = line.strip()
+        if line.startswith(_JSON_START):
+            end_char = _JSON_END[line[0]]
+            break
+    else:
+        # Didn't find start
+        return output
+    lines = lines[start:]
+    for end in range(len(lines) - 1, -1, -1):
+        if lines[end].strip().endswith(end_char):
+            break
+    else:
+        # Didn't find end
+        return output
+    lines = lines[: end + 1]
+    return "\n".join(lines)
+
+
+def parse_antsibull_docs_errors(
+    *,
+    output: str,
+) -> list[Message]:
+    """
+    Parse errors reported by antsibull-docs lint-collection-docs 'json' format.
+    """
+    try:
+        data = json.loads(_find_json(output))
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return [
+            Message(
+                file=None,
+                position=None,
+                end_position=None,
+                level=Level.ERROR,
+                id=None,
+                message=f"Cannot parse antsibull-docs lint-collection-docs output: {exc}\n{output}",
+            )
+        ]
+
+    messages = []
+    for message in data["messages"]:
+        messages.append(
+            Message(
+                file=message["path"],
+                position=(
+                    Location(
+                        line=message["row"],
+                        column=message.get("column"),
+                    )
+                    if message.get("row") is not None
+                    else None
+                ),
+                end_position=None,
+                level=Level.ERROR,
+                id=None,
+                message=message["message"],
+            )
+        )
+    return messages

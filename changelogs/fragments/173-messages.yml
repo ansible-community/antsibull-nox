@@ -1,0 +1,2 @@
+minor_changes:
+  - "When antsibull-docs 2.24.0+ is available, the ``docs-check`` session now uses its JSON message format (https://github.com/ansible-community/antsibull-nox/pull/173)."
