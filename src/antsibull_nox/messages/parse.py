@@ -189,7 +189,7 @@ def parse_bare_framework_errors(
     def loc(data: _DataLocation | None) -> Location | None:
         if data is None:
             return None
-        return Location(line=data.line, column=data.column)
+        return Location(line=data.line, column=data.column, exact=data.exact)
 
     levels: dict[_DataLevel, Level] = {
         "error": Level.ERROR,

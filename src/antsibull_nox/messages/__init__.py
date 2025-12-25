@@ -32,10 +32,11 @@ class Location:
 
     line: int
     column: int | None = None
+    exact: bool = True
 
-    def __get_tuple(self) -> tuple[int, bool, int]:
+    def __get_tuple(self) -> tuple[int, bool, int, bool]:
         """Helper for comparison functions."""
-        return self.line, self.column is not None, self.column or 0
+        return self.line, self.column is not None, self.column or 0, self.exact
 
     def __lt__(self, other: Location) -> bool:
         o = other.__get_tuple()  # pylint: disable=protected-access

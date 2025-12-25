@@ -76,7 +76,9 @@ def process_rst_file(
         warn_unknown_block=warn_unknown_block,
     ):
         location = Location(
-            line=code_block.row_offset + 1, column=code_block.col_offset + 1
+            line=code_block.row_offset + 1,
+            column=code_block.col_offset + 1,
+            exact=code_block.position_exact,
         )
         note: str | None = None
         if not code_block.position_exact:

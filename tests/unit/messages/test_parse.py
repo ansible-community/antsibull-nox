@@ -202,7 +202,9 @@ PARSE_BARE_FRAMEWORK_ERRORS_DATA: list[tuple[str, list[Message]]] = [
         [],
     ),
     (
-        r"""{"messages": [{"file": "meta/runtime.yml", "start": null, "end": null, "level": "error", "id": null, "message": "module 'hosttech_dns_record' is not part of 'hosttech' action group", "symbol": null, "hint": null, "note": null, "url": null}]}""",
+        r"""{"messages": [{"file": "meta/runtime.yml", "start": null, "end": null, "level": "error", "id": null,"""
+        r""" "message": "module 'hosttech_dns_record' is not part of 'hosttech' action group", "symbol": null,"""
+        r""" "hint": null, "note": null, "url": null}]}""",
         [
             Message(
                 file="meta/runtime.yml",
@@ -220,7 +222,9 @@ PARSE_BARE_FRAMEWORK_ERRORS_DATA: list[tuple[str, list[Message]]] = [
         ],
     ),
     (
-        r"""{"messages": [{"file": "plugins/inventory/hosttech_dns_records.py", "start": {"line": 16, "column": null}, "end": null, "level": "error", "id": null, "message": "found trailing whitespace", "symbol": null, "hint": null, "note": null, "url": null}]}""",
+        r"""{"messages": [{"file": "plugins/inventory/hosttech_dns_records.py", "start": {"line": 16, "column": null},"""
+        r""" "end": null, "level": "error", "id": null, "message": "found trailing whitespace", "symbol": null, "hint":"""
+        r""" null, "note": null, "url": null}]}""",
         [
             Message(
                 file="plugins/inventory/hosttech_dns_records.py",
@@ -258,6 +262,40 @@ PARSE_BARE_FRAMEWORK_ERRORS_DATA: list[tuple[str, list[Message]]] = [
             ),
         ],
     ),
+    (
+        r"""{"messages": [{"file": "docs/docsite/rst/hosttech_guide.rst", "start": {"line": 113, "column": 1, "exact": false},"""
+        r""""end": null, "level": "error", "id": null, "message": "error: syntax error: could not find expected ':' (syntax)","""
+        r""""symbol": null, "hint": null, "note": "The code block could not be exactly located in the source file. """
+        r"""The line/column numbers might be off.", "url": null}, {"file": "docs/docsite/rst/hosttech_guide.rst", "start":"""
+        r""" {"line": 123, "column": 1, "exact": true}, "end": null, "level": "error", "id": null, "message": "error: syntax"""
+        r""" error: could not find expected ':' (syntax)", "symbol": null, "hint": null, "note": null, "url": null}]}""",
+        [
+            Message(
+                file="docs/docsite/rst/hosttech_guide.rst",
+                position=Location(line=113, column=1, exact=False),
+                end_position=None,
+                level=Level.ERROR,
+                id=None,
+                message="error: syntax error: could not find expected ':' (syntax)",
+                symbol=None,
+                hint=None,
+                note="The code block could not be exactly located in the source file. The line/column numbers might be off.",
+                url=None,
+            ),
+            Message(
+                file="docs/docsite/rst/hosttech_guide.rst",
+                position=Location(line=123, column=1, exact=True),
+                end_position=None,
+                level=Level.ERROR,
+                id=None,
+                message="error: syntax error: could not find expected ':' (syntax)",
+                symbol=None,
+                hint=None,
+                note=None,
+                url=None,
+            ),
+        ],
+    ),
 ]
 
 
@@ -284,7 +322,9 @@ PARSE_MYPY_ERRORS_DATA: list[tuple[str, list[Message]]] = [
         [],
     ),
     (
-        r"""{"file": "ansible_collections/community/general/plugins/cache/memcached.py", "line": 254, "column": 11, "message": "Incompatible types in assignment (expression has type \"None\", variable has type \"str\")", "hint": null, "code": "assignment", "severity": "error"}""",
+        r"""{"file": "ansible_collections/community/general/plugins/cache/memcached.py", "line": 254,"""
+        r""" "column": 11, "message": "Incompatible types in assignment (expression has type \"None\","""
+        r""" variable has type \"str\")", "hint": null, "code": "assignment", "severity": "error"}""",
         [
             Message(
                 file="plugins/cache/memcached.py",

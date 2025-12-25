@@ -123,6 +123,7 @@ def get_bool(
 class Location:
     line: int
     column: int | None = None
+    exact: bool = True
 
     @staticmethod
     def from_json(data: object) -> Location:

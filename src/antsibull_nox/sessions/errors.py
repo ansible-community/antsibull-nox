@@ -23,11 +23,13 @@ def print_messages(
     """
     found_error = False
     for message in sorted(messages):
-        loc_line = 0
+        loc_line = "0"
         loc_column = 0
         if message.position is not None:
-            loc_line = message.position.line
+            loc_line = str(message.position.line)
             loc_column = message.position.column or 0
+            if not message.position.exact:
+                loc_line = f"~{loc_line}"
         prefix = f"{message.file or ''}:{loc_line}:{loc_column}:"
         if message.id is not None:
             prefix = f"{prefix} [{message.id}]"

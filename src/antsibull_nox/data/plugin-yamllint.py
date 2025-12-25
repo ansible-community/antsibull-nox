@@ -49,6 +49,7 @@ def lint(
     section: str,
     config: YamlLintConfig,
     note: str | None = None,
+    exact: bool = True,
 ) -> None:
     # If the string start with optional whitespace + linebreak, skip that line
     idx = data.find("\n")
@@ -78,6 +79,7 @@ def lint(
                         # The col_offset is only valid for line 1; otherwise the offset is 0
                         column=(col_offset if problem.line == 1 else 0)
                         + problem.column,
+                        exact=exact,
                     ),
                     end=None,
                     level=level,
@@ -94,6 +96,7 @@ def lint(
                 start=Location(
                     line=row_offset + 1,
                     column=col_offset + 1,
+                    exact=exact,
                 ),
                 end=None,
                 level="error",
@@ -244,6 +247,7 @@ def process_sidecar_docs_file(
         section=EXAMPLES_SECTION,
         config=config_examples,
         note="Line/column are relative to EXAMPLES string contents",
+        exact=False,
     )
 
 
