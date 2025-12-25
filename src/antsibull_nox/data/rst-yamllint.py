@@ -48,6 +48,7 @@ def lint(
     col_offset: int,
     config: YamlLintConfig,
     note: str | None = None,
+    exact: bool = True,
 ) -> None:
     # If the string start with optional whitespace + linebreak, skip that line
     idx = data.find("\n")
@@ -77,6 +78,7 @@ def lint(
                         # The col_offset is only valid for line 1; otherwise the offset is 0
                         column=(col_offset if problem.line == 1 else 0)
                         + problem.column,
+                        exact=exact,
                     ),
                     end=None,
                     level=level,
@@ -90,7 +92,7 @@ def lint(
         messages.append(
             Message(
                 file=path,
-                start=Location(line=row_offset + 1, column=col_offset + 1),
+                start=Location(line=row_offset + 1, column=col_offset + 1, exact=exact),
                 end=None,
                 level="error",
                 id=None,
@@ -212,6 +214,7 @@ def process_rst_file(
             col_offset=code_block.col_offset,
             config=config,
             note=note,
+            exact=code_block.position_exact,
         )
 
 

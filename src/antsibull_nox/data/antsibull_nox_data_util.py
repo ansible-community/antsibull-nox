@@ -123,6 +123,7 @@ def get_bool(
 class Location:
     line: int
     column: int | None = None
+    exact: bool = True
 
     @staticmethod
     def from_json(data: object) -> Location:
@@ -154,10 +155,8 @@ class Message:
         params = {k: v for k, v in data.items()}
         start = params.pop("start", None)
         end = params.pop("end", None)
-        if start is not None:
-            params["start"] = Location.from_json(start)
-        if end is not None:
-            params["end"] = Location.from_json(end)
+        params["start"] = Location.from_json(start) if start is not None else None
+        params["end"] = Location.from_json(end) if end is not None else None
         return Message(**params)
 
 

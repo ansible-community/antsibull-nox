@@ -18,6 +18,7 @@ import nox
 from ..cd import (
     get_changes,
 )
+from ..messages.parse import parse_antsibull_docs_errors
 from ..paths import (
     list_all_files,
 )
@@ -25,6 +26,7 @@ from .collections import (
     CollectionSetup,
     prepare_collections,
 )
+from .errors import print_messages
 from .utils.package_versions import (
     get_package_version,
     is_new_enough,
@@ -174,7 +176,27 @@ def add_docs_check(
                 command.extend(["--validate-collection-refs", validate_collection_refs])
             if is_new_enough(antsibull_docs_version, min_version="2.18.0"):
                 command.append("--check-extra-docs-refs")
-            session.run(*command, env={"ANSIBLE_COLLECTIONS_PATH": collections_path})
+
+            env = {"ANSIBLE_COLLECTIONS_PATH": collections_path}
+            if is_new_enough(antsibull_docs_version, min_version="2.24.0"):
+                command.extend(["--message-format", "json"])
+                output = session.run(
+                    *command,
+                    env=env,
+                    silent=True,
+                    success_codes=(0, 3),
+                )
+
+                if output:
+                    print_messages(
+                        session=session,
+                        messages=parse_antsibull_docs_errors(
+                            output=output,
+                        ),
+                        fail_msg="antsibull-docs lint-collection-docs failed",
+                    )
+            else:
+                session.run(*command, env=env)
 
     def docs_check(session: nox.Session) -> None:
         install(session, *compose_dependencies(session))

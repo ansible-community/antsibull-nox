@@ -19,6 +19,12 @@ import nox
 from ..collection import (
     load_collection_data_from_disk,
 )
+from ..messages import Message
+from ..messages.parse import (
+    parse_mypy_errors,
+    parse_pylint_json2_errors,
+    parse_ruff_check_errors,
+)
 from ..paths import (
     list_all_files,
     relative_to_walk_up,
@@ -29,10 +35,6 @@ from .collections import (
 )
 from .docs_check import find_extra_docs_rst_files
 from .errors import (
-    Message,
-    parse_mypy_errors,
-    parse_pylint_json2_errors,
-    parse_ruff_check_errors,
     print_messages,
 )
 from .utils import (
