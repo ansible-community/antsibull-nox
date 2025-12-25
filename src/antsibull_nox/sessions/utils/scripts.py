@@ -17,11 +17,12 @@ from pathlib import Path
 import nox
 
 from ...data_util import prepare_data_script
+from ...messages.parse import parse_bare_framework_errors
 from ...paths import (
     find_data_directory,
     list_all_files,
 )
-from ..errors import parse_bare_framework_errors, print_messages
+from ..errors import print_messages
 from .paths import filter_files_cd
 
 

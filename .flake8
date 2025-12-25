@@ -15,3 +15,4 @@ ignore = E203, E704, W503
 # Line in multi-line string is too long:
 per-file-ignores =
     src/antsibull_nox/init.py:E501
+    tests/unit/messages/test_parse.py:E501

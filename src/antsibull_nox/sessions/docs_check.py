@@ -18,6 +18,7 @@ import nox
 from ..cd import (
     get_changes,
 )
+from ..messages.parse import parse_antsibull_docs_errors
 from ..paths import (
     list_all_files,
 )
@@ -25,7 +26,7 @@ from .collections import (
     CollectionSetup,
     prepare_collections,
 )
-from .errors import parse_antsibull_docs_errors, print_messages
+from .errors import print_messages
 from .utils.package_versions import (
     get_package_version,
     is_new_enough,
