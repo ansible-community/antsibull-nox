@@ -78,9 +78,11 @@ def get_min_python_version(
 
     try:
         spec_set = SpecifierSet(config.modules.python_requires)
-    except InvalidSpecifier:
+    except InvalidSpecifier as exc:
         if ignore_errors:
             return "default"
-        raise
+        raise ValueError(
+            f"Invalid specifier set in modules.python_requires: {config.modules.python_requires!r}"
+        ) from exc
 
     return lambda version: PackagingVersion(str(version)) in spec_set
