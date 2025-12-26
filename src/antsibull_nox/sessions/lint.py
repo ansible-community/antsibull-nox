@@ -34,13 +34,13 @@ from .collections import (
     prepare_collections,
 )
 from .docs_check import find_extra_docs_rst_files
-from .errors import (
-    print_messages,
-)
 from .utils import (
     IN_CI,
     compose_description,
     silence_run_verbosity,
+)
+from .utils.output import (
+    print_messages,
 )
 from .utils.packages import (
     PackageType,
@@ -566,7 +566,7 @@ def add_codeqa(  # noqa: C901
         if not files:
             session.warn("Skipping ruff check (no files to process)")
             return
-        with session.chdir(prepared_collections.current_place):
+        with session.chdir(prepared_collections.current_place), silence_run_verbosity():
             command.extend(prepared_collections.prefix_current_paths(files))
             # https://docs.astral.sh/ruff/linter/#exit-codes
             output = session.run(*command, silent=True, success_codes=[0, 1])
@@ -617,7 +617,7 @@ def add_codeqa(  # noqa: C901
         command.extend(["--output-format", "json2"])
         command.extend(session.posargs)
         command.extend(prepared_collections.prefix_current_paths(paths))
-        with silence_run_verbosity():
+        with silence_run_verbosity(), silence_run_verbosity():
             # Exit code is OR of some of 1, 2, 4, 8, 16
             output = session.run(
                 *command, silent=True, success_codes=list(range(0, 32))

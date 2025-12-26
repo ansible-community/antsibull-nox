@@ -26,7 +26,8 @@ from .collections import (
     CollectionSetup,
     prepare_collections,
 )
-from .errors import print_messages
+from .utils import silence_run_verbosity
+from .utils.output import print_messages
 from .utils.package_versions import (
     get_package_version,
     is_new_enough,
@@ -180,12 +181,13 @@ def add_docs_check(
             env = {"ANSIBLE_COLLECTIONS_PATH": collections_path}
             if is_new_enough(antsibull_docs_version, min_version="2.24.0"):
                 command.extend(["--message-format", "json"])
-                output = session.run(
-                    *command,
-                    env=env,
-                    silent=True,
-                    success_codes=(0, 3),
-                )
+                with silence_run_verbosity():
+                    output = session.run(
+                        *command,
+                        env=env,
+                        silent=True,
+                        success_codes=(0, 3),
+                    )
 
                 if output:
                     print_messages(

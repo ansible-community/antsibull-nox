@@ -10,6 +10,7 @@ Utils for handling scripts.
 
 from __future__ import annotations
 
+import os
 import sys
 import typing as t
 from pathlib import Path
@@ -22,7 +23,8 @@ from ...paths import (
     find_data_directory,
     list_all_files,
 )
-from ..errors import print_messages
+from ..utils.output import print_messages
+from . import silence_run_verbosity
 from .paths import filter_files_cd
 
 
@@ -59,29 +61,35 @@ def run_bare_script(
     if use_session_python:
         python = "python"
         env["PYTHONPATH"] = str(find_data_directory())
-    success_codes: tuple[int, ...] | None = None
-    if process_messages:
-        silent = True
-        success_codes = (0, 1)
-    output = session.run(
+    command: list[str | os.PathLike[str]] = [
         python,
         find_data_directory() / f"{name}.py",
         "--data",
         data,
-        external=True,
-        silent=silent,
-        env=env,
-        success_codes=success_codes,
-    )
+    ]
+    kwargs: dict[str, t.Any] = {
+        "external": True,
+        "silent": silent,
+        "env": env,
+    }
 
-    if process_messages and output:
-        print_messages(
-            session=session,
-            messages=parse_bare_framework_errors(
-                output=output,
-            ),
-            fail_msg=f"{name} failed",
-        )
+    if process_messages:
+        kwargs["silent"] = True
+        kwargs["success_codes"] = (0, 1)
+        with silence_run_verbosity():
+            output = session.run(*command, **kwargs)
+
+        if output:
+            print_messages(
+                session=session,
+                messages=parse_bare_framework_errors(
+                    output=output,
+                ),
+                fail_msg=f"{name} failed",
+            )
+
+    else:
+        output = session.run(*command, **kwargs)
 
     return output
 
