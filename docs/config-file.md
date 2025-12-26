@@ -17,6 +17,11 @@ A basic `antsibull-nox.toml` looks as follows:
 ```toml
 # Comments start with a '#', similar to YAML or Python.
 
+[collection]
+# Use ansible-test's config file (tests/config.yml) to determine which
+# Python versions to use when generating test matrixes.
+min_python_version = "ansible-test-config"
+
 [collection_sources]
 # This section tells antsibull-nox how to install collections.
 # We want to install community.internal_test_tools, community.general, and community.crypto
@@ -74,6 +79,24 @@ validate_collection_refs="all"
 
 Make sure that your `noxfile.py` contains the `antsibull_nox.load_antsibull_nox_toml()` function call.
 Otherwise `antsibull-nox.toml` will be ignored.
+
+## General collection configuration
+
+The `[collection]` section allows to do some general configuration.
+Right now the following settings are supported:
+
+* `min_python_version: "default" | "controller" | "ansible-test-config" | Version` (default: `default`).
+  When generating test matrixes with Python versions,
+  this option will be used as a lower limit.
+
+    Right now this is only used for the `[sessions.ansible_test_integration_w_default_container]` section.
+
+    When set to `"ansible-test-config"`,
+    `tests/config.yml` in the collection is loaded and interpreted as in
+    [ansible-test's example config.yml file](https://github.com/ansible/ansible/blob/devel/test/lib/ansible_test/config/config.yml).
+
+    !!! note
+        If a specifier set is applied, it is checked against Python versions of the form `x.y`.
 
 ## Setup collection installation
 
@@ -1070,6 +1093,8 @@ The `ansible-test integration --docker default` sessions are added with the `[se
 Sessions are added for all supported ansible-core versions.
 The tests will all be run using ansible-test's `default` container.
 It is possible to restrict the Python versions used to run the tests per ansible-core version.
+By default,
+`min_python_version` in the `[collection]` section is used to restrict the Python versions.
 
 * `default: bool` (default `false`):
   Whether the sessions should be made default.
@@ -1136,15 +1161,22 @@ It is possible to restrict the Python versions used to run the tests per ansible
   If no restrictions are provided, all Python versions supported by this version of ansible-core are used;
   see `controller_python_versions_only` below for more details.
 
-    Note that this setting is a new session `[sessions.ansible_test_integration_w_default_container.core_python_versions]`.
+    Note that this setting is a new section `[sessions.ansible_test_integration_w_default_container.core_python_versions]`.
     The keys can be strings `"devel"`, `"milestone"`, and `"x.y"`, where ansible-core x.y is a minor ansible-core release;
     if `add_devel_like_branches`, the branch names appearing in `add_devel_like_branches` can also be specified.
     The values can be strings `"x.y"`, where Python x.y is a minor Python release.
+
+    If this is set, `min_python_version` is ignored.
 
 * `controller_python_versions_only: bool` (default `false`):
   For ansible-core versions where `core_python_versions` does not provide a list of Python versions,
   usually all Python versions supported on the remote side are used.
   If this is set to `true`, only all Python versions uspported on the controller side are used.
+
+    When set to `true`,
+    this behaves the same as when `min_python_version` is set to `"controller"`,
+    or when `min_python_version` is set to `"ansible-test-config"`
+    and `tests/config.yml` has `modules.python_requires` set to `"controller"`.
 
 * `ansible_vars_from_env_vars: dict[str, str]` (default `{}`):
   If given, will create an integration test config file which for every `key=value` pair,

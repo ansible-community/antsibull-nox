@@ -1,0 +1,4 @@
+minor_changes:
+  - "Allow to set minimum Python version supported by a collection.
+     This is currently used for the ``[sessions.ansible_test_integration_w_default_container]`` section
+     (https://github.com/ansible-community/antsibull-nox/issues/163, https://github.com/ansible-community/antsibull-nox/pull/176)."
