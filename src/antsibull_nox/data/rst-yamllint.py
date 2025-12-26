@@ -75,9 +75,7 @@ def lint(
                     file=path,
                     start=Location(
                         line=row_offset + problem.line,
-                        # The col_offset is only valid for line 1; otherwise the offset is 0
-                        column=(col_offset if problem.line == 1 else 0)
-                        + problem.column,
+                        column=col_offset + problem.column,
                         exact=exact,
                     ),
                     end=None,
