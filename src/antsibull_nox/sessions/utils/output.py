@@ -117,7 +117,11 @@ def split_lines(text: str) -> list[str]:
 
 
 def split_lines_with_prefix(
-    text: str, *, prefix: str = "", separator: str = " "
+    text: str,
+    *,
+    prefix: str = "",
+    separator: str = " ",
+    at_least_one_line: bool = False,
 ) -> t.Generator[str]:
     """
     Given a text with newlines, emit single lines with optional prefix.
@@ -125,10 +129,13 @@ def split_lines_with_prefix(
     By default prefix and line are separated by a single space.
     This can be changed by passing an appropriate ``separator``.
     """
-    for index, line in enumerate(split_lines(text)):
+    lines = split_lines(text)
+    for index, line in enumerate(lines):
         if index == 1:
             prefix = " " * len(prefix)
         yield f"{prefix}{separator}{line}"
+    if not lines and at_least_one_line:
+        yield prefix
 
 
 class SynchronizedOutput:
@@ -198,7 +205,9 @@ def format_messages_plain(messages: list[Message]) -> t.Generator[str]:
             content = f"{content}\n{message.hint}"
         if message.note is not None:
             content = f"{content}\nNote: {message.note}"
-        yield from split_lines_with_prefix(content, prefix=prefix)
+        yield from split_lines_with_prefix(
+            content, prefix=prefix, at_least_one_line=True
+        )
 
 
 _RESET = "\x1b[0m"
@@ -623,6 +632,7 @@ def _render_code(
     mkcomp: t.Callable[[], ColorComposer],
     markings: Markings,
 ) -> t.Generator[str]:
+    assert content
     line_prefixes = [
         markings.vertical_ellipsis if line_no is None else str(line_no)
         for line_no, _ in content
@@ -633,7 +643,9 @@ def _render_code(
         " " * (max_prefix_len - len(prefix)) + prefix for prefix in line_prefixes
     ]
     extra_indent = ""
-    if content_end is not None or content_start[1] is None:
+    if (
+        content_end is not None and content_start[0] != content_end[0]
+    ) or content_start[1] is None:
         extra_indent = "  "
     inside = False
     for prefix, (line_no, line) in zip(line_prefixes, content):
@@ -694,6 +706,7 @@ def _compose_message_with_note(
     mkcomp: t.Callable[[], ColorComposer],
     *,
     add_hint: bool,
+    at_least_one_line: bool,
 ) -> t.Generator[str]:
     msg_content = message.message
     if message.symbol is not None:
@@ -705,6 +718,7 @@ def _compose_message_with_note(
         comp.add_text(indent)
         comp.add_text(line, bold=True)
         yield comp.value
+        at_least_one_line = False
     if message.note is not None:
         for index, line in enumerate(split_lines(message.note)):
             comp = mkcomp()
@@ -713,6 +727,9 @@ def _compose_message_with_note(
                 comp.add_text("Note: ", italics=True)
             comp.add_text(line, italics=False)
             yield comp.value
+            at_least_one_line = False
+    if at_least_one_line:
+        yield indent
 
 
 def format_messages_with_context(
@@ -755,7 +772,11 @@ def format_messages_with_context(
         # Afterwards: message with note, and hint if content isn't shown
         indent = "  " if has_first_line else ""
         yield from _compose_message_with_note(
-            message, indent, mkcomp, add_hint=content is None
+            message,
+            indent,
+            mkcomp,
+            add_hint=content is None,
+            at_least_one_line=not has_first_line and not content,
         )
 
         if content is not None:
