@@ -22,11 +22,14 @@ from antsibull_fileutils.yaml import store_yaml_file
 
 from ..ansible import (
     AnsibleCoreVersion,
+    MinPythonVersion,
+    MinPythonVersionConstantsWOATC,
     get_ansible_core_info,
     get_ansible_core_package_name,
     get_supported_core_versions,
     parse_ansible_core_version,
 )
+from ..ansible_test_config import get_min_python_version, load_ansible_test_config
 from ..cd import get_base_branch, get_vcs_name, is_config_dir_the_repo_dir
 from ..container import get_container_engine_preference
 from ..paths import copy_directory_tree_into
@@ -533,6 +536,7 @@ def add_ansible_test_integration_sessions_default_container(
         dict[str | AnsibleCoreVersion, list[str | Version]] | None
     ) = None,
     controller_python_versions_only: bool = False,
+    min_python_version: MinPythonVersion | None = None,
     ansible_vars_from_env_vars: dict[str, str] | None = None,
     ansible_vars: dict[str, AnsibleValue] | None = None,
     default: bool = False,
@@ -545,7 +549,20 @@ def add_ansible_test_integration_sessions_default_container(
 
     ``controller_python_versions_only`` can be used to only run against
     controller Python versions.
+
+    ``min_python_version`` allows to generally restrict the Python versions.
+    This is only used when ``core_python_versions`` does not provide an
+    explicit list of Python versions.
     """
+    effective_min_python_version: (
+        MinPythonVersionConstantsWOATC | Version | t.Callable[[Version], bool]
+    )
+    if min_python_version == "ansible-test-config":
+        effective_min_python_version = get_min_python_version(
+            load_ansible_test_config(ignore_errors=True), ignore_errors=True
+        )
+    else:
+        effective_min_python_version = min_python_version or "default"
 
     def callback_before() -> None:
         if not ansible_vars_from_env_vars and not ansible_vars:
@@ -570,11 +587,29 @@ def add_ansible_test_integration_sessions_default_container(
         )
         if py_versions is None:
             core_info = get_ansible_core_info(ansible_core_version)
-            py_versions = list(
+            effective_py_versions: list[Version] = list(
                 core_info.controller_python_versions
                 if controller_python_versions_only
+                or effective_min_python_version == "controller"
                 else core_info.remote_python_versions
             )
+            if effective_min_python_version not in ("default", "controller"):
+                if callable(effective_min_python_version):
+                    # effective_min_python_version is a predicate
+                    effective_py_versions = [
+                        pyv
+                        for pyv in effective_py_versions
+                        if effective_min_python_version(pyv)
+                    ]
+                else:
+                    # mypy doesn't get this, so we have to use assert()...
+                    assert isinstance(effective_min_python_version, Version)
+                    effective_py_versions = [
+                        pyv
+                        for pyv in effective_py_versions
+                        if pyv >= effective_min_python_version
+                    ]
+            py_versions = list(effective_py_versions)
 
         # Add sessions
         integration_sessions_core: list[str] = []

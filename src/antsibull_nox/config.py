@@ -18,7 +18,7 @@ import pydantic as p
 from antsibull_nox.ee_config import create_ee_config
 
 from ._pydantic import forbid_extras, get_formatted_error_messages
-from .ansible import AnsibleCoreVersion
+from .ansible import AnsibleCoreVersion, MinPythonVersionConstants
 from .data.antsibull_nox_data_util import Message
 from .sessions.utils.packages import PackageConstraints as _PackageConstraints
 from .sessions.utils.packages import PackageEditable as _PackageEditable
@@ -806,6 +806,14 @@ class VCS(_BaseModel):
     stable_branches: list[str] = []
 
 
+class CollectionConfig(_BaseModel):
+    """
+    Global collection configuration that isn't part of any other configuration.
+    """
+
+    min_python_version: t.Union[MinPythonVersionConstants, PVersion] = "default"
+
+
 class Config(_BaseModel):
     """
     The contents of a antsibull-nox config file.
@@ -817,6 +825,7 @@ class Config(_BaseModel):
     ] = {}
     vcs: t.Optional[VCS] = None
     sessions: Sessions = Sessions()
+    collection: CollectionConfig = CollectionConfig()
 
 
 def load_config_from_toml(path: str | os.PathLike) -> Config:

@@ -22,6 +22,12 @@ from .utils import Version, version_range
 
 AnsibleCoreVersion = t.Union[Version, t.Literal["milestone", "devel"]]
 
+MinPythonVersionConstantsWOATC = t.Literal["default", "controller"]
+MinPythonVersionConstants = t.Union[
+    MinPythonVersionConstantsWOATC, t.Literal["ansible-test-config"]
+]
+MinPythonVersion = t.Union[Version, MinPythonVersionConstants]
+
 
 @dataclass(frozen=True)
 class AnsibleCoreInfo:

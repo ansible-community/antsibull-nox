@@ -19,6 +19,7 @@ from .collection import CollectionSource, setup_collection_sources
 from .config import ActionGroup as ConfigActionGroup
 from .config import AvoidCharacterGroup as ConfigAvoidCharacterGroup
 from .config import (
+    CollectionConfig,
     Config,
     DevelLikeBranch,
     PackageType,
@@ -195,7 +196,7 @@ def _coalesce(*values: _T) -> _T | None:
     return None
 
 
-def _add_ansible_test_sessions(sessions: Sessions) -> None:
+def _add_ansible_test_sessions(sessions: Sessions, cconfig: CollectionConfig) -> None:
     if sessions.ansible_test_sanity:
         add_all_ansible_test_sanity_test_sessions(
             default=sessions.ansible_test_sanity.default,
@@ -257,6 +258,7 @@ def _add_ansible_test_sessions(sessions: Sessions) -> None:
                     cfg.core_python_versions
                 ),
                 controller_python_versions_only=cfg.controller_python_versions_only,
+                min_python_version=cconfig.min_python_version,
                 ansible_vars_from_env_vars=cfg.ansible_vars_from_env_vars,
                 ansible_vars={
                     k: v.to_utils_instance() for k, v in cfg.ansible_vars.items()
@@ -381,7 +383,7 @@ def _add_ansible_test_sessions(sessions: Sessions) -> None:
         )(ansible_test_integration)
 
 
-def _add_sessions(sessions: Sessions) -> None:
+def _add_sessions(sessions: Sessions, cconfig: CollectionConfig) -> None:
     if sessions.lint:
         add_lint_sessions(
             make_lint_default=sessions.lint.default,
@@ -528,7 +530,7 @@ def _add_sessions(sessions: Sessions) -> None:
                 sessions.build_import_check.galaxy_importer_always_show_logs
             ),
         )
-    _add_ansible_test_sessions(sessions)
+    _add_ansible_test_sessions(sessions, cconfig)
     if sessions.ansible_lint:
         add_ansible_lint(
             make_ansible_lint_default=sessions.ansible_lint.default,
@@ -576,4 +578,4 @@ def interpret_config(config: Config) -> None:
     Interpret the config file's contents.
     """
     _interpret_config(config)
-    _add_sessions(config.sessions)
+    _add_sessions(config.sessions, config.collection)
