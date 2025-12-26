@@ -52,6 +52,16 @@ def silence_run_verbosity() -> t.Iterator[None]:
         logger.setLevel(original_level)
 
 
+def nox_has_color(session: nox.Session) -> bool:
+    """
+    Determine whether nox is run with color mode.
+    """
+    # I don't know of a better way to obtain this information.
+    # It is also stored in the logging stream handler that nox
+    # installs, but extracting it from there seems even more hacky...
+    return session._runner.global_config.color  # pylint: disable=protected-access
+
+
 @contextmanager
 def ci_group(name: str) -> t.Iterator[tuple[str, bool]]:
     """

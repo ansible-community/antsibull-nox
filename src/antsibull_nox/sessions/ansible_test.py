@@ -35,6 +35,7 @@ from ..utils import Version
 from .collections import prepare_collections
 from .utils import (
     normalize_session_name,
+    nox_has_color,
     register,
 )
 from .utils.packages import (
@@ -71,6 +72,20 @@ def get_ansible_test_env() -> dict[str, str]:
     return {}
 
 
+def get_ansible_test_color_flag(session: nox.Session) -> list[str]:
+    """
+    Return the fitting --color flag for ansible-test depending on nox' color setting.
+    """
+    return ["--color", "yes"] if nox_has_color(session) else ["--color", "no"]
+
+
+class _ColorFlagType:
+    pass
+
+
+COLOR_FLAG = _ColorFlagType()
+
+
 # NOTE: This is publicly documented API!
 # Any change to the API must not be breaking, and must be
 # updated in docs/reference.md!
@@ -79,7 +94,7 @@ def add_ansible_test_session(
     name: str,
     description: str | None,
     extra_deps_files: list[str | os.PathLike] | None = None,
-    ansible_test_params: list[str],
+    ansible_test_params: Sequence[str | _ColorFlagType],
     add_posargs: bool = True,
     default: bool,
     ansible_core_version: str | AnsibleCoreVersion,
@@ -142,7 +157,12 @@ def add_ansible_test_session(
             if callback_before:
                 callback_before()
 
-            command = ["ansible-test"] + ansible_test_params
+            command = ["ansible-test"]
+            for param in ansible_test_params:
+                if isinstance(param, _ColorFlagType):
+                    command.extend(get_ansible_test_color_flag(session))
+                else:
+                    command.append(param)
             if change_detection_args is not None:
                 command.extend(change_detection_args)
             if add_posargs and session.posargs:
@@ -157,7 +177,7 @@ def add_ansible_test_session(
                     "ansible-test",
                     "coverage",
                     "xml",
-                    "--color",
+                    *get_ansible_test_color_flag(session),
                     "-v",
                     "--requirements",
                     "--group-by",
@@ -227,7 +247,7 @@ def add_ansible_test_sanity_test_session(
     """
     Add generic ansible-test sanity test session.
     """
-    command = ["sanity", "--color", "-v", "--docker"]
+    command: list[str | _ColorFlagType] = ["sanity", COLOR_FLAG, "-v", "--docker"]
     if skip_tests:
         for test in skip_tests:
             command.extend(["--skip", test])
@@ -363,7 +383,7 @@ def add_ansible_test_unit_test_session(
     add_ansible_test_session(
         name=name,
         description=description,
-        ansible_test_params=["units", "--color", "-v", "--docker"],
+        ansible_test_params=["units", COLOR_FLAG, "-v", "--docker"],
         extra_deps_files=["tests/unit/requirements.yml"],
         default=default,
         ansible_core_version=ansible_core_version,
@@ -585,7 +605,7 @@ def add_ansible_test_integration_sessions_default_container(
                 description=description,
                 ansible_test_params=[
                     "integration",
-                    "--color",
+                    COLOR_FLAG,
                     "-v",
                     "--docker",
                     "default",
@@ -935,9 +955,9 @@ def add_ansible_test_integration_sessions(
 
     for _, session in sorted(session_by_name.items()):
         register_tags = ["integration"] + session.tags
-        cmd = [
+        cmd: list[str | _ColorFlagType] = [
             "integration",
-            "--color",
+            COLOR_FLAG,
             "-v",
         ]
         if session.docker:
