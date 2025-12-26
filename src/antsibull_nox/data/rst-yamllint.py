@@ -51,6 +51,7 @@ def lint(
     exact: bool = True,
 ) -> None:
     try:
+        lines = data.splitlines()
         problems = linter.run(
             io.StringIO(data),
             config,
@@ -63,12 +64,19 @@ def lint(
             msg = f"{problem.level}: {problem.desc}"
             if problem.rule:
                 msg += f"  ({problem.rule})"
+            # Sometimes yamllint points to a line *after* the last line.
+            # In that case, point after the end of the last actual line.
+            line = problem.line
+            column = problem.column
+            if line > len(lines) and lines:
+                line = len(lines)
+                column = len(lines[-1]) + 1
             messages.append(
                 Message(
                     file=path,
                     start=Location(
-                        line=row_offset + problem.line,
-                        column=col_offset + problem.column,
+                        line=row_offset + line,
+                        column=col_offset + column,
                         exact=exact,
                     ),
                     end=None,
