@@ -208,7 +208,7 @@ _ITALICS = "\x1b[3m"
 _UNDERLINE = "\x1b[4m"
 
 
-class Color(enum.StrEnum):
+class Color(enum.Enum):
     """
     ANSI colors.
     """
@@ -302,7 +302,7 @@ class _Formatting:
             if self.underline:
                 result.append(_UNDERLINE)
         if use_color and self.color is not Color.NONE:
-            result.append(self.color)
+            result.append(self.color.value)
         return result
 
     def _update_format(
@@ -342,7 +342,7 @@ class _Formatting:
             and self.color is not Color.NONE
             and (needs_reset or self.color != previous.color)
         ):
-            result.append(self.color)
+            result.append(self.color.value)
         return result
 
     def format(
