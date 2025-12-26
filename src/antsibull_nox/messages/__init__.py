@@ -62,6 +62,10 @@ class Message:
     """
 
     file: str | None
+    # position and end_position point to the first and last affected
+    # character, respectively. The special column -1 can be used for
+    # end_position to indicate the position after the last character
+    # in the line.
     position: Location | None
     end_position: Location | None
     level: Level

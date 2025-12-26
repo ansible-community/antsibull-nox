@@ -6,10 +6,6 @@
 
 # pylint: disable=missing-function-docstring
 
-"""
-Helpers for testing.
-"""
-
 from __future__ import annotations
 
 import pytest
