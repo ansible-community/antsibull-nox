@@ -91,6 +91,11 @@ def parse_ruff_check_errors(
             fix = message["fix"]
             if "message" in fix:
                 hint = fix["message"]
+        end_line = message["end_location"]["row"]
+        end_col = message["end_location"]["column"] - 1
+        if end_col == 0:
+            end_line -= 1
+            end_col = -1
         messages.append(
             Message(
                 file=path,
@@ -99,8 +104,8 @@ def parse_ruff_check_errors(
                     column=message["location"]["column"],
                 ),
                 end_position=Location(
-                    line=message["end_location"]["row"],
-                    column=message["end_location"]["column"],
+                    line=end_line,
+                    column=end_col,
                 ),
                 level=Level.ERROR,
                 id=message["code"],

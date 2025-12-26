@@ -540,7 +540,7 @@ PARSE_RUFF_CHECK_ERRORS_DATA: list[tuple[str, list[Message]]] = [
             Message(
                 file="plugins/cache/memcached.py",
                 position=Location(line=245, column=16),
-                end_position=Location(line=245, column=28),
+                end_position=Location(line=245, column=27),
                 level=Level.ERROR,
                 id="SIM222",
                 message="Use `True` instead of `True or ...`",
@@ -552,7 +552,7 @@ PARSE_RUFF_CHECK_ERRORS_DATA: list[tuple[str, list[Message]]] = [
             Message(
                 file="plugins/cache/memcached.py",
                 position=Location(line=248, column=9),
-                end_position=Location(line=251, column=25),
+                end_position=Location(line=251, column=24),
                 level=Level.ERROR,
                 id="SIM103",
                 message="Return the condition `bool(foo)` directly",
@@ -593,8 +593,8 @@ PARSE_RUFF_CHECK_ERRORS_DATA: list[tuple[str, list[Message]]] = [
                     column=33,
                 ),
                 end_position=Location(
-                    line=243,
-                    column=1,
+                    line=242,
+                    column=-1,
                 ),
                 level=Level.ERROR,
                 id="invalid-syntax",

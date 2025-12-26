@@ -706,6 +706,7 @@ DETERMINE_MARKER_DATA: list[
     tuple[
         bool,
         int | None,
+        int,
         tuple[int, int | None],
         tuple[int, int | None] | None,
         str,
@@ -720,6 +721,7 @@ DETERMINE_MARKER_DATA: list[
     (
         False,
         None,
+        0,
         (0, None),
         None,
         "  ",
@@ -733,6 +735,7 @@ DETERMINE_MARKER_DATA: list[
     (
         True,
         None,
+        0,
         (0, None),
         None,
         "  ",
@@ -746,6 +749,7 @@ DETERMINE_MARKER_DATA: list[
     (
         False,
         123,
+        23,
         (122, None),
         None,
         "  ",
@@ -759,6 +763,7 @@ DETERMINE_MARKER_DATA: list[
     (
         False,
         123,
+        23,
         (123, None),
         None,
         "  ",
@@ -772,6 +777,7 @@ DETERMINE_MARKER_DATA: list[
     (
         False,
         123,
+        23,
         (123, 3),
         None,
         "  ",
@@ -785,6 +791,7 @@ DETERMINE_MARKER_DATA: list[
     (
         False,
         123,
+        23,
         (123, None),
         (123, None),
         "  ",
@@ -798,6 +805,7 @@ DETERMINE_MARKER_DATA: list[
     (
         False,
         123,
+        23,
         (123, 2),
         (123, 4),
         "  ",
@@ -805,12 +813,13 @@ DETERMINE_MARKER_DATA: list[
         True,
         True,
         "",
-        "   ^^",
+        "   ^^^",
         "  ",
     ),
     (
         False,
         123,
+        23,
         (123, 2),
         (124, 4),
         "  ",
@@ -824,6 +833,7 @@ DETERMINE_MARKER_DATA: list[
     (
         True,
         124,
+        23,
         (123, 2),
         (124, 4),
         "  ",
@@ -831,12 +841,13 @@ DETERMINE_MARKER_DATA: list[
         True,
         True,
         "",
-        "\\----/",
+        "\\-----/",
         "| ",
     ),
     (
         False,
         123,
+        23,
         (123, 2),
         (124, None),
         "  ",
@@ -850,6 +861,7 @@ DETERMINE_MARKER_DATA: list[
     (
         True,
         124,
+        23,
         (123, 2),
         (124, None),
         "  ",
@@ -864,13 +876,15 @@ DETERMINE_MARKER_DATA: list[
 
 
 @pytest.mark.parametrize(
-    "inside, line_no, content_start, content_end, extra_indent, markings, expected_inside,"
-    " expected_last_inside, expected_before_mark, expected_after_mark, expected_this_extra_indent",
+    "inside, line_no, line_length, content_start, content_end, extra_indent, markings,"
+    " expected_inside, expected_last_inside, expected_before_mark, expected_after_mark,"
+    " expected_this_extra_indent",
     DETERMINE_MARKER_DATA,
 )
 def test__determine_marker(
     inside: bool,
     line_no: int | None,
+    line_length: int,
     content_start: tuple[int, int | None],
     content_end: tuple[int, int | None] | None,
     extra_indent: str,
@@ -882,7 +896,7 @@ def test__determine_marker(
     expected_this_extra_indent: str,
 ) -> None:
     result = _determine_marker(
-        inside, line_no, content_start, content_end, extra_indent, markings
+        inside, line_no, line_length, content_start, content_end, extra_indent, markings
     )
     assert result == (
         expected_inside,
@@ -1008,13 +1022,35 @@ RENDER_CODE_DATA: list[
             (None, ""),
         ],
         (4, 2),
-        (4, 4),
+        (4, 3),
         ASCII_MARKINGS,
         [
             ": | ",
             "3 | foo",
             "4 | barbam",
             "  |  ^^",
+            "5 | baz",
+            "6 | bam",
+            ": | ",
+        ],
+    ),
+    (
+        [
+            (None, ""),
+            (3, "foo"),
+            (4, "barbam"),
+            (5, "baz"),
+            (6, "bam"),
+            (None, ""),
+        ],
+        (4, 4),
+        (4, -1),
+        ASCII_MARKINGS,
+        [
+            ": | ",
+            "3 | foo",
+            "4 | barbam",
+            "  |    ^^^^",
             "5 | baz",
             "6 | bam",
             ": | ",
@@ -1038,7 +1074,30 @@ RENDER_CODE_DATA: list[
             "  | /",
             "4 | | bar",
             "5 | | baz",
-            "  | \\--/",
+            "  | \\---/",
+            "6 |   bam",
+            ": |   ",
+        ],
+    ),
+    (
+        [
+            (None, ""),
+            (3, "foo"),
+            (4, "bar"),
+            (5, "baz"),
+            (6, "bam"),
+            (None, ""),
+        ],
+        (4, 3),
+        (5, -1),
+        ASCII_MARKINGS,
+        [
+            ": |   ",
+            "3 |   foo",
+            "  | /",
+            "4 | | bar",
+            "5 | | baz",
+            "  | \\-----/",
             "6 |   bam",
             ": |   ",
         ],

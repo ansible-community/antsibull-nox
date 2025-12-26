@@ -578,6 +578,7 @@ class _ContentProvider:
 def _determine_marker(
     inside: bool,
     line_no: int | None,
+    line_length: int,
     content_start: tuple[int, int | None],
     content_end: tuple[int, int | None] | None,
     extra_indent: str,
@@ -600,10 +601,18 @@ def _determine_marker(
         elif content_end[0] == content_start[0]:
             last_inside = True
             if content_start[1] is not None and content_end[1] is not None:
+                end_col = content_end[1]
+                if end_col <= 0:
+                    end_col = max(content_start[1], line_length + 1)
+                mark_len = end_col - content_start[1] + 1
                 after_mark = (
                     extra_indent
                     + " " * (content_start[1] - 1)
-                    + markings.underline_indicator * (content_end[1] - content_start[1])
+                    + (
+                        markings.pos_indicator
+                        if mark_len == 1
+                        else markings.underline_indicator * mark_len
+                    )
                 )
             else:
                 before_mark = markings.box_left_top
@@ -617,8 +626,11 @@ def _determine_marker(
         this_extra_indent = f"{markings.box_left} "
         after_mark = markings.box_left_bottom
         if content_end[1] is not None:
+            end_col = content_end[1]
+            if end_col <= 0:
+                end_col = line_length + 1
             after_mark += (
-                markings.box_bottom * content_end[1] + markings.box_right_bottom
+                markings.box_bottom * (end_col + 1) + markings.box_right_bottom
             )
     elif inside:
         this_extra_indent = f"{markings.box_left} "
@@ -654,7 +666,13 @@ def _render_code(
         comp.add_text(f" {markings.box_left} ", faint=True)
         inside, last_inside, before_mark, after_mark, this_extra_indent = (
             _determine_marker(
-                inside, line_no, content_start, content_end, extra_indent, markings
+                inside,
+                line_no,
+                len(line),
+                content_start,
+                content_end,
+                extra_indent,
+                markings,
             )
         )
         comp.add_text(
