@@ -18,6 +18,9 @@ import nox
 
 from ...messages import Level, Message
 
+if t.TYPE_CHECKING:
+    Formatter = t.Callable[[list[Message]], t.Generator[str]]
+
 
 def split_lines_with_prefix(
     text: str, *, prefix: str = "", separator: str = " "
@@ -77,9 +80,6 @@ def should_fail(messages: list[Message]) -> bool:
     Determine whether a test with the given list of output messages should fail.
     """
     return any(message.level in (Level.WARNING, Level.ERROR) for message in messages)
-
-
-Formatter = t.Callable[[list[Message]], t.Generator[str]]
 
 
 def format_messages_plain(messages: list[Message]) -> t.Generator[str]:
