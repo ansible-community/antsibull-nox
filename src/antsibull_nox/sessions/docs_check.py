@@ -26,7 +26,7 @@ from .collections import (
     CollectionSetup,
     prepare_collections,
 )
-from .errors import print_messages
+from .utils.output import print_messages
 from .utils.package_versions import (
     get_package_version,
     is_new_enough,

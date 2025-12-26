@@ -34,13 +34,13 @@ from .collections import (
     prepare_collections,
 )
 from .docs_check import find_extra_docs_rst_files
-from .errors import (
-    print_messages,
-)
 from .utils import (
     IN_CI,
     compose_description,
     silence_run_verbosity,
+)
+from .utils.output import (
+    print_messages,
 )
 from .utils.packages import (
     PackageType,

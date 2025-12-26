@@ -22,7 +22,7 @@ from ...paths import (
     find_data_directory,
     list_all_files,
 )
-from ..errors import print_messages
+from ..utils.output import print_messages
 from .paths import filter_files_cd
 
 

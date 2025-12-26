@@ -120,7 +120,6 @@ def add_matrix_generator() -> None:
         )
         include_tags = list(_split(args.include_tags))
         exclude_tags = list(_split(args.exclude_tags))
-        print(include_tags, exclude_tags)
 
         registered_sessions = get_registered_sessions()
         for key, sessions in list(registered_sessions.items()):

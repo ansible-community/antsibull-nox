@@ -59,15 +59,17 @@ def ci_group(name: str) -> t.Iterator[tuple[str, bool]]:
 
     This is highly CI system dependent, and currently only works for GitHub Actions.
     """
+    sys.stderr.flush()
     is_collapsing = False
     if IN_GITHUB_ACTIONS:
         print(f"::group::{name}")
         sys.stdout.flush()
         is_collapsing = True
     yield ("  " if is_collapsing else "", is_collapsing)
+    sys.stderr.flush()
     if IN_GITHUB_ACTIONS:
         print("::endgroup::")
-        sys.stdout.flush()
+    sys.stdout.flush()
 
 
 def register(name: str, data: dict[str, t.Any]) -> None:
