@@ -688,6 +688,33 @@ def _compose_first_line(
     return comp
 
 
+def _compose_message_with_note(
+    message: Message,
+    indent: str,
+    mkcomp: t.Callable[[], ColorComposer],
+    *,
+    add_hint: bool,
+) -> t.Generator[str]:
+    msg_content = message.message
+    if message.symbol is not None:
+        msg_content = f"{msg_content} [{message.symbol}]"
+    if message.hint is not None and add_hint:
+        msg_content = f"{msg_content}\n{message.hint}"
+    for line in split_lines(msg_content):
+        comp = mkcomp()
+        comp.add_text(indent)
+        comp.add_text(line, bold=True)
+        yield comp.value
+    if message.note is not None:
+        for index, line in enumerate(split_lines(message.note)):
+            comp = mkcomp()
+            comp.add_text(indent)
+            if index == 0:
+                comp.add_text("Note: ", italics=True)
+            comp.add_text(line, italics=False)
+            yield comp.value
+
+
 def format_messages_with_context(
     messages: list[Message], *, color: bool, markings: Markings
 ) -> t.Generator[str]:
@@ -726,25 +753,10 @@ def format_messages_with_context(
                 content, content_start, content_end = content_tuple
 
         # Afterwards: message with note, and hint if content isn't shown
-        msg_content = message.message
-        if message.symbol is not None:
-            msg_content = f"{msg_content} [{message.symbol}]"
-        if message.hint is not None and content is None:
-            msg_content = f"{msg_content}\n{message.hint}"
         indent = "  " if has_first_line else ""
-        for line in split_lines(msg_content):
-            comp = mkcomp()
-            comp.add_text(indent)
-            comp.add_text(line, bold=True)
-            yield comp.value
-        if message.note is not None:
-            for index, line in enumerate(split_lines(message.note)):
-                comp = mkcomp()
-                comp.add_text(indent)
-                if index == 0:
-                    comp.add_text("Note: ", italics=True)
-                comp.add_text(line, italics=False)
-                yield comp.value
+        yield from _compose_message_with_note(
+            message, indent, mkcomp, add_hint=content is None
+        )
 
         if content is not None:
             yield from _render_code(
