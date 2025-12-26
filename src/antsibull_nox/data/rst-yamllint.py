@@ -50,13 +50,6 @@ def lint(
     note: str | None = None,
     exact: bool = True,
 ) -> None:
-    # If the string start with optional whitespace + linebreak, skip that line
-    idx = data.find("\n")
-    if idx >= 0 and (idx == 0 or data[:idx].isspace()):
-        data = data[idx + 1 :]
-        row_offset += 1
-        col_offset = 0
-
     try:
         problems = linter.run(
             io.StringIO(data),
