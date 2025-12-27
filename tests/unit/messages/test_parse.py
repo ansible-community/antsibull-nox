@@ -66,6 +66,34 @@ Some random text.
       "row": null,
       "column": null,
       "message": "DOCUMENTATION -> options -> state -> description[2]: O(foo): option name does not reference to an existing option of the module community.dns.adguardhome_rewrite"
+    },
+    {
+      "path": "foo/bar",
+      "row": 2,
+      "column": 3,
+      "end_column": null,
+      "message": "bar"
+    },
+    {
+      "path": "foo/bar",
+      "row": 5,
+      "column": 6,
+      "end_column": 10,
+      "message": "baz"
+    },
+    {
+      "path": "foo/bar",
+      "row": 10,
+      "column": null,
+      "end_column": 15,
+      "message": "bam"
+    },
+    {
+      "path": "foo/bar",
+      "row": 12,
+      "column": null,
+      "end_column": null,
+      "message": "bino"
     }
   ],
   "success": false
@@ -151,6 +179,54 @@ More random text.
                     " option name does not reference to an existing option of the"
                     " module community.dns.adguardhome_rewrite"
                 ),
+                symbol=None,
+                hint=None,
+                note=None,
+                url=None,
+            ),
+            Message(
+                file="foo/bar",
+                position=Location(line=2, column=3),
+                end_position=None,
+                level=Level.ERROR,
+                id=None,
+                message="bar",
+                symbol=None,
+                hint=None,
+                note=None,
+                url=None,
+            ),
+            Message(
+                file="foo/bar",
+                position=Location(line=5, column=6),
+                end_position=Location(line=5, column=10),
+                level=Level.ERROR,
+                id=None,
+                message="baz",
+                symbol=None,
+                hint=None,
+                note=None,
+                url=None,
+            ),
+            Message(
+                file="foo/bar",
+                position=Location(line=10),
+                end_position=Location(line=10, column=15),
+                level=Level.ERROR,
+                id=None,
+                message="bam",
+                symbol=None,
+                hint=None,
+                note=None,
+                url=None,
+            ),
+            Message(
+                file="foo/bar",
+                position=Location(line=12),
+                end_position=None,
+                level=Level.ERROR,
+                id=None,
+                message="bino",
                 symbol=None,
                 hint=None,
                 note=None,

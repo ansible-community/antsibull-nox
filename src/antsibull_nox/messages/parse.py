@@ -245,18 +245,26 @@ def parse_antsibull_docs_errors(
 
     messages = []
     for message in data["messages"]:
+        row = message.get("row")
         messages.append(
             Message(
                 file=message["path"],
                 position=(
                     Location(
-                        line=message["row"],
+                        line=row,
                         column=message.get("column"),
                     )
-                    if message.get("row") is not None
+                    if row is not None
                     else None
                 ),
-                end_position=None,
+                end_position=(
+                    Location(
+                        line=row,
+                        column=message["end_column"],
+                    )
+                    if row is not None and message.get("end_column") is not None
+                    else None
+                ),
                 level=Level.ERROR,
                 id=None,
                 message=message["message"],

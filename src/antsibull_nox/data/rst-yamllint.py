@@ -50,14 +50,8 @@ def lint(
     note: str | None = None,
     exact: bool = True,
 ) -> None:
-    # If the string start with optional whitespace + linebreak, skip that line
-    idx = data.find("\n")
-    if idx >= 0 and (idx == 0 or data[:idx].isspace()):
-        data = data[idx + 1 :]
-        row_offset += 1
-        col_offset = 0
-
     try:
+        lines = data.splitlines()
         problems = linter.run(
             io.StringIO(data),
             config,
@@ -70,14 +64,19 @@ def lint(
             msg = f"{problem.level}: {problem.desc}"
             if problem.rule:
                 msg += f"  ({problem.rule})"
+            # Sometimes yamllint points to a line *after* the last line.
+            # In that case, point after the end of the last actual line.
+            line = problem.line
+            column = problem.column
+            if line > len(lines) and lines:
+                line = len(lines)
+                column = len(lines[-1]) + 1
             messages.append(
                 Message(
                     file=path,
                     start=Location(
-                        line=row_offset + problem.line,
-                        # The col_offset is only valid for line 1; otherwise the offset is 0
-                        column=(col_offset if problem.line == 1 else 0)
-                        + problem.column,
+                        line=row_offset + line,
+                        column=col_offset + column,
                         exact=exact,
                     ),
                     end=None,

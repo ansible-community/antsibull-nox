@@ -1,0 +1,2 @@
+bugfixes:
+  - "Fix reporting of locations when running yamllint for YAML code blocks in RST extra docs (https://github.com/ansible-community/antsibull-nox/pull/177)."
