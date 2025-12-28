@@ -167,3 +167,14 @@ def report_result(messages: list[Message]) -> int:
     }
     print(json.dumps(data))
     return 1 if has_error else 0
+
+
+__all__ = (
+    "setup",
+    "get_list_of_strings",
+    "get_bool",
+    "Location",
+    "Level",
+    "Message",
+    "report_result",
+)
