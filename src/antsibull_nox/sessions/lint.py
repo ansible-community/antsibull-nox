@@ -689,7 +689,7 @@ def add_codeqa(  # noqa: C901
                     )
                 )
 
-            print_messages(session=session, messages=messages, fail_msg="Pylint failed")
+        print_messages(session=session, messages=messages, fail_msg="Pylint failed")
 
     def codeqa(session: nox.Session) -> None:
         install(session, *compose_dependencies(session))
@@ -938,16 +938,16 @@ def add_typing(
                     success_codes=(0, 1, 2),
                 )
 
-            if output:
-                print_messages(
-                    session=session,
-                    messages=parse_mypy_errors(
-                        root_path=prepared_collections.current_place,
-                        source_path=prepared_collections.current_path,
-                        output=output,
-                    ),
-                    fail_msg="Mypy failed",
-                )
+        if output:
+            print_messages(
+                session=session,
+                messages=parse_mypy_errors(
+                    root_path=prepared_collections.current_place,
+                    source_path=prepared_collections.current_path,
+                    output=output,
+                ),
+                fail_msg="Mypy failed",
+            )
 
     def typing(session: nox.Session) -> None:
         install(session, *compose_dependencies(session))

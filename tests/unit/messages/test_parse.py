@@ -469,6 +469,19 @@ PARSE_PYLINT_JSON2_ERRORS_DATA: list[tuple[str, list[Message]]] = [
             "endColumn": 4,
             "path": "ansible_collections/community/dns/plugins/module_utils/ips.py",
             "absolutePath": "/root/ansible_collections/community/dns/plugins/module_utils/ips.py"
+        },
+        {
+            "type": "warning",
+            "symbol": "pointless-statement",
+            "message": "Statement seems to have no effect II",
+            "messageId": "W0104",
+            "confidence": "UNDEFINED",
+            "module": "ansible_collections.community.dns.plugins.module_utils.ips",
+            "obj": "",
+            "line": 47,
+            "column": 3,
+            "path": "ansible_collections/community/dns/plugins/module_utils/ips.py",
+            "absolutePath": "/root/ansible_collections/community/dns/plugins/module_utils/ips.py"
         }
     ],
     "statistics": {
@@ -492,10 +505,28 @@ PARSE_PYLINT_JSON2_ERRORS_DATA: list[tuple[str, list[Message]]] = [
                     line=43,
                     column=0,
                 ),
-                end_position=None,
+                end_position=Location(
+                    line=43,
+                    column=4,
+                ),
                 level=Level.ERROR,
                 id="W0104",
                 message="Statement seems to have no effect",
+                symbol="pointless-statement",
+                hint=None,
+                note=None,
+                url=None,
+            ),
+            Message(
+                file="plugins/module_utils/ips.py",
+                position=Location(
+                    line=47,
+                    column=3,
+                ),
+                end_position=None,
+                level=Level.ERROR,
+                id="W0104",
+                message="Statement seems to have no effect II",
                 symbol="pointless-statement",
                 hint=None,
                 note=None,

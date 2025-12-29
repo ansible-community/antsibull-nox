@@ -51,7 +51,13 @@ def parse_pylint_json2_errors(
                 Message(
                     file=path,
                     position=Location(line=message["line"], column=message["column"]),
-                    end_position=None,
+                    end_position=(
+                        Location(
+                            line=message["endLine"], column=message.get("endColumn")
+                        )
+                        if message.get("endLine") is not None
+                        else None
+                    ),
                     level=Level.ERROR,
                     id=message["messageId"],
                     symbol=message["symbol"],
