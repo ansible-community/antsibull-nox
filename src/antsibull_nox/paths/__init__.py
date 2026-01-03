@@ -31,7 +31,7 @@ def find_data_directory() -> Path:
     """
     Retrieve the directory for antsibull_nox.data on disk.
     """
-    return Path(__file__).parent / "data"
+    return Path(__file__).parent.parent / "data"
 
 
 def match_path(path: str, is_file: bool, paths: list[str]) -> bool:
