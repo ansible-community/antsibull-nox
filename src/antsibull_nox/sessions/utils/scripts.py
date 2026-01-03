@@ -19,7 +19,7 @@ import nox
 
 from ...data_util import prepare_data_script
 from ...messages.parse import parse_bare_framework_errors
-from ...paths import (
+from ...paths.utils import (
     find_data_directory,
     list_all_files,
 )

@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .config import VCS as VCSConfig
 from .config import Config
-from .paths import relative_to_walk_up
+from .paths.utils import relative_to_walk_up
 from .vcs import VCS, VcsProvider
 from .vcs.factory import get_vcs_provider
 

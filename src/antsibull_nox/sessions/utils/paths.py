@@ -16,10 +16,8 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from ...cd import get_changes
-from ...paths import filter_paths as _filter_paths
-from ...paths import (
-    restrict_paths,
-)
+from ...paths.utils import filter_paths as _filter_paths
+from ...paths.utils import restrict_paths as _restrict_paths
 from ...python.python_dependencies import get_python_dependency_info
 
 PythonDependencies = t.Literal["none", "imported-by-changed", "importing-changed"]
@@ -89,7 +87,7 @@ def filter_paths(
                     for file in restrict_cd
                     if os.path.splitext(file)[1] in extensions
                 ]
-            paths = restrict_paths(paths, restrict_cd)
+            paths = _restrict_paths(paths, restrict_cd)
     return _filter_paths(paths, remove=remove, restrict=restrict, extensions=extensions)
 
 

@@ -19,7 +19,7 @@ from ..cd import (
     get_changes,
 )
 from ..messages.parse import parse_antsibull_docs_errors
-from ..paths import (
+from ..paths.utils import (
     list_all_files,
 )
 from .collections import (

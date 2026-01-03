@@ -14,7 +14,7 @@ from pathlib import Path
 
 import nox
 
-from ..paths import (
+from ..paths.utils import (
     copy_collection,
     remove_path,
 )

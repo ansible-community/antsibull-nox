@@ -25,7 +25,7 @@ from ..collection import (
     setup_collections,
     setup_current_tree,
 )
-from ..paths import (
+from ..paths.utils import (
     create_temp_directory,
 )
 

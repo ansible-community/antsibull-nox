@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ..collection import load_collection_data_from_disk
-from ..paths import list_all_files
+from ..paths.utils import list_all_files
 from .imports import PythonModule, get_module_data_from_module_path, get_module_path
 
 

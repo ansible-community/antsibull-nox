@@ -25,7 +25,7 @@ from ..messages.parse import (
     parse_pylint_json2_errors,
     parse_ruff_check_errors,
 )
-from ..paths import (
+from ..paths.utils import (
     list_all_files,
     relative_to_walk_up,
 )
