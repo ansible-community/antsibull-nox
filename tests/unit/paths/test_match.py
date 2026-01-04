@@ -16,9 +16,34 @@ from pathlib import Path
 
 import pytest
 
-from antsibull_nox.paths.match import FileCollector
+from antsibull_nox.paths.match import FileCollector, _FileSet
 
 from ..utils import chdir
+
+
+def test_FileSet() -> None:
+    fs1 = _FileSet.create([Path("foo")])
+    fs2 = _FileSet.create([Path("bar")])
+    fs3 = _FileSet.create([Path("foo"), Path("bar")])
+
+    assert fs3.subset({("foo",)}) == fs1
+    assert fs3.subset({("bar",)}) == fs2
+
+    fs = fs1.clone()
+    fs.merge_set(fs1)
+    assert fs == fs1
+
+    fs = fs1.clone()
+    fs.merge_set(fs2)
+    assert fs == fs3
+
+    fs = fs1.clone()
+    fs.merge_paths(paths=[Path("foo")])
+    assert fs == fs1
+
+    fs = fs1.clone()
+    fs.merge_paths(paths=[Path("bar")])
+    assert fs == fs3
 
 
 @pytest.fixture(name="path_structure", scope="module")

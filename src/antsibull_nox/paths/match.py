@@ -88,6 +88,15 @@ class _FileSet:
             infos=infos,
         )
 
+    def clone(self) -> _FileSet:
+        """
+        Create a copy of this file set.
+        """
+        return _FileSet(
+            files=list(self.files),
+            infos=dict(self.infos),
+        )
+
     def subset(self, files: set[tuple[str, ...]]) -> _FileSet:
         """
         Restrict a file set to a subset of files.
@@ -115,23 +124,11 @@ class _FileSet:
                 self.files.append(file)
                 self.infos[file] = _FileInfo.create(path)
 
-    def is_dir(self, file: tuple[str, ...]) -> bool:
-        """
-        Test whether the given file is a directory.
-        """
-        return self.infos[file].is_dir
-
-    def get_path(self, file: tuple[str, ...]) -> Path:
-        """
-        Return a ``Path`` object for a file.
-        """
-        return self.infos[file].path
-
     def get_paths(self) -> list[Path]:
         """
         Return a list of ``Path`` object for all contained files.
         """
-        return [self.get_path(file) for file in self.files]
+        return [info.path for info in self.infos.values()]
 
 
 class _ExtensionChecker:
