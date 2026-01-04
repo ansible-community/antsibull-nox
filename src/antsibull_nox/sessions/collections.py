@@ -58,7 +58,7 @@ class CollectionSetup:
     #   current_path == current_root / current_collection.namespace / current_collection.name
     current_path: Path
 
-    def prefix_current_paths(self, paths: list[str]) -> list[str]:
+    def prefix_current_paths(self, paths: list[Path]) -> list[Path]:
         """
         Prefix the list of given paths with ``current_path``.
         """
@@ -66,7 +66,7 @@ class CollectionSetup:
         for path in paths:
             prefixed_path = (self.current_path / path).relative_to(self.current_place)
             if prefixed_path.exists():
-                result.append(str(prefixed_path))
+                result.append(prefixed_path)
         return result
 
 

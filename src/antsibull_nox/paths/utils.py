@@ -50,110 +50,6 @@ def path_walk(
         yield (Path(dirpath), dirnames, filenames)
 
 
-def match_path(path: str, is_file: bool, paths: list[str]) -> bool:
-    """
-    Check whether a path (that is a file or not) matches a given list of paths.
-    """
-    for check in paths:
-        if check == path:
-            return True
-        if not is_file:
-            if not check.endswith("/"):
-                check += "/"
-            if path.startswith(check):
-                return True
-    return False
-
-
-def restrict_paths(paths: list[str], restrict: list[str]) -> list[str]:
-    """
-    Restrict a list of paths with a given set of restrictions.
-    """
-    result = []
-    for path in paths:
-        is_file = os.path.isfile(path)
-        if not is_file and not path.endswith("/"):
-            path += "/"
-        if not match_path(path, is_file, restrict):
-            if not is_file:
-                for check in restrict:
-                    if check.startswith(path) and os.path.exists(check):
-                        result.append(check)
-            continue
-        result.append(path)
-    return result
-
-
-def _scan_remove_paths(
-    path: str, remove: list[str], extensions: list[str] | None
-) -> list[str]:
-    result = []
-    for root, dirs, files in os.walk(path, topdown=True):
-        if not root.endswith("/"):
-            root += "/"
-        if match_path(root, False, remove):
-            continue
-        if all(not check.startswith(root) for check in remove):
-            dirs[:] = []
-            result.append(root)
-            continue
-        for file in files:
-            if extensions and os.path.splitext(file)[1] not in extensions:
-                continue
-            filepath = os.path.normpath(os.path.join(root, file))
-            if not match_path(filepath, True, remove):
-                result.append(filepath)
-        for directory in list(dirs):
-            if directory == "__pycache__":
-                dirs.remove(directory)
-                continue
-            dirpath = os.path.normpath(os.path.join(root, directory))
-            if match_path(dirpath, False, remove):
-                dirs.remove(directory)
-                continue
-    return result
-
-
-def remove_paths(
-    paths: list[str], remove: list[str], extensions: list[str] | None
-) -> list[str]:
-    """
-    Restrict a list of paths by removing paths.
-
-    If ``extensions`` is specified, only files matching this extension
-    will be considered when files need to be explicitly enumerated.
-    """
-    result = []
-    for path in paths:
-        is_file = os.path.isfile(path)
-        if not is_file and not path.endswith("/"):
-            path += "/"
-        if match_path(path, is_file, remove):
-            continue
-        if not is_file and any(check.startswith(path) for check in remove):
-            result.extend(_scan_remove_paths(path, remove, extensions))
-            continue
-        result.append(path)
-    return result
-
-
-def filter_paths(
-    paths: list[str],
-    /,
-    remove: list[str] | None = None,
-    restrict: list[str] | None = None,
-    extensions: list[str] | None = None,
-) -> list[str]:
-    """
-    Modifies a list of paths by restricting to and/or removing paths.
-    """
-    if restrict:
-        paths = restrict_paths(paths, restrict)
-    if remove:
-        paths = remove_paths(paths, remove, extensions)
-    return [path for path in paths if os.path.exists(path)]
-
-
 @functools.cache
 def list_all_files() -> list[Path]:
     """
@@ -271,12 +167,10 @@ __all__ = (
     "copy_collection",
     "copy_directory_tree_into",
     "create_temp_directory",
-    "filter_paths",
     "find_data_directory",
     "get_outside_temp_directory",
     "list_all_files",
     "path_walk",
     "relative_to_walk_up",
     "remove_path",
-    "restrict_paths",
 )

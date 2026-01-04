@@ -10,14 +10,12 @@ Path utils for creating nox sessions.
 
 from __future__ import annotations
 
-import os
 import typing as t
 from collections.abc import Sequence
 from pathlib import Path
 
 from ...cd import get_changes
-from ...paths.utils import filter_paths as _filter_paths
-from ...paths.utils import restrict_paths as _restrict_paths
+from ...paths.match import FileCollector
 from ...python.python_dependencies import get_python_dependency_info
 
 PythonDependencies = t.Literal["none", "imported-by-changed", "importing-changed"]
@@ -59,17 +57,18 @@ def add_python_deps(files: list[Path], *, forward: bool, cwd: Path) -> None:
 
 
 def filter_paths(
-    paths: list[str],
+    paths: list[Path],
     /,
-    remove: list[str] | None = None,
-    restrict: list[str] | None = None,
+    remove: list[Path] | None = None,
+    restrict: list[Path] | None = None,
     extensions: list[str] | None = None,
     with_cd: bool = False,
     cd_add_python_deps: PythonDependencies = "none",
-) -> list[str]:
+) -> list[Path]:
     """
     Modifies a list of paths by restricting to and/or removing paths.
     """
+    collector = FileCollector(paths=[Path(path) for path in paths])
     if with_cd:
         cwd = Path.cwd()
         changed_files = get_changes(relative_to=cwd)
@@ -80,15 +79,16 @@ def filter_paths(
                     forward=cd_add_python_deps == "imported-by-changed",
                     cwd=cwd,
                 )
-            restrict_cd = [str(file) for file in changed_files]
             if extensions:
-                restrict_cd = [
-                    file
-                    for file in restrict_cd
-                    if os.path.splitext(file)[1] in extensions
+                changed_files = [
+                    file for file in changed_files if file.suffix in extensions
                 ]
-            paths = _restrict_paths(paths, restrict_cd)
-    return _filter_paths(paths, remove=remove, restrict=restrict, extensions=extensions)
+            collector.restrict(paths=changed_files)
+    if restrict:
+        collector.restrict(paths=restrict)
+    if remove:
+        collector.remove(paths=remove, extensions=extensions)
+    return collector.get_existing()
 
 
 def filter_files_cd(files: Sequence[Path]) -> list[Path]:
