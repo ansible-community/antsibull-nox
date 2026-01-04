@@ -1,2 +1,4 @@
 bugfixes:
   - "Extra code files were ignored so far in the ``pylint`` test. They are now used there as well (https://github.com/ansible-community/antsibull-nox/pull/181)."
+minor_changes:
+  - "Allow to define the Python code files that the linters should run on (https://github.com/ansible-community/antsibull-nox/issues/178, https://github.com/ansible-community/antsibull-nox/pull/181)."
