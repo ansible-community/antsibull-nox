@@ -198,6 +198,7 @@ def _get_files(
 def _execute_isort_for(
     session: nox.Session,
     *,
+    old_cwd: Path,
     root_dir: Path,
     collection_dir: Path,
     run_check: bool,
@@ -219,7 +220,7 @@ def _execute_isort_for(
         command.extend(
             [
                 "--settings-file",
-                str(relative_to_walk_up(Path(isort_config).resolve(), root_dir)),
+                str(relative_to_walk_up((old_cwd / isort_config).resolve(), root_dir)),
             ]
         )
     command.extend(session.posargs)
@@ -246,10 +247,12 @@ def _execute_isort(
         split_modules=isort_modules_config is not None
         and isort_modules_config != isort_config,
     )
+    old_cwd = Path.cwd()
     with session.chdir(root_dir):
         if files is not None:
             _execute_isort_for(
                 session,
+                old_cwd=old_cwd,
                 root_dir=root_dir,
                 collection_dir=collection_dir,
                 run_check=run_check,
@@ -259,6 +262,7 @@ def _execute_isort(
         if files_modules is not None:
             _execute_isort_for(
                 session,
+                old_cwd=old_cwd,
                 root_dir=root_dir,
                 collection_dir=collection_dir,
                 run_check=run_check,
@@ -269,6 +273,7 @@ def _execute_isort(
         if files_other is not None:
             _execute_isort_for(
                 session,
+                old_cwd=old_cwd,
                 root_dir=root_dir,
                 collection_dir=collection_dir,
                 run_check=run_check,
@@ -423,6 +428,7 @@ def _execute_ruff_format(
 def _execute_ruff_autofix_for(
     session: nox.Session,
     *,
+    old_cwd: Path,
     root_dir: Path,
     collection_dir: Path,
     run_check: bool,
@@ -444,7 +450,11 @@ def _execute_ruff_autofix_for(
         command.extend(
             [
                 "--config",
-                str(relative_to_walk_up(Path(ruff_autofix_config).resolve(), root_dir)),
+                str(
+                    relative_to_walk_up(
+                        (old_cwd / ruff_autofix_config).resolve(), root_dir
+                    )
+                ),
             ]
         )
     if ruff_autofix_select:
@@ -474,10 +484,12 @@ def _execute_ruff_autofix(
         split_modules=ruff_autofix_modules_config is not None
         and ruff_autofix_modules_config != ruff_autofix_config,
     )
+    old_cwd = Path.cwd()
     with session.chdir(root_dir):
         if files is not None:
             _execute_ruff_autofix_for(
                 session,
+                old_cwd=old_cwd,
                 root_dir=root_dir,
                 collection_dir=collection_dir,
                 run_check=run_check,
@@ -488,6 +500,7 @@ def _execute_ruff_autofix(
         if files_modules is not None:
             _execute_ruff_autofix_for(
                 session,
+                old_cwd=old_cwd,
                 root_dir=root_dir,
                 collection_dir=collection_dir,
                 run_check=run_check,
@@ -499,6 +512,7 @@ def _execute_ruff_autofix(
         if files_other is not None:
             _execute_ruff_autofix_for(
                 session,
+                old_cwd=old_cwd,
                 root_dir=root_dir,
                 collection_dir=collection_dir,
                 run_check=run_check,
