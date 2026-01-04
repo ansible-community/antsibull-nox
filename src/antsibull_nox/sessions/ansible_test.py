@@ -32,7 +32,7 @@ from ..ansible import (
 from ..ansible_test_config import get_min_python_version, load_ansible_test_config
 from ..cd import get_base_branch, get_vcs_name, is_config_dir_the_repo_dir
 from ..container import get_container_engine_preference
-from ..paths import copy_directory_tree_into
+from ..paths.utils import copy_directory_tree_into
 from ..python.versions import get_installed_python_versions
 from ..utils import Version
 from .collections import prepare_collections

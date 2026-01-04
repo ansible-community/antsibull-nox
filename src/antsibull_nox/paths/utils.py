@@ -15,6 +15,7 @@ import functools
 import os
 import shutil
 import sys
+import typing as t
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -31,111 +32,22 @@ def find_data_directory() -> Path:
     """
     Retrieve the directory for antsibull_nox.data on disk.
     """
-    return Path(__file__).parent / "data"
+    return Path(__file__).parent.parent / "data"
 
 
-def match_path(path: str, is_file: bool, paths: list[str]) -> bool:
+def path_walk(
+    path: Path, top_down: bool = True, follow_symlinks: bool = False
+) -> t.Generator[tuple[Path, list[str], list[str]]]:
     """
-    Check whether a path (that is a file or not) matches a given list of paths.
+    Shim for Path.walk() that falls back to os.walk().
     """
-    for check in paths:
-        if check == path:
-            return True
-        if not is_file:
-            if not check.endswith("/"):
-                check += "/"
-            if path.startswith(check):
-                return True
-    return False
-
-
-def restrict_paths(paths: list[str], restrict: list[str]) -> list[str]:
-    """
-    Restrict a list of paths with a given set of restrictions.
-    """
-    result = []
-    for path in paths:
-        is_file = os.path.isfile(path)
-        if not is_file and not path.endswith("/"):
-            path += "/"
-        if not match_path(path, is_file, restrict):
-            if not is_file:
-                for check in restrict:
-                    if check.startswith(path) and os.path.exists(check):
-                        result.append(check)
-            continue
-        result.append(path)
-    return result
-
-
-def _scan_remove_paths(
-    path: str, remove: list[str], extensions: list[str] | None
-) -> list[str]:
-    result = []
-    for root, dirs, files in os.walk(path, topdown=True):
-        if not root.endswith("/"):
-            root += "/"
-        if match_path(root, False, remove):
-            continue
-        if all(not check.startswith(root) for check in remove):
-            dirs[:] = []
-            result.append(root)
-            continue
-        for file in files:
-            if extensions and os.path.splitext(file)[1] not in extensions:
-                continue
-            filepath = os.path.normpath(os.path.join(root, file))
-            if not match_path(filepath, True, remove):
-                result.append(filepath)
-        for directory in list(dirs):
-            if directory == "__pycache__":
-                dirs.remove(directory)
-                continue
-            dirpath = os.path.normpath(os.path.join(root, directory))
-            if match_path(dirpath, False, remove):
-                dirs.remove(directory)
-                continue
-    return result
-
-
-def remove_paths(
-    paths: list[str], remove: list[str], extensions: list[str] | None
-) -> list[str]:
-    """
-    Restrict a list of paths by removing paths.
-
-    If ``extensions`` is specified, only files matching this extension
-    will be considered when files need to be explicitly enumerated.
-    """
-    result = []
-    for path in paths:
-        is_file = os.path.isfile(path)
-        if not is_file and not path.endswith("/"):
-            path += "/"
-        if match_path(path, is_file, remove):
-            continue
-        if not is_file and any(check.startswith(path) for check in remove):
-            result.extend(_scan_remove_paths(path, remove, extensions))
-            continue
-        result.append(path)
-    return result
-
-
-def filter_paths(
-    paths: list[str],
-    /,
-    remove: list[str] | None = None,
-    restrict: list[str] | None = None,
-    extensions: list[str] | None = None,
-) -> list[str]:
-    """
-    Modifies a list of paths by restricting to and/or removing paths.
-    """
-    if restrict:
-        paths = restrict_paths(paths, restrict)
-    if remove:
-        paths = remove_paths(paths, remove, extensions)
-    return [path for path in paths if os.path.exists(path)]
+    if hasattr(path, "walk"):
+        yield from path.walk(top_down=top_down, follow_symlinks=follow_symlinks)
+        return
+    for dirpath, dirnames, filenames in os.walk(
+        path, topdown=top_down, followlinks=follow_symlinks
+    ):
+        yield (Path(dirpath), dirnames, filenames)
 
 
 @functools.cache
@@ -148,11 +60,10 @@ def list_all_files() -> list[Path]:
     if vcs == "git":
         return [directory / path.decode("utf-8") for path in list_git_files(directory)]
     result = []
-    for root, dirs, files in os.walk(directory, topdown=True):
-        root_path = Path(root)
+    for root, dirs, files in path_walk(directory, top_down=True):
         for file in files:
-            result.append(root_path / file)
-        if root_path == directory and ".nox" in dirs:
+            result.append(root / file)
+        if root == directory and ".nox" in dirs:
             dirs.remove(".nox")
     return result
 
@@ -233,8 +144,7 @@ def copy_directory_tree_into(source: Path, destination: Path) -> None:
     if not source.is_dir():
         return
     destination.mkdir(parents=True, exist_ok=True)
-    for root_, _, files in os.walk(source):
-        root = Path(root_)
+    for root, _, files in path_walk(source):
         path = destination / root.relative_to(source)
         path.mkdir(exist_ok=True)
         for file in files:
@@ -253,13 +163,14 @@ def relative_to_walk_up(path: Path, relative_to: Path) -> Path:
     return path.relative_to(relative_to, walk_up=True)
 
 
-__all__ = [
+__all__ = (
     "copy_collection",
     "copy_directory_tree_into",
     "create_temp_directory",
-    "filter_paths",
     "find_data_directory",
     "get_outside_temp_directory",
     "list_all_files",
+    "path_walk",
+    "relative_to_walk_up",
     "remove_path",
-]
+)

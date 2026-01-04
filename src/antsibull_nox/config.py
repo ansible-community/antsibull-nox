@@ -221,7 +221,8 @@ class SessionLint(_BaseModel):
     """
 
     default: bool = True
-    extra_code_files: list[str] = []
+    code_files: t.Union[t.Literal["default"], list[str]] = "default"
+    extra_code_files: t.Optional[list[str]] = None
     ruff_config: t.Optional[p.FilePath] = None
     ruff_package: Packages = PackageName(name="ruff")
 

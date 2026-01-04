@@ -21,9 +21,9 @@ from pathlib import Path
 from antsibull_fileutils.yaml import load_yaml_file
 
 from ..ansible import AnsibleCoreVersion
-from ..paths import copy_collection as _paths_copy_collection
-from ..paths import relative_to_walk_up as _relative_to_walk_up
-from ..paths import remove_path as _remove
+from ..paths.utils import copy_collection as _paths_copy_collection
+from ..paths.utils import relative_to_walk_up as _relative_to_walk_up
+from ..paths.utils import remove_path as _remove
 from .data import CollectionData, CollectionSource, SetupResult
 from .extract import extract_tarball
 from .search import (

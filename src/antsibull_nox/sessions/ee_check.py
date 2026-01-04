@@ -16,11 +16,10 @@ from pathlib import Path
 
 import nox
 
-from antsibull_nox.ee_config import generate_ee_config
-from antsibull_nox.paths import get_outside_temp_directory
-
 from ..collection import CollectionData, build_collection
 from ..container import get_container_engine_preference, get_preferred_container_engine
+from ..ee_config import generate_ee_config
+from ..paths.utils import get_outside_temp_directory
 from .utils import register
 from .utils.packages import (
     PackageType,

@@ -1,0 +1,2 @@
+bugfixes:
+  - "Extra code files were ignored so far in the ``pylint`` test. They are now used there as well (https://github.com/ansible-community/antsibull-nox/pull/181)."
