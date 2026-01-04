@@ -389,9 +389,13 @@ def _add_sessions(sessions: Sessions, cconfig: CollectionConfig) -> None:
         code_files: FileCollector | None = None
         if sessions.lint.code_files != "default":
             code_files = FileCollector.create(sessions.lint.code_files, glob=True)
+        module_files: FileCollector | None = None
+        if sessions.lint.module_files != "default":
+            module_files = FileCollector.create(sessions.lint.module_files, glob=True)
         add_lint_sessions(
             make_lint_default=sessions.lint.default,
             code_files=code_files,
+            module_files=module_files,
             extra_code_files=sessions.lint.extra_code_files,
             run_isort=sessions.lint.run_isort,
             isort_config=sessions.lint.isort_config,

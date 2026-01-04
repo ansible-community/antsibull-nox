@@ -281,6 +281,18 @@ and there are plenty of configuration settings for the indiviual formatters/lint
     !!! note
         If `code_files` has been specified, `extra_code_files` cannot be used.
 
+* `module_files: "default" | list[str]` (default `"default"`):
+  The code files the linters and formatters will treat as module files.
+  These can be processed with different linter/formatter configurations.
+
+    If set to `"default"`, `plugins/modules/`, `plugins/module_utils/`,
+    `tests/unit/plugins/modules/`, and `tests/unit/plugins/module_utils/`
+    will be used.
+
+    You can use [glob patterns](https://docs.python.org/3/library/pathlib.html#pathlib-pattern-language).
+    For example, `"tests/integration/targets/*/library"`
+    considers all local modules defined in integration test roles.
+
 * `ruff_config: str | os.PathLike | None` (default `None`):
   Specifies a config file for `ruff`.
   Use a path relative to `noxfile.py`.
