@@ -1096,7 +1096,6 @@ def add_lint_sessions(
     extra_code_files_paths = [Path(file) for file in (extra_code_files or [])]
     code_files_w_noxfile = CODE_FILES_W_NOXFILE + extra_code_files_paths
     code_files = CODE_FILES + extra_code_files_paths
-    code_files_pylint = CODE_FILES
 
     if has_formatters:
         add_formatters(
@@ -1120,7 +1119,7 @@ def add_lint_sessions(
     if has_codeqa:
         add_codeqa(
             code_files=code_files_w_noxfile,
-            code_files_pylint=code_files_pylint,
+            code_files_pylint=code_files,
             run_ruff_check=run_ruff_check,
             ruff_check_config=ruff_check_config,
             ruff_check_package=ruff_check_package,
