@@ -25,6 +25,9 @@ from ..messages.parse import (
     parse_pylint_json2_errors,
     parse_ruff_check_errors,
 )
+from ..paths.match import (
+    FileCollector,
+)
 from ..paths.utils import (
     list_all_files,
     relative_to_walk_up,
@@ -68,12 +71,15 @@ CODE_FILES_W_NOXFILE = [
     Path("noxfile.py"),
 ]
 
-MODULE_PATHS = [
-    Path("plugins/modules/"),
-    Path("plugins/module_utils/"),
-    Path("tests/unit/plugins/modules/"),
-    Path("tests/unit/plugins/module_utils/"),
-]
+MODULE_PATHS = FileCollector.create(
+    [
+        "plugins/modules/",
+        "plugins/module_utils/",
+        "tests/unit/plugins/modules/",
+        "tests/unit/plugins/module_utils/",
+    ],
+    glob=False,
+)
 
 
 def _split_arg(
@@ -159,7 +165,7 @@ def _execute_isort(
     root_dir: Path,
     collection_dir: Path,
     run_check: bool,
-    extra_code_files: list[str],
+    code_files: list[Path] | FileCollector,
     isort_config: str | os.PathLike | None,
 ) -> None:
     command: list[str] = [
@@ -178,7 +184,7 @@ def _execute_isort(
         )
     command.extend(session.posargs)
     files = filter_paths(
-        CODE_FILES_W_NOXFILE + [Path(file) for file in extra_code_files],
+        code_files,
         extensions=[".py"],
         with_cd=True,
     )
@@ -218,7 +224,7 @@ def _execute_black(
     session: nox.Session,
     *,
     run_check: bool,
-    extra_code_files: list[str],
+    code_files: list[Path] | FileCollector,
     run_black: bool,
     run_black_modules: bool | None,
     black_config: str | os.PathLike | None,
@@ -227,7 +233,7 @@ def _execute_black(
         _execute_black_for(
             session,
             paths=filter_paths(
-                CODE_FILES_W_NOXFILE + [Path(file) for file in extra_code_files],
+                code_files,
                 extensions=[".py"],
                 with_cd=True,
             ),
@@ -237,7 +243,7 @@ def _execute_black(
         return
     if run_black:
         paths = filter_paths(
-            CODE_FILES_W_NOXFILE + [Path(file) for file in extra_code_files],
+            code_files,
             remove=MODULE_PATHS,
             extensions=[".py"],
             with_cd=True,
@@ -251,7 +257,7 @@ def _execute_black(
         )
     if run_black_modules:
         paths = filter_paths(
-            CODE_FILES_W_NOXFILE,
+            code_files,
             restrict=MODULE_PATHS,
             extensions=[".py"],
             with_cd=True,
@@ -269,7 +275,7 @@ def _execute_ruff_format(
     session: nox.Session,
     *,
     run_check: bool,
-    extra_code_files: list[str],
+    code_files: list[Path] | FileCollector,
     ruff_format_config: str | os.PathLike | None,
 ) -> None:
     command: list[str] = [
@@ -282,7 +288,7 @@ def _execute_ruff_format(
         command.extend(["--config", str(ruff_format_config)])
     command.extend(session.posargs)
     files = filter_paths(
-        CODE_FILES_W_NOXFILE + [Path(file) for file in extra_code_files],
+        code_files,
         extensions=[".py"],
         with_cd=True,
     )
@@ -299,7 +305,7 @@ def _execute_ruff_autofix(
     root_dir: Path,
     collection_dir: Path,
     run_check: bool,
-    extra_code_files: list[str],
+    code_files: list[Path] | FileCollector,
     ruff_autofix_config: str | os.PathLike | None,
     ruff_autofix_select: list[str],
 ) -> None:
@@ -320,7 +326,7 @@ def _execute_ruff_autofix(
         command.extend(["--select", ",".join(ruff_autofix_select)])
     command.extend(session.posargs)
     files = filter_paths(
-        CODE_FILES_W_NOXFILE + [Path(file) for file in extra_code_files],
+        code_files,
         extensions=[".py"],
         with_cd=True,
     )
@@ -337,7 +343,7 @@ def _execute_ruff_autofix(
 
 def add_formatters(
     *,
-    extra_code_files: list[str],
+    code_files: list[Path] | FileCollector,
     # isort:
     run_isort: bool,
     isort_config: str | os.PathLike | None,
@@ -433,14 +439,14 @@ def add_formatters(
                 root_dir=root_dir,
                 collection_dir=collection_path,
                 run_check=run_check,
-                extra_code_files=extra_code_files,
+                code_files=code_files,
                 isort_config=isort_config,
             )
         if run_black or run_black_modules:
             _execute_black(
                 session,
                 run_check=run_check,
-                extra_code_files=extra_code_files,
+                code_files=code_files,
                 run_black=run_black,
                 run_black_modules=run_black_modules,
                 black_config=black_config,
@@ -449,7 +455,7 @@ def add_formatters(
             _execute_ruff_format(
                 session,
                 run_check=run_check,
-                extra_code_files=extra_code_files,
+                code_files=code_files,
                 ruff_format_config=ruff_format_config,
             )
         if run_ruff_autofix:
@@ -458,7 +464,7 @@ def add_formatters(
                 root_dir=root_dir,
                 collection_dir=collection_path,
                 run_check=run_check,
-                extra_code_files=extra_code_files,
+                code_files=code_files,
                 ruff_autofix_config=ruff_autofix_config,
                 ruff_autofix_select=ruff_autofix_select,
             )
@@ -480,7 +486,8 @@ def add_formatters(
 
 def add_codeqa(  # noqa: C901
     *,
-    extra_code_files: list[str],
+    code_files: list[Path] | FileCollector,
+    code_files_pylint: list[Path] | FileCollector,
     # ruff check:
     run_ruff_check: bool,
     ruff_check_config: str | os.PathLike | None,
@@ -567,7 +574,7 @@ def add_codeqa(  # noqa: C901
             )
         command.extend(session.posargs)
         files = filter_paths(
-            CODE_FILES_W_NOXFILE + [Path(file) for file in extra_code_files],
+            code_files,
             extensions=[".py"],
             with_cd=True,
         )
@@ -599,7 +606,7 @@ def add_codeqa(  # noqa: C901
             command.extend(["--config", str(flake8_config)])
         command.extend(session.posargs)
         files = filter_paths(
-            CODE_FILES_W_NOXFILE + [Path(file) for file in extra_code_files],
+            code_files,
             extensions=[".py"],
             with_cd=True,
         )
@@ -650,14 +657,14 @@ def add_codeqa(  # noqa: C901
         if pylint_modules_rcfile is not None and pylint_modules_rcfile != pylint_rcfile:
             # Only run pylint twice when using different configurations
             module_paths = filter_paths(
-                CODE_FILES,
+                code_files_pylint,
                 restrict=MODULE_PATHS,
                 extensions=[".py"],
                 with_cd=True,
                 cd_add_python_deps="importing-changed",
             )
             other_paths = filter_paths(
-                CODE_FILES,
+                code_files_pylint,
                 remove=MODULE_PATHS,
                 extensions=[".py"],
                 with_cd=True,
@@ -673,7 +680,7 @@ def add_codeqa(  # noqa: C901
             # Otherwise run it only once using the general configuration
             module_paths = []
             other_paths = filter_paths(
-                CODE_FILES,
+                code_files_pylint,
                 extensions=[".py"],
                 with_cd=True,
                 cd_add_python_deps="importing-changed",
@@ -873,7 +880,7 @@ def add_yamllint(
 
 def add_typing(
     *,
-    extra_code_files: list[str],
+    code_files: list[Path] | FileCollector,
     run_mypy: bool,
     mypy_config: str | os.PathLike | None,
     mypy_package: PackageTypeOrList,
@@ -917,7 +924,7 @@ def add_typing(
     ) -> None:
         # Run mypy
         files = filter_paths(
-            CODE_FILES + [Path(file) for file in extra_code_files],
+            code_files,
             extensions=[".py"],
             with_cd=True,
             cd_add_python_deps="importing-changed",
@@ -1086,9 +1093,14 @@ def add_lint_sessions(
         make_lint_default=make_lint_default,
     )
 
+    extra_code_files_paths = [Path(file) for file in (extra_code_files or [])]
+    code_files_w_noxfile = CODE_FILES_W_NOXFILE + extra_code_files_paths
+    code_files = CODE_FILES + extra_code_files_paths
+    code_files_pylint = CODE_FILES
+
     if has_formatters:
         add_formatters(
-            extra_code_files=extra_code_files or [],
+            code_files=code_files_w_noxfile,
             run_isort=run_isort,
             isort_config=isort_config,
             isort_package=isort_package,
@@ -1107,7 +1119,8 @@ def add_lint_sessions(
 
     if has_codeqa:
         add_codeqa(
-            extra_code_files=extra_code_files or [],
+            code_files=code_files_w_noxfile,
+            code_files_pylint=code_files_pylint,
             run_ruff_check=run_ruff_check,
             ruff_check_config=ruff_check_config,
             ruff_check_package=ruff_check_package,
@@ -1135,7 +1148,7 @@ def add_lint_sessions(
 
     if has_typing:
         add_typing(
-            extra_code_files=extra_code_files or [],
+            code_files=code_files,
             run_mypy=run_mypy,
             mypy_config=mypy_config,
             mypy_package=mypy_package,
