@@ -12,9 +12,10 @@ from __future__ import annotations
 
 import ast
 import dataclasses
-import os
 import typing as t
 from pathlib import Path
+
+from ..paths.utils import path_walk
 
 if t.TYPE_CHECKING:
     from collections.abc import Sequence
@@ -146,13 +147,13 @@ def get_all_module_data(
     for path, module_path in paths_with_module_paths:
         resolved_path = path.resolve()
         if resolved_path.is_dir():
-            for dirpath, _, filenames in os.walk(path):
-                reldir = Path(dirpath).relative_to(path)
+            for dirpath, _, filenames in path_walk(path):
+                reldir = dirpath.relative_to(path)
                 for filename in filenames:
                     if not filename.endswith(".py"):
                         continue
                     rel_module_path = get_module_path(reldir / filename)
-                    file_path = Path(dirpath) / filename
+                    file_path = dirpath / filename
                     yield get_module_data_from_module_path(
                         file_path, module_path=module_path + rel_module_path
                     )

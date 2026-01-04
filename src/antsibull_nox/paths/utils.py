@@ -15,6 +15,7 @@ import functools
 import os
 import shutil
 import sys
+import typing as t
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -32,6 +33,21 @@ def find_data_directory() -> Path:
     Retrieve the directory for antsibull_nox.data on disk.
     """
     return Path(__file__).parent.parent / "data"
+
+
+def path_walk(
+    path: Path, top_down: bool = True, follow_symlinks: bool = False
+) -> t.Generator[tuple[Path, list[str], list[str]]]:
+    """
+    Shim for Path.walk() that falls back to os.walk().
+    """
+    if hasattr(path, "walk"):
+        yield from path.walk(top_down=top_down, follow_symlinks=follow_symlinks)
+        return
+    for dirpath, dirnames, filenames in os.walk(
+        path, topdown=top_down, followlinks=follow_symlinks
+    ):
+        yield (Path(dirpath), dirnames, filenames)
 
 
 def match_path(path: str, is_file: bool, paths: list[str]) -> bool:
@@ -148,11 +164,10 @@ def list_all_files() -> list[Path]:
     if vcs == "git":
         return [directory / path.decode("utf-8") for path in list_git_files(directory)]
     result = []
-    for root, dirs, files in os.walk(directory, topdown=True):
-        root_path = Path(root)
+    for root, dirs, files in path_walk(directory, top_down=True):
         for file in files:
-            result.append(root_path / file)
-        if root_path == directory and ".nox" in dirs:
+            result.append(root / file)
+        if root == directory and ".nox" in dirs:
             dirs.remove(".nox")
     return result
 
@@ -233,8 +248,7 @@ def copy_directory_tree_into(source: Path, destination: Path) -> None:
     if not source.is_dir():
         return
     destination.mkdir(parents=True, exist_ok=True)
-    for root_, _, files in os.walk(source):
-        root = Path(root_)
+    for root, _, files in path_walk(source):
         path = destination / root.relative_to(source)
         path.mkdir(exist_ok=True)
         for file in files:
@@ -261,6 +275,7 @@ __all__ = (
     "find_data_directory",
     "get_outside_temp_directory",
     "list_all_files",
+    "path_walk",
     "relative_to_walk_up",
     "remove_path",
     "restrict_paths",
