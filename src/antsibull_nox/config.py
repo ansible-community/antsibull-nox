@@ -224,38 +224,45 @@ class SessionLint(_BaseModel):
     code_files: t.Union[t.Literal["default"], list[str]] = "default"
     extra_code_files: t.Optional[list[str]] = None
     ruff_config: t.Optional[p.FilePath] = None
+    ruff_modules_config: t.Optional[p.FilePath] = None
     ruff_package: Packages = PackageName(name="ruff")
 
     # isort:
     run_isort: bool = True
     isort_config: t.Optional[p.FilePath] = None
+    isort_modules_config: t.Optional[p.FilePath] = None
     isort_package: Packages = PackageName(name="isort")
 
     # black:
     run_black: bool = True
     run_black_modules: t.Optional[bool] = None
     black_config: t.Optional[p.FilePath] = None
+    black_modules_config: t.Optional[p.FilePath] = None
     black_package: Packages = PackageName(name="black")
 
     # ruff format:
     run_ruff_format: bool = False
     ruff_format_config: t.Optional[p.FilePath] = None
+    ruff_format_modules_config: t.Optional[p.FilePath] = None
     ruff_format_package: t.Optional[Packages] = None
 
     # ruff autofix:
     run_ruff_autofix: bool = False
     ruff_autofix_config: t.Optional[p.FilePath] = None
+    ruff_autofix_modules_config: t.Optional[p.FilePath] = None
     ruff_autofix_package: t.Optional[Packages] = None
     ruff_autofix_select: list[str] = []
 
     # ruff check:
     run_ruff_check: bool = False
     ruff_check_config: t.Optional[p.FilePath] = None
+    ruff_check_modules_config: t.Optional[p.FilePath] = None
     ruff_check_package: t.Optional[Packages] = None
 
     # flake8:
     run_flake8: bool = True
     flake8_config: t.Optional[p.FilePath] = None
+    flake8_modules_config: t.Optional[p.FilePath] = None
     flake8_package: Packages = PackageName(name="flake8")
 
     # pylint:
@@ -280,6 +287,7 @@ class SessionLint(_BaseModel):
     # mypy:
     run_mypy: bool = True
     mypy_config: t.Optional[p.FilePath] = None
+    mypy_modules_config: t.Optional[p.FilePath] = None
     mypy_package: Packages = PackageName(name="mypy")
     mypy_ansible_core_package: t.Optional[Packages] = PackageName(name="ansible-core")
     mypy_extra_deps: list[PackageFieldOrString] = []

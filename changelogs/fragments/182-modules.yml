@@ -1,0 +1,2 @@
+minor_changes:
+  - "Allow to specify special configs for modules for all formatters and linters in the ``lint`` section (https://github.com/ansible-community/antsibull-nox/pull/181)."
