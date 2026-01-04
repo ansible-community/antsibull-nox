@@ -225,6 +225,7 @@ def _execute_black(
     *,
     run_check: bool,
     code_files: list[Path] | FileCollector,
+    module_files: list[Path] | FileCollector,
     run_black: bool,
     run_black_modules: bool | None,
     black_config: str | os.PathLike | None,
@@ -244,7 +245,7 @@ def _execute_black(
     if run_black:
         paths = filter_paths(
             code_files,
-            remove=MODULE_PATHS,
+            remove=module_files,
             extensions=[".py"],
             with_cd=True,
         )
@@ -258,7 +259,7 @@ def _execute_black(
     if run_black_modules:
         paths = filter_paths(
             code_files,
-            restrict=MODULE_PATHS,
+            restrict=module_files,
             extensions=[".py"],
             with_cd=True,
         )
@@ -344,6 +345,7 @@ def _execute_ruff_autofix(
 def add_formatters(
     *,
     code_files: list[Path] | FileCollector,
+    module_files: list[Path] | FileCollector,
     # isort:
     run_isort: bool,
     isort_config: str | os.PathLike | None,
@@ -447,6 +449,7 @@ def add_formatters(
                 session,
                 run_check=run_check,
                 code_files=code_files,
+                module_files=module_files,
                 run_black=run_black,
                 run_black_modules=run_black_modules,
                 black_config=black_config,
@@ -488,6 +491,7 @@ def add_codeqa(  # noqa: C901
     *,
     code_files: list[Path] | FileCollector,
     code_files_pylint: list[Path] | FileCollector,
+    module_files: list[Path] | FileCollector,
     # ruff check:
     run_ruff_check: bool,
     ruff_check_config: str | os.PathLike | None,
@@ -658,14 +662,14 @@ def add_codeqa(  # noqa: C901
             # Only run pylint twice when using different configurations
             module_paths = filter_paths(
                 code_files_pylint,
-                restrict=MODULE_PATHS,
+                restrict=module_files,
                 extensions=[".py"],
                 with_cd=True,
                 cd_add_python_deps="importing-changed",
             )
             other_paths = filter_paths(
                 code_files_pylint,
-                remove=MODULE_PATHS,
+                remove=module_files,
                 extensions=[".py"],
                 with_cd=True,
                 cd_add_python_deps="importing-changed",
@@ -881,6 +885,7 @@ def add_yamllint(
 def add_typing(
     *,
     code_files: list[Path] | FileCollector,
+    module_files: list[Path] | FileCollector,  # pylint: disable=unused-argument
     run_mypy: bool,
     mypy_config: str | os.PathLike | None,
     mypy_package: PackageTypeOrList,
@@ -1017,7 +1022,9 @@ def add_config_lint(
 def add_lint_sessions(
     *,
     make_lint_default: bool = True,
+    code_files: list[Path] | FileCollector | None = None,
     extra_code_files: list[str] | None = None,
+    module_files: list[Path] | FileCollector | None = None,
     # isort:
     run_isort: bool = True,
     isort_config: str | os.PathLike | None = None,
@@ -1071,6 +1078,20 @@ def add_lint_sessions(
     """
     Add nox sessions for linting.
     """
+    if code_files is not None:
+        if extra_code_files is not None:
+            raise ValueError("Cannot specify both code_files and extra_code_files")
+        code_files_w_noxfile = code_files
+    else:
+        extra_code_files_paths = (
+            [Path(file) for file in extra_code_files] if extra_code_files else []
+        )
+        code_files_w_noxfile = CODE_FILES_W_NOXFILE + extra_code_files_paths
+        code_files = CODE_FILES + extra_code_files_paths
+
+    if module_files is None:
+        module_files = MODULE_PATHS
+
     has_formatters = (
         run_isort
         or run_black
@@ -1093,13 +1114,10 @@ def add_lint_sessions(
         make_lint_default=make_lint_default,
     )
 
-    extra_code_files_paths = [Path(file) for file in (extra_code_files or [])]
-    code_files_w_noxfile = CODE_FILES_W_NOXFILE + extra_code_files_paths
-    code_files = CODE_FILES + extra_code_files_paths
-
     if has_formatters:
         add_formatters(
             code_files=code_files_w_noxfile,
+            module_files=module_files,
             run_isort=run_isort,
             isort_config=isort_config,
             isort_package=isort_package,
@@ -1120,6 +1138,7 @@ def add_lint_sessions(
         add_codeqa(
             code_files=code_files_w_noxfile,
             code_files_pylint=code_files,
+            module_files=module_files,
             run_ruff_check=run_ruff_check,
             ruff_check_config=ruff_check_config,
             ruff_check_package=ruff_check_package,
@@ -1148,6 +1167,7 @@ def add_lint_sessions(
     if has_typing:
         add_typing(
             code_files=code_files,
+            module_files=module_files,
             run_mypy=run_mypy,
             mypy_config=mypy_config,
             mypy_package=mypy_package,
