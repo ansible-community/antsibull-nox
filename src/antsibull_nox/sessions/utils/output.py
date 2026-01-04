@@ -489,13 +489,20 @@ class _ContentProvider:
 
     @staticmethod
     def _get_column(
-        line: str, column: int | None, *, tabulator_width: int = 8, is_end: bool = False
+        lines: list[str],
+        line: int,
+        column: int | None,
+        *,
+        tabulator_width: int = 8,
+        is_end: bool = False,
     ) -> int | None:
         if column is None:
             return None
+        if not 0 <= line < len(lines):
+            return None
         column -= 1
         idx = 0
-        for idx, part in enumerate(line.split("\t")):
+        for idx, part in enumerate(lines[line].split("\t")):
             if idx:
                 act_tab_w = tabulator_width - (idx % tabulator_width)
                 if act_tab_w == 0:
@@ -566,11 +573,14 @@ class _ContentProvider:
             result.append((None, ""))
         return (
             result,
-            (start.line, self._get_column(self.content[start.line], start.column)),
+            (start.line, self._get_column(self.content, start.line - 1, start.column)),
             (
                 None
                 if end is None
-                else (end.line, self._get_column(self.content[end.line], end.column))
+                else (
+                    end.line,
+                    self._get_column(self.content, end.line - 1, end.column),
+                )
             ),
         )
 

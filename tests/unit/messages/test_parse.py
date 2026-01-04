@@ -400,7 +400,7 @@ PARSE_MYPY_ERRORS_DATA: list[tuple[str, list[Message]]] = [
         [
             Message(
                 file="plugins/cache/memcached.py",
-                position=Location(line=254, column=11),
+                position=Location(line=254, column=12),
                 end_position=None,
                 level=Level.ERROR,
                 id="assignment",

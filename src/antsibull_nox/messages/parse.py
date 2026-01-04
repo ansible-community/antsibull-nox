@@ -137,6 +137,12 @@ def parse_mypy_errors(
         "error": Level.ERROR,
         "note": Level.INFO,
     }
+
+    def plus_one_or_none(value: int | None) -> int | None:
+        if value is None:
+            return None
+        return value + 1
+
     for line in output.splitlines():
         if not line.strip():
             continue
@@ -152,7 +158,7 @@ def parse_mypy_errors(
                     file=path,
                     position=Location(
                         line=data["line"],
-                        column=data["column"],
+                        column=plus_one_or_none(data["column"]),
                     ),
                     end_position=None,
                     level=level,
