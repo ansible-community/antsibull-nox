@@ -258,10 +258,28 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Whether the `lint` session should be made default.
   This means that when a user just runs `nox` without specifying sessions, this session will run.
 
+* `code_files: "default" | list[str]` (default `"default"`):
+  The code files the linters and formatters will operate on.
+
+    If set to `"default"`, `plugins/`, `tests/unit/`, and `noxfile.py` will be used
+    and the files and directories from `extra_code_files` will be added
+    (for mypy and pylint, `noxfile.py` will be skipped).
+
+    When specifying this option,
+    the default set of files will be overridden by the list specified.
+    For example, you can specify `["."]` to process all Python files in the collection.
+
+    You can use [glob patterns](https://docs.python.org/3/library/pathlib.html#pathlib-pattern-language).
+    For example, `"tests/integration/targets/*/*_plugins"`
+    considers all local plugins defined in integration test roles.
+
 * `extra_code_files: list[str]` (default `[]`):
   An extra list of files to run the formatters and linters on.
   By default the formatters and linters run on code files in `plugins/`, `tests/unit/`, and on `noxfile.py`.
   If you have other scripts in your collection that should be checked, you can add them with this option.
+
+    !!! note
+        If `code_files` has been specified, `extra_code_files` cannot be used.
 
 * `ruff_config: str | os.PathLike | None` (default `None`):
   Specifies a config file for `ruff`.

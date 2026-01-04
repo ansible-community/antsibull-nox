@@ -354,7 +354,12 @@ TEST_CREATE: list[tuple[list[str], bool, list[str]]] = [
     (
         ["*/?c", "*/*fff", "e", "moo"],
         True,
-        ["c/cc", "d/dc", "e"],
+        ["c/cc", "d/dc", "e", "moo"],
+    ),
+    (
+        ["."],
+        True,
+        ["."],
     ),
 ]
 

@@ -308,7 +308,7 @@ class FileCollector:
         tree = _FileTree()
         root = Path(".")
         for source in sources:
-            if glob:
+            if glob and any(ch in "*?[" for ch in source):
                 for path in root.glob(source):
                     tree.add(_split_path(path), keep_pruned=True)
             else:
