@@ -281,11 +281,32 @@ and there are plenty of configuration settings for the indiviual formatters/lint
     !!! note
         If `code_files` has been specified, `extra_code_files` cannot be used.
 
+* `module_files: "default" | list[str]` (default `"default"`):
+  The code files the linters and formatters will treat as module files.
+  These can be processed with different linter/formatter configurations.
+
+    If set to `"default"`, `plugins/modules/`, `plugins/module_utils/`,
+    `tests/unit/plugins/modules/`, and `tests/unit/plugins/module_utils/`
+    will be used.
+
+    You can use [glob patterns](https://docs.python.org/3/library/pathlib.html#pathlib-pattern-language).
+    For example, `"tests/integration/targets/*/library"`
+    considers all local modules defined in integration test roles.
+
 * `ruff_config: str | os.PathLike | None` (default `None`):
   Specifies a config file for `ruff`.
   Use a path relative to `noxfile.py`.
   This config file applies to all `ruff` checks
   but can be overridden for specific `ruff` invocations.
+  Note that antsibull-nox does not currently supply a default config file,
+  but this might change in the future.
+
+* `ruff_modules_config: str | os.PathLike | None` (default `None`):
+  Specifies a config file for `ruff`
+  that is used for modules and module utils.
+  (The `module_files` option allows to configure which files are treated this way.)
+  If not specified but `ruff_config` is specified, `ruff_config` will be used for these files.
+  Use a path relative to `noxfile.py`.
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
@@ -304,6 +325,15 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 
 * `isort_config: str | os.PathLike | None` (default `None`):
   Specifies a config file for `isort`.
+  Use a path relative to `noxfile.py`.
+  Note that antsibull-nox does not currently supply a default config file,
+  but this might change in the future.
+
+* `isort_modules_config: str | os.PathLike | None` (default `None`):
+  Specifies a config file for `isort`
+  that is used for modules and module utils.
+  (The `module_files` option allows to configure which files are treated this way.)
+  If not specified but `isort_config` is specified, `isort_config` will be used for these files.
   Use a path relative to `noxfile.py`.
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
@@ -331,6 +361,15 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
+* `black_modules_config: str | os.PathLike | None` (default `None`):
+  Specifies a config file for `black`
+  that is used for modules and module utils.
+  (The `module_files` option allows to configure which files are treated this way.)
+  If not specified but `black_config` is specified, `black_config` will be used for these files.
+  Use a path relative to `noxfile.py`.
+  Note that antsibull-nox does not currently supply a default config file,
+  but this might change in the future.
+
 * `black_package: PackageType` (default `"black"`):
   The package to install for `black` in this session.
   You can specify a value here to add restrictions to the `black` version,
@@ -346,6 +385,15 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Specifies a config file for `ruff format`.
   Use a path relative to `noxfile.py`.
   Falls back to `ruff_config` if set to `None`.
+  Note that antsibull-nox does not currently supply a default config file,
+  but this might change in the future.
+
+* `ruff_format_modules_config: str | os.PathLike | None` (default `None`):
+  Specifies a config file for `ruff format`
+  that is used for modules and module utils.
+  (The `module_files` option allows to configure which files are treated this way.)
+  Use a path relative to `noxfile.py`.
+  Falls back to `ruff_modules_config` and then to `ruff_format_config` if set to `None`.
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
@@ -365,6 +413,15 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Specifies a config file for `ruff check --fix`.
   Use a path relative to `noxfile.py`.
   Falls back to `ruff_config` if set to `None`.
+  Note that antsibull-nox does not currently supply a default config file,
+  but this might change in the future.
+
+* `ruff_autofix_modules_config: str | os.PathLike | None` (default `None`):
+  Specifies a config file for `ruff check --fix`
+  that is used for modules and module utils.
+  (The `module_files` option allows to configure which files are treated this way.)
+  Use a path relative to `noxfile.py`.
+  Falls back to `ruff_modules_config` and then to `ruff_autofix_config` if set to `None`.
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
@@ -393,6 +450,15 @@ and there are plenty of configuration settings for the indiviual formatters/lint
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
 
+* `ruff_check_modules_config: str | os.PathLike | None` (default `None`):
+  Specifies a config file for `ruff check`
+  that is used for modules and module utils.
+  (The `module_files` option allows to configure which files are treated this way.)
+  Use a path relative to `noxfile.py`.
+  Falls back to `ruff_modules_config` and then to `ruff_check_config` if set to `None`.
+  Note that antsibull-nox does not currently supply a default config file,
+  but this might change in the future.
+
 * `ruff_check_package: PackageType | None` (default `None`):
   The package to install for `ruff` in this session.
   Falls back to `ruff_package` if set to `None`.
@@ -407,6 +473,15 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 
 * `flake8_config: str | os.PathLike | None` (default `None`):
   Specifies a config file for `flake8`.
+  Use a path relative to `noxfile.py`.
+  Note that antsibull-nox does not currently supply a default config file,
+  but this might change in the future.
+
+* `flake8_modules_config: str | os.PathLike | None` (default `None`):
+  Specifies a config file for `flake8`
+  that is used for modules and module utils.
+  (The `module_files` option allows to configure which files are treated this way.)
+  If not specified but `flake8_config` is specified, `flake8_config` will be used for these files.
   Use a path relative to `noxfile.py`.
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.
@@ -430,6 +505,7 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 
 * `pylint_modules_rcfile: str | os.PathLike | None` (default `None`):
   Specifies a config file for `pylint`  for modules, module utils, and the associated unit tests.
+  (The `module_files` option allows to configure which files are treated this way.)
   If not specified but `pylint_rcfile` is specified, `pylint_rcfile` will be used for these files.
   Use a path relative to `noxfile.py`.
   Note that antsibull-nox does not currently supply a default config file,
@@ -507,6 +583,15 @@ and there are plenty of configuration settings for the indiviual formatters/lint
 
 * `mypy_config: str | os.PathLike | None` (default `None`):
   Specifies a config file for `mypy`.
+  Use a path relative to `noxfile.py`.
+  Note that antsibull-nox does not currently supply a default config file,
+  but this might change in the future.
+
+* `mypy_modules_config: str | os.PathLike | None` (default `None`):
+  Specifies a config file for `mypy`
+  that is used for modules and module utils.
+  (The `module_files` option allows to configure which files are treated this way.)
+  If not specified but `mypy_config` is specified, `mypy_config` will be used for these files.
   Use a path relative to `noxfile.py`.
   Note that antsibull-nox does not currently supply a default config file,
   but this might change in the future.

@@ -389,26 +389,36 @@ def _add_sessions(sessions: Sessions, cconfig: CollectionConfig) -> None:
         code_files: FileCollector | None = None
         if sessions.lint.code_files != "default":
             code_files = FileCollector.create(sessions.lint.code_files, glob=True)
+        module_files: FileCollector | None = None
+        if sessions.lint.module_files != "default":
+            module_files = FileCollector.create(sessions.lint.module_files, glob=True)
         add_lint_sessions(
             make_lint_default=sessions.lint.default,
             code_files=code_files,
+            module_files=module_files,
             extra_code_files=sessions.lint.extra_code_files,
             run_isort=sessions.lint.run_isort,
             isort_config=sessions.lint.isort_config,
+            isort_modules_config=sessions.lint.isort_modules_config,
             isort_package=_convert_package_name(sessions.lint.isort_package),
             run_black=sessions.lint.run_black,
             run_black_modules=sessions.lint.run_black_modules,
             black_config=sessions.lint.black_config,
+            black_modules_config=sessions.lint.black_modules_config,
             black_package=_convert_package_name(sessions.lint.black_package),
             run_ruff_format=sessions.lint.run_ruff_format,
             ruff_format_config=sessions.lint.ruff_format_config
             or sessions.lint.ruff_config,
+            ruff_format_modules_config=sessions.lint.ruff_format_modules_config
+            or sessions.lint.ruff_modules_config,
             ruff_format_package=_convert_package_name(
                 sessions.lint.ruff_format_package or sessions.lint.ruff_package
             ),
             run_ruff_autofix=sessions.lint.run_ruff_autofix,
             ruff_autofix_config=sessions.lint.ruff_autofix_config
             or sessions.lint.ruff_config,
+            ruff_autofix_modules_config=sessions.lint.ruff_autofix_modules_config
+            or sessions.lint.ruff_modules_config,
             ruff_autofix_package=_convert_package_name(
                 sessions.lint.ruff_autofix_package or sessions.lint.ruff_package
             ),
@@ -416,11 +426,14 @@ def _add_sessions(sessions: Sessions, cconfig: CollectionConfig) -> None:
             run_ruff_check=sessions.lint.run_ruff_check,
             ruff_check_config=sessions.lint.ruff_check_config
             or sessions.lint.ruff_config,
+            ruff_check_modules_config=sessions.lint.ruff_check_modules_config
+            or sessions.lint.ruff_modules_config,
             ruff_check_package=_convert_package_name(
                 sessions.lint.ruff_check_package or sessions.lint.ruff_package
             ),
             run_flake8=sessions.lint.run_flake8,
             flake8_config=sessions.lint.flake8_config,
+            flake8_modules_config=sessions.lint.flake8_modules_config,
             flake8_package=_convert_package_name(sessions.lint.flake8_package),
             run_pylint=sessions.lint.run_pylint,
             pylint_rcfile=sessions.lint.pylint_rcfile,
@@ -441,6 +454,7 @@ def _add_sessions(sessions: Sessions, cconfig: CollectionConfig) -> None:
             ),
             run_mypy=sessions.lint.run_mypy,
             mypy_config=sessions.lint.mypy_config,
+            mypy_modules_config=sessions.lint.mypy_modules_config,
             mypy_package=_convert_package_name(sessions.lint.mypy_package),
             mypy_ansible_core_package=_convert_package_name(
                 sessions.lint.mypy_ansible_core_package

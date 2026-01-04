@@ -53,6 +53,7 @@ from .utils.packages import (
     normalize_package_type,
 )
 from .utils.paths import (
+    PythonDependencies,
     filter_files_cd,
     filter_paths,
 )
@@ -159,15 +160,55 @@ def add_lint(
     )(lint)
 
 
-def _execute_isort(
+def _get_files(
+    *,
+    code_files: list[Path] | FileCollector,
+    module_files: list[Path] | FileCollector,
+    split_modules: bool,
+    cd_add_python_deps: PythonDependencies = "none",
+) -> tuple[list[Path] | None, list[Path] | None, list[Path] | None]:
+    files: list[Path] | None = None
+    files_modules: list[Path] | None = None
+    files_other: list[Path] | None = None
+    if split_modules:
+        files_modules = filter_paths(
+            code_files,
+            restrict=module_files,
+            extensions=[".py"],
+            with_cd=True,
+            cd_add_python_deps=cd_add_python_deps,
+        )
+        files_other = filter_paths(
+            code_files,
+            remove=module_files,
+            extensions=[".py"],
+            with_cd=True,
+            cd_add_python_deps=cd_add_python_deps,
+        )
+    else:
+        files = filter_paths(
+            code_files,
+            extensions=[".py"],
+            with_cd=True,
+            cd_add_python_deps=cd_add_python_deps,
+        )
+    return files, files_modules, files_other
+
+
+def _execute_isort_for(
     session: nox.Session,
     *,
+    old_cwd: Path,
     root_dir: Path,
     collection_dir: Path,
     run_check: bool,
-    code_files: list[Path] | FileCollector,
+    paths: list[Path],
     isort_config: str | os.PathLike | None,
+    what_for: str = "",
 ) -> None:
+    if not paths:
+        session.warn(f"Skipping isort{what_for} (no files to process)")
+        return
     command: list[str] = [
         "isort",
         "--src",
@@ -179,24 +220,67 @@ def _execute_isort(
         command.extend(
             [
                 "--settings-file",
-                str(relative_to_walk_up(Path(isort_config).resolve(), root_dir)),
+                str(relative_to_walk_up((old_cwd / isort_config).resolve(), root_dir)),
             ]
         )
     command.extend(session.posargs)
-    files = filter_paths(
-        code_files,
-        extensions=[".py"],
-        with_cd=True,
-    )
-    if not files:
-        session.warn("Skipping isort (no files to process)")
-        return
-
     relative_dir = collection_dir.relative_to(root_dir)
+    for file in paths:
+        command.append(str(relative_dir / file))
+    session.run(*command)
+
+
+def _execute_isort(
+    session: nox.Session,
+    *,
+    root_dir: Path,
+    collection_dir: Path,
+    run_check: bool,
+    code_files: list[Path] | FileCollector,
+    module_files: list[Path] | FileCollector,
+    isort_config: str | os.PathLike | None,
+    isort_modules_config: str | os.PathLike | None,
+) -> None:
+    files, files_modules, files_other = _get_files(
+        code_files=code_files,
+        module_files=module_files,
+        split_modules=isort_modules_config is not None
+        and isort_modules_config != isort_config,
+    )
+    old_cwd = Path.cwd()
     with session.chdir(root_dir):
-        for file in files:
-            command.append(str(relative_dir / file))
-        session.run(*command)
+        if files is not None:
+            _execute_isort_for(
+                session,
+                old_cwd=old_cwd,
+                root_dir=root_dir,
+                collection_dir=collection_dir,
+                run_check=run_check,
+                paths=files,
+                isort_config=isort_config,
+            )
+        if files_modules is not None:
+            _execute_isort_for(
+                session,
+                old_cwd=old_cwd,
+                root_dir=root_dir,
+                collection_dir=collection_dir,
+                run_check=run_check,
+                paths=files_modules,
+                isort_config=isort_modules_config or isort_config,
+                what_for=" for modules and module utils",
+            )
+        if files_other is not None:
+            _execute_isort_for(
+                session,
+                old_cwd=old_cwd,
+                root_dir=root_dir,
+                collection_dir=collection_dir,
+                run_check=run_check,
+                paths=files_other,
+                isort_config=isort_config,
+                what_for=" for other files",
+            )
 
 
 def _execute_black_for(
@@ -229,8 +313,13 @@ def _execute_black(
     run_black: bool,
     run_black_modules: bool | None,
     black_config: str | os.PathLike | None,
+    black_modules_config: str | os.PathLike | None,
 ) -> None:
-    if run_black and run_black_modules:
+    if (
+        run_black
+        and run_black_modules
+        and (black_modules_config is None or black_modules_config == black_config)
+    ):
         _execute_black_for(
             session,
             paths=filter_paths(
@@ -267,18 +356,22 @@ def _execute_black(
             session,
             paths=paths,
             run_check=run_check,
-            black_config=black_config,
+            black_config=black_modules_config or black_config,
             what_for=" for modules and module utils",
         )
 
 
-def _execute_ruff_format(
+def _execute_ruff_format_for(
     session: nox.Session,
     *,
     run_check: bool,
-    code_files: list[Path] | FileCollector,
+    files: list[Path],
     ruff_format_config: str | os.PathLike | None,
+    what_for: str = "",
 ) -> None:
+    if not files:
+        session.warn(f"Skipping ruff format{what_for} (no files to process)")
+        return
     command: list[str] = [
         "ruff",
         "format",
@@ -288,28 +381,65 @@ def _execute_ruff_format(
     if ruff_format_config is not None:
         command.extend(["--config", str(ruff_format_config)])
     command.extend(session.posargs)
-    files = filter_paths(
-        code_files,
-        extensions=[".py"],
-        with_cd=True,
-    )
-    if not files:
-        session.warn("Skipping ruff format (no files to process)")
-        return
     command.extend(str(file) for file in files)
     session.run(*command)
 
 
-def _execute_ruff_autofix(
+def _execute_ruff_format(
     session: nox.Session,
     *,
+    run_check: bool,
+    code_files: list[Path] | FileCollector,
+    module_files: list[Path] | FileCollector,
+    ruff_format_config: str | os.PathLike | None,
+    ruff_format_modules_config: str | os.PathLike | None,
+) -> None:
+    files, files_modules, files_other = _get_files(
+        code_files=code_files,
+        module_files=module_files,
+        split_modules=ruff_format_modules_config is not None
+        and ruff_format_modules_config != ruff_format_config,
+    )
+    if files is not None:
+        _execute_ruff_format_for(
+            session,
+            run_check=run_check,
+            files=files,
+            ruff_format_config=ruff_format_config,
+        )
+    if files_modules is not None:
+        _execute_ruff_format_for(
+            session,
+            run_check=run_check,
+            files=files_modules,
+            ruff_format_config=ruff_format_modules_config or ruff_format_config,
+            what_for=" for modules and module utils",
+        )
+    if files_other is not None:
+        _execute_ruff_format_for(
+            session,
+            run_check=run_check,
+            files=files_other,
+            ruff_format_config=ruff_format_config,
+            what_for=" for other files",
+        )
+
+
+def _execute_ruff_autofix_for(
+    session: nox.Session,
+    *,
+    old_cwd: Path,
     root_dir: Path,
     collection_dir: Path,
     run_check: bool,
-    code_files: list[Path] | FileCollector,
+    files: list[Path],
     ruff_autofix_config: str | os.PathLike | None,
     ruff_autofix_select: list[str],
+    what_for: str = "",
 ) -> None:
+    if not files:
+        session.warn(f"Skipping ruff autofix{what_for} (no files to process)")
+        return
     command: list[str] = [
         "ruff",
         "check",
@@ -320,26 +450,77 @@ def _execute_ruff_autofix(
         command.extend(
             [
                 "--config",
-                str(relative_to_walk_up(Path(ruff_autofix_config).resolve(), root_dir)),
+                str(
+                    relative_to_walk_up(
+                        (old_cwd / ruff_autofix_config).resolve(), root_dir
+                    )
+                ),
             ]
         )
     if ruff_autofix_select:
         command.extend(["--select", ",".join(ruff_autofix_select)])
     command.extend(session.posargs)
-    files = filter_paths(
-        code_files,
-        extensions=[".py"],
-        with_cd=True,
-    )
-    if not files:
-        session.warn("Skipping ruff autofix (no files to process)")
-        return
-
     relative_dir = collection_dir.relative_to(root_dir)
+    for file in files:
+        command.append(str(relative_dir / file))
+    session.run(*command)
+
+
+def _execute_ruff_autofix(
+    session: nox.Session,
+    *,
+    root_dir: Path,
+    collection_dir: Path,
+    run_check: bool,
+    code_files: list[Path] | FileCollector,
+    module_files: list[Path] | FileCollector,
+    ruff_autofix_config: str | os.PathLike | None,
+    ruff_autofix_modules_config: str | os.PathLike | None,
+    ruff_autofix_select: list[str],
+) -> None:
+    files, files_modules, files_other = _get_files(
+        code_files=code_files,
+        module_files=module_files,
+        split_modules=ruff_autofix_modules_config is not None
+        and ruff_autofix_modules_config != ruff_autofix_config,
+    )
+    old_cwd = Path.cwd()
     with session.chdir(root_dir):
-        for file in files:
-            command.append(str(relative_dir / file))
-        session.run(*command)
+        if files is not None:
+            _execute_ruff_autofix_for(
+                session,
+                old_cwd=old_cwd,
+                root_dir=root_dir,
+                collection_dir=collection_dir,
+                run_check=run_check,
+                files=files,
+                ruff_autofix_config=ruff_autofix_config,
+                ruff_autofix_select=ruff_autofix_select,
+            )
+        if files_modules is not None:
+            _execute_ruff_autofix_for(
+                session,
+                old_cwd=old_cwd,
+                root_dir=root_dir,
+                collection_dir=collection_dir,
+                run_check=run_check,
+                files=files_modules,
+                ruff_autofix_config=ruff_autofix_modules_config or ruff_autofix_config,
+                ruff_autofix_select=ruff_autofix_select,
+                what_for=" for modules and module utils",
+            )
+        if files_other is not None:
+            _execute_ruff_autofix_for(
+                session,
+                old_cwd=old_cwd,
+                root_dir=root_dir,
+                collection_dir=collection_dir,
+                run_check=run_check,
+                files=files_other,
+                ruff_autofix_config=ruff_autofix_config,
+                ruff_autofix_select=ruff_autofix_select,
+                what_for=" for other files",
+            )
 
 
 def add_formatters(
@@ -349,19 +530,23 @@ def add_formatters(
     # isort:
     run_isort: bool,
     isort_config: str | os.PathLike | None,
+    isort_modules_config: str | os.PathLike | None,
     isort_package: PackageTypeOrList,
     # black:
     run_black: bool,
     run_black_modules: bool | None,
     black_config: str | os.PathLike | None,
+    black_modules_config: str | os.PathLike | None,
     black_package: PackageTypeOrList,
     # ruff format:
     run_ruff_format: bool,
     ruff_format_config: str | os.PathLike | None,
+    ruff_format_modules_config: str | os.PathLike | None,
     ruff_format_package: PackageTypeOrList,
     # ruff autofix:
     run_ruff_autofix: bool,
     ruff_autofix_config: str | os.PathLike | None,
+    ruff_autofix_modules_config: str | os.PathLike | None,
     ruff_autofix_package: PackageTypeOrList,
     ruff_autofix_select: list[str],
 ) -> None:
@@ -442,7 +627,9 @@ def add_formatters(
                 collection_dir=collection_path,
                 run_check=run_check,
                 code_files=code_files,
+                module_files=module_files,
                 isort_config=isort_config,
+                isort_modules_config=isort_modules_config,
             )
         if run_black or run_black_modules:
             _execute_black(
@@ -453,13 +640,16 @@ def add_formatters(
                 run_black=run_black,
                 run_black_modules=run_black_modules,
                 black_config=black_config,
+                black_modules_config=black_modules_config,
             )
         if run_ruff_format:
             _execute_ruff_format(
                 session,
                 run_check=run_check,
                 code_files=code_files,
+                module_files=module_files,
                 ruff_format_config=ruff_format_config,
+                ruff_format_modules_config=ruff_format_modules_config,
             )
         if run_ruff_autofix:
             _execute_ruff_autofix(
@@ -468,7 +658,9 @@ def add_formatters(
                 collection_dir=collection_path,
                 run_check=run_check,
                 code_files=code_files,
+                module_files=module_files,
                 ruff_autofix_config=ruff_autofix_config,
+                ruff_autofix_modules_config=ruff_autofix_modules_config,
                 ruff_autofix_select=ruff_autofix_select,
             )
 
@@ -495,10 +687,12 @@ def add_codeqa(  # noqa: C901
     # ruff check:
     run_ruff_check: bool,
     ruff_check_config: str | os.PathLike | None,
+    ruff_check_modules_config: str | os.PathLike | None,
     ruff_check_package: PackageTypeOrList,
     # flake8:
     run_flake8: bool,
     flake8_config: str | os.PathLike | None,
+    flake8_modules_config: str | os.PathLike | None,
     flake8_package: PackageTypeOrList,
     # pylint:
     run_pylint: bool,
@@ -557,75 +751,148 @@ def add_codeqa(  # noqa: C901
                 )
         return deps
 
-    def execute_ruff_check(
+    def execute_ruff_check_impl(
         session: nox.Session,
         prepared_collections: CollectionSetup,
-    ) -> None:
+        *,
+        files: list[Path],
+        config: str | os.PathLike | None,
+        what_for: str = "",
+    ) -> list[Message]:
+        if not files:
+            session.warn(f"Skipping ruff check{what_for} (no files to process)")
+            return []
         command: list[str] = [
             "ruff",
             "check",
             "--no-respect-gitignore",
             "--output-format=json",
         ]
-        if ruff_check_config is not None:
+        if config is not None:
             command.extend(
                 [
                     "--config",
-                    os.path.join(
-                        prepared_collections.current_collection.path, ruff_check_config
-                    ),
+                    os.path.join(prepared_collections.current_collection.path, config),
                 ]
             )
         command.extend(session.posargs)
-        files = filter_paths(
-            code_files,
-            extensions=[".py"],
-            with_cd=True,
+        command.extend(
+            str(path) for path in prepared_collections.prefix_current_paths(files)
         )
-        if not files:
-            session.warn("Skipping ruff check (no files to process)")
-            return
+        # https://docs.astral.sh/ruff/linter/#exit-codes
+        output = session.run(*command, silent=True, success_codes=[0, 1])
+
+        return (
+            parse_ruff_check_errors(
+                source_path=prepared_collections.current_path,
+                output=output,
+            )
+            if output
+            else []
+        )
+
+    def execute_ruff_check(
+        session: nox.Session,
+        prepared_collections: CollectionSetup,
+    ) -> None:
+        files, files_modules, files_other = _get_files(
+            code_files=code_files,
+            module_files=module_files,
+            split_modules=ruff_check_modules_config is not None
+            and ruff_check_modules_config != ruff_check_config,
+        )
+
+        messages = []
         with session.chdir(prepared_collections.current_place), silence_run_verbosity():
-            command.extend(
-                str(path) for path in prepared_collections.prefix_current_paths(files)
-            )
-            # https://docs.astral.sh/ruff/linter/#exit-codes
-            output = session.run(*command, silent=True, success_codes=[0, 1])
+            if files is not None:
+                messages.extend(
+                    execute_ruff_check_impl(
+                        session,
+                        prepared_collections,
+                        files=files,
+                        config=ruff_check_config,
+                    )
+                )
+            if files_modules is not None:
+                messages.extend(
+                    execute_ruff_check_impl(
+                        session,
+                        prepared_collections,
+                        files=files_modules,
+                        config=ruff_check_modules_config or ruff_check_config,
+                        what_for=" for modules and module utils",
+                    )
+                )
+            if files_other is not None:
+                messages.extend(
+                    execute_ruff_check_impl(
+                        session,
+                        prepared_collections,
+                        files=files_other,
+                        config=ruff_check_config,
+                        what_for=" for other files",
+                    )
+                )
 
-        if output:
-            print_messages(
-                session=session,
-                messages=parse_ruff_check_errors(
-                    source_path=prepared_collections.current_path,
-                    output=output,
-                ),
-                fail_msg="Ruff failed",
-            )
+        print_messages(
+            session=session,
+            messages=messages,
+            fail_msg="Ruff check failed",
+        )
 
-    def execute_flake8(session: nox.Session) -> None:
+    def execute_flake8_impl(
+        session: nox.Session,
+        *,
+        files: list[Path],
+        config: str | os.PathLike | None,
+        what_for: str = "",
+    ) -> None:
+        if not files:
+            session.warn(f"Skipping flake8{what_for} (no files to process)")
+            return
         command: list[str] = [
             "flake8",
         ]
-        if flake8_config is not None:
-            command.extend(["--config", str(flake8_config)])
+        if config is not None:
+            command.extend(["--config", str(config)])
         command.extend(session.posargs)
-        files = filter_paths(
-            code_files,
-            extensions=[".py"],
-            with_cd=True,
-        )
-        if not files:
-            session.warn("Skipping flake8 (no files to process)")
-            return
         command.extend(str(file) for file in files)
         session.run(*command)
+
+    def execute_flake8(session: nox.Session) -> None:
+        files, files_modules, files_other = _get_files(
+            code_files=code_files,
+            module_files=module_files,
+            split_modules=flake8_modules_config is not None
+            and flake8_modules_config != flake8_config,
+        )
+        if files is not None:
+            execute_flake8_impl(session, files=files, config=flake8_config)
+        if files_modules is not None:
+            execute_flake8_impl(
+                session,
+                files=files_modules,
+                config=flake8_modules_config or flake8_config,
+                what_for=" for modules and module utils",
+            )
+        if files_other is not None:
+            execute_flake8_impl(
+                session,
+                files=files_other,
+                config=flake8_config,
+                what_for=" for other files",
+            )
 
     def execute_pylint_impl(
         session: nox.Session,
         prepared_collections: CollectionSetup,
         config: os.PathLike | str | None,
         paths: list[Path],
+        what_for: str = "",
     ) -> list[Message]:
+        if not paths:
+            session.warn(f"Skipping pylint{what_for} (no files to process)")
+            return []
         command = ["pylint"]
         if config is not None:
             command.extend(
@@ -658,57 +925,43 @@ def add_codeqa(  # noqa: C901
     def execute_pylint(
         session: nox.Session, prepared_collections: CollectionSetup
     ) -> None:
-        if pylint_modules_rcfile is not None and pylint_modules_rcfile != pylint_rcfile:
-            # Only run pylint twice when using different configurations
-            module_paths = filter_paths(
-                code_files_pylint,
-                restrict=module_files,
-                extensions=[".py"],
-                with_cd=True,
-                cd_add_python_deps="importing-changed",
-            )
-            other_paths = filter_paths(
-                code_files_pylint,
-                remove=module_files,
-                extensions=[".py"],
-                with_cd=True,
-                cd_add_python_deps="importing-changed",
-            )
-            if not module_paths:
-                session.warn("Skipping pylint for modules (no files to process)")
-            if not other_paths:
-                session.warn("Skipping pylint for other files (no files to process)")
-            if not module_paths and not other_paths:
-                return
-        else:
-            # Otherwise run it only once using the general configuration
-            module_paths = []
-            other_paths = filter_paths(
-                code_files_pylint,
-                extensions=[".py"],
-                with_cd=True,
-                cd_add_python_deps="importing-changed",
-            )
-            if not other_paths:
-                session.warn("Skipping pylint (no files to process)")
-                return
+        files, files_modules, files_other = _get_files(
+            code_files=code_files_pylint,
+            module_files=module_files,
+            split_modules=pylint_modules_rcfile is not None
+            and pylint_modules_rcfile != pylint_rcfile,
+            cd_add_python_deps="importing-changed",
+        )
 
+        messages = []
         with session.chdir(prepared_collections.current_place):
-            messages = []
-            if module_paths:
+            if files is not None:
                 messages.extend(
                     execute_pylint_impl(
                         session,
                         prepared_collections,
                         pylint_modules_rcfile or pylint_rcfile,
-                        module_paths,
+                        files,
                     )
                 )
-
-            if other_paths:
+            if files_modules is not None:
                 messages.extend(
                     execute_pylint_impl(
-                        session, prepared_collections, pylint_rcfile, other_paths
+                        session,
+                        prepared_collections,
+                        pylint_modules_rcfile or pylint_rcfile,
+                        files_modules,
+                        what_for=" for modules and module utils",
+                    )
+                )
+            if files_other is not None:
+                messages.extend(
+                    execute_pylint_impl(
+                        session,
+                        prepared_collections,
+                        pylint_modules_rcfile or pylint_rcfile,
+                        files_other,
+                        what_for=" for other files",
                     )
                 )
 
@@ -885,9 +1138,10 @@ def add_yamllint(
 def add_typing(
     *,
     code_files: list[Path] | FileCollector,
-    module_files: list[Path] | FileCollector,  # pylint: disable=unused-argument
+    module_files: list[Path] | FileCollector,
     run_mypy: bool,
     mypy_config: str | os.PathLike | None,
+    mypy_modules_config: str | os.PathLike | None,
     mypy_package: PackageTypeOrList,
     mypy_ansible_core_package: PackageTypeOrList | None,
     mypy_extra_deps: list[str | PackageType],
@@ -924,54 +1178,94 @@ def add_typing(
                 )
         return deps
 
+    def execute_mypy_impl(
+        session: nox.Session,
+        prepared_collections: CollectionSetup,
+        *,
+        files: list[Path],
+        config: str | os.PathLike | None,
+        what_for: str = "",
+    ) -> list[Message]:
+        files = prepared_collections.prefix_current_paths(files)
+        if not files:
+            session.warn(f"Skipping mypy{what_for} (no files to process)")
+            return []
+        command = ["mypy"]
+        if config is not None:
+            command.extend(
+                [
+                    "--config-file",
+                    os.path.join(prepared_collections.current_collection.path, config),
+                ]
+            )
+        command.append("--namespace-packages")
+        command.append("--explicit-package-bases")
+        command.extend(["--output", "json"])
+        command.extend(session.posargs)
+        command.extend(str(file) for file in files)
+        with silence_run_verbosity():
+            output = session.run(
+                *command,
+                env={"MYPYPATH": str(prepared_collections.current_place)},
+                silent=True,
+                success_codes=(0, 1, 2),
+            )
+
+        return (
+            parse_mypy_errors(
+                root_path=prepared_collections.current_place,
+                source_path=prepared_collections.current_path,
+                output=output,
+            )
+            if output
+            else []
+        )
+
     def execute_mypy(
         session: nox.Session, prepared_collections: CollectionSetup
     ) -> None:
-        # Run mypy
-        files = filter_paths(
-            code_files,
-            extensions=[".py"],
-            with_cd=True,
+        files, files_modules, files_other = _get_files(
+            code_files=code_files,
+            module_files=module_files,
+            split_modules=mypy_modules_config is not None
+            and mypy_modules_config != mypy_config,
             cd_add_python_deps="importing-changed",
         )
+
+        messages = []
         with session.chdir(prepared_collections.current_place):
-            files = prepared_collections.prefix_current_paths(files)
-            if not files:
-                session.warn("Skipping mypy (no files to process)")
-                return
-            command = ["mypy"]
-            if mypy_config is not None:
-                command.extend(
-                    [
-                        "--config-file",
-                        os.path.join(
-                            prepared_collections.current_collection.path, mypy_config
-                        ),
-                    ]
+            if files is not None:
+                messages.extend(
+                    execute_mypy_impl(
+                        session, prepared_collections, files=files, config=mypy_config
+                    )
                 )
-            command.append("--namespace-packages")
-            command.append("--explicit-package-bases")
-            command.extend(["--output", "json"])
-            command.extend(session.posargs)
-            command.extend(str(file) for file in files)
-            with silence_run_verbosity():
-                output = session.run(
-                    *command,
-                    env={"MYPYPATH": str(prepared_collections.current_place)},
-                    silent=True,
-                    success_codes=(0, 1, 2),
+            if files_modules is not None:
+                messages.extend(
+                    execute_mypy_impl(
+                        session,
+                        prepared_collections,
+                        files=files_modules,
+                        config=mypy_modules_config or mypy_config,
+                        what_for=" for modules and module utils",
+                    )
+                )
+            if files_other is not None:
+                messages.extend(
+                    execute_mypy_impl(
+                        session,
+                        prepared_collections,
+                        files=files_other,
+                        config=mypy_config,
+                        what_for=" for other files",
+                    )
                 )
 
-        if output:
-            print_messages(
-                session=session,
-                messages=parse_mypy_errors(
-                    root_path=prepared_collections.current_place,
-                    source_path=prepared_collections.current_path,
-                    output=output,
-                ),
-                fail_msg="Mypy failed",
-            )
+        print_messages(
+            session=session,
+            messages=messages,
+            fail_msg="Mypy failed",
+        )
 
     def typing(session: nox.Session) -> None:
         install(session, *compose_dependencies(session))
@@ -1028,28 +1322,34 @@ def add_lint_sessions(
     # isort:
     run_isort: bool = True,
     isort_config: str | os.PathLike | None = None,
+    isort_modules_config: str | os.PathLike | None = None,
     isort_package: PackageTypeOrList = "isort",
     # black:
     run_black: bool = True,
     run_black_modules: bool | None = None,
     black_config: str | os.PathLike | None = None,
+    black_modules_config: str | os.PathLike | None = None,
     black_package: PackageTypeOrList = "black",
     # ruff format:
     run_ruff_format: bool = False,
     ruff_format_config: str | os.PathLike | None = None,
+    ruff_format_modules_config: str | os.PathLike | None = None,
     ruff_format_package: PackageTypeOrList = "ruff",
     # ruff autofix:
     run_ruff_autofix: bool = False,
     ruff_autofix_config: str | os.PathLike | None = None,
+    ruff_autofix_modules_config: str | os.PathLike | None = None,
     ruff_autofix_package: PackageTypeOrList = "ruff",
     ruff_autofix_select: list[str] | None = None,
     # ruff check:
     run_ruff_check: bool = False,
     ruff_check_config: str | os.PathLike | None = None,
+    ruff_check_modules_config: str | os.PathLike | None = None,
     ruff_check_package: PackageTypeOrList = "ruff",
     # flake8:
     run_flake8: bool = True,
     flake8_config: str | os.PathLike | None = None,
+    flake8_modules_config: str | os.PathLike | None = None,
     flake8_package: PackageTypeOrList = "flake8",
     # pylint:
     run_pylint: bool = True,
@@ -1069,6 +1369,7 @@ def add_lint_sessions(
     # mypy:
     run_mypy: bool = True,
     mypy_config: str | os.PathLike | None = None,
+    mypy_modules_config: str | os.PathLike | None = None,
     mypy_package: PackageTypeOrList = "mypy",
     mypy_ansible_core_package: PackageTypeOrList | None = "ansible-core",
     mypy_extra_deps: list[str | PackageType] | None = None,
@@ -1120,16 +1421,20 @@ def add_lint_sessions(
             module_files=module_files,
             run_isort=run_isort,
             isort_config=isort_config,
+            isort_modules_config=isort_modules_config,
             isort_package=isort_package,
             run_black=run_black,
             run_black_modules=run_black_modules,
             black_config=black_config,
+            black_modules_config=black_modules_config,
             black_package=black_package,
             run_ruff_format=run_ruff_format,
             ruff_format_config=ruff_format_config,
+            ruff_format_modules_config=ruff_format_modules_config,
             ruff_format_package=ruff_format_package,
             run_ruff_autofix=run_ruff_autofix,
             ruff_autofix_config=ruff_autofix_config,
+            ruff_autofix_modules_config=ruff_autofix_modules_config,
             ruff_autofix_package=ruff_autofix_package,
             ruff_autofix_select=ruff_autofix_select or [],
         )
@@ -1141,9 +1446,11 @@ def add_lint_sessions(
             module_files=module_files,
             run_ruff_check=run_ruff_check,
             ruff_check_config=ruff_check_config,
+            ruff_check_modules_config=ruff_check_modules_config,
             ruff_check_package=ruff_check_package,
             run_flake8=run_flake8,
             flake8_config=flake8_config,
+            flake8_modules_config=flake8_modules_config,
             flake8_package=flake8_package,
             run_pylint=run_pylint,
             pylint_rcfile=pylint_rcfile,
@@ -1170,6 +1477,7 @@ def add_lint_sessions(
             module_files=module_files,
             run_mypy=run_mypy,
             mypy_config=mypy_config,
+            mypy_modules_config=mypy_modules_config,
             mypy_package=mypy_package,
             mypy_ansible_core_package=mypy_ansible_core_package,
             mypy_extra_deps=mypy_extra_deps or [],
