@@ -57,10 +57,10 @@ def add_python_deps(files: list[Path], *, forward: bool, cwd: Path) -> None:
 
 
 def filter_paths(
-    paths: list[Path],
+    paths: list[Path] | FileCollector,
     /,
-    remove: list[Path] | None = None,
-    restrict: list[Path] | None = None,
+    remove: list[Path] | FileCollector | None = None,
+    restrict: list[Path] | FileCollector | None = None,
     extensions: list[str] | None = None,
     with_cd: bool = False,
     cd_add_python_deps: PythonDependencies = "none",
@@ -68,7 +68,11 @@ def filter_paths(
     """
     Modifies a list of paths by restricting to and/or removing paths.
     """
-    collector = FileCollector(paths=[Path(path) for path in paths])
+    collector = (
+        paths.clone()
+        if isinstance(paths, FileCollector)
+        else FileCollector(paths=[Path(path) for path in paths])
+    )
     if with_cd:
         cwd = Path.cwd()
         changed_files = get_changes(relative_to=cwd)

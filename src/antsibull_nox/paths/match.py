@@ -2,7 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or
 # https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2025, Ansible Project
+# SPDX-FileCopyrightText: 2026, Ansible Project
 
 """
 Path matchers.
@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import dataclasses
 import typing as t
-from collections.abc import Sequence
+from collections.abc import Iterable
 from pathlib import Path
 
 from .utils import path_walk
@@ -28,21 +28,6 @@ def _split_path(path: Path) -> tuple[str, ...]:
         parts.append(path.name)
         path = path.parent
     return tuple(reversed(parts))
-
-
-def _get_common_prefix_length(first: tuple[str, ...], second: tuple[str, ...]) -> int:
-    max_prefix_length = min(len(first), len(second))
-    for i in range(max_prefix_length):
-        if first[i] != second[i]:
-            return i
-    return max_prefix_length
-
-
-def _starts_with(what: tuple[str, ...], prefix: tuple[str, ...]) -> bool:
-    """
-    Test whether ``what`` starts with ``prefix``.
-    """
-    return len(what) >= len(prefix) and all(w == p for w, p in zip(what, prefix))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -72,7 +57,7 @@ class _FileSet:
     infos: dict[tuple[str, ...], _FileInfo]
 
     @classmethod
-    def create(cls, paths: Sequence[Path]) -> t.Self:
+    def create(cls, paths: Iterable[Path]) -> t.Self:
         """
         Create a file set from a sequence of paths.
         """
@@ -83,6 +68,23 @@ class _FileSet:
             if file not in infos:
                 files.append(file)
                 infos[file] = _FileInfo.create(path)
+        return cls(
+            files=files,
+            infos=infos,
+        )
+
+    @classmethod
+    def create_from_split(cls, *, split_files: Iterable[tuple[str, ...]]) -> t.Self:
+        """
+        Create a file set from a sequence of split paths.
+        """
+        files = []
+        infos = {}
+        root = Path(".")
+        for file in split_files:
+            if file not in infos:
+                files.append(file)
+                infos[file] = _FileInfo.create(root.joinpath(*file))
         return cls(
             files=files,
             infos=infos,
@@ -114,7 +116,7 @@ class _FileSet:
                 self.files.append(file)
                 self.infos[file] = info
 
-    def merge_paths(self, *, paths: Sequence[Path]) -> None:
+    def merge_paths(self, *, paths: Iterable[Path]) -> None:
         """
         Merge this file set with a sequence of paths.
         """
@@ -136,7 +138,7 @@ class _ExtensionChecker:
     Allows to test filenames for a set of extensions.
     """
 
-    def __init__(self, *, extensions: Sequence[str]) -> None:
+    def __init__(self, *, extensions: Iterable[str]) -> None:
         """
         Create an extension checker, given a list of extensions (without leading period).
         """
@@ -149,6 +151,135 @@ class _ExtensionChecker:
         return any(filename.endswith(ext) for ext in self._extensions)
 
 
+@dataclasses.dataclass(frozen=False)
+class _FileTreeNode:
+    """
+    Represent a node in a file tree.
+    """
+
+    file: tuple[str, ...]
+    contained: bool
+    children: dict[str, _FileTreeNode]
+
+    def iterate(self) -> t.Generator[tuple[str, ...]]:
+        """
+        Generate all contained files.
+        """
+        if self.contained:
+            yield self.file
+        for child in self.children.values():
+            yield from child.iterate()
+
+
+@dataclasses.dataclass(frozen=False)
+class _FileTree:
+    """
+    Represent a set of files as a hierarchical tree.
+    """
+
+    root: _FileTreeNode
+
+    def __init__(self) -> None:
+        self.root = _FileTreeNode(file=(), contained=False, children={})
+
+    def add(self, file: tuple[str, ...], *, keep_pruned: bool = False) -> None:
+        """
+        Add a file to the tree.
+
+        If ``keep_pruned == True``, all children below an entry will be removed.
+        """
+        node = self.root
+        for index, part in enumerate(file):
+            if keep_pruned and node.contained:
+                return
+            next_node = node.children.get(part)
+            if next_node is None:
+                next_node = _FileTreeNode(
+                    file=file[: index + 1], contained=False, children={}
+                )
+                node.children[part] = next_node
+            node = next_node
+        node.contained = True
+        if keep_pruned:
+            node.children.clear()
+
+    @classmethod
+    def create_from_files(
+        cls, files: Iterable[tuple[str, ...]], *, keep_pruned: bool = False
+    ) -> t.Self:
+        """
+        Create a file tree from a sequence of files.
+        """
+        result = cls()
+        for file in files:
+            result.add(file, keep_pruned=keep_pruned)
+        return result
+
+    @classmethod
+    def create_from_paths(
+        cls, paths: Iterable[Path], *, keep_pruned: bool = False
+    ) -> t.Self:
+        """
+        Create a file tree from a sequence of paths.
+        """
+        result = cls()
+        for path in paths:
+            file = _split_path(path)
+            result.add(file, keep_pruned=keep_pruned)
+        return result
+
+    def find_closest(self, file: tuple[str, ...]) -> tuple[tuple[str, ...], bool]:
+        """
+        Find the closest match to the file in the tree.
+
+        Return a tuple ``(closest_match, closest_match_contained_in_tree)``.
+        """
+        node = self.root
+        for part in file:
+            next_node = node.children.get(part)
+            if next_node is None:
+                break
+            node = next_node
+        return node.file, node.contained
+
+    def has_or_has_children(self, file: tuple[str, ...]) -> bool:
+        """
+        Check if a file is part of the tree, or has children inside the tree
+        (i.e. files in the tree start with the given file).
+        """
+        path, _contained = self.find_closest(file)
+        return len(path) == len(file)
+
+    def has_or_is_child(self, file: tuple[str, ...]) -> bool:
+        """
+        Check if a file is part of the tree, or is a child of something in the tree.
+        """
+        node = self.root
+        for part in file:
+            if node.contained:
+                return True
+            next_node = node.children.get(part)
+            if next_node is None:
+                return False
+            node = next_node
+        return node.contained
+
+    def iterate(
+        self, *, prefix: tuple[str, ...] | None = None
+    ) -> t.Generator[tuple[str, ...]]:
+        """
+        Generate all contained files.
+        """
+        node = self.root
+        if prefix is not None:
+            for part in prefix:
+                next_node = node.children.get(part)
+                if next_node is None:
+                    return
+                node = next_node
+        yield from node.iterate()
+
+
 class FileCollector:
     """
     Modifies a list of paths by restricting to and/or removing paths.
@@ -156,46 +287,71 @@ class FileCollector:
     The paths can point to directories or files.
     """
 
-    def __init__(self, *, paths: list[Path]) -> None:
+    def __init__(self, *, paths: list[Path] | _FileSet) -> None:
         """
         Create a list of paths.
         """
-        self._paths = _FileSet.create(paths)
+        self._paths = paths if isinstance(paths, _FileSet) else _FileSet.create(paths)
 
-    def restrict(self, *, paths: list[Path]) -> None:
+    def clone(self) -> FileCollector:
+        """
+        Create a copy of the file collector.
+        """
+        return FileCollector(paths=self._paths.clone())
+
+    @classmethod
+    def create(cls, sources: Iterable[str], *, glob: bool = True) -> t.Self:
+        """
+        Create a list of paths from strings with potential globbing.
+        """
+        # Collect files in tree
+        tree = _FileTree()
+        root = Path(".")
+        for source in sources:
+            if glob:
+                for path in root.glob(source):
+                    tree.add(_split_path(path), keep_pruned=True)
+            else:
+                tree.add(_split_path(Path(source)), keep_pruned=True)
+        # Create set
+        return cls(paths=_FileSet.create_from_split(split_files=list(tree.iterate())))
+
+    @staticmethod
+    def _get_pruned_tree(paths: list[Path] | FileCollector) -> _FileTree:
+        if isinstance(paths, FileCollector):
+            return _FileTree.create_from_files(
+                paths._paths.files, keep_pruned=True  # pylint: disable=protected-access
+            )
+        return _FileTree.create_from_paths(paths, keep_pruned=True)
+
+    def restrict(self, *, paths: list[Path] | FileCollector) -> None:
         """
         Restrict the list of paths to the given list of paths.
         """
-        paths_set = _FileSet.create(paths)
+        paths_tree = self._get_pruned_tree(paths)
         files: set[tuple[str, ...]] = set()
         path_files: set[tuple[str, ...]] = set()
         for file in self._paths.files:
-            for path in paths_set.files:
-                cpl = _get_common_prefix_length(file, path)
-                if cpl == len(path):
-                    files.add(file)
-                    break
-                if cpl == len(file):
-                    path_files.add(path)
+            path, contained = paths_tree.find_closest(file)
+            if contained:
+                files.add(file)
+            elif len(path) == len(file):
+                path_files.update(paths_tree.iterate(prefix=path))
         self._paths = self._paths.subset(files)
         if path_files:
-            self._paths.merge_set(paths_set.subset(path_files))
-
-    @staticmethod
-    def _match(file: tuple[str, ...], paths_set: _FileSet) -> bool:
-        return any(_starts_with(file, other) for other in paths_set.files)
+            self._paths.merge_set(_FileSet.create_from_split(split_files=path_files))
 
     def _scan_remove_paths(
-        self, path: Path, *, remove: _FileSet, extensions: _ExtensionChecker | None
+        self, path: Path, *, remove: _FileTree, extensions: _ExtensionChecker | None
     ) -> list[Path]:
         result = []
         for root, dirs, files in path_walk(path, top_down=True):
             root_file = _split_path(root)
-            if self._match(root_file, remove):
+            if remove.has_or_is_child(root_file):
                 # This should never happen anyway, since it's already covered by other cases
                 dirs[:] = []  # pragma: no cover
                 continue  # pragma: no cover
-            if all(not _starts_with(check, root_file) for check in remove.files):
+            if not remove.has_or_has_children(root_file):
                 dirs[:] = []  # do not iterate deeper
                 result.append(root)
                 continue
@@ -203,7 +359,7 @@ class FileCollector:
                 if extensions and not extensions.has(file):
                     continue
                 file_file = root_file + (file,)
-                if not self._match(file_file, remove):
+                if not remove.has_or_is_child(file_file):
                     result.append(root / file)
             for directory in list(dirs):
                 # We should probably use .gitignore here...
@@ -211,12 +367,14 @@ class FileCollector:
                     dirs.remove(directory)
                     continue
                 directory_file = root_file + (directory,)
-                if self._match(directory_file, remove):
+                if remove.has_or_is_child(directory_file):
                     dirs.remove(directory)
                     continue
         return result
 
-    def remove(self, *, paths: list[Path], extensions: list[str] | None = None) -> None:
+    def remove(
+        self, *, paths: list[Path] | FileCollector, extensions: list[str] | None = None
+    ) -> None:
         """
         Restrict/refine the list of paths by removing a given list of paths.
 
@@ -226,27 +384,19 @@ class FileCollector:
         extensions_checker = (
             _ExtensionChecker(extensions=extensions) if extensions is not None else None
         )
-        paths_set = _FileSet.create(paths)
+        paths_tree = self._get_pruned_tree(paths)
         files = set()
         other_files = []
         for file, info in self._paths.infos.items():
-            remove_file = False
-            remove_subset = []
-            for path in paths_set.files:
-                cpl = _get_common_prefix_length(file, path)
-                if cpl == len(path):
-                    remove_file = True
-                    break
-                if cpl == len(file):
-                    remove_subset.append(path)
-            if remove_file:
+            path, contained = paths_tree.find_closest(file)
+            if contained:
                 continue
-            if not info.is_dir or not remove_subset:
+            if not info.is_dir or len(path) != len(file):
                 files.add(file)
                 continue
             other_files.extend(
                 self._scan_remove_paths(
-                    info.path, remove=paths_set, extensions=extensions_checker
+                    info.path, remove=paths_tree, extensions=extensions_checker
                 )
             )
         self._paths = self._paths.subset(files)

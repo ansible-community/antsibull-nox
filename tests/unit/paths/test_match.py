@@ -2,7 +2,7 @@
 # GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or
 # https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2025, Ansible Project
+# SPDX-FileCopyrightText: 2026, Ansible Project
 
 # pylint: disable=missing-function-docstring
 
@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from antsibull_nox.paths.match import FileCollector, _FileSet
+from antsibull_nox.paths.match import FileCollector, _FileSet, _FileTree
 
 from ..utils import chdir
 
@@ -25,6 +25,9 @@ def test_FileSet() -> None:
     fs1 = _FileSet.create([Path("foo")])
     fs2 = _FileSet.create([Path("bar")])
     fs3 = _FileSet.create([Path("foo"), Path("bar")])
+
+    fs = _FileSet.create_from_split(split_files=[("foo",), ("foo",)])
+    assert fs == fs1
 
     assert fs3.subset({("foo",)}) == fs1
     assert fs3.subset({("bar",)}) == fs2
@@ -44,6 +47,54 @@ def test_FileSet() -> None:
     fs = fs1.clone()
     fs.merge_paths(paths=[Path("bar")])
     assert fs == fs3
+
+
+def test_FileTree() -> None:
+    ft = _FileTree.create_from_paths(
+        [
+            Path("foo/bar"),
+            Path("foo"),
+            Path("foo/bam"),
+            Path("bam/baz/bar"),
+        ],
+        keep_pruned=True,
+    )
+    assert sorted(ft.iterate()) == [("bam", "baz", "bar"), ("foo",)]
+
+    assert ft.has_or_has_children(())
+    assert not ft.has_or_has_children(("bar",))
+    assert ft.has_or_has_children(("foo",))
+    assert not ft.has_or_has_children(("foo", "bar"))
+    assert not ft.has_or_has_children(("foo", "baz"))
+    assert ft.has_or_has_children(("bam",))
+    assert not ft.has_or_has_children(("bam", "bar"))
+    assert ft.has_or_has_children(("bam", "baz"))
+    assert ft.has_or_has_children(("bam", "baz", "bar"))
+    assert not ft.has_or_has_children(("bam", "baz", "bar", "boom"))
+
+    assert not ft.has_or_is_child(())
+    assert not ft.has_or_is_child(("bar",))
+    assert ft.has_or_is_child(("foo",))
+    assert ft.has_or_is_child(("foo", "bar"))
+    assert ft.has_or_is_child(("foo", "baz"))
+    assert not ft.has_or_is_child(("bam",))
+    assert not ft.has_or_is_child(("bam", "bar"))
+    assert not ft.has_or_is_child(("bam", "baz"))
+    assert ft.has_or_is_child(("bam", "baz", "bar"))
+    assert ft.has_or_is_child(("bam", "baz", "bar", "boom"))
+
+    assert sorted(ft.iterate(prefix=("foo", "foo"))) == []
+
+    ft = _FileTree.create_from_paths(
+        [
+            Path("foo/bar"),
+            Path("foo"),
+            Path("foo/bam"),
+            Path("."),
+        ],
+        keep_pruned=False,
+    )
+    assert sorted(ft.iterate()) == [(), ("foo",), ("foo", "bam"), ("foo", "bar")]
 
 
 @pytest.fixture(name="path_structure", scope="module")
@@ -131,6 +182,8 @@ def test_get_paths(
     result = [str(path) for path in fc.get_paths()]
     assert result == expected_paths
 
+    assert fc.clone().get_paths() == fc.get_paths()
+
 
 TEST_GET_EXISTING: list[tuple[list[str], list[str]]] = [
     (
@@ -175,6 +228,21 @@ TEST_RESTRICT: list[tuple[list[str], list[str], list[str]]] = [
         ["foo"],
     ),
     (
+        ["foo/bar"],
+        ["foo"],
+        ["foo/bar"],
+    ),
+    (
+        ["bam", "bam/foo/bar", "bar"],
+        ["bam/foo"],
+        ["bam/foo", "bam/foo/bar"],
+    ),
+    (
+        ["."],
+        ["foo/bar", "foo", "foo/bam"],
+        ["foo"],
+    ),
+    (
         ["foo", "bar"],
         ["foo", "bar/baz", "bar/bam", "bam"],
         ["bar/bam", "bar/baz", "foo"],
@@ -188,6 +256,11 @@ TEST_RESTRICT: list[tuple[list[str], list[str], list[str]]] = [
         ["foo"],
         ["foo/bam", "foo/bar"],
         ["foo/bam", "foo/bar"],
+    ),
+    (
+        ["foo"],
+        ["foo"],
+        ["foo"],
     ),
 ]
 
@@ -204,6 +277,13 @@ def test_restrict(
     fc = FileCollector(paths=[Path(path) for path in start_paths])
     fc.restrict(paths=[Path(path) for path in restrict_paths])
     result = sorted(str(path) for path in fc.get_paths())
+    assert result == expected_paths
+
+    # Alternative way
+    fc1 = FileCollector(paths=[Path(path) for path in start_paths])
+    fc2 = FileCollector(paths=[Path(path) for path in restrict_paths])
+    fc1.restrict(paths=fc2)
+    result = sorted(str(path) for path in fc1.get_paths())
     assert result == expected_paths
 
 
@@ -261,5 +341,35 @@ def test_remove(
     with chdir(path_structure):
         fc = FileCollector(paths=[Path(path) for path in start_paths])
         fc.remove(paths=[Path(path) for path in remove_paths], extensions=extensions)
+        result = sorted(str(path) for path in fc.get_paths())
+        assert result == expected_paths
+
+
+TEST_CREATE: list[tuple[list[str], bool, list[str]]] = [
+    (
+        ["c", "moo"],
+        False,
+        ["c", "moo"],
+    ),
+    (
+        ["*/?c", "*/*fff", "e", "moo"],
+        True,
+        ["c/cc", "d/dc", "e"],
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "sources, glob, expected_paths",
+    TEST_CREATE,
+)
+def test_create(
+    sources: list[str],
+    glob: bool,
+    expected_paths: list[str],
+    path_structure: Path,
+) -> None:
+    with chdir(path_structure):
+        fc = FileCollector.create(sources, glob=glob)
         result = sorted(str(path) for path in fc.get_paths())
         assert result == expected_paths
