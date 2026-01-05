@@ -1,2 +1,0 @@
-bugfixes:
-  - "Only pass ``--color [yes]`` to ansible-test when nox is running in color mode (https://github.com/ansible-community/antsibull-nox/pull/174)."

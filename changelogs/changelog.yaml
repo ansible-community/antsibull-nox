@@ -492,3 +492,49 @@ releases:
       - 166-action.yml
       - 168-compat.yml
     release_date: '2025-12-16'
+  1.5.0:
+    changes:
+      bugfixes:
+        - Extra code files were ignored so far in the ``pylint`` test. They are now
+          used there as well (https://github.com/ansible-community/antsibull-nox/pull/181).
+        - Fix ``antsibull-nox-config`` session in case antsibull-nox has not been
+          installed in ``$PATH`` (https://github.com/ansible-community/antsibull-nox/pull/169).
+        - Fix reporting of locations when running yamllint for YAML code blocks in
+          RST extra docs (https://github.com/ansible-community/antsibull-nox/pull/177).
+        - Only pass ``--color [yes]`` to ansible-test when nox is running in color
+          mode (https://github.com/ansible-community/antsibull-nox/pull/174).
+        - Remove superfluous call from the ``antsibull-nox-config`` session (https://github.com/ansible-community/antsibull-nox/pull/172).
+      minor_changes:
+        - Allow to configure which files and directories are modules and module utils
+          (https://github.com/ansible-community/antsibull-nox/pull/181).
+        - Allow to define the Python code files that the linters should run on (https://github.com/ansible-community/antsibull-nox/issues/178,
+          https://github.com/ansible-community/antsibull-nox/pull/181).
+        - Allow to set minimum Python version supported by a collection. This is currently
+          used for the ``[sessions.ansible_test_integration_w_default_container]``
+          section (https://github.com/ansible-community/antsibull-nox/issues/163,
+          https://github.com/ansible-community/antsibull-nox/pull/176).
+        - Allow to specify special configs for modules for all formatters and linters
+          in the ``lint`` section (https://github.com/ansible-community/antsibull-nox/pull/181).
+        - Format messages nicely outside CI, or when not configured otherwise (https://github.com/ansible-community/antsibull-nox/pull/175).
+        - Improve error reporting system used by internal scripts (https://github.com/ansible-community/antsibull-nox/pull/171).
+        - Improve output parsing and formatting for pylint and mypy checks (https://github.com/ansible-community/antsibull-nox/pull/171).
+        - In the ``ruff check`` and ``ruff check --fix`` checks, make sure to run
+          ruff in a ``ansible_collections/<namespace>/<name>/`` structure so that
+          import classification works correctly. The output of these checks is now
+          handled as JSON and parsed and then formatted by antsibull-nox (https://github.com/ansible-community/antsibull-nox/pull/171).
+        - When antsibull-docs 2.24.0+ is available, the ``docs-check`` session now
+          uses its JSON message format (https://github.com/ansible-community/antsibull-nox/pull/173).
+      release_summary: Bugfix and feature release.
+    fragments:
+      - 1.5.0.yml
+      - 169-lint.yml
+      - 171-ruff-output.yml
+      - 172-lint-config.yml
+      - 173-messages.yml
+      - 174-ansible-test-color.yml
+      - 175-formatting.yml
+      - 176-min-python.yml
+      - 177-messages.yml
+      - 181-python-paths.yml
+      - 182-modules.yml
+    release_date: '2026-01-05'

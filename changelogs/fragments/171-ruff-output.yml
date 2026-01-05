@@ -1,8 +1,0 @@
-minor_changes:
-  - "In the ``ruff check`` and ``ruff check --fix`` checks, make sure to run ruff in a ``ansible_collections/<namespace>/<name>/`` structure so that import classification works correctly.
-     The output of these checks is now handled as JSON and parsed and then formatted by antsibull-nox
-     (https://github.com/ansible-community/antsibull-nox/pull/171)."
-  - "Improve output parsing and formatting for pylint and mypy checks
-     (https://github.com/ansible-community/antsibull-nox/pull/171)."
-  - "Improve error reporting system used by internal scripts
-     (https://github.com/ansible-community/antsibull-nox/pull/171)."

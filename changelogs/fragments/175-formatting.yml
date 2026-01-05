@@ -1,2 +1,0 @@
-minor_changes:
-  - "Format messages nicely outside CI, or when not configured otherwise (https://github.com/ansible-community/antsibull-nox/pull/175)."
