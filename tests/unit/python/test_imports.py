@@ -165,12 +165,10 @@ def test_get_module_data_from_source_root(tmp_path: Path) -> None:
     dir_1 = tmp_path / "dir_1"
     dir_1.mkdir()
     file_1 = dir_1 / "file_1.py"
-    file_1.write_text(
-        r"""
+    file_1.write_text(r"""
 import foo
 from .bar import asdf
-"""
-    )
+""")
     assert get_module_data_from_source_root(
         file_1, source_root=tmp_path
     ) == PythonModule(
@@ -199,35 +197,27 @@ from .bar import asdf
 
 def test_get_all_module_data(tmp_path: Path) -> None:
     file_1 = tmp_path / "file_1.py"
-    file_1.write_text(
-        r"""
+    file_1.write_text(r"""
 import foo
 from .bar import asdf
-"""
-    )
+""")
     dir_1 = tmp_path / "dir_1"
     dir_1.mkdir()
     file_2 = dir_1 / "file_2.py"
-    file_2.write_text(
-        r"""
+    file_2.write_text(r"""
 import foo
 from .bar import asdf
-"""
-    )
+""")
     file_3 = dir_1 / "__init__.py"
-    file_3.write_text(
-        r"""
+    file_3.write_text(r"""
 import foo
 from .bar import asdf
-"""
-    )
+""")
     file_4 = dir_1 / "foo.pyx"
-    file_4.write_text(
-        r"""
+    file_4.write_text(r"""
 import bam
 from .bar import fdsa
-"""
-    )
+""")
     result = set(get_all_module_data([(tmp_path, ("baz",))]))
     assert result == {
         PythonModule(

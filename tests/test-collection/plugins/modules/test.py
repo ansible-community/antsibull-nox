@@ -10,7 +10,6 @@
 This is a test module.
 """
 
-
 DOCUMENTATION = r"""
 ---
 module: test

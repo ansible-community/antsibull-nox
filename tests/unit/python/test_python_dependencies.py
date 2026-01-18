@@ -18,12 +18,10 @@ from ..utils import chdir
 
 def test_get_python_dependency_info(tmp_path: Path) -> None:
     galaxy_yml = tmp_path / "galaxy.yml"
-    galaxy_yml.write_text(
-        r"""
+    galaxy_yml.write_text(r"""
 namespace: foo
 name: bar
-"""
-    )
+""")
 
     plugins = tmp_path / "plugins"
     plugins.mkdir()
@@ -33,42 +31,32 @@ name: bar
     modules.mkdir()
 
     module_utils_foo = module_utils / "foo.py"
-    module_utils_foo.write_text(
-        r"""
-"""
-    )
+    module_utils_foo.write_text(r"""
+""")
 
     module_utils_bar = module_utils / "bar"
     module_utils_bar.mkdir()
 
     module_utils_bar_init = module_utils_bar / "__init__.py"
-    module_utils_bar_init.write_text(
-        r"""
-"""
-    )
+    module_utils_bar_init.write_text(r"""
+""")
 
     module_utils_bar_foobarbaz = module_utils_bar / "foobarbaz.py"
-    module_utils_bar_foobarbaz.write_text(
-        r"""
-"""
-    )
+    module_utils_bar_foobarbaz.write_text(r"""
+""")
 
     module_utils_foo = module_utils / "foo.py"
-    module_utils_foo.write_text(
-        r"""
-"""
-    )
+    module_utils_foo.write_text(r"""
+""")
 
     module_1 = modules / "module_1.py"
-    module_1.write_text(
-        r"""
+    module_1.write_text(r"""
 from ansible.module_utils.basic import AnsibleModule
 from ..module_utils import foo
 from ansible_collections.foo.bar.plugins.module_utils.bar import run_bar, foobarbaz
 from ansible_collections.foo.bar.plugins.module_utils.baz import run_baz
 from ansible_collections.foo.bam.plugins.module_utils.bazbam import run_bazbam
-"""
-    )
+""")
 
     with chdir(tmp_path):
         with patch(

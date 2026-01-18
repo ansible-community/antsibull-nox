@@ -579,7 +579,9 @@ class _ContentProvider:
                 if end is None
                 else (
                     end.line,
-                    self._get_column(self.content, end.line - 1, end.column),
+                    self._get_column(
+                        self.content, end.line - 1, end.column, is_end=True
+                    ),
                 )
             ),
         )
