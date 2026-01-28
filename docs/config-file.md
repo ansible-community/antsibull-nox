@@ -847,30 +847,30 @@ It can be configured as follows:
       The action groups to check for.
       The test makes sure that exactly these groups exist.
 
-      Every group is an object.
-      It should be defined in a new section `[[sessions.extra_checks.action_groups_config]]`.
-      (See [Array of Tables](https://toml.io/en/v1.0.0#array-of-tables) in the TOML Specification.)
-      Groups have the following properties:
+        Every group is an object.
+        It should be defined in a new section `[[sessions.extra_checks.action_groups_config]]`.
+        (See [Array of Tables](https://toml.io/en/v1.0.0#array-of-tables) in the TOML Specification.)
+        Groups have the following properties:
 
-      * `name: str` (**required**):
-        The name of the action group.
-        Must be equal to the name used in `meta/runtime.yml`.
+        * `name: str` (**required**):
+          The name of the action group.
+          Must be equal to the name used in `meta/runtime.yml`.
 
-      * `pattern: str` (**required**):
-        A [Python regular expression](https://docs.python.org/3/library/re.html) matching
-        modules that usually are part of this action group.
-        Every module that is part of this action group must match this regular expression,
-        otherwise the test will fail.
-        If a module matching this regular expression is not part of the action group,
-        it must be explicitly listed in `exclusions` (see below).
+        * `pattern: str` (**required**):
+          A [Python regular expression](https://docs.python.org/3/library/re.html) matching
+          modules that usually are part of this action group.
+          Every module that is part of this action group must match this regular expression,
+          otherwise the test will fail.
+          If a module matching this regular expression is not part of the action group,
+          it must be explicitly listed in `exclusions` (see below).
 
-      * `doc_fragment: str` (**required**):
-        The name of the documentation fragment that must be included
-        exactly for all modules that are part of this action group.
+        * `doc_fragment: str` (**required**):
+          The name of the documentation fragment that must be included
+          exactly for all modules that are part of this action group.
 
-      * `exclusions: list[str]` (default `[]`):
-        This must list all modules whose names match `pattern`,
-        but that are not part of the action group.
+        * `exclusions: list[str]` (default `[]`):
+          This must list all modules whose names match `pattern`,
+          but that are not part of the action group.
 
 * No trailing whitespace:
 
@@ -891,34 +891,34 @@ It can be configured as follows:
     * `avoid_character_group: list[AvoidCharacterGroup]` (default `[]`):
       List of groups of regular expressions with optional names and file selectors.
 
-      Every group is an object.
-      It should be defined in a new section `[[sessions.extra_checks.avoid_character_group]]`.
-      (See [Array of Tables](https://toml.io/en/v1.0.0#array-of-tables) in the TOML Specification.)
-      Groups have the following properties:
+        Every group is an object.
+        It should be defined in a new section `[[sessions.extra_checks.avoid_character_group]]`.
+        (See [Array of Tables](https://toml.io/en/v1.0.0#array-of-tables) in the TOML Specification.)
+        Groups have the following properties:
 
-      * `name: str` (**optional**):
-        User-friendly name to show instead of the regular expression.
+        * `name: str` (**optional**):
+          User-friendly name to show instead of the regular expression.
 
-      * `regex: str` (**required**):
-        A [Python regular expression](https://docs.python.org/3/library/re.html) to flag when being found.
+        * `regex: str` (**required**):
+          A [Python regular expression](https://docs.python.org/3/library/re.html) to flag when being found.
 
-      * `match_extensions: list[str] | None` (default `None`):
-        If specified, will only match files whose filename ends with a string from this list.
+        * `match_extensions: list[str] | None` (default `None`):
+          If specified, will only match files whose filename ends with a string from this list.
 
-      * `match_paths: list[str] | None` (default `None`):
-        If specified, will only match files whose paths are part of this list.
+        * `match_paths: list[str] | None` (default `None`):
+          If specified, will only match files whose paths are part of this list.
 
-      * `match_directories: list[str] | None` (default `None`):
-        If specified, will only match files which are in a directory or subdirectory of a path in this list.
+        * `match_directories: list[str] | None` (default `None`):
+          If specified, will only match files which are in a directory or subdirectory of a path in this list.
 
-      * `skip_extensions: list[str]` (default `[]`):
-        If specified, will not match files whose filename ends with a string from this list.
+        * `skip_extensions: list[str]` (default `[]`):
+          If specified, will not match files whose filename ends with a string from this list.
 
-      * `skip_paths: list[str]` (default `[]`):
-        If specified, will only match files whose paths are not part of this list.
+        * `skip_paths: list[str]` (default `[]`):
+          If specified, will only match files whose paths are not part of this list.
 
-      * `skip_directories: list[str]` (default `[]`):
-        If specified, will not match files which are in a directory or subdirectory of a path in this list.
+        * `skip_directories: list[str]` (default `[]`):
+          If specified, will not match files which are in a directory or subdirectory of a path in this list.
 
 ### Example code
 
