@@ -30,7 +30,8 @@ from ..ansible import (
     parse_ansible_core_version,
 )
 from ..ansible_test_config import get_min_python_version, load_ansible_test_config
-from ..cd import get_base_branch, get_vcs_name, is_config_dir_the_repo_dir
+from ..cd import get_base_branch, get_changes, get_vcs_name, is_config_dir_the_repo_dir
+from ..config import CONFIG_FILENAME
 from ..container import get_container_engine_preference
 from ..paths.utils import copy_directory_tree_into
 from ..python.versions import get_installed_python_versions
@@ -135,14 +136,16 @@ def add_ansible_test_session(
 
         change_detection_args: list[str] | None = None
         if support_cd and get_vcs_name() == "git" and is_config_dir_the_repo_dir():
+            changes = get_changes()
             base_branch = get_base_branch()
-            if base_branch is not None:
-                change_detection_args = [
-                    "--changed",
-                    "--untracked",
-                    "--base-branch",
-                    base_branch,
-                ]
+            if changes is not None and base_branch is not None:
+                if all(file != Path(CONFIG_FILENAME) for file in changes):
+                    change_detection_args = [
+                        "--changed",
+                        "--untracked",
+                        "--base-branch",
+                        base_branch,
+                    ]
 
         prepared_collections = prepare_collections(
             session,

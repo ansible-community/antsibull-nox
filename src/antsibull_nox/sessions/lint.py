@@ -83,6 +83,13 @@ MODULE_PATHS = FileCollector.create(
 )
 
 
+def _as_list(*args: str | os.PathLike | None) -> list[Path] | None:
+    result = [
+        (arg if isinstance(arg, Path) else Path(arg)) for arg in args if arg is not None
+    ]
+    return result or None
+
+
 def _split_arg(
     session: nox.Session, arg: str | PackageType, arg_name: str, index: int
 ) -> list[str | PackageType]:
@@ -166,6 +173,8 @@ def _get_files(
     module_files: list[Path] | FileCollector,
     split_modules: bool,
     cd_add_python_deps: PythonDependencies = "none",
+    config: str | os.PathLike | None,
+    config_modules: str | os.PathLike | None,
 ) -> tuple[list[Path] | None, list[Path] | None, list[Path] | None]:
     files: list[Path] | None = None
     files_modules: list[Path] | None = None
@@ -177,6 +186,7 @@ def _get_files(
             extensions=[".py"],
             with_cd=True,
             cd_add_python_deps=cd_add_python_deps,
+            paths_to_trigger_full_build=_as_list(config_modules),
         )
         files_other = filter_paths(
             code_files,
@@ -184,6 +194,7 @@ def _get_files(
             extensions=[".py"],
             with_cd=True,
             cd_add_python_deps=cd_add_python_deps,
+            paths_to_trigger_full_build=_as_list(config),
         )
     else:
         files = filter_paths(
@@ -191,6 +202,7 @@ def _get_files(
             extensions=[".py"],
             with_cd=True,
             cd_add_python_deps=cd_add_python_deps,
+            paths_to_trigger_full_build=_as_list(config),
         )
     return files, files_modules, files_other
 
@@ -246,6 +258,8 @@ def _execute_isort(
         module_files=module_files,
         split_modules=isort_modules_config is not None
         and isort_modules_config != isort_config,
+        config=isort_config,
+        config_modules=isort_modules_config or isort_config,
     )
     old_cwd = Path.cwd()
     with session.chdir(root_dir):
@@ -326,6 +340,7 @@ def _execute_black(
                 code_files,
                 extensions=[".py"],
                 with_cd=True,
+                paths_to_trigger_full_build=_as_list(black_config),
             ),
             run_check=run_check,
             black_config=black_config,
@@ -337,6 +352,7 @@ def _execute_black(
             remove=module_files,
             extensions=[".py"],
             with_cd=True,
+            paths_to_trigger_full_build=_as_list(black_config),
         )
         _execute_black_for(
             session,
@@ -351,6 +367,7 @@ def _execute_black(
             restrict=module_files,
             extensions=[".py"],
             with_cd=True,
+            paths_to_trigger_full_build=_as_list(black_modules_config or black_config),
         )
         _execute_black_for(
             session,
@@ -399,6 +416,8 @@ def _execute_ruff_format(
         module_files=module_files,
         split_modules=ruff_format_modules_config is not None
         and ruff_format_modules_config != ruff_format_config,
+        config=ruff_format_config,
+        config_modules=ruff_format_modules_config or ruff_format_config,
     )
     if files is not None:
         _execute_ruff_format_for(
@@ -483,6 +502,8 @@ def _execute_ruff_autofix(
         module_files=module_files,
         split_modules=ruff_autofix_modules_config is not None
         and ruff_autofix_modules_config != ruff_autofix_config,
+        config=ruff_autofix_config,
+        config_modules=ruff_autofix_modules_config or ruff_autofix_config,
     )
     old_cwd = Path.cwd()
     with session.chdir(root_dir):
@@ -800,6 +821,8 @@ def add_codeqa(  # noqa: C901
             module_files=module_files,
             split_modules=ruff_check_modules_config is not None
             and ruff_check_modules_config != ruff_check_config,
+            config=ruff_check_config,
+            config_modules=ruff_check_modules_config or ruff_check_config,
         )
 
         messages = []
@@ -865,6 +888,8 @@ def add_codeqa(  # noqa: C901
             module_files=module_files,
             split_modules=flake8_modules_config is not None
             and flake8_modules_config != flake8_config,
+            config=flake8_config,
+            config_modules=flake8_modules_config or flake8_config,
         )
         if files is not None:
             execute_flake8_impl(session, files=files, config=flake8_config)
@@ -931,6 +956,8 @@ def add_codeqa(  # noqa: C901
             split_modules=pylint_modules_rcfile is not None
             and pylint_modules_rcfile != pylint_rcfile,
             cd_add_python_deps="importing-changed",
+            config=pylint_rcfile,
+            config_modules=pylint_modules_rcfile or pylint_rcfile,
         )
 
         messages = []
@@ -1042,6 +1069,7 @@ def add_yamllint(
                 for file in all_files
                 if file.name.lower().endswith((".yml", ".yaml"))
             ],
+            paths_to_trigger_full_build=_as_list(yamllint_config),
         )
         if not all_yaml_filenames:
             session.warn("Skipping yamllint (no files to process)")
@@ -1075,6 +1103,10 @@ def add_yamllint(
                 and file.name.lower().endswith((".py", ".yml", ".yaml"))
                 and not any(file.is_relative_to(dir) for dir in ignore_dirs)
             ],
+            paths_to_trigger_full_build=_as_list(
+                yamllint_config_plugins or yamllint_config,
+                yamllint_config_plugins_examples,
+            ),
         )
         if not all_plugin_files:
             session.warn("Skipping yamllint for modules/plugins (no files to process)")
@@ -1096,7 +1128,15 @@ def add_yamllint(
         )
 
     def execute_extra_docs_yamllint(session: nox.Session) -> None:
-        all_extra_docs = filter_files_cd(find_extra_docs_rst_files())
+        all_extra_docs = filter_files_cd(
+            find_extra_docs_rst_files(),
+            paths_to_trigger_full_build=_as_list(
+                yamllint_config_extra_docs
+                or yamllint_config_plugins_examples
+                or yamllint_config_plugins
+                or yamllint_config
+            ),
+        )
         if not all_extra_docs:
             session.warn("Skipping yamllint for extra docs (no files to process)")
             return
@@ -1230,6 +1270,8 @@ def add_typing(
             split_modules=mypy_modules_config is not None
             and mypy_modules_config != mypy_config,
             cd_add_python_deps="importing-changed",
+            config=mypy_config,
+            config_modules=mypy_modules_config or mypy_config,
         )
 
         messages = []

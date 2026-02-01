@@ -1,0 +1,3 @@
+bugfixes:
+  - "If change detection is enabled and ``antsibull-nox.toml`` or a linter's config file is changed, check all files
+     (https://github.com/ansible-community/antsibull-nox/issues/183, https://github.com/ansible-community/antsibull-nox/pull/185)."
