@@ -18,6 +18,7 @@ import nox
 from ..cd import (
     get_changes,
 )
+from ..config import CONFIG_FILENAME
 from ..messages.parse import parse_antsibull_docs_errors
 from ..paths.utils import (
     list_all_files,
@@ -62,6 +63,8 @@ def file_of_interest(file: Path) -> bool:
     """
     Determine whether the file is relevant for the docs build.
     """
+    if file == Path(CONFIG_FILENAME):
+        return True
     if file.is_relative_to("docs/docsite"):
         return True
     if file in (Path("meta/runtime.yml"), Path("galaxy.yml")):

@@ -15,6 +15,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from ...cd import get_changes
+from ...config import CONFIG_FILENAME
 from ...paths.match import FileCollector
 from ...python.python_dependencies import get_python_dependency_info
 
@@ -56,6 +57,16 @@ def add_python_deps(files: list[Path], *, forward: bool, cwd: Path) -> None:
                 to_process.add(next_module)
 
 
+def _massage_paths_to_trigger_full_build(
+    paths_to_trigger_full_build: Sequence[Path] | None,
+) -> list[Path]:
+    if paths_to_trigger_full_build is None:
+        paths_to_trigger_full_build = []
+    paths_to_trigger_full_build = list(paths_to_trigger_full_build)
+    paths_to_trigger_full_build.append(Path(CONFIG_FILENAME))
+    return paths_to_trigger_full_build
+
+
 def filter_paths(
     paths: list[Path] | FileCollector,
     /,
@@ -64,10 +75,14 @@ def filter_paths(
     extensions: list[str] | None = None,
     with_cd: bool = False,
     cd_add_python_deps: PythonDependencies = "none",
+    paths_to_trigger_full_build: Sequence[Path] | None = None,
 ) -> list[Path]:
     """
     Modifies a list of paths by restricting to and/or removing paths.
     """
+    paths_to_trigger_full_build = _massage_paths_to_trigger_full_build(
+        paths_to_trigger_full_build
+    )
     collector = (
         paths.clone()
         if isinstance(paths, FileCollector)
@@ -76,7 +91,9 @@ def filter_paths(
     if with_cd:
         cwd = Path.cwd()
         changed_files = get_changes(relative_to=cwd)
-        if changed_files is not None:
+        if changed_files is not None and (
+            all(file not in paths_to_trigger_full_build for file in changed_files)
+        ):
             if cd_add_python_deps != "none":
                 add_python_deps(
                     changed_files,
@@ -95,13 +112,20 @@ def filter_paths(
     return collector.get_existing()
 
 
-def filter_files_cd(files: Sequence[Path]) -> list[Path]:
+def filter_files_cd(
+    files: Sequence[Path], *, paths_to_trigger_full_build: Sequence[Path] | None = None
+) -> list[Path]:
     """
     Given a sequence of paths, filters out changed files if change detection is enabled.
     If it is disabled, simply return the sequence as a list.
     """
+    paths_to_trigger_full_build = _massage_paths_to_trigger_full_build(
+        paths_to_trigger_full_build
+    )
     changed_files = get_changes(relative_to=Path.cwd())
-    if changed_files is None:
+    if changed_files is None or (
+        any(file in paths_to_trigger_full_build for file in changed_files)
+    ):
         if isinstance(files, list):
             return files
         return list(files)
