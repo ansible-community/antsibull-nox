@@ -1,0 +1,3 @@
+bugfixes:
+  - "Run ``ruff check`` with ``--quiet`` to avoid warnings to prevent parsing of the JSON output
+     (https://github.com/ansible-community/antsibull-nox/issues/184, https://github.com/ansible-community/antsibull-nox/pull/186)."

@@ -786,6 +786,9 @@ def add_codeqa(  # noqa: C901
         command: list[str] = [
             "ruff",
             "check",
+            # We use --quiet to avoid printing warnings on stderr, see
+            # https://github.com/ansible-community/antsibull-nox/issues/184:
+            "--quiet",
             "--no-respect-gitignore",
             "--output-format=json",
         ]
