@@ -781,7 +781,7 @@ class SessionMolecule(_BaseModel):
     debug: bool = False
     all: bool = False
     scenarios: list[str] = []
-    exclude: list[str] = []
+    exclude_scenarios: list[str] = []
     parallel: bool = False
     shared_state = bool = False
 
