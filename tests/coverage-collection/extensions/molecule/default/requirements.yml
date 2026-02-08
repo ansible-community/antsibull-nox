@@ -3,11 +3,5 @@
 # or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 ---
-dependency:
-  name: galaxy
-
-platforms:
-  - name: instance
-
-scenario:
-  name: default
+collections:
+  - community.general
