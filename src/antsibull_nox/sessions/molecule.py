@@ -127,8 +127,8 @@ def add_molecule(
         if session.posargs:
             command.extend(session.posargs)
         if molecule_collection_root_exists:
-            # Ensure we are in _MOLECULE_COLLECTION_ROOT prior to running molecule test
-            with session.chdir(_MOLECULE_COLLECTION_ROOT):
+            # Ensure we are in extensions prior to running molecule test
+            with session.chdir("extensions"):
                 session.run(*command, env=env)
         else:
             session.run(*command, env=env)
