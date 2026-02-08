@@ -26,6 +26,7 @@ from .config import (
     Sessions,
 )
 from .paths.match import FileCollector
+from .sessions.molecule import add_molecule
 from .sessions.ansible_lint import add_ansible_lint
 from .sessions.ansible_test import (
     AnsibleTestIntegrationSessionTemplate,
@@ -558,6 +559,20 @@ def _add_sessions(sessions: Sessions, cconfig: CollectionConfig) -> None:
             ),
             additional_requirements_files=sessions.ansible_lint.additional_requirements_files,
             strict=sessions.ansible_lint.strict,
+        )
+    if sessions.molecule:
+        add_molecule(
+            default=sessions.molecule.default,
+            molecule_package=_convert_package_name(
+                sessions.molecule.molecule_package
+            ),
+            additional_requirements_files=sessions.molecule.additional_requirements_files,
+            debug=sessions.molecule.debug,
+            all=sessions.molecule.all,
+            scenarios=sessions.molecule.scenarios,
+            exclude_scenarios=sessions.molecule.exclude_scenarios,
+            parallel=sessions.molecule.parallel,
+            shared_state=sessions.molecule.shared_state,
         )
     if sessions.ee_check:
         execution_environments = []
