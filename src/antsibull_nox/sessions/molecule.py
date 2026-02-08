@@ -65,7 +65,7 @@ def add_molecule(
     molecule_package: PackageTypeOrList = "molecule",
     additional_requirements_files: Sequence[str | os.PathLike] | None = None,
     debug: bool = False,
-    all: bool = False,
+    run_all: bool = False,
     scenarios: list[str] = [],
     exclude_scenarios: list[str] = [],
     parallel: bool = False,
@@ -120,7 +120,7 @@ def add_molecule(
         command = ["molecule", "test"]
         if debug:
             command.insert(1, "--debug")
-        if all:
+        if run_all:
             command.append("--all")
         if parallel:
             command.append("--parallel")

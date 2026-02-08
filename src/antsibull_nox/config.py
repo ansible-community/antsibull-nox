@@ -779,7 +779,7 @@ class SessionMolecule(_BaseModel):
     molecule_package: Packages = PackageName(name="molecule")
     additional_requirements_files: list[str] = []
     debug: bool = False
-    all: bool = False
+    run_all: bool = False
     scenarios: list[str] = []
     exclude_scenarios: list[str] = []
     parallel: bool = False
