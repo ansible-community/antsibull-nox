@@ -66,8 +66,6 @@ def add_molecule(
     additional_requirements_files: Sequence[str | os.PathLike] | None = None,
     debug: bool = False,
     run_all: bool = False,
-    scenarios: list[str] = [],
-    exclude_scenarios: list[str] = [],
     parallel: bool = False,
     shared_state: bool = False,
 ) -> None:
@@ -82,7 +80,7 @@ def add_molecule(
             normalize_package_type(molecule_package),
         )
 
-    def molecule(session: nox.Session) -> None:
+    def molecule(session: nox.Session) -> None:  # pylint: disable=too-many-branches
         molecule_collection_root_exists: bool = check_molecule_collection_root()
         if not molecule_collection_root_exists:
             # Warn users to migrate to the new molecule collection root directory
@@ -124,12 +122,6 @@ def add_molecule(
             command.append("--all")
         if parallel:
             command.append("--parallel")
-        if scenarios:
-            for scenario in scenarios:
-                command.append(f"--scenario-name {scenario}")
-        if exclude_scenarios:
-            for scenario in exclude_scenarios:
-                command.append(f"--exclude {scenario}")
         if shared_state:
             command.append("--shared-state")
         if molecule_collection_root_exists:

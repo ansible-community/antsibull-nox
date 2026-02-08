@@ -780,8 +780,6 @@ class SessionMolecule(_BaseModel):
     additional_requirements_files: list[str] = []
     debug: bool = False
     run_all: bool = False
-    scenarios: list[str] = []
-    exclude_scenarios: list[str] = []
     parallel: bool = False
     shared_state: bool = False
 
