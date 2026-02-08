@@ -1,0 +1,11 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: "${MOLECULE_SCENARIO_DIRECTORY}/../requirements.yml"
+
+platforms:
+  - name: instance
+
+scenario:
+  name: default

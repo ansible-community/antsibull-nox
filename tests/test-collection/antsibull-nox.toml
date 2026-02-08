@@ -4,6 +4,8 @@
 
 [sessions]
 
+[sessions.molecule]
+
 [sessions.lint]
 run_mypy = false
 

@@ -1,0 +1,8 @@
+---
+- name: Create
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Create | Debug message
+      ansible.builtin.debug:
+        msg: "Create sequence molecule default scenario."

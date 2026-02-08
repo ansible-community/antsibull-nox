@@ -1,0 +1,7 @@
+---
+- name: Converge
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Converge | Run test module
+      antsibull.test.test:
