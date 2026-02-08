@@ -12,6 +12,9 @@ stable_branches = [ "stable-*" ]
 
 [sessions]
 
+[sessions.molecule]
+default = true
+
 [sessions.lint]
 default = true
 run_isort = true
