@@ -8,6 +8,8 @@
 Constants for antsibull-nox sessions.
 """
 
+from __future__ import annotations
+
 import os
 
 # Taken from:
