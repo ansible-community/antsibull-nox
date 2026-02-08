@@ -12,8 +12,7 @@ import os
 
 # Taken from:
 # https://github.com/ansible/ansible-compat/blob/main/src/ansible_compat/constants.py#L6
-# pylint: disable=unsupported-assignment-operation
-_ANSIBLE_COMPAT_REQUIREMENTS_FILES = list[str | os.PathLike] = [
+_ANSIBLE_COMPAT_REQUIREMENTS_FILES: list[str | os.PathLike] = [
     "requirements.yml",
     "roles/requirements.yml",
     "collections/requirements.yml",
