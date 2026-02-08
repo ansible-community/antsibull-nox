@@ -80,7 +80,7 @@ def add_molecule(
             normalize_package_type(molecule_package),
         )
 
-    def molecule(session: nox.Session) -> None:  # pylint: disable=too-many-branches
+    def molecule(session: nox.Session) -> None:
         molecule_collection_root_exists: bool = check_molecule_collection_root()
         if not molecule_collection_root_exists:
             # Warn users to migrate to the new molecule collection root directory
@@ -103,6 +103,7 @@ def add_molecule(
         discovered_molecule_requirements_files = find_molecule_scenario_requirements()
         if discovered_molecule_requirements_files:
             extra_deps_files.extend(discovered_molecule_requirements_files)
+        # pylint: disable=duplicate-code
         if additional_requirements_files:
             extra_deps_files.extend(additional_requirements_files)
         prepared_collections = prepare_collections(
