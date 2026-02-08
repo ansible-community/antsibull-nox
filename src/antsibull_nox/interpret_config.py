@@ -568,6 +568,8 @@ def _add_sessions(sessions: Sessions, cconfig: CollectionConfig) -> None:
             debug=sessions.molecule.debug,
             run_all=sessions.molecule.run_all,
             parallel=sessions.molecule.parallel,
+            report=sessions.molecule.report,
+            command_borders=sessions.molecule.command_borders,
             shared_state=sessions.molecule.shared_state,
         )
     if sessions.ee_check:

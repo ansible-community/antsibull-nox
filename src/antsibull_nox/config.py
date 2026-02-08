@@ -781,6 +781,8 @@ class SessionMolecule(_BaseModel):
     debug: bool = False
     run_all: bool = False
     parallel: bool = False
+    report: bool = False
+    command_borders: bool = False
     shared_state: bool = False
 
 

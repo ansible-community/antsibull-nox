@@ -68,6 +68,8 @@ def add_molecule(
     debug: bool = False,
     run_all: bool = False,
     parallel: bool = False,
+    report: bool = False,
+    command_borders: bool = False,
     shared_state: bool = False,
 ) -> None:
     """
@@ -125,6 +127,10 @@ def add_molecule(
             command.append("--all")
         if parallel:
             command.append("--parallel")
+        if report:
+            command.append("--report")
+        if command_borders:
+            command.append("--command-borders")
         if shared_state:
             command.append("--shared-state")
         if session.posargs:
