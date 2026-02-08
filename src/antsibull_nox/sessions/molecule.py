@@ -83,12 +83,11 @@ def add_molecule(
     def molecule(session: nox.Session) -> None:
         molecule_collection_root_exists = check_molecule_collection_root()
         if not molecule_collection_root_exists:
-            # Warn users to migrate to the new molecule collection root directory
+            # Fail if molecule collection root directory does not exist
             # https://github.com/ansible/molecule/blob/main/src/molecule/util.py#L651
-            session.warn(
+            session.error(
                 f"Molecule collection root directory {_MOLECULE_COLLECTION_ROOT} was not found."
                 f" Molecule scenarios should be migrated to {_MOLECULE_COLLECTION_ROOT}."
-                " We will attempt to use 'molecule' directory at the collection root."
             )
         install(session, *compose_dependencies(session))
         extra_deps_files: list[str | os.PathLike] = [
