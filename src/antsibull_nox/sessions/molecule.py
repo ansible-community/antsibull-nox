@@ -134,7 +134,7 @@ def add_molecule(
             command.append("--shared-state")
         if molecule_collection_root_exists:
             # Ensure we are in _MOLECULE_COLLECTION_ROOT prior to running molecule test
-            command = ["cd", "extensions/molecule", "&&", *command]
+            command = ["cd", f"{_MOLECULE_COLLECTION_ROOT}", "&&", *command]
         if session.posargs:
             command.extend(session.posargs)
         session.run(*command, env=env)
