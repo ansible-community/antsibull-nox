@@ -26,7 +26,6 @@ from .config import (
     Sessions,
 )
 from .paths.match import FileCollector
-from .sessions.molecule import add_molecule
 from .sessions.ansible_lint import add_ansible_lint
 from .sessions.ansible_test import (
     AnsibleTestIntegrationSessionTemplate,
@@ -50,6 +49,7 @@ from .sessions.extra_checks import (
 from .sessions.license_check import add_license_check
 from .sessions.lint import add_lint_sessions
 from .sessions.matrix_generator import add_matrix_generator
+from .sessions.molecule import add_molecule
 from .sessions.utils.packages import PackageType as RuntimePackageType
 from .utils import Version
 
@@ -563,9 +563,7 @@ def _add_sessions(sessions: Sessions, cconfig: CollectionConfig) -> None:
     if sessions.molecule:
         add_molecule(
             default=sessions.molecule.default,
-            molecule_package=_convert_package_name(
-                sessions.molecule.molecule_package
-            ),
+            molecule_package=_convert_package_name(sessions.molecule.molecule_package),
             additional_requirements_files=sessions.molecule.additional_requirements_files,
             debug=sessions.molecule.debug,
             all=sessions.molecule.all,
