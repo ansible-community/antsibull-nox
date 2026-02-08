@@ -18,6 +18,7 @@ import nox
 
 from ..paths.utils import list_all_files
 from .collections import prepare_collections
+from .constants import _ANSIBLE_COMPAT_REQUIREMENTS_FILES
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
@@ -91,7 +92,6 @@ def add_molecule(
             )
         install(session, *compose_dependencies(session))
         extra_deps_files: list[str | os.PathLike] = [
-            "requirements.yml",
             # Taken from
             # https://github.com/ansible/molecule/blob/main/docs/getting-started-playbooks.md?plain=1#L49
             "molecule/requirements.yml",
@@ -99,17 +99,20 @@ def add_molecule(
             # https://github.com/ansible/molecule/blob/main/docs/getting-started-collections.md
             "extensions/molecule/requirements.yml",
         ]
+        _ANSIBLE_COMPAT_REQUIREMENTS_FILES.extend(extra_deps_files)
         discovered_molecule_requirements_files = find_molecule_scenario_requirements()
         if discovered_molecule_requirements_files:
-            extra_deps_files.extend(discovered_molecule_requirements_files)
+            _ANSIBLE_COMPAT_REQUIREMENTS_FILES.extend(
+                discovered_molecule_requirements_files
+            )
         # pylint: disable=duplicate-code
         if additional_requirements_files:
-            extra_deps_files.extend(additional_requirements_files)
+            _ANSIBLE_COMPAT_REQUIREMENTS_FILES.extend(additional_requirements_files)
         prepared_collections = prepare_collections(
             session,
             install_in_site_packages=False,
             install_out_of_tree=True,
-            extra_deps_files=extra_deps_files,
+            extra_deps_files=_ANSIBLE_COMPAT_REQUIREMENTS_FILES,
         )
         if not prepared_collections:
             session.warn("Skipping molecule...")
