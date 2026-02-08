@@ -12,9 +12,11 @@ from __future__ import annotations
 
 import os
 from collections.abc import Sequence
+from pathlib import Path
 
 import nox
 
+from ..paths.utils import list_all_files
 from .collections import prepare_collections
 from .utils.packages import (
     PackageType,
@@ -23,6 +25,38 @@ from .utils.packages import (
     install,
     normalize_package_type,
 )
+
+# Taken from:
+# https://github.com/ansible/molecule/blob/main/src/molecule/constants.py#L26
+_MOLECULE_COLLECTION_ROOT: str = "extensions/molecule"
+_MOLECULE_COLLECTION_REQUIREMENTS_GLOB: str = (
+    f"{_MOLECULE_COLLECTION_ROOT}/*/requirements.yml"
+)
+
+
+def check_molecule_collection_root() -> bool:
+    """
+    Determine whether the molecule collection root exists.
+    """
+    cwd: Path = Path.cwd()
+    molecule_collection_root_dir: Path = cwd / _MOLECULE_COLLECTION_ROOT
+    if molecule_collection_root_dir.exists():
+        return True
+    return False
+
+
+def find_molecule_scenario_requirements() -> list[Path]:
+    """
+    Find requirements.yml files located in molecule scenario directories.
+
+    Reference documentation:
+    https://github.com/ansible/molecule/blob/main/src/molecule/dependency/ansible_galaxy/roles.py#L41
+    """
+    requirements_files: list[Path] = []
+    for path in list_all_files():
+        if path.match(_MOLECULE_COLLECTION_REQUIREMENTS_GLOB):
+            requirements_files.append(path)
+    return requirements_files
 
 
 def add_molecule(
@@ -35,7 +69,7 @@ def add_molecule(
     scenarios: list[str] = [],
     exclude_scenarios: list[str] = [],
     parallel: bool = False,
-    shared_state: bool = False
+    shared_state: bool = False,
 ) -> None:
     """
     Add a session that runs molecule.
@@ -49,18 +83,28 @@ def add_molecule(
         )
 
     def molecule(session: nox.Session) -> None:
+        molecule_collection_root_exists: bool = check_molecule_collection_root()
+        if not molecule_collection_root_exists:
+            # Warn users to migrate to the new molecule collection root directory
+            # https://github.com/ansible/molecule/blob/main/src/molecule/util.py#L651
+            session.warn(
+                f"Molecule collection root directory {_MOLECULE_COLLECTION_ROOT} was not found."
+                f" Molecule scenarios should be migrated to {_MOLECULE_COLLECTION_ROOT}."
+                " We will attempt to use 'molecule' directory at the collection root."
+            )
         install(session, *compose_dependencies(session))
-        # TODO: Support globbing for molecule convention of
-        # extensions/molecule/<scenario>/requirements.yml
         extra_deps_files: list[str | os.PathLike] = [
             "requirements.yml",
             # Taken from
+            # https://github.com/ansible/molecule/blob/main/docs/getting-started-playbooks.md?plain=1#L49
+            "molecule/requirements.yml",
+            # Taken from
             # https://github.com/ansible/molecule/blob/main/docs/getting-started-collections.md
             "extensions/molecule/requirements.yml",
-            # Taken from
-            # https://github.com/ansible/molecule/blob/main/docs/getting-started-playbooks.md?plain=1#L49
-            "molecule/requirements.yml"
         ]
+        discovered_molecule_requirements_files = find_molecule_scenario_requirements()
+        if discovered_molecule_requirements_files:
+            extra_deps_files.extend(discovered_molecule_requirements_files)
         if additional_requirements_files:
             extra_deps_files.extend(additional_requirements_files)
         prepared_collections = prepare_collections(
@@ -73,9 +117,6 @@ def add_molecule(
             session.warn("Skipping molecule...")
             return
         env = {"ANSIBLE_COLLECTIONS_PATH": f"{prepared_collections.current_place}"}
-        # TODO: Detect if extensions/molecule exists and change directory
-        # If it does not exist, stay where we are and verify the molecule directory
-        # exists
         command = ["molecule", "test"]
         if debug:
             command.insert(1, "--debug")
@@ -91,6 +132,9 @@ def add_molecule(
                 command.append(f"--exclude {scenario}")
         if shared_state:
             command.append("--shared-state")
+        if molecule_collection_root_exists:
+            # Ensure we are in _MOLECULE_COLLECTION_ROOT prior to running molecule test
+            command = ["cd", "extensions/molecule", "&&", *command]
         if session.posargs:
             command.extend(session.posargs)
         session.run(*command, env=env)
