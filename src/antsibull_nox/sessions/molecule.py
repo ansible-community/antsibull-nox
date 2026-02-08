@@ -38,8 +38,8 @@ def check_molecule_collection_root() -> bool:
     """
     Determine whether the molecule collection root exists.
     """
-    cwd: Path = Path.cwd()
-    molecule_collection_root_dir: Path = cwd / _MOLECULE_COLLECTION_ROOT
+    cwd = Path.cwd()
+    molecule_collection_root_dir = cwd / _MOLECULE_COLLECTION_ROOT
     if molecule_collection_root_dir.exists():
         return True
     return False
@@ -81,7 +81,7 @@ def add_molecule(
         )
 
     def molecule(session: nox.Session) -> None:
-        molecule_collection_root_exists: bool = check_molecule_collection_root()
+        molecule_collection_root_exists = check_molecule_collection_root()
         if not molecule_collection_root_exists:
             # Warn users to migrate to the new molecule collection root directory
             # https://github.com/ansible/molecule/blob/main/src/molecule/util.py#L651
@@ -125,12 +125,14 @@ def add_molecule(
             command.append("--parallel")
         if shared_state:
             command.append("--shared-state")
-        if molecule_collection_root_exists:
-            # Ensure we are in _MOLECULE_COLLECTION_ROOT prior to running molecule test
-            command = ["cd", f"{_MOLECULE_COLLECTION_ROOT}", "&&", *command]
         if session.posargs:
             command.extend(session.posargs)
-        session.run(*command, env=env)
+        if molecule_collection_root_exists:
+            # Ensure we are in _MOLECULE_COLLECTION_ROOT prior to running molecule test
+            with session.chdir(_MOLECULE_COLLECTION_ROOT):
+                session.run(*command, env=env)
+        else:
+            session.run(*command, env=env)
 
     molecule.__doc__ = "Run molecule."
     nox.session(
