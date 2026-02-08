@@ -126,11 +126,8 @@ def add_molecule(
             command.append("--shared-state")
         if session.posargs:
             command.extend(session.posargs)
-        if molecule_collection_root_exists:
-            # Ensure we are in extensions prior to running molecule test
-            with session.chdir("extensions"):
-                session.run(*command, env=env)
-        else:
+        # Ensure we are in extensions prior to running molecule test
+        with session.chdir("extensions"):
             session.run(*command, env=env)
 
     molecule.__doc__ = "Run molecule."
