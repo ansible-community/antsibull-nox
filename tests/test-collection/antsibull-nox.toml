@@ -5,6 +5,7 @@
 [sessions]
 
 [sessions.molecule]
+default = true
 
 [sessions.lint]
 run_mypy = false
