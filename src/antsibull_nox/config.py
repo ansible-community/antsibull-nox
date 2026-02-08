@@ -783,7 +783,7 @@ class SessionMolecule(_BaseModel):
     scenarios: list[str] = []
     exclude_scenarios: list[str] = []
     parallel: bool = False
-    shared_state = bool = False
+    shared_state: bool = False
 
 
 class Sessions(_BaseModel):
