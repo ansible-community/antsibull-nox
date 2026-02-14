@@ -53,6 +53,15 @@ name: Run nox tests
           Note that change detection might not work for all sessions if this is not `.`.
         required: false
         default: .
+      pre-test-cmd:
+        type: string
+        description: |-
+          Extra command to invoke before nox.
+
+          Note that there is no safe way to escape templated variables here, as the content is passed
+          as-is to `run`.
+        required: false
+        default: ""
 
 jobs:
   session:
@@ -115,6 +124,11 @@ jobs:
           # Show branch information
           git branch -vv
         shell: bash
+      - name: Run a pre-test command
+        if: inputs.pre-test-cmd
+        run: >-
+          ${{ inputs.pre-test-cmd }}
+        working-directory: ${{ inputs.collection-root }}
       - name: Run nox
         uses: ansible-community/antsibull-nox@main
         with:
