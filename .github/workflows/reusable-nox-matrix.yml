@@ -75,6 +75,52 @@ name: Run sanity, unit, integration, and EE tests
           Note that change detection might not work for all sessions if this is not `.`.
         required: false
         default: .
+      pre-test-cmd:
+        type: string
+        description: |-
+          Extra command to invoke before nox for all kind of tests.
+          (For specific test types, use the more specific inputs.)
+
+          Note that there is no safe way to escape templated variables here, as the content is passed
+          as-is to `run`.
+        required: false
+        default: ""
+      pre-test-cmd-sanity:
+        type: string
+        description: |-
+          Extra command to invoke before nox when running sanity tests.
+
+          Note that there is no safe way to escape templated variables here, as the content is passed
+          as-is to `run`.
+        required: false
+        default: ""
+      pre-test-cmd-units:
+        type: string
+        description: |-
+          Extra command to invoke before nox when running unit tests.
+
+          Note that there is no safe way to escape templated variables here, as the content is passed
+          as-is to `run`.
+        required: false
+        default: ""
+      pre-test-cmd-integration:
+        type: string
+        description: |-
+          Extra command to invoke before nox when running integration tests.
+
+          Note that there is no safe way to escape templated variables here, as the content is passed
+          as-is to `run`.
+        required: false
+        default: ""
+      pre-test-cmd-ee:
+        type: string
+        description: |-
+          Extra command to invoke before nox when running EE tests.
+
+          Note that there is no safe way to escape templated variables here, as the content is passed
+          as-is to `run`.
+        required: false
+        default: ""
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -220,6 +266,18 @@ jobs:
           # Show branch information
           git branch -vv
         shell: bash
+      - name: Run a pre-test command
+        if: >-
+          !matrix.skip && inputs.pre-test-cmd
+        run: >-
+          ${{ inputs.pre-test-cmd }}
+        working-directory: ${{ inputs.collection-root }}
+      - name: Run a pre-test command for sanity tests
+        if: >-
+          !matrix.skip && inputs.pre-test-cmd-sanity
+        run: >-
+          ${{ inputs.pre-test-cmd-sanity }}
+        working-directory: ${{ inputs.collection-root }}
       - name: Run nox
         if: >-
           !matrix.skip
@@ -274,6 +332,18 @@ jobs:
           # Show branch information
           git branch -vv
         shell: bash
+      - name: Run a pre-test command
+        if: >-
+          !matrix.skip && inputs.pre-test-cmd
+        run: >-
+          ${{ inputs.pre-test-cmd }}
+        working-directory: ${{ inputs.collection-root }}
+      - name: Run a pre-test command for unit tests
+        if: >-
+          !matrix.skip && inputs.pre-test-cmd-units
+        run: >-
+          ${{ inputs.pre-test-cmd-units }}
+        working-directory: ${{ inputs.collection-root }}
       - name: Run nox
         if: >-
           !matrix.skip
@@ -329,6 +399,18 @@ jobs:
           # Show branch information
           git branch -vv
         shell: bash
+      - name: Run a pre-test command
+        if: >-
+          !matrix.skip && inputs.pre-test-cmd
+        run: >-
+          ${{ inputs.pre-test-cmd }}
+        working-directory: ${{ inputs.collection-root }}
+      - name: Run a pre-test command for integration tests
+        if: >-
+          !matrix.skip && inputs.pre-test-cmd-integration
+        run: >-
+          ${{ inputs.pre-test-cmd-integration }}
+        working-directory: ${{ inputs.collection-root }}
       - name: Run nox
         if: >-
           !matrix.skip
@@ -396,6 +478,18 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - name: Run a pre-test command
+        if: >-
+          !matrix.skip && inputs.pre-test-cmd
+        run: >-
+          ${{ inputs.pre-test-cmd }}
+        working-directory: ${{ inputs.collection-root }}
+      - name: Run a pre-test command for EE tests
+        if: >-
+          !matrix.skip && inputs.pre-test-cmd-ee
+        run: >-
+          ${{ inputs.pre-test-cmd-ee }}
+        working-directory: ${{ inputs.collection-root }}
       - name: Run nox
         if: >-
           !matrix.skip
