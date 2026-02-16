@@ -17,7 +17,7 @@ from copy import deepcopy
 import nox
 
 from .collections import prepare_collections
-from .constants import _ANSIBLE_COMPAT_REQUIREMENTS_FILES
+from .utils.constants import _ANSIBLE_COMPAT_REQUIREMENTS_FILES
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,

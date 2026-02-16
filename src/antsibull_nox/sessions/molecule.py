@@ -19,7 +19,7 @@ import nox
 
 from ..paths.utils import list_all_files
 from .collections import prepare_collections
-from .constants import _ANSIBLE_COMPAT_REQUIREMENTS_FILES
+from .utils.constants import _ANSIBLE_COMPAT_REQUIREMENTS_FILES
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
