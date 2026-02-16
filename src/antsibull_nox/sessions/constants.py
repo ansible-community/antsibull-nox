@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import os
 
-# Taken from:
+# List taken from:
 # https://github.com/ansible/ansible-compat/blob/main/src/ansible_compat/constants.py#L6
 _ANSIBLE_COMPAT_REQUIREMENTS_FILES: list[str | os.PathLike] = [
     "requirements.yml",

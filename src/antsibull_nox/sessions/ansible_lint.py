@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Sequence
+from copy import deepcopy
 
 import nox
 
@@ -45,16 +46,15 @@ def add_ansible_lint(
         )
 
     def ansible_lint(session: nox.Session) -> None:
+        ansible_compat_req_files = deepcopy(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
         install(session, *compose_dependencies(session))
         if additional_requirements_files:
-            _ANSIBLE_COMPAT_REQUIREMENTS_FILES.extend(additional_requirements_files)
+            ansible_compat_req_files.extend(additional_requirements_files)
         prepared_collections = prepare_collections(
             session,
             install_in_site_packages=False,
             install_out_of_tree=True,
-            # List taken from
-            # https://github.com/ansible/ansible-compat/blob/main/src/ansible_compat/constants.py#L6-L14
-            extra_deps_files=_ANSIBLE_COMPAT_REQUIREMENTS_FILES,
+            extra_deps_files=ansible_compat_req_files,
         )
         if not prepared_collections:
             session.warn("Skipping ansible-lint...")
