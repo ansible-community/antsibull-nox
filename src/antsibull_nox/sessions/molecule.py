@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Sequence
+from copy import deepcopy
 from pathlib import Path
 
 import nox
@@ -84,6 +85,7 @@ def add_molecule(
         )
 
     def molecule(session: nox.Session) -> None:
+        ansible_compat_req_files = deepcopy(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
         molecule_collection_root_exists = check_molecule_collection_root()
         if not molecule_collection_root_exists:
             # Fail if molecule collection root directory does not exist
@@ -101,20 +103,18 @@ def add_molecule(
             # https://github.com/ansible/molecule/blob/main/docs/getting-started-collections.md
             "extensions/molecule/requirements.yml",
         ]
-        _ANSIBLE_COMPAT_REQUIREMENTS_FILES.extend(extra_deps_files)
+        ansible_compat_req_files.extend(extra_deps_files)
         discovered_molecule_requirements_files = find_molecule_scenario_requirements()
         if discovered_molecule_requirements_files:
-            _ANSIBLE_COMPAT_REQUIREMENTS_FILES.extend(
-                discovered_molecule_requirements_files
-            )
+            ansible_compat_req_files.extend(discovered_molecule_requirements_files)
         # pylint: disable=duplicate-code
         if additional_requirements_files:
-            _ANSIBLE_COMPAT_REQUIREMENTS_FILES.extend(additional_requirements_files)
+            ansible_compat_req_files.extend(additional_requirements_files)
         prepared_collections = prepare_collections(
             session,
             install_in_site_packages=False,
             install_out_of_tree=True,
-            extra_deps_files=_ANSIBLE_COMPAT_REQUIREMENTS_FILES,
+            extra_deps_files=ansible_compat_req_files,
         )
         if not prepared_collections:
             session.warn("Skipping molecule...")
