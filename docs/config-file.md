@@ -1754,9 +1754,8 @@ The added session is called `molecule`. The section can contain the following co
   Additional list of `requirements.yml` files for collections to install
   before running `molecule test`.
 
-  Note that antsibull-nox knows about
-  [the locations ansible-compat looks for `requirements.yml` in](https://github.com/ansible/ansible-compat/blob/main/src/ansible_compat/constants.py#L6)
-  and already makes sure that collections from these requirement files are present.
+    > [!NOTE]
+    > `antsibull-nox` knows about [the locations ansible-compat looks for `requirements.yml` in](https://github.com/ansible/ansible-compat/blob/main/src/ansible_compat/constants.py#L6) and already makes sure that collections from these requirement files are present.
 
 * `debug: bool` (default `false`):
   Whether the `--debug` parameter should be passed to `molecule`.
