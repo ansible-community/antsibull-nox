@@ -19,9 +19,10 @@ from pathlib import Path
 
 from . import __version__
 from .cd import get_base_branch, get_changes, init_cd, supports_cd
-from .config import CONFIG_FILENAME, load_config_from_toml
+from .config import CONFIG_FILENAME, Config, load_config_from_toml
 from .init import create_initial_config as _create_initial_config
 from .lint_config import lint_config as _lint_config
+from .python.python_dependencies import get_python_dependency_info
 from .sessions.utils.paths import PythonDependencies, add_python_deps
 
 try:
@@ -107,12 +108,78 @@ def show_changes(args: argparse.Namespace) -> int:
     return 0
 
 
+def dependency_tree(args: argparse.Namespace) -> int:
+    """
+    Subcommand 'dependency-tree'.
+    """
+    subcommand: str = args.subcommand
+
+    config_path = Path(CONFIG_FILENAME)
+    try:
+        config = load_config_from_toml(config_path)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        print(f"Error: {exc}", file=sys.stderr)
+        return 3
+
+    return DEPENDENCY_TREE_ARGS_MAP[subcommand](config, args)
+
+
+def find_unused_python(
+    config: Config, args: argparse.Namespace  # pylint: disable=unused-argument
+) -> int:
+    """
+    Subcommand 'dependency-tree find-unused-python'.
+    """
+    dep_info = get_python_dependency_info()
+    found: set[Path] = set()
+    for file, module_path in dep_info.file_to_module_path.items():
+        if (
+            len(module_path) > 4
+            and module_path[3] == "plugins"
+            and module_path[4] not in ("module_utils", "plugin_utils")
+        ):
+            found.add(file)
+    to_do: list[Path] = list(found)
+    while to_do:
+        file = to_do.pop()
+        next_info = dep_info.file_to_imported_modules.get(file)
+        if next_info:
+            _next_module_paths, next_files = next_info
+            for next_file in next_files:
+                if next_file not in found:
+                    found.add(next_file)
+                    to_do.append(next_file)
+    left_over = {
+        file
+        for file, module_path in dep_info.file_to_module_path.items()
+        if len(module_path) > 3
+        and module_path[3] == "plugins"
+        and file.name != "__init__.py"
+        and file not in found
+    }
+    if left_over:
+        print(f"Found {len(left_over)} apparently unused Python modules in plugins/:")
+        cwd = Path.cwd()
+        for file in sorted(left_over):
+            print(f"  {file.relative_to(cwd)}")
+    else:
+        print("All code in plugins/ seems to be in use.")
+    return 0
+
+
 # Mapping from command line subcommand names to functions which implement those.
 # The functions need to take a single argument, the processed list of args.
 ARGS_MAP: dict[str, Callable[[argparse.Namespace], int]] = {
     "lint-config": lint_config,
     "init": create_initial_config,
     "show-changes": show_changes,
+    "dependency-tree": dependency_tree,
+}
+
+# Mapping from command line subcommand names to functions which implement those.
+# The functions need to take a single argument, the processed list of args.
+DEPENDENCY_TREE_ARGS_MAP: dict[str, Callable[[Config, argparse.Namespace], int]] = {
+    "find-unused-python": find_unused_python,
 }
 
 
@@ -163,6 +230,20 @@ def parse_args(program_name: str, args: list[str]) -> argparse.Namespace:
         " If set to 'imported-by-changed', all Python files (transitively) importing"
         " changed files will be added ('backward'). If set to 'importing-changed', all"
         " Python files (transitively) imported by changed files will be added ('forward').",
+    )
+
+    show_changes_parser = subparsers.add_parser(
+        "dependency-tree", description="Operations on the dependency trees"
+    )
+    show_changes_parser_sub = show_changes_parser.add_subparsers(
+        title="Subcommands",
+        dest="subcommand",
+        help="for help use: `SUBCOMMANDS -h`",
+        required=True,
+    )
+
+    show_changes_parser_sub.add_parser(
+        "find-unused-python", description="Find unused Python module and plugin utils"
     )
 
     # This must come after all parser setup
