@@ -49,6 +49,7 @@ from .sessions.extra_checks import (
 from .sessions.license_check import add_license_check
 from .sessions.lint import add_lint_sessions
 from .sessions.matrix_generator import add_matrix_generator
+from .sessions.molecule import add_molecule
 from .sessions.utils.packages import PackageType as RuntimePackageType
 from .utils import Version
 
@@ -558,6 +559,18 @@ def _add_sessions(sessions: Sessions, cconfig: CollectionConfig) -> None:
             ),
             additional_requirements_files=sessions.ansible_lint.additional_requirements_files,
             strict=sessions.ansible_lint.strict,
+        )
+    if sessions.molecule:
+        add_molecule(
+            default=sessions.molecule.default,
+            molecule_package=_convert_package_name(sessions.molecule.molecule_package),
+            additional_requirements_files=sessions.molecule.additional_requirements_files,
+            debug=sessions.molecule.debug,
+            run_all=sessions.molecule.run_all,
+            parallel=sessions.molecule.parallel,
+            report=sessions.molecule.report,
+            command_borders=sessions.molecule.command_borders,
+            shared_state=sessions.molecule.shared_state,
         )
     if sessions.ee_check:
         execution_environments = []

@@ -769,6 +769,23 @@ class SessionAnsibleLint(_BaseModel):
     strict: bool = False
 
 
+class SessionMolecule(_BaseModel):
+    """
+    Molecule session config.
+    """
+
+    default: bool = False
+
+    molecule_package: Packages = PackageName(name="molecule")
+    additional_requirements_files: list[str] = []
+    debug: bool = False
+    run_all: bool = False
+    parallel: bool = False
+    report: bool = False
+    command_borders: bool = False
+    shared_state: bool = False
+
+
 class Sessions(_BaseModel):
     """
     Configuration of nox sessions to add.
@@ -787,6 +804,7 @@ class Sessions(_BaseModel):
     ansible_test_integration: t.Optional[SessionAnsibleTestIntegration] = None
     ansible_lint: t.Optional[SessionAnsibleLint] = None
     ee_check: t.Optional[SessionExecutionEnvironmentCheck] = None
+    molecule: t.Optional[SessionMolecule] = None
 
 
 class CollectionSource(_BaseModel):
