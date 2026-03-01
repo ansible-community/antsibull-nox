@@ -527,6 +527,22 @@ def write_integration_config(
     )
 
 
+def _add_version_specific_interation_test_params(
+    parameters: list[str | _ColorFlagType], ansible_core_version: AnsibleCoreVersion
+) -> None:
+    version = get_ansible_core_info(ansible_core_version).ansible_core_version
+    if version >= Version(2, 19):
+        # The behavior changed from ansible-core 2.19 on, that tracebacks are no
+        # longer shown in case of errors by default. While for end-users this is
+        # OK, this is potentially really bad for integration tests. In case of
+        # *intentional* errors this is also fine (and reduces clutter), but it
+        # also prevents stack traces being shown in case of *unintentional* errors.
+        # So we generally enable tracebacks for errors for integration tests
+        # since this seems like the lesser evil.
+        # (Related: https://github.com/ansible/ansible/issues/86533)
+        parameters.extend(["--display-traceback", "error"])
+
+
 def add_ansible_test_integration_sessions_default_container(
     *,
     include_devel: bool = False,
@@ -638,18 +654,22 @@ def add_ansible_test_integration_sessions_default_container(
                     f"Run integration tests from ansible-test in ansible-core's {branch_name}"
                     f" branch{repo_postfix} with Python {py_version}"
                 )
+            parameters: list[str | _ColorFlagType] = [
+                "integration",
+                COLOR_FLAG,
+                "-v",
+                "--docker",
+                "default",
+                "--python",
+                str(py_version),
+            ]
+            _add_version_specific_interation_test_params(
+                parameters, ansible_core_version
+            )
             add_ansible_test_session(
                 name=name,
                 description=description,
-                ansible_test_params=[
-                    "integration",
-                    COLOR_FLAG,
-                    "-v",
-                    "--docker",
-                    "default",
-                    "--python",
-                    str(py_version),
-                ],
+                ansible_test_params=parameters,
                 extra_deps_files=["tests/integration/requirements.yml"],
                 ansible_core_version=ansible_core_version,
                 ansible_core_repo_name=repo_name,
@@ -998,6 +1018,7 @@ def add_ansible_test_integration_sessions(
             COLOR_FLAG,
             "-v",
         ]
+        _add_version_specific_interation_test_params(cmd, session.ansible_core)
         if session.docker:
             cmd.extend(
                 [

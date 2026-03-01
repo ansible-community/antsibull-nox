@@ -1,0 +1,6 @@
+minor_changes:
+  - "Always show tracebacks in case of errors for ansible-core 2.19+ in integration tests.
+     Showing these has been turned off by default in ansible-core 2.19, which is great for
+     intentional errors, but makes debugging unintentional ones (like plugin crashes)
+     hard to debug since you do not see where the error comes from
+     (https://github.com/ansible-community/antsibull-nox/pull/190)."
