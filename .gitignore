@@ -137,3 +137,6 @@ dmypy.json
 
 # VSCode Ansible extension
 /.ansible/
+
+# uv
+uv.lock
