@@ -135,12 +135,14 @@ def add_molecule(
             command.append("--shared-state")
         if isinstance(scenarios, list):
             for scenario in scenarios:
-                command.append(f"--scenario-name {scenario}")
+                command.append(f"--scenario-name")
+                command.append(scenario)
         elif scenarios == "all":
             command.append("--all")
         else:
             # Must be None at this point so run the default scenario
-            command.append("--scenario-name default")
+            command.append("--scenario-name")
+            command.append("default")
         if session.posargs:
             command.append("--")
             command.extend(session.posargs)
