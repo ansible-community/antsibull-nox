@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import os
 from collections.abc import Sequence
-from copy import deepcopy
 
 import nox
 
@@ -46,7 +45,7 @@ def add_ansible_lint(
         )
 
     def ansible_lint(session: nox.Session) -> None:
-        ansible_compat_req_files = deepcopy(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
+        ansible_compat_req_files = list(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
         install(session, *compose_dependencies(session))
         if additional_requirements_files:
             ansible_compat_req_files.extend(additional_requirements_files)

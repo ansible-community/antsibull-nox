@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import os
 from collections.abc import Sequence
-from copy import deepcopy
 from pathlib import Path
 
 import nox
@@ -85,7 +84,7 @@ def add_molecule(
         )
 
     def molecule(session: nox.Session) -> None:
-        ansible_compat_req_files = deepcopy(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
+        ansible_compat_req_files = list(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
         molecule_collection_root_exists = check_molecule_collection_root()
         if not molecule_collection_root_exists:
             # Fail if molecule collection root directory does not exist
@@ -95,15 +94,16 @@ def add_molecule(
                 f" Molecule scenarios should be migrated to {_MOLECULE_COLLECTION_ROOT}."
             )
         install(session, *compose_dependencies(session))
-        extra_deps_files: list[str | os.PathLike] = [
-            # Taken from
-            # https://github.com/ansible/molecule/blob/main/docs/getting-started-playbooks.md?plain=1#L49
-            "molecule/requirements.yml",
-            # Taken from
-            # https://github.com/ansible/molecule/blob/main/docs/getting-started-collections.md
-            "extensions/molecule/requirements.yml",
-        ]
-        ansible_compat_req_files.extend(extra_deps_files)
+        ansible_compat_req_files.extend(
+            [
+                # Taken from
+                # https://github.com/ansible/molecule/blob/main/docs/getting-started-playbooks.md?plain=1#L49
+                "molecule/requirements.yml",
+                # Taken from
+                # https://github.com/ansible/molecule/blob/main/docs/getting-started-collections.md
+                "extensions/molecule/requirements.yml",
+            ]
+        )
         discovered_molecule_requirements_files = find_molecule_scenario_requirements()
         if discovered_molecule_requirements_files:
             ansible_compat_req_files.extend(discovered_molecule_requirements_files)
@@ -134,6 +134,7 @@ def add_molecule(
         if shared_state:
             command.append("--shared-state")
         if session.posargs:
+            command.append("--")
             command.extend(session.posargs)
         # Ensure we are in extensions prior to running molecule test
         with session.chdir("extensions"):
