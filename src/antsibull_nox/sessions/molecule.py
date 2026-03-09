@@ -11,6 +11,7 @@ Create nox molecule session.
 from __future__ import annotations
 
 import os
+import typing as t
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -66,7 +67,7 @@ def add_molecule(
     molecule_package: PackageTypeOrList = "molecule",
     additional_requirements_files: Sequence[str | os.PathLike] | None = None,
     debug: bool = False,
-    run_all: bool = False,
+    scenarios: list[str] | t.Literal["all"] | None = None,
     parallel: bool = False,
     report: bool = False,
     command_borders: bool = False,
@@ -84,6 +85,7 @@ def add_molecule(
         )
 
     def molecule(session: nox.Session) -> None:
+        # pylint: disable=too-many-branches
         ansible_compat_req_files = list(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
         molecule_collection_root_exists = check_molecule_collection_root()
         if not molecule_collection_root_exists:
@@ -123,8 +125,6 @@ def add_molecule(
         command = ["molecule", "test"]
         if debug:
             command.insert(1, "--debug")
-        if run_all:
-            command.append("--all")
         if parallel:
             command.append("--parallel")
         if report:
@@ -133,6 +133,14 @@ def add_molecule(
             command.append("--command-borders")
         if shared_state:
             command.append("--shared-state")
+        if isinstance(scenarios, list):
+            for scenario in scenarios:
+                command.append(f"--scenario-name {scenario}")
+        elif scenarios == "all":
+            command.append("--all")
+        else:
+            # Must be None at this point so run the default scenario
+            command.append("--scenario-name default")
         if session.posargs:
             command.append("--")
             command.extend(session.posargs)

@@ -566,7 +566,7 @@ def _add_sessions(sessions: Sessions, cconfig: CollectionConfig) -> None:
             molecule_package=_convert_package_name(sessions.molecule.molecule_package),
             additional_requirements_files=sessions.molecule.additional_requirements_files,
             debug=sessions.molecule.debug,
-            run_all=sessions.molecule.run_all,
+            scenarios=sessions.molecule.scenarios,
             parallel=sessions.molecule.parallel,
             report=sessions.molecule.report,
             command_borders=sessions.molecule.command_borders,
