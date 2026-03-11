@@ -135,7 +135,7 @@ def add_molecule(
             command.append("--shared-state")
         if isinstance(scenarios, list):
             for scenario in scenarios:
-                command.append(f"--scenario-name")
+                command.append("--scenario-name")
                 command.append(scenario)
         elif scenarios == "all":
             command.append("--all")
