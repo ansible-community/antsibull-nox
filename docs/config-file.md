@@ -1769,9 +1769,25 @@ The added session is called `molecule`. The section can contain the following co
   Whether the `--debug` parameter should be passed to `molecule`.
   This enables debugging for `molecule`.
 
-* `run_all: bool` (default `false`):
-  Whether the `--all` parameter should be passed to `molecule test`.
-  This makes `molecule` run all scenarios.
+* `scenarios: list[str] | "all" | None` (default `None`):
+  Used to control the scenarios to run with Molecule.
+
+  Users can specify a list of scenario names to run:
+
+  ```toml
+  [molecule]
+  scenarios = ["scenario1", "scenario2"]
+  ```
+
+  Alternatively, users can specify `"all"` which is the equivalent of
+  passing the `--all` flag to `molecule test`:
+
+  ```toml
+  [molecule]
+  scenarios = "all"
+  ```
+
+  Finally, if not specified, the default behaviour is to run `molecule test --scenario-name default`.
 
 * `parallel: bool` (default `false`):
   Whether the `--parallel` parameter should be passed to `molecule test`.
