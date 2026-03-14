@@ -1739,12 +1739,9 @@ It simply runs `ansible-lint`.
 
 The [molecule](https://docs.ansible.com/projects/molecule/) session is added with the `[sessions.molecule]` section in `antsibull-nox.toml`.
 
-> [!IMPORTANT]
-> At a minimum, you **must** have a `default` scenario in order to use this session. If you want to run other scenarios, then you must use:
-> ```toml
-> [sessions.molecule]
-> run_all = true
-> ```
+> [!NOTE]
+> By default this session will run against the `default` scenario in a collection when no configuration changes
+> are made. Use the `scenarios` configuration option to customize this.
 
 The added session is called `molecule`. The section can contain the following configurations:
 
