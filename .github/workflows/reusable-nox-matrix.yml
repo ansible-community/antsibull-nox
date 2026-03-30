@@ -452,7 +452,7 @@ jobs:
         shell: bash
         working-directory: ${{ inputs.collection-root }}
       - name: Upload coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: coverage=*.xml
           token: ${{ secrets.CODECOV_TOKEN }}
