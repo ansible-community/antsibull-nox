@@ -16,11 +16,11 @@ from collections.abc import Sequence
 import nox
 
 from .collections import prepare_collections
+from .utils.package_decorator import install_packages
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
     check_package_types,
-    install,
     normalize_package_type,
 )
 
@@ -36,15 +36,15 @@ def add_ansible_lint(
     Add a session that runs ansible-lint.
     """
 
-    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+    def compose_dependencies(session: nox.Session | None) -> list[PackageType]:
         return check_package_types(
             session,
             "sessions.ansible_lint.ansible_lint_package",
             normalize_package_type(ansible_lint_package),
         )
 
+    @install_packages(package_callback=compose_dependencies)
     def ansible_lint(session: nox.Session) -> None:
-        install(session, *compose_dependencies(session))
         extra_deps_files: list[str | os.PathLike] = [
             "requirements.yml",
             "roles/requirements.yml",

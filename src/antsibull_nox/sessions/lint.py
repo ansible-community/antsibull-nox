@@ -45,11 +45,11 @@ from .utils import (
 from .utils.output import (
     print_messages,
 )
+from .utils.package_decorator import install_packages
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
     check_package_types,
-    install,
     normalize_package_type,
 )
 from .utils.paths import (
@@ -91,7 +91,7 @@ def _as_list(*args: str | os.PathLike | None) -> list[Path] | None:
 
 
 def _split_arg(
-    session: nox.Session, arg: str | PackageType, arg_name: str, index: int
+    session: nox.Session | None, arg: str | PackageType, arg_name: str, index: int
 ) -> list[str | PackageType]:
     if not isinstance(arg, str):
         return check_package_types(session, arg_name, [arg])
@@ -100,7 +100,7 @@ def _split_arg(
     #   1. Eventually, make the following warnings errors (in 2.0.0 likely);
     #   2. Eventually, parse str as PackageName as for other
     #      package list arguments (do this in config.py) (in 2.x.0 likely).
-    if args != [arg]:
+    if args != [arg] and session:
         session.warn(
             f"DEPRECATION WARNING: {arg_name}[{index + 1}] is currently shell-split."
             " This behavior is deprecated and will change in a future release."
@@ -108,7 +108,7 @@ def _split_arg(
             " see PackageType in the config file documentation for details."
         )
     for part in args:
-        if part.startswith("-"):
+        if part.startswith("-") and session:
             session.warn(
                 f"DEPRECATION WARNING: {arg_name}[{index + 1}] contains an argument"
                 f" {part!r} starting with a dash."
@@ -578,7 +578,7 @@ def add_formatters(
         run_black_modules = run_black
     run_check = IN_CI
 
-    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+    def compose_dependencies(session: nox.Session | None) -> list[PackageType]:
         deps = []
         if run_isort:
             deps.extend(
@@ -627,8 +627,8 @@ def add_formatters(
                 )
         return deps
 
+    @install_packages(package_callback=compose_dependencies)
     def formatters(session: nox.Session) -> None:
-        install(session, *compose_dependencies(session))
         if run_isort or run_ruff_autofix:
             cwd = Path.cwd()
             cd = load_collection_data_from_disk(cwd)
@@ -727,7 +727,7 @@ def add_codeqa(  # noqa: C901
     Add nox session for codeqa.
     """
 
-    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+    def compose_dependencies(session: nox.Session | None) -> list[PackageType]:
         deps = []
         if run_ruff_check:
             deps.extend(
@@ -997,8 +997,8 @@ def add_codeqa(  # noqa: C901
 
         print_messages(session=session, messages=messages, fail_msg="Pylint failed")
 
+    @install_packages(package_callback=compose_dependencies)
     def codeqa(session: nox.Session) -> None:
-        install(session, *compose_dependencies(session))
         prepared_collections: CollectionSetup | None = None
         if run_ruff_check or run_pylint:
             prepared_collections = prepare_collections(
@@ -1042,7 +1042,7 @@ def add_yamllint(
     Add yamllint session for linting YAML files and plugin/module docs.
     """
 
-    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+    def compose_dependencies(session: nox.Session | None) -> list[PackageType]:
         deps = []
         if run_yamllint:
             deps.extend(
@@ -1159,8 +1159,8 @@ def add_yamllint(
             process_messages=True,
         )
 
+    @install_packages(package_callback=compose_dependencies)
     def yamllint(session: nox.Session) -> None:
-        install(session, *compose_dependencies(session))
         if run_yamllint:
             execute_yamllint(session)
             execute_plugin_yamllint(session)
@@ -1193,7 +1193,7 @@ def add_typing(
     Add nox session for typing.
     """
 
-    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+    def compose_dependencies(session: nox.Session | None) -> list[PackageType]:
         deps = []
         if run_mypy:
             deps.extend(
@@ -1312,8 +1312,8 @@ def add_typing(
             fail_msg="Mypy failed",
         )
 
+    @install_packages(package_callback=compose_dependencies)
     def typing(session: nox.Session) -> None:
-        install(session, *compose_dependencies(session))
         prepared_collections = prepare_collections(
             session,
             install_in_site_packages=False,

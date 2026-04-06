@@ -29,6 +29,7 @@ from .collections import (
 )
 from .utils import silence_run_verbosity
 from .utils.output import print_messages
+from .utils.package_decorator import install_packages
 from .utils.package_versions import (
     get_package_version,
     is_new_enough,
@@ -37,7 +38,6 @@ from .utils.packages import (
     PackageType,
     PackageTypeOrList,
     check_package_types,
-    install,
     normalize_package_type,
 )
 from .utils.scripts import (
@@ -106,7 +106,7 @@ def add_docs_check(
         or not codeblocks_allow_literal_blocks
     )
 
-    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+    def compose_dependencies(session: nox.Session | None) -> list[PackageType]:
         deps = []
         deps.extend(
             check_package_types(
@@ -203,8 +203,8 @@ def add_docs_check(
             else:
                 session.run(*command, env=env)
 
+    @install_packages(package_callback=compose_dependencies)
     def docs_check(session: nox.Session) -> None:
-        install(session, *compose_dependencies(session))
         prepared_collections = prepare_collections(
             session,
             install_in_site_packages=False,

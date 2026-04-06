@@ -42,9 +42,7 @@ from .utils import (
     nox_has_color,
     register,
 )
-from .utils.packages import (
-    install,
-)
+from .utils.package_decorator import install_packages
 from .utils.values import (
     AnsibleValue,
     AnsibleValueExplicit,
@@ -120,7 +118,7 @@ def add_ansible_test_session(
     """
     parsed_ansible_core_version = parse_ansible_core_version(ansible_core_version)
 
-    def compose_dependencies() -> list[str]:
+    def compose_dependencies(_session: nox.Session | None) -> list[str]:
         deps = [
             get_ansible_core_package_name(
                 parsed_ansible_core_version,
@@ -131,9 +129,8 @@ def add_ansible_test_session(
         ]
         return deps
 
+    @install_packages(package_callback=compose_dependencies)
     def run_ansible_test(session: nox.Session) -> None:
-        install(session, *compose_dependencies())
-
         change_detection_args: list[str] | None = None
         if support_cd and get_vcs_name() == "git" and is_config_dir_the_repo_dir():
             changes = get_changes()

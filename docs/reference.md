@@ -59,6 +59,93 @@ It loads the `antsibull-nox.toml` configuration file,
 loads its configuration options,
 and adds all sessions configured in there.
 
+## Adding own tests that install packages
+
+While you can use [nox's `session.install()`](https://nox.thea.codes/en/stable/config.html#nox.sessions.Session.install)
+to install packages,
+we recommend to use the `antsibull_nox.sessions.install_packages` decorator instead.
+This will later allow to easily pin packages and hook into antsibull-nox's mechanism to update these pins.
+
+You need to either provide a list of packages,
+or a callback that returns a list of packages to the decorator.
+
+1. Explicit list of packages:
+   You can provide a single string, or a list of strings with package names:
+
+    ```python
+    @nox.session
+    @antsibull_nox.sessions.install_packages(packages="ansible-core")
+    def foo(session: nox.Session) -> None:
+        ...
+
+    @nox.session
+    @antsibull_nox.sessions.install_packages(packages=["ansible-core", "antsibull-docs", "requests"])
+    def bar(session: nox.Session) -> None:
+        ...
+    ```
+
+2. Callback that provides a list of packages:
+
+    The callback needs to accept a `session` parameter that is either a `nox.Session` object or `None`.
+    It is `None` in case the list of packages is accessed programmatically,
+    for example when determining which packages to pin.
+
+    You can use the `session` parameter to emit warnings if it is not `None`.
+
+    The callback should return a string for a single package name,
+    a (possibly empty) list of strings for a list of package names,
+    or `None` to install no package:
+
+    ```python
+    # Install a single package
+
+    def foo_packages():
+        return "ansible-core"
+
+    @nox.session
+    @antsibull_nox.sessions.install_packages(package_callback=foo_packages)
+    def foo(session: nox.Session) -> None:
+        ...
+
+    # Install a list of packages
+
+    def bar_packages():
+        return ["ansible-core", "antsibull-docs", "requests"]
+
+    @nox.session
+    @antsibull_nox.sessions.install_packages(package_callback=bar_packages)
+    def bar(session: nox.Session) -> None:
+        ...
+
+    # Install no package
+
+    def baz_packages():
+        return None
+
+    @nox.session
+    @antsibull_nox.sessions.install_packages(package_callback=baz_packages)
+    def baz(session: nox.Session) -> None:
+        ...
+    ```
+
+### Example code
+
+This simple example runs a playbook with ansible-core.
+For that we need to make sure ansible-core is installed in the session.
+
+```python
+import os
+
+# Put this in the try/except at the top of the noxfile.py:
+import antsibull_nox.sessions
+
+
+@nox.session(name="run-test-playbook")
+@antsibull_nox.sessions.install_packages(packages=["ansible-core"])
+def run_test_playbook(session: nox.Session) -> None:
+    session.run("ansible-playbook", "tests/test-playbook.yml")
+```
+
 ## Adding own tests that need to import from the collection structure
 
 Some collections need additional, specific tests for collection-specific properties.
@@ -190,8 +277,8 @@ IN_CI = os.environ.get("CI") == "true"
 
 
 @nox.session(name="update-docs-fragments")
+@antsibull_nox.sessions.install_packages(packages=["ansible-core"])
 def update_docs_fragments(session: nox.Session) -> None:
-    session.install(session, "ansible-core")
     prepare = antsibull_nox.sessions.prepare_collections(
         session, install_in_site_packages=True
     )
