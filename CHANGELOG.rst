@@ -4,6 +4,27 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.6.0
+======
+
+Release Summary
+---------------
+
+Feature and bugfix release.
+
+Minor Changes
+-------------
+
+- Allow to run commands before executing nox in shared workflows (https://github.com/ansible-community/antsibull-nox/pull/188).
+- Always show tracebacks in case of errors for ansible-core 2.19+ in integration tests. Showing these has been turned off by default in ansible-core 2.19, which is great for intentional errors, but makes debugging unintentional ones (like plugin crashes) hard to debug since you do not see where the error comes from (https://github.com/ansible-community/antsibull-nox/pull/190).
+- Antsibull-nox's ansible-core ``devel`` and ``milestone`` branch versions have been updated to 2.22. This means that ``stable-2.21`` will now be added to CI matrices if ``max_version`` has not been explicitly specified (https://github.com/ansible-community/antsibull-nox/pull/195).
+
+Bugfixes
+--------
+
+- If change detection is enabled and ``antsibull-nox.toml`` or a linter's config file is changed, check all files (https://github.com/ansible-community/antsibull-nox/issues/183, https://github.com/ansible-community/antsibull-nox/pull/185).
+- Run ``ruff check`` with ``--quiet`` to avoid warnings to prevent parsing of the JSON output (https://github.com/ansible-community/antsibull-nox/issues/184, https://github.com/ansible-community/antsibull-nox/pull/186).
+
 v1.5.0
 ======
 
