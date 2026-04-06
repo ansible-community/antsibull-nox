@@ -182,6 +182,7 @@ GET_SUPPORTED_CORE_VERSIONS_DATA: list[
             Version.parse("2.18"),
             Version.parse("2.19"),
             Version.parse("2.20"),
+            Version.parse("2.21"),
         ],
     ),
     (
