@@ -17,6 +17,7 @@ from collections.abc import Iterator, Sequence
 
 import nox
 
+from ...ansible import AnsiblePackage
 from . import IN_CI as _IN_CI
 
 ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not _IN_CI)).lower() in (
@@ -93,6 +94,7 @@ class PackageConstraints:
 
 PackageType = t.Union[
     str,
+    AnsiblePackage,
     PackageName,
     PackageEditable,
     PackageRequirements,
@@ -142,7 +144,7 @@ def install(session: nox.Session, *args: PackageType, **kwargs):
 
 
 def check_package_types(
-    session: nox.Session, arg_name: str, packages: list[PackageType]
+    session: nox.Session | None, arg_name: str, packages: list[PackageType]
 ) -> list[PackageType]:
     """
     Given a list of packages, check for invalid package names.
@@ -150,7 +152,7 @@ def check_package_types(
     for package in packages:
         if not isinstance(package, (PackageName, PackageEditable)):
             continue
-        if package.name.startswith("-"):
+        if package.name.startswith("-") and session is not None:
             session.warn(
                 f"DEPRECATION WARNING: {arg_name} contains a package name"
                 f" {package.name!r} starting with a dash."

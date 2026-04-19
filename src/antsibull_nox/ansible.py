@@ -10,8 +10,10 @@ Ansible-core version utilities.
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import typing as t
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 from antsibull_fileutils.yaml import load_yaml_file
@@ -179,13 +181,32 @@ _ANSIBLE_EOL_REPO = "ansible-community/eol-ansible"
 _ANSIBLE_EOL_MAX_VERSION = Version(2, 14)
 
 
+@dataclasses.dataclass
+class AnsiblePackage:
+    """
+    An Ansible package.
+    """
+
+    source: t.Literal["git", "pypi"]
+    core_version: AnsibleCoreVersion
+    name: str
+    git_repo: str | None = None
+    branch_name: str | None = None
+
+    def get_pip_install_args(self) -> Iterator[str]:
+        """
+        Yield arguments to 'pip install'.
+        """
+        yield self.name
+
+
 def get_ansible_core_package_name(
     core_version: AnsibleCoreVersion,
     *,
     source: t.Literal["git", "pypi"] = "git",
     ansible_repo: str | None = None,
     branch_name: str | None = None,
-) -> str:
+) -> AnsiblePackage:
     """
     Return the package name for a specific ansible-core version.
 
@@ -209,7 +230,13 @@ def get_ansible_core_package_name(
                 ansible_repo = _ANSIBLE_EOL_REPO
             else:
                 ansible_repo = _ANSIBLE_REPO
-        return f"https://github.com/{ansible_repo}/archive/{branch_name}.tar.gz"
+        return AnsiblePackage(
+            source="git",
+            core_version=core_version,
+            name=f"https://github.com/{ansible_repo}/archive/{branch_name}.tar.gz",
+            git_repo=f"https://github.com/{ansible_repo}.git",
+            branch_name=branch_name,
+        )
 
     assert isinstance(core_version, Version)
     next_core_version = core_version.next_minor_version()
@@ -218,7 +245,11 @@ def get_ansible_core_package_name(
         base = "ansible"
     elif core_version == Version(2, 10):
         base = "ansible-base"
-    return f"{base}>={core_version},<{next_core_version}"
+    return AnsiblePackage(
+        source="pypi",
+        core_version=core_version,
+        name=f"{base}>={core_version},<{next_core_version}",
+    )
 
 
 @functools.cache
@@ -305,6 +336,7 @@ def parse_ansible_core_version(
 
 __all__ = [
     "AnsibleCoreInfo",
+    "AnsiblePackage",
     "get_ansible_core_info",
     "get_ansible_core_package_name",
     "parse_ansible_core_version",

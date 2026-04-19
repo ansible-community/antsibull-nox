@@ -15,11 +15,11 @@ import nox
 from .utils import (
     compose_description,
 )
+from .utils.package_decorator import install_packages
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
     check_package_types,
-    install,
     normalize_package_type,
 )
 from .utils.scripts import (
@@ -39,7 +39,7 @@ def add_license_check(
     Add license-check session for license checks.
     """
 
-    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+    def compose_dependencies(session: nox.Session | None) -> list[PackageType]:
         deps = []
         if run_reuse:
             deps.extend(
@@ -51,8 +51,8 @@ def add_license_check(
             )
         return deps
 
+    @install_packages(package_callback=compose_dependencies)
     def license_check(session: nox.Session) -> None:
-        install(session, *compose_dependencies(session))
         if run_reuse:
             session.run("reuse", "lint")
         if run_license_check:
