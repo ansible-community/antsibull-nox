@@ -13,6 +13,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import nox
+from nox.registry import Func
 
 from .packages import (
     PackageType,
@@ -41,6 +42,7 @@ def _get_packages(
 
 
 def install_packages(
+    *,
     packages: PackageTypeOrList | None = None,
     package_callback: (
         Callable[[nox.Session | None], PackageTypeOrList | None] | None
@@ -62,6 +64,13 @@ def install_packages(
         """
         The actual decorator.
         """
+        if isinstance(session_func, Func):
+            raise ValueError(
+                "The @install_packages decorator must be applied to a function"
+                " before nox's @session decorator. This means that @install_package"
+                " must come after @session when both decorators are applied"
+                " next to each other."
+            )
 
         def new_session_func(session: nox.Session) -> None:
             session_packages = _get_packages(
@@ -73,12 +82,31 @@ def install_packages(
 
         new_session_func.__doc__ = session_func.__doc__
         new_session_func.install_packages__packages = packages  # type: ignore
-        new_session_func.install_packages__packages = package_callback  # type: ignore
+        new_session_func.install_packages__package_callback = package_callback  # type: ignore
         return new_session_func
 
     return wrapper
 
 
+def get_session_packages(session: Func) -> list[PackageType] | None:
+    """
+    Given a nox session function, return a list of packages if applicable.
+
+    If the install_packages decorator was not used, returns ``None`` instead.
+    """
+    sentinel = object()
+    packages = getattr(session.func, "install_packages__packages", sentinel)
+    package_callback = getattr(
+        session.func, "install_packages__package_callback", sentinel
+    )
+    if packages is sentinel or package_callback is sentinel:
+        return None
+    return _get_packages(
+        session=None, packages=packages, package_callback=package_callback  # type: ignore
+    )
+
+
 __all__ = [
+    "get_session_packages",
     "install_packages",
 ]
