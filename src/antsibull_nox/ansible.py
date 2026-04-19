@@ -190,7 +190,7 @@ class AnsiblePackage:
     source: t.Literal["git", "pypi"]
     core_version: AnsibleCoreVersion
     name: str
-    ansible_repo: str | None = None
+    git_repo: str | None = None
     branch_name: str | None = None
 
     def get_pip_install_args(self) -> Iterator[str]:
@@ -234,7 +234,7 @@ def get_ansible_core_package_name(
             source="git",
             core_version=core_version,
             name=f"https://github.com/{ansible_repo}/archive/{branch_name}.tar.gz",
-            ansible_repo=f"https://github.com/{ansible_repo}.git",
+            git_repo=f"https://github.com/{ansible_repo}.git",
             branch_name=branch_name,
         )
 
