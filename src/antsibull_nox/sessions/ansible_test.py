@@ -43,6 +43,7 @@ from .utils import (
     register,
 )
 from .utils.package_decorator import install_packages
+from .utils.packages import PackageType
 from .utils.values import (
     AnsibleValue,
     AnsibleValueExplicit,
@@ -118,8 +119,8 @@ def add_ansible_test_session(
     """
     parsed_ansible_core_version = parse_ansible_core_version(ansible_core_version)
 
-    def compose_dependencies(_session: nox.Session | None) -> list[str]:
-        deps = [
+    def compose_dependencies(_session: nox.Session | None) -> list[PackageType]:
+        deps: list[PackageType] = [
             get_ansible_core_package_name(
                 parsed_ansible_core_version,
                 source=ansible_core_source,

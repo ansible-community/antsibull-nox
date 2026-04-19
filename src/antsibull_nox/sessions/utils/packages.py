@@ -17,6 +17,7 @@ from collections.abc import Iterator, Sequence
 
 import nox
 
+from ...ansible import AnsiblePackage
 from . import IN_CI as _IN_CI
 
 ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not _IN_CI)).lower() in (
@@ -93,6 +94,7 @@ class PackageConstraints:
 
 PackageType = t.Union[
     str,
+    AnsiblePackage,
     PackageName,
     PackageEditable,
     PackageRequirements,
