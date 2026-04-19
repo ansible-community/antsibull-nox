@@ -128,6 +128,11 @@ or a callback that returns a list of packages to the decorator.
         ...
     ```
 
+!!! note
+    The `install_packages` decorator must be applied before nox's `session` decorator is applied.
+    The above and below examples show the correct order.
+    If you apply the decorators in the wrong order, an exception will be raised.
+
 ### Example code
 
 This simple example runs a playbook with ansible-core.
