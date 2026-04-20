@@ -16,8 +16,8 @@ from collections.abc import Sequence
 import nox
 
 from .collections import prepare_collections
-from .utils.package_decorator import install_packages
 from .utils.constants import _ANSIBLE_COMPAT_REQUIREMENTS_FILES
+from .utils.package_decorator import install_packages
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
