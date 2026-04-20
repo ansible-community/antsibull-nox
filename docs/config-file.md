@@ -1739,14 +1739,15 @@ It simply runs `ansible-lint`.
 
 The [molecule](https://docs.ansible.com/projects/molecule/) session is added with the `[sessions.molecule]` section in `antsibull-nox.toml`.
 
-> [!NOTE]
-> By default this session will run against the `default` scenario in a collection when no configuration changes are made. Use the `scenarios` configuration option to customize this.
+!!! note
+    By default this session will run against the `default` scenario in a collection when no configuration changes are made.
+    Use the `scenarios` configuration option to customize this.
 
 The added session is called `molecule`. The section can contain the following configurations:
 
 * `default: bool` (default `false`):
   Whether the `molecule` session should be made default.
-  This means that when a user just runs `nox` without specifying sessions, this session will not run automatically.
+  This means that when a user just runs `nox` without specifying sessions, this session will run.
 
 * `molecule_package: PackageType` (default `"molecule"`):
   The package to install for `molecule` in this session.
@@ -1758,8 +1759,9 @@ The added session is called `molecule`. The section can contain the following co
   Additional list of `requirements.yml` files for collections to install
   before running `molecule test`.
 
-    > [!NOTE]
-    > `antsibull-nox` knows about [the locations ansible-compat looks for `requirements.yml` in](https://github.com/ansible/ansible-compat/blob/main/src/ansible_compat/constants.py#L6) and already makes sure that collections from these requirement files are present.
+    !!! note
+        `antsibull-nox` knows about [the locations ansible-compat looks for `requirements.yml` in](https://github.com/ansible/ansible-compat/blob/main/src/ansible_compat/constants.py#L6)
+        and already makes sure that collections from these requirement files are present.
 
 * `debug: bool` (default `false`):
   Whether the `--debug` parameter should be passed to `molecule`.
@@ -1768,22 +1770,9 @@ The added session is called `molecule`. The section can contain the following co
 * `scenarios: list[str] | "all" | None` (default `None`):
   Used to control the scenarios to run with Molecule.
 
-  Users can specify a list of scenario names to run:
+    Users can specify a list of scenario names to run:
 
-  ```toml
-  [molecule]
-  scenarios = ["scenario1", "scenario2"]
-  ```
-
-  Alternatively, users can specify `"all"` which is the equivalent of
-  passing the `--all` flag to `molecule test`:
-
-  ```toml
-  [molecule]
-  scenarios = "all"
-  ```
-
-  Finally, if not specified, the default behaviour is to run `molecule test --scenario-name default`.
+    
 
 * `parallel: bool` (default `false`):
   Whether the `--parallel` parameter should be passed to `molecule test`.

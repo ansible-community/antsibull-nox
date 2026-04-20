@@ -106,9 +106,7 @@ def add_molecule(
                 "extensions/molecule/requirements.yml",
             ]
         )
-        discovered_molecule_requirements_files = find_molecule_scenario_requirements()
-        if discovered_molecule_requirements_files:
-            ansible_compat_req_files.extend(discovered_molecule_requirements_files)
+        ansible_compat_req_files.extend(find_molecule_scenario_requirements())
         # pylint: disable=duplicate-code
         if additional_requirements_files:
             ansible_compat_req_files.extend(additional_requirements_files)
@@ -146,6 +144,7 @@ def add_molecule(
         if session.posargs:
             command.append("--")
             command.extend(session.posargs)
+
         # Ensure we are in extensions prior to running molecule test
         with session.chdir("extensions"):
             session.run(*command, env=env)

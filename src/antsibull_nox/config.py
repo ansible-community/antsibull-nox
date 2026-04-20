@@ -803,8 +803,8 @@ class Sessions(_BaseModel):
     ] = None
     ansible_test_integration: t.Optional[SessionAnsibleTestIntegration] = None
     ansible_lint: t.Optional[SessionAnsibleLint] = None
-    ee_check: t.Optional[SessionExecutionEnvironmentCheck] = None
     molecule: t.Optional[SessionMolecule] = None
+    ee_check: t.Optional[SessionExecutionEnvironmentCheck] = None
 
 
 class CollectionSource(_BaseModel):
