@@ -85,7 +85,6 @@ def add_molecule(
         )
 
     def molecule(session: nox.Session) -> None:
-        # pylint: disable=too-many-branches
         ansible_compat_req_files = list(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
         molecule_collection_root_exists = check_molecule_collection_root()
         if not molecule_collection_root_exists:
