@@ -18,6 +18,7 @@ from antsibull_nox.ansible import (
     _CURRENT_MILESTONE_VERSION,
     _MIN_SUPPORTED_VERSION,
     AnsibleCoreVersion,
+    AnsiblePackage,
     _read_requires_ansible,
     get_ansible_core_info,
     get_ansible_core_package_name,
@@ -76,71 +77,154 @@ def test_all_versions() -> None:
 
 
 GET_ANSIBLE_CORE_PAGAGE_NAME_DATA: list[
-    tuple[AnsibleCoreVersion, dict[str, t.Any], str]
+    tuple[AnsibleCoreVersion, dict[str, t.Any], AnsiblePackage]
 ] = [
     (
         Version(2, 9),
         {},
-        "https://github.com/ansible-community/eol-ansible/archive/stable-2.9.tar.gz",
+        AnsiblePackage(
+            source="git",
+            core_version=Version(2, 9),
+            name="https://github.com/ansible-community/eol-ansible/archive/stable-2.9.tar.gz",
+            git_repo="https://github.com/ansible-community/eol-ansible.git",
+            branch_name="stable-2.9",
+        ),
     ),
     (
         Version(2, 9),
         {"source": "pypi"},
-        "ansible>=2.9,<2.10",
+        AnsiblePackage(
+            source="pypi",
+            core_version=Version(2, 9),
+            name="ansible>=2.9,<2.10",
+            git_repo=None,
+            branch_name=None,
+        ),
     ),
     (
         Version(2, 10),
         {},
-        "https://github.com/ansible-community/eol-ansible/archive/stable-2.10.tar.gz",
+        AnsiblePackage(
+            source="git",
+            core_version=Version(2, 10),
+            name="https://github.com/ansible-community/eol-ansible/archive/stable-2.10.tar.gz",
+            git_repo="https://github.com/ansible-community/eol-ansible.git",
+            branch_name="stable-2.10",
+        ),
     ),
     (
         Version(2, 10),
         {"source": "pypi"},
-        "ansible-base>=2.10,<2.11",
+        AnsiblePackage(
+            source="pypi",
+            core_version=Version(2, 10),
+            name="ansible-base>=2.10,<2.11",
+            git_repo=None,
+            branch_name=None,
+        ),
     ),
     (
         Version(2, 11),
         {},
-        "https://github.com/ansible-community/eol-ansible/archive/stable-2.11.tar.gz",
+        AnsiblePackage(
+            source="git",
+            core_version=Version(2, 11),
+            name="https://github.com/ansible-community/eol-ansible/archive/stable-2.11.tar.gz",
+            git_repo="https://github.com/ansible-community/eol-ansible.git",
+            branch_name="stable-2.11",
+        ),
     ),
     (
         Version(2, 11),
         {"source": "pypi"},
-        "ansible-core>=2.11,<2.12",
+        AnsiblePackage(
+            source="pypi",
+            core_version=Version(2, 11),
+            name="ansible-core>=2.11,<2.12",
+            git_repo=None,
+            branch_name=None,
+        ),
     ),
     # Last EOL version
     (
         Version(2, 14),
         {},
-        "https://github.com/ansible-community/eol-ansible/archive/stable-2.14.tar.gz",
+        AnsiblePackage(
+            source="git",
+            core_version=Version(2, 14),
+            name="https://github.com/ansible-community/eol-ansible/archive/stable-2.14.tar.gz",
+            git_repo="https://github.com/ansible-community/eol-ansible.git",
+            branch_name="stable-2.14",
+        ),
     ),
     # First non-EOL version
     (
         Version(2, 15),
         {},
-        "https://github.com/ansible/ansible/archive/stable-2.15.tar.gz",
+        AnsiblePackage(
+            source="git",
+            core_version=Version(2, 15),
+            name="https://github.com/ansible/ansible/archive/stable-2.15.tar.gz",
+            git_repo="https://github.com/ansible/ansible.git",
+            branch_name="stable-2.15",
+        ),
+    ),
+    (
+        Version(2, 15),
+        {"source": "pypi"},
+        AnsiblePackage(
+            source="pypi",
+            core_version=Version(2, 15),
+            name="ansible-core>=2.15,<2.16",
+            git_repo=None,
+            branch_name=None,
+        ),
     ),
     # devel
     (
         "devel",
         {},
-        "https://github.com/ansible/ansible/archive/devel.tar.gz",
+        AnsiblePackage(
+            source="git",
+            core_version="devel",
+            name="https://github.com/ansible/ansible/archive/devel.tar.gz",
+            git_repo="https://github.com/ansible/ansible.git",
+            branch_name="devel",
+        ),
     ),
     (
         "devel",
         {"source": "pypi"},
-        "https://github.com/ansible/ansible/archive/devel.tar.gz",
+        AnsiblePackage(
+            source="git",
+            core_version="devel",
+            name="https://github.com/ansible/ansible/archive/devel.tar.gz",
+            git_repo="https://github.com/ansible/ansible.git",
+            branch_name="devel",
+        ),
     ),
     # milestone
     (
         "milestone",
         {},
-        "https://github.com/ansible/ansible/archive/milestone.tar.gz",
+        AnsiblePackage(
+            source="git",
+            core_version="milestone",
+            name="https://github.com/ansible/ansible/archive/milestone.tar.gz",
+            git_repo="https://github.com/ansible/ansible.git",
+            branch_name="milestone",
+        ),
     ),
     (
         "milestone",
         {"source": "pypi"},
-        "https://github.com/ansible/ansible/archive/milestone.tar.gz",
+        AnsiblePackage(
+            source="git",
+            core_version="milestone",
+            name="https://github.com/ansible/ansible/archive/milestone.tar.gz",
+            git_repo="https://github.com/ansible/ansible.git",
+            branch_name="milestone",
+        ),
     ),
     (
         "milestone",
@@ -148,7 +232,14 @@ GET_ANSIBLE_CORE_PAGAGE_NAME_DATA: list[
             "branch_name": "refs/pull/84621/head",
             "ansible_repo": "ansible-community/eol-ansible",
         },
-        "https://github.com/ansible-community/eol-ansible/archive/refs/pull/84621/head.tar.gz",
+        AnsiblePackage(
+            source="git",
+            core_version="milestone",
+            name="https://github.com/ansible-community/eol-ansible/"
+            "archive/refs/pull/84621/head.tar.gz",
+            git_repo="https://github.com/ansible-community/eol-ansible.git",
+            branch_name="refs/pull/84621/head",
+        ),
     ),
 ]
 
@@ -158,7 +249,9 @@ GET_ANSIBLE_CORE_PAGAGE_NAME_DATA: list[
     GET_ANSIBLE_CORE_PAGAGE_NAME_DATA,
 )
 def test_get_ansible_core_package_name(
-    version: AnsibleCoreVersion, kwargs: dict[str, t.Any], expected_package_name: str
+    version: AnsibleCoreVersion,
+    kwargs: dict[str, t.Any],
+    expected_package_name: AnsiblePackage,
 ) -> None:
     assert get_ansible_core_package_name(version, **kwargs) == expected_package_name
 
@@ -182,6 +275,7 @@ GET_SUPPORTED_CORE_VERSIONS_DATA: list[
             Version.parse("2.18"),
             Version.parse("2.19"),
             Version.parse("2.20"),
+            Version.parse("2.21"),
         ],
     ),
     (

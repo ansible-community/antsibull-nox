@@ -16,12 +16,12 @@ from collections.abc import Sequence
 import nox
 
 from .collections import prepare_collections
+from .utils.package_decorator import install_packages
 from .utils.constants import _ANSIBLE_COMPAT_REQUIREMENTS_FILES
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
     check_package_types,
-    install,
     normalize_package_type,
 )
 
@@ -37,16 +37,16 @@ def add_ansible_lint(
     Add a session that runs ansible-lint.
     """
 
-    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+    def compose_dependencies(session: nox.Session | None) -> list[PackageType]:
         return check_package_types(
             session,
             "sessions.ansible_lint.ansible_lint_package",
             normalize_package_type(ansible_lint_package),
         )
 
+    @install_packages(package_callback=compose_dependencies)
     def ansible_lint(session: nox.Session) -> None:
         ansible_compat_req_files = list(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
-        install(session, *compose_dependencies(session))
         if additional_requirements_files:
             ansible_compat_req_files.extend(additional_requirements_files)
         prepared_collections = prepare_collections(

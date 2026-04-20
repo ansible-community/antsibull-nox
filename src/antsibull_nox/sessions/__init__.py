@@ -14,8 +14,12 @@ from .collections import (  # Re-export for usage in noxfiles
     CollectionSetup,
     prepare_collections,
 )
+from .utils.package_decorator import (  # Re-export for usage in noxfiles
+    install_packages,
+)
 
 __all__ = [
     "CollectionSetup",
+    "install_packages",
     "prepare_collections",
 ]

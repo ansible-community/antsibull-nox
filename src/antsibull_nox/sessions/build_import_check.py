@@ -24,11 +24,11 @@ from .utils import (
     nox_has_verbosity,
     silence_run_verbosity,
 )
+from .utils.package_decorator import install_packages
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
     check_package_types,
-    install,
     normalize_package_type,
 )
 
@@ -48,7 +48,7 @@ def add_build_import_check(
     Add license-check session for license checks.
     """
 
-    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+    def compose_dependencies(session: nox.Session | None) -> list[PackageType]:
         deps = []
         deps.extend(
             check_package_types(
@@ -61,9 +61,8 @@ def add_build_import_check(
             deps.extend(normalize_package_type(galaxy_importer_package))
         return deps
 
+    @install_packages(package_callback=compose_dependencies)
     def build_import_check(session: nox.Session) -> None:
-        install(session, *compose_dependencies(session))
-
         tarball, _, __ = build_collection(session)
 
         if run_galaxy_importer and tarball:

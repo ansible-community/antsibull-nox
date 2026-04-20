@@ -21,11 +21,11 @@ from ..container import get_container_engine_preference, get_preferred_container
 from ..ee_config import generate_ee_config
 from ..paths.utils import get_outside_temp_directory
 from .utils import register
+from .utils.package_decorator import install_packages
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
     check_package_types,
-    install,
     normalize_package_type,
 )
 
@@ -148,7 +148,7 @@ def add_execution_environment_session(
     Build and test execution environments for the collection.
     """
 
-    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+    def compose_dependencies(session: nox.Session | None) -> list[PackageType]:
         result = []
         result.extend(
             check_package_types(
@@ -173,9 +173,8 @@ def add_execution_environment_session(
         )
         return result
 
+    @install_packages(package_callback=compose_dependencies)
     def session_func(session: nox.Session) -> None:
-        install(session, *compose_dependencies(session))
-
         container_engine = get_preferred_container_engine()
         session.log(f"Using container engine {container_engine}")
 
