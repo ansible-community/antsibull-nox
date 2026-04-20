@@ -67,7 +67,7 @@ def add_molecule(
     molecule_package: PackageTypeOrList = "molecule",
     additional_requirements_files: Sequence[str | os.PathLike] | None = None,
     debug: bool = False,
-    scenarios: t.Union[list[str], t.Literal["all"], None] = None,
+    scenarios: list[str] | t.Literal["all"] | None = None,
     parallel: bool = False,
     report: bool = False,
     command_borders: bool = False,
