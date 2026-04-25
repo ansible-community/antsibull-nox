@@ -16,6 +16,7 @@ from collections.abc import Sequence
 import nox
 
 from .collections import prepare_collections
+from .utils.constants import _ANSIBLE_COMPAT_REQUIREMENTS_FILES
 from .utils.package_decorator import install_packages
 from .utils.packages import (
     PackageType,
@@ -45,23 +46,14 @@ def add_ansible_lint(
 
     @install_packages(package_callback=compose_dependencies)
     def ansible_lint(session: nox.Session) -> None:
-        extra_deps_files: list[str | os.PathLike] = [
-            "requirements.yml",
-            "roles/requirements.yml",
-            "collections/requirements.yml",
-            "tests/requirements.yml",
-            "tests/integration/requirements.yml",
-            "tests/unit/requirements.yml",
-        ]
+        ansible_compat_req_files = list(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
         if additional_requirements_files:
-            extra_deps_files.extend(additional_requirements_files)
+            ansible_compat_req_files.extend(additional_requirements_files)
         prepared_collections = prepare_collections(
             session,
             install_in_site_packages=False,
             install_out_of_tree=True,
-            # List taken from
-            # https://github.com/ansible/ansible-compat/blob/main/src/ansible_compat/constants.py#L6-L14
-            extra_deps_files=extra_deps_files,
+            extra_deps_files=ansible_compat_req_files,
         )
         if not prepared_collections:
             session.warn("Skipping ansible-lint...")
