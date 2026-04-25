@@ -20,11 +20,11 @@ import nox
 from ..paths.utils import list_all_files
 from .collections import prepare_collections
 from .utils.constants import _ANSIBLE_COMPAT_REQUIREMENTS_FILES
+from .utils.package_decorator import install_packages
 from .utils.packages import (
     PackageType,
     PackageTypeOrList,
     check_package_types,
-    install,
     normalize_package_type,
 )
 
@@ -77,13 +77,14 @@ def add_molecule(
     Add a session that runs molecule.
     """
 
-    def compose_dependencies(session: nox.Session) -> list[PackageType]:
+    def compose_dependencies(session: nox.Session | None) -> list[PackageType]:
         return check_package_types(
             session,
             "sessions.molecule.molecule_package",
             normalize_package_type(molecule_package),
         )
 
+    @install_packages(package_callback=compose_dependencies)
     def molecule(session: nox.Session) -> None:
         ansible_compat_req_files = list(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
         molecule_collection_root_exists = check_molecule_collection_root()
@@ -94,17 +95,6 @@ def add_molecule(
                 f"Molecule collection root directory {_MOLECULE_COLLECTION_ROOT} was not found."
                 f" Molecule scenarios should be migrated to {_MOLECULE_COLLECTION_ROOT}."
             )
-        install(session, *compose_dependencies(session))
-        ansible_compat_req_files.extend(
-            [
-                # Taken from
-                # https://github.com/ansible/molecule/blob/main/docs/getting-started-playbooks.md?plain=1#L49
-                "molecule/requirements.yml",
-                # Taken from
-                # https://github.com/ansible/molecule/blob/main/docs/getting-started-collections.md
-                "extensions/molecule/requirements.yml",
-            ]
-        )
         ansible_compat_req_files.extend(find_molecule_scenario_requirements())
         # pylint: disable=duplicate-code
         if additional_requirements_files:

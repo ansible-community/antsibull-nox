@@ -1772,7 +1772,20 @@ The added session is called `molecule`. The section can contain the following co
 
     Users can specify a list of scenario names to run:
 
-    
+    ```toml
+    [sessions.molecule]
+    scenarios = ["scenario1", "scenario2"]
+    ```
+
+    Alternatively, users can specify `"all"` which is the equivalent of
+    passing the `--all` flag to `molecule test`:
+
+    ```toml
+    [sessions.molecule]
+    scenarios = "all"
+    ```
+
+    Finally, if not specified, the default behaviour is to run `molecule test --scenario-name default`.
 
 * `parallel: bool` (default `false`):
   Whether the `--parallel` parameter should be passed to `molecule test`.
