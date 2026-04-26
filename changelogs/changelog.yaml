@@ -566,3 +566,20 @@ releases:
       - 189-ansible-test-integration.yml
       - 195-bump.yml
     release_date: '2026-04-06'
+  1.7.0:
+    changes:
+      minor_changes:
+        - A Molecule session can now be added with ``[sessions.molecule]`` in ``antsibull-nox.toml``
+          (https://github.com/ansible-community/antsibull-nox/issues/162, https://github.com/ansible-community/antsibull-nox/pull/187).
+        - Ansible-core devel now supports Python 3.15 (https://github.com/ansible-community/antsibull-nox/pull/198).
+        - Provide a decorator ``@antsibull_nox.sessions.install_packages()`` in the
+          public API that allows to install Python packages for nox sessions in a
+          way that can later be used to provide a unified way to pin packages and
+          update package lockfiles (https://github.com/ansible-community/antsibull-nox/pull/194).
+      release_summary: Feature release.
+    fragments:
+      - 1.7.0.yml
+      - 187-molecule.yml
+      - 194-install-packages.yml
+      - 198-python-3-15.yml
+    release_date: '2026-04-26'

@@ -4,6 +4,21 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.7.0
+======
+
+Release Summary
+---------------
+
+Feature release.
+
+Minor Changes
+-------------
+
+- A Molecule session can now be added with ``[sessions.molecule]`` in ``antsibull-nox.toml`` (https://github.com/ansible-community/antsibull-nox/issues/162, https://github.com/ansible-community/antsibull-nox/pull/187).
+- Ansible-core devel now supports Python 3.15 (https://github.com/ansible-community/antsibull-nox/pull/198).
+- Provide a decorator ``@antsibull_nox.sessions.install_packages()`` in the public API that allows to install Python packages for nox sessions in a way that can later be used to provide a unified way to pin packages and update package lockfiles (https://github.com/ansible-community/antsibull-nox/pull/194).
+
 v1.6.0
 ======
 

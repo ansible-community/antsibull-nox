@@ -1,3 +1,0 @@
-minor_changes:
-  - "A Molecule session can now be added with ``[sessions.molecule]`` in ``antsibull-nox.toml``
-     (https://github.com/ansible-community/antsibull-nox/issues/162, https://github.com/ansible-community/antsibull-nox/pull/187)."
