@@ -161,6 +161,18 @@ def add_ansible_test_session(
             if callback_before:
                 callback_before()
 
+            env_command = [
+                "ansible-test",
+                "env",
+                "--dump",
+                "--show",
+                "-v",
+            ] + get_ansible_test_color_flag(session)
+            timeout = os.environ.get("ANTSIBULL_NOX_TIMEOUT")
+            if timeout:
+                env_command.extend(["--timeout", timeout])
+            session.run(*env_command, env=get_ansible_test_env())
+
             command = ["ansible-test"]
             for param in ansible_test_params:
                 if isinstance(param, _ColorFlagType):
