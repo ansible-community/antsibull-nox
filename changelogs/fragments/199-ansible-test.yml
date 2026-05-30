@@ -1,0 +1,5 @@
+minor_changes:
+  - "Run ``ansible-test env`` before running ansible-test tests.
+     Also allow to supply ``--timeout`` parameter by setting ``ANTSIBULL_NOX_TIMEOUT`` environment variable;
+     this is for use in CI systems such as Azure Pipelines
+     (https://github.com/ansible-community/antsibull-nox/pull/199)."
