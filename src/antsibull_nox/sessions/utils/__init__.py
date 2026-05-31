@@ -31,6 +31,22 @@ def _is_in_ci() -> bool:
     # https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
     if os.environ.get("CI") == "true":
         return True
+
+    # The following seems to detect Azure Pipelines:
+    # https://stackoverflow.com/a/68771148
+    # https://stackoverflow.com/a/77218424
+    # https://learn.microsoft.com/en-us/azure/devops/pipelines/build/variables?view=azure-devops&tabs=yaml
+    if os.environ.get("TF_BUILD") == "True":
+        return True
+
+    # The following check is used by ansible-test to detect Azure Pipelines.
+    # It likely only works for Ansible's AZP environment.
+    if os.environ.get("SYSTEM_COLLECTIONURI", "").startswith("https://dev.azure.com/"):
+        return True
+
+    # The following contains more env variables set by various CI systems:
+    # https://github.com/watson/ci-info/blob/master/vendors.json
+
     return False
 
 
