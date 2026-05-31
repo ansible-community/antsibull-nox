@@ -19,6 +19,7 @@ from .config import (
 )
 from .interpret_config import interpret_config
 from .sessions.ansible_test import add_ansible_test_session
+from .sessions.utils import IN_CI
 
 __version__ = "1.7.0.post0"
 
@@ -33,9 +34,9 @@ def load_antsibull_nox_toml() -> None:
     interpret_config(config)
 
 
-# pylint:disable=duplicate-code
 __all__ = (
     "__version__",
     "add_ansible_test_session",
     "load_antsibull_nox_toml",
+    "IN_CI",
 )
