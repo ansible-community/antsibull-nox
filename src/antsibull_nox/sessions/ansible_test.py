@@ -147,13 +147,18 @@ def add_ansible_test_session(
                         base_branch,
                     ]
 
+        always_copy_repo_structure = (
+            os.environ.get("ANTSIBULL_NOX_ALWAYS_COPY_REPO_STRUCTURE") == "true"
+        )
+
         prepared_collections = prepare_collections(
             session,
             ansible_core_version=parsed_ansible_core_version,
             install_in_site_packages=False,
             extra_deps_files=extra_deps_files,
             install_out_of_tree=True,
-            copy_repo_structure=change_detection_args is not None,
+            copy_repo_structure=change_detection_args is not None
+            or always_copy_repo_structure,
         )
         if not prepared_collections:
             session.warn("Skipping ansible-test...")
