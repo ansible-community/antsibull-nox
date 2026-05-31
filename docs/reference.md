@@ -59,6 +59,24 @@ It loads the `antsibull-nox.toml` configuration file,
 loads its configuration options,
 and adds all sessions configured in there.
 
+## Determining whether nox is run in CI
+
+Antsibull-nox exports a `IN_CI` constant.
+This can be used to make sessions fail when a change appears in CI,
+like this:
+```python
+import antsibull_nox
+
+
+@nox.session
+def foo(session: nox.Session) -> None:
+    ...
+    changed = ...
+    ...
+    if changed and antsibull_nox.IN_CI:
+        session.error("Found unexpected change!")
+```
+
 ## Adding own tests that install packages
 
 While you can use [nox's `session.install()`](https://nox.thea.codes/en/stable/config.html#nox.sessions.Session.install)
@@ -274,13 +292,6 @@ import os
 import antsibull_nox.sessions
 
 
-# Whether the noxfile is running in CI:
-# https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
-# https://docs.gitlab.com/ci/variables/predefined_variables/#predefined-variables
-# https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
-IN_CI = os.environ.get("CI") == "true"
-
-
 @nox.session(name="update-docs-fragments")
 @antsibull_nox.sessions.install_packages(packages=["ansible-core"])
 def update_docs_fragments(session: nox.Session) -> None:
@@ -290,7 +301,7 @@ def update_docs_fragments(session: nox.Session) -> None:
     if not prepare:
         return
     data = ["python", "update-docs-fragments.py"]
-    if IN_CI:
+    if antsibull_nox.IN_CI:
         data.append("--lint")
     session.run(*data)
 ```

@@ -20,11 +20,22 @@ from contextlib import contextmanager
 import nox
 from nox.logger import OUTPUT as nox_OUTPUT
 
-# https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
-# https://docs.gitlab.com/ci/variables/predefined_variables/#predefined-variables
-# https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
-IN_CI = os.environ.get("CI") == "true"
-IN_GITHUB_ACTIONS = bool(os.environ.get("GITHUB_ACTION"))
+
+def _is_in_gha() -> bool:
+    return bool(os.environ.get("GITHUB_ACTION"))
+
+
+def _is_in_ci() -> bool:
+    # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+    # https://docs.gitlab.com/ci/variables/predefined_variables/#predefined-variables
+    # https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+    if os.environ.get("CI") == "true":
+        return True
+    return False
+
+
+IN_CI: t.Final[bool] = _is_in_ci()
+IN_GITHUB_ACTIONS: t.Final[bool] = _is_in_gha()
 
 _SESSIONS: dict[str, list[dict[str, t.Any]]] = {}
 
