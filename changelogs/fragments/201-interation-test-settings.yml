@@ -1,3 +1,5 @@
 minor_changes:
   - "Allow to configure whether ``ansible-test integration`` is passed the ``--retry-on-error`` flag
      (https://github.com/ansible-community/antsibull-nox/pull/201)."
+  - "Allow to configure whether ``ansible-test integration`` is passed the ``--continue-on-error`` flag
+     (https://github.com/ansible-community/antsibull-nox/pull/201)."

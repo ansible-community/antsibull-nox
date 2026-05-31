@@ -566,6 +566,13 @@ def _add_retry_on_error_params(
         parameters.append("--retry-on-error")
 
 
+def _add_continue_on_error_params(
+    parameters: list[str | _ColorFlagType], continue_on_error: NeverAlwaysInCI
+) -> None:
+    if _is_applicable(continue_on_error):
+        parameters.append("--continue-on-error")
+
+
 def add_ansible_test_integration_sessions_default_container(
     *,
     include_devel: bool = False,
@@ -582,6 +589,7 @@ def add_ansible_test_integration_sessions_default_container(
     ansible_vars_from_env_vars: dict[str, str] | None = None,
     ansible_vars: dict[str, AnsibleValue] | None = None,
     retry_on_error: NeverAlwaysInCI = "never",
+    continue_on_error: NeverAlwaysInCI = "never",
     default: bool = False,
 ) -> list[str]:
     """
@@ -691,6 +699,7 @@ def add_ansible_test_integration_sessions_default_container(
                 parameters, ansible_core_version
             )
             _add_retry_on_error_params(parameters, retry_on_error)
+            _add_continue_on_error_params(parameters, continue_on_error)
             add_ansible_test_session(
                 name=name,
                 description=description,
@@ -789,6 +798,7 @@ class AnsibleTestIntegrationSessionTemplate:
     display_name_template: str
     description_template: str
     retry_on_error: NeverAlwaysInCI
+    continue_on_error: NeverAlwaysInCI
     tags: list[str]
 
 
@@ -828,6 +838,7 @@ class AnsibleTestIntegrationSession:
     display_name: str
     description: str
     retry_on_error: NeverAlwaysInCI
+    continue_on_error: NeverAlwaysInCI
     tags: list[str]
 
     def get_ansible_vars_callback(self) -> t.Callable[[], None] | None:
@@ -966,6 +977,7 @@ def _template_session(
             display_name=tmpl(session_template.display_name_template),
             description=tmpl(session_template.description_template),
             retry_on_error=session_template.retry_on_error,
+            continue_on_error=session_template.continue_on_error,
             tags=tags_list,
         )
 
@@ -1048,6 +1060,7 @@ def add_ansible_test_integration_sessions(
         ]
         _add_version_specific_interation_test_params(cmd, session.ansible_core)
         _add_retry_on_error_params(cmd, session.retry_on_error)
+        _add_continue_on_error_params(cmd, session.continue_on_error)
         if session.docker:
             cmd.extend(
                 [

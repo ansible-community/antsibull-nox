@@ -266,6 +266,7 @@ def _add_ansible_test_sessions(sessions: Sessions, cconfig: CollectionConfig) ->
                     k: v.to_utils_instance() for k, v in cfg.ansible_vars.items()
                 },
                 retry_on_error=cfg.retry_on_error,
+                continue_on_error=cfg.continue_on_error,
             )
         )
     if sessions.ansible_test_integration:
@@ -301,6 +302,8 @@ def _add_ansible_test_sessions(sessions: Sessions, cconfig: CollectionConfig) ->
                         or sessions.ansible_test_integration.description_template,
                         retry_on_error=session.retry_on_error
                         or sessions.ansible_test_integration.retry_on_error,
+                        continue_on_error=session.continue_on_error
+                        or sessions.ansible_test_integration.continue_on_error,
                         tags=session.tags,
                     )
                     for session in sessions.ansible_test_integration.sessions
@@ -355,6 +358,9 @@ def _add_ansible_test_sessions(sessions: Sessions, cconfig: CollectionConfig) ->
                                 retry_on_error=session.retry_on_error
                                 or group.retry_on_error
                                 or sessions.ansible_test_integration.retry_on_error,
+                                continue_on_error=session.continue_on_error
+                                or group.continue_on_error
+                                or sessions.ansible_test_integration.continue_on_error,
                                 tags=session.tags,
                             )
                             for session in group.sessions

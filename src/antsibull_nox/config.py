@@ -655,6 +655,7 @@ class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
     ansible_vars_from_env_vars: dict[str, str] = {}
     ansible_vars: dict[str, AnsibleValueField] = {}
     retry_on_error: NeverAlwaysInCI = "never"
+    continue_on_error: NeverAlwaysInCI = "never"
 
     @p.model_validator(mode="after")
     def _validate_core_keys(self) -> t.Self:
@@ -693,6 +694,7 @@ class SessionAnsibleTestIntegrationSession(_BaseModel):
     description_template: t.Union[str, None] = None
 
     retry_on_error: t.Optional[NeverAlwaysInCI] = None
+    continue_on_error: t.Optional[NeverAlwaysInCI] = None
 
     # Tags for session registration; can be used by matrix generator
     tags: list[str] = []
@@ -733,6 +735,7 @@ class SessionAnsibleTestIntegrationGroup(_BaseModel):
     description_template: t.Union[str, None] = None
 
     retry_on_error: t.Optional[NeverAlwaysInCI] = None
+    continue_on_error: t.Optional[NeverAlwaysInCI] = None
 
     # Tags for session registration; can be used by matrix generator
     tags: list[str] = []
@@ -750,6 +753,7 @@ class SessionAnsibleTestIntegration(_BaseModel):
     groups: list[SessionAnsibleTestIntegrationGroup] = []
 
     retry_on_error: NeverAlwaysInCI = "never"
+    continue_on_error: NeverAlwaysInCI = "never"
 
     session_name_template: str = (
         "ansible-test-integration-{target_dash}{ansible_core}"
