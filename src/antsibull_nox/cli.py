@@ -18,6 +18,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from . import __version__
+from .azp import update_azp_config as _update_azp_config
 from .cd import get_base_branch, get_changes, init_cd, supports_cd
 from .config import CONFIG_FILENAME, load_config_from_toml
 from .init import create_initial_config as _create_initial_config
@@ -107,12 +108,37 @@ def show_changes(args: argparse.Namespace) -> int:
     return 0
 
 
+def update_azp_config(args: argparse.Namespace) -> int:
+    """
+    Update AZP config.
+    """
+    min_ansible_core: str | None = args.min_ansible_core
+    max_ansible_core: str | None = args.max_ansible_core
+    include_tags: str | None = args.include_tags
+    exclude_tags: str | None = args.exclude_tags
+    fail_on_change: bool = args.fail_on_change
+    try:
+        changed = _update_azp_config(
+            min_ansible_core=min_ansible_core,
+            max_ansible_core=max_ansible_core,
+            include_tags=include_tags,
+            exclude_tags=exclude_tags,
+        )
+        if fail_on_change and changed:
+            return 1
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        print(f"Error: {exc}", file=sys.stderr)
+        return 3
+    return 0
+
+
 # Mapping from command line subcommand names to functions which implement those.
 # The functions need to take a single argument, the processed list of args.
 ARGS_MAP: dict[str, Callable[[argparse.Namespace], int]] = {
     "lint-config": lint_config,
     "init": create_initial_config,
     "show-changes": show_changes,
+    "update-azp-config": update_azp_config,
 }
 
 
@@ -163,6 +189,28 @@ def parse_args(program_name: str, args: list[str]) -> argparse.Namespace:
         " If set to 'imported-by-changed', all Python files (transitively) importing"
         " changed files will be added ('backward'). If set to 'importing-changed', all"
         " Python files (transitively) imported by changed files will be added ('forward').",
+    )
+
+    update_azp_parser = subparsers.add_parser(
+        "update-azp-config", description="Update AZP config"
+    )
+    update_azp_parser.add_argument(
+        "--min-ansible-core", help="Minimum ansible-core version"
+    )
+    update_azp_parser.add_argument(
+        "--max-ansible-core", help="Maximum ansible-core version"
+    )
+    update_azp_parser.add_argument(
+        "--include-tags", help="Comma-separated list of tags that have to be present"
+    )
+    update_azp_parser.add_argument(
+        "--exclude-tags", help="Comma-separated list of tags that must not be present"
+    )
+    update_azp_parser.add_argument(
+        "--fail-on-change",
+        default=False,
+        action="store_true",
+        help="Fail if the configuration file is changed",
     )
 
     # This must come after all parser setup
