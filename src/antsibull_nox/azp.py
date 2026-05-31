@@ -216,12 +216,27 @@ def _write_azp_definition(path: Path, content: list[str]) -> None:
         f.write("\n".join(content) + "\n")
 
 
+_YAML_ESCAPES: dict[str, str] = {
+    "\n": r"\n",
+    "\\": r"\\",
+    '"': r"\"",
+    "'": r"\'",
+}
+
+
 def _escape_yaml(value: str) -> str:
     if _YAML_NO_NEED_TO_ESCAPE.match(value):
-        return value
+        # If this is parsable as a float, quote it
+        try:
+            float(value)
+        except ValueError:
+            return value
     result = ['"']
     for c in value:
-        if ord(c) < 32 or c in "'\"\\":
+        repl = _YAML_ESCAPES.get(c)
+        if repl is not None:
+            result.append(repl)
+        elif ord(c) < 32:
             result.append(f"\\u{hex(ord(c))[2:].rjust(4, '0')}")
         else:
             result.append(c)
