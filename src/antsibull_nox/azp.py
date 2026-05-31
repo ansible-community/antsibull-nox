@@ -122,17 +122,30 @@ class _Group:
     sessions: list[_Session]
 
 
-def _get_title(session: dict[str, t.Any]) -> str:
+def _get_title(session: dict[str, t.Any], *, with_ansible_core_prefix: bool) -> str:
     display_name = session.get("display-name")
     if display_name:
-        display_name = display_name.replace("Ⓐ", "ansible-core ").replace("+", " + ")
+        if with_ansible_core_prefix:
+            display_name = display_name.replace("Ⓐ", "ansible-core ")
+        else:
+            display_name = display_name.replace("Ⓐ", "")
+        display_name = display_name.replace("+", " + ")
     return display_name or session["name"]
 
 
-def _convert_sessions(sessions: list[dict[str, t.Any]]) -> list[_Session]:
+def _convert_sessions(
+    sessions: list[dict[str, t.Any]], *, with_ansible_core_prefix: bool
+) -> list[_Session]:
     result = []
     for session in sessions:
-        result.append(_Session(name=session["name"], title=_get_title(session)))
+        result.append(
+            _Session(
+                name=session["name"],
+                title=_get_title(
+                    session, with_ansible_core_prefix=with_ansible_core_prefix
+                ),
+            )
+        )
     return result
 
 
@@ -144,7 +157,9 @@ def _create_groups(data: dict[str, list[dict[str, t.Any]]]) -> list[_Group]:
                 name="sanity",
                 title="Sanity",
                 dependencies=[],
-                sessions=_convert_sessions(data["sanity"]),
+                sessions=_convert_sessions(
+                    data["sanity"], with_ansible_core_prefix=True
+                ),
             )
         )
     if "units" in data:
@@ -153,7 +168,9 @@ def _create_groups(data: dict[str, list[dict[str, t.Any]]]) -> list[_Group]:
                 name="units",
                 title="Unit tests",
                 dependencies=[],
-                sessions=_convert_sessions(data["units"]),
+                sessions=_convert_sessions(
+                    data["units"], with_ansible_core_prefix=True
+                ),
             )
         )
     if "integration" in data:
@@ -187,7 +204,9 @@ def _create_groups(data: dict[str, list[dict[str, t.Any]]]) -> list[_Group]:
                         name=f"{what}_{ansible_core.replace('-', '_').replace('.', '_')}",
                         title=f"{what.title()} ansible-core {ansible_core}",
                         dependencies=[],
-                        sessions=_convert_sessions(sessions),
+                        sessions=_convert_sessions(
+                            sessions, with_ansible_core_prefix=False
+                        ),
                     )
                 )
     return result
