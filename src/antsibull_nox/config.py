@@ -148,6 +148,8 @@ _VALID_PACKAGE_TYPE_NAMES = tuple(
     p.model_fields["type"].default for p in t.get_args(PackageType)
 )
 
+NeverAlwaysInCI = t.Literal["never", "always", "in-ci"]
+
 
 def _package_name_validator(value: t.Any, *, keep_strings: bool = False) -> t.Any:
     """
@@ -652,6 +654,8 @@ class SessionAnsibleTestIntegrationWDefaultContainer(_BaseModel):
     controller_python_versions_only: bool = False
     ansible_vars_from_env_vars: dict[str, str] = {}
     ansible_vars: dict[str, AnsibleValueField] = {}
+    retry_on_error: NeverAlwaysInCI = "never"
+    continue_on_error: NeverAlwaysInCI = "never"
 
     @p.model_validator(mode="after")
     def _validate_core_keys(self) -> t.Self:
@@ -688,6 +692,9 @@ class SessionAnsibleTestIntegrationSession(_BaseModel):
     session_name_template: t.Union[str, None] = None
     display_name_template: t.Union[str, None] = None
     description_template: t.Union[str, None] = None
+
+    retry_on_error: t.Optional[NeverAlwaysInCI] = None
+    continue_on_error: t.Optional[NeverAlwaysInCI] = None
 
     # Tags for session registration; can be used by matrix generator
     tags: list[str] = []
@@ -727,6 +734,9 @@ class SessionAnsibleTestIntegrationGroup(_BaseModel):
     display_name_template: t.Union[str, None] = None
     description_template: t.Union[str, None] = None
 
+    retry_on_error: t.Optional[NeverAlwaysInCI] = None
+    continue_on_error: t.Optional[NeverAlwaysInCI] = None
+
     # Tags for session registration; can be used by matrix generator
     tags: list[str] = []
 
@@ -741,6 +751,9 @@ class SessionAnsibleTestIntegration(_BaseModel):
     ansible_vars: dict[str, AnsibleValueField] = {}
     sessions: list[SessionAnsibleTestIntegrationSession] = []
     groups: list[SessionAnsibleTestIntegrationGroup] = []
+
+    retry_on_error: NeverAlwaysInCI = "never"
+    continue_on_error: NeverAlwaysInCI = "never"
 
     session_name_template: str = (
         "ansible-test-integration-{target_dash}{ansible_core}"

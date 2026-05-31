@@ -1315,6 +1315,18 @@ By default,
     * `value_template: str | None` (default `None`):
       If set, show this value insead of the real value in templates (see further below).
 
+* `retry_on_error: "never" | "always" | "in-ci"` (default `"never"`):
+  If set to `"always"`, or set to `"in-ci"` and antsibull-nox detects it is run in a CI environment,
+  ansible-test will be passed the `--retry-on-error` flag.
+  This causes ansible-test to re-run a failed integration test with higher verbosity settings.
+  Only if the second invocation also fails, the complete run fails.
+
+* `continue_on_error: "never" | "always" | "in-ci"` (default `"never"`):
+  If set to `"always"`, or set to `"in-ci"` and antsibull-nox detects it is run in a CI environment,
+  ansible-test will be passed the `--continue-on-error` flag.
+  This causes ansible-test to continue executing the next test(s) after an integration test (finally) failed,
+  instead of terminating the execution.
+
 #### Example code
 
 This example is from `community.dns`.
@@ -1403,6 +1415,18 @@ You explicitly have to list all sessions in `antsibull-nox.toml`.
   See below for the available variables.
   This can also be overriden for specific sessions.
 
+* `retry_on_error: "never" | "always" | "in-ci"` (default `"never"`):
+  If set to `"always"`, or set to `"in-ci"` and antsibull-nox detects it is run in a CI environment,
+  ansible-test will be passed the `--retry-on-error` flag.
+  This causes ansible-test to re-run a failed integration test with higher verbosity settings.
+  Only if the second invocation also fails, the complete run fails.
+
+* `continue_on_error: "never" | "always" | "in-ci"` (default `"never"`):
+  If set to `"always"`, or set to `"in-ci"` and antsibull-nox detects it is run in a CI environment,
+  ansible-test will be passed the `--continue-on-error` flag.
+  This causes ansible-test to continue executing the next test(s) after an integration test (finally) failed,
+  instead of terminating the execution.
+
 * `tags: list[str]` (default: `[]`):
   A list of tags to add to all sessions.
   These tags can be used when filtering sessions for CI matrix generation.
@@ -1465,23 +1489,23 @@ You explicitly have to list all sessions in `antsibull-nox.toml`.
       Please note that branches are usually deleted upon merging,
       so you have to remove them again from your `noxfile.py` to avoid CI breaking.
 
-      ```toml
-      # To add the Data Tagging PR (https://github.com/ansible/ansible/pull/84621)
-      # to CI, we can either use the special GitHub reference refs/pull/84621/head
-      # to refer to the PR's HEAD:
-      devel_like_branch = { branch = "refs/pull/84621/head" }
+        ```toml
+        # To add the Data Tagging PR (https://github.com/ansible/ansible/pull/84621)
+        # to CI, we can either use the special GitHub reference refs/pull/84621/head
+        # to refer to the PR's HEAD:
+        devel_like_branch = { branch = "refs/pull/84621/head" }
 
-      # We can also just specify a branch as a string:
-      devel_like_branch = "refs/pull/84621/head"
+        # We can also just specify a branch as a string:
+        devel_like_branch = "refs/pull/84621/head"
 
-      # Alternatively, we can specify a GitHub repository and a branch in that
-      # repository. The Data Tagging PR is based on a branch in nitzmahone's fork
-      # of ansible/ansible:
-      devel_like_branch = { repository = "nitzmahone/ansible", branch = "data_tagging_219" }
+        # Alternatively, we can specify a GitHub repository and a branch in that
+        # repository. The Data Tagging PR is based on a branch in nitzmahone's fork
+        # of ansible/ansible:
+        devel_like_branch = { repository = "nitzmahone/ansible", branch = "data_tagging_219" }
 
-      # We can also provide a two-element list with repository name and branch:
-      devel_like_branch = ["nitzmahone/ansible", "data_tagging_219"]
-      ```
+        # We can also provide a two-element list with repository name and branch:
+        devel_like_branch = ["nitzmahone/ansible", "data_tagging_219"]
+        ```
 
     * `ansible_vars: dict[str, AnsibleValueField]` (default: `{}
       If given, will create an integration test config file which for every `key=value` pair.
@@ -1496,6 +1520,22 @@ You explicitly have to list all sessions in `antsibull-nox.toml`.
 
     * `description_template: str | None` (default: `None`)
       If given, will overwrite `[sessions.ansible_test_integration.description_template]`.
+
+    * `retry_on_error: "never" | "always" | "in-ci" | None` (default `None`):
+      If set to `"always"`, or set to `"in-ci"` and antsibull-nox detects it is run in a CI environment,
+      ansible-test will be passed the `--retry-on-error` flag.
+      This causes ansible-test to re-run a failed integration test with higher verbosity settings.
+      Only if the second invocation also fails, the complete run fails.
+
+        If set to `None`, the group value (if applicable) or the global value of `retry_on_error` is used.
+
+    * `continue_on_error: "never" | "always" | "in-ci" | None` (default `None`):
+      If set to `"always"`, or set to `"in-ci"` and antsibull-nox detects it is run in a CI environment,
+      ansible-test will be passed the `--continue-on-error` flag.
+      This causes ansible-test to continue executing the next test(s) after an integration test (finally) failed,
+      instead of terminating the execution.
+
+        If set to `None`, the group value (if applicable) or the global value of `continue_on_error` is used.
 
     * `tags: list[str]` (default: `[]`):
       A list of tags to add to all sessions for this session template.
@@ -1552,6 +1592,22 @@ You explicitly have to list all sessions in `antsibull-nox.toml`.
     * `description_template: str | None` (default: `None`)
       Allows to provide a session's description template that overrides the global one `[sessions.ansible_test_integration.description_template]`.
       This can be overridden in each session template.
+    * `retry_on_error: "never" | "always" | "in-ci" | None` (default `None`):
+      If set to `"always"`, or set to `"in-ci"` and antsibull-nox detects it is run in a CI environment,
+      ansible-test will be passed the `--retry-on-error` flag.
+      This causes ansible-test to re-run a failed integration test with higher verbosity settings.
+      Only if the second invocation also fails, the complete run fails.
+
+        If set to `None`, the global value of `retry_on_error` is used.
+
+    * `continue_on_error: "never" | "always" | "in-ci" | None` (default `None`):
+      If set to `"always"`, or set to `"in-ci"` and antsibull-nox detects it is run in a CI environment,
+      ansible-test will be passed the `--continue-on-error` flag.
+      This causes ansible-test to continue executing the next test(s) after an integration test (finally) failed,
+      instead of terminating the execution.
+
+        If set to `None`, the global value of `continue_on_error` is used.
+
     * `tags: list[str]` (default: `[]`):
       A list of tags to add to all sessions for this group template.
       These tags can be used when filtering sessions for CI matrix generation.
