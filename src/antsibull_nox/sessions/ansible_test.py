@@ -38,6 +38,7 @@ from ..python.versions import get_installed_python_versions
 from ..utils import Version
 from .collections import prepare_collections
 from .utils import (
+    IN_CI,
     normalize_session_name,
     nox_has_color,
     register,
@@ -51,6 +52,7 @@ from .utils.values import (
 
 if t.TYPE_CHECKING:
     DevelLikeBranch = tuple[str | None, str]
+    NeverAlwaysInCI = t.Literal["never", "always", "in-ci"]
 
 
 def get_ansible_test_env() -> dict[str, str]:
@@ -553,6 +555,17 @@ def _add_version_specific_interation_test_params(
         parameters.extend(["--display-traceback", "error"])
 
 
+def _is_applicable(value: NeverAlwaysInCI) -> bool:
+    return value == "always" or (value == "in-ci" and IN_CI)
+
+
+def _add_retry_on_error_params(
+    parameters: list[str | _ColorFlagType], retry_on_error: NeverAlwaysInCI
+) -> None:
+    if _is_applicable(retry_on_error):
+        parameters.append("--retry-on-error")
+
+
 def add_ansible_test_integration_sessions_default_container(
     *,
     include_devel: bool = False,
@@ -568,6 +581,7 @@ def add_ansible_test_integration_sessions_default_container(
     min_python_version: MinPythonVersion | None = None,
     ansible_vars_from_env_vars: dict[str, str] | None = None,
     ansible_vars: dict[str, AnsibleValue] | None = None,
+    retry_on_error: NeverAlwaysInCI = "never",
     default: bool = False,
 ) -> list[str]:
     """
@@ -676,6 +690,7 @@ def add_ansible_test_integration_sessions_default_container(
             _add_version_specific_interation_test_params(
                 parameters, ansible_core_version
             )
+            _add_retry_on_error_params(parameters, retry_on_error)
             add_ansible_test_session(
                 name=name,
                 description=description,
@@ -773,6 +788,7 @@ class AnsibleTestIntegrationSessionTemplate:
     session_name_template: str
     display_name_template: str
     description_template: str
+    retry_on_error: NeverAlwaysInCI
     tags: list[str]
 
 
@@ -811,6 +827,7 @@ class AnsibleTestIntegrationSession:
     session_name: str
     display_name: str
     description: str
+    retry_on_error: NeverAlwaysInCI
     tags: list[str]
 
     def get_ansible_vars_callback(self) -> t.Callable[[], None] | None:
@@ -948,6 +965,7 @@ def _template_session(
             ),
             display_name=tmpl(session_template.display_name_template),
             description=tmpl(session_template.description_template),
+            retry_on_error=session_template.retry_on_error,
             tags=tags_list,
         )
 
@@ -1029,6 +1047,7 @@ def add_ansible_test_integration_sessions(
             "-v",
         ]
         _add_version_specific_interation_test_params(cmd, session.ansible_core)
+        _add_retry_on_error_params(cmd, session.retry_on_error)
         if session.docker:
             cmd.extend(
                 [
