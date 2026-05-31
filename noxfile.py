@@ -15,7 +15,7 @@ from pathlib import Path
 import nox
 
 DEFAULT_MODE = os.environ.get("OTHER_ANTSIBULL_MODE", "auto")
-IN_CI = "GITHUB_ACTIONS" in os.environ
+IN_CI = os.environ.get("CI") == "true"
 ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not IN_CI)).lower() in (
     "1",
     "true",
