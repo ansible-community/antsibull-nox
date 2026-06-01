@@ -904,6 +904,7 @@ def _template_session(
     source: str,
     part_of_group: bool,
     ansible_vars: list[dict[str, AnsibleValue] | None],
+    nice_target_names: dict[str, str],
     tags: set[str] | list[str],
 ) -> t.Generator[AnsibleTestIntegrationSession]:
     session_ansible_vars = {}
@@ -953,6 +954,7 @@ def _template_session(
                 "python_version": python_version,
                 "py_python_version": f"py{python_version}" if python_version else None,
                 "target": target,
+                "target_nice": nice_target_names.get(target or "", target),
                 "target_dashized": (
                     target.replace("/", "-").strip("-") if target else None
                 ),
@@ -997,6 +999,7 @@ def _template_sessions(
     session_templates: list[AnsibleTestIntegrationSessionTemplate],
     session_template_groups: list[AnsibleTestIntegrationSessionTemplateGroup],
     ansible_vars: dict[str, AnsibleValue],
+    nice_target_names: dict[str, str],
     tags: list[str],
 ) -> tuple[
     list[AnsibleTestIntegrationSession], list[AnsibleTestIntegrationSessionGroup]
@@ -1005,7 +1008,12 @@ def _template_sessions(
     result_groups: list[AnsibleTestIntegrationSessionGroup] = []
     for index, template in enumerate(session_templates):
         for session in _template_session(
-            template, f"session template #{index + 1}", False, [ansible_vars], tags
+            template,
+            f"session template #{index + 1}",
+            False,
+            [ansible_vars],
+            nice_target_names,
+            tags,
         ):
             result.append(session)
     for group_index, group in enumerate(session_template_groups):
@@ -1018,6 +1026,7 @@ def _template_sessions(
                 f"session template #{index + 1} of group #{group_index + 1}",
                 True,
                 [ansible_vars, group.ansible_vars],
+                nice_target_names,
                 group_tags,
             ):
                 result.append(session)
@@ -1039,6 +1048,7 @@ def add_ansible_test_integration_sessions(
         list[AnsibleTestIntegrationSessionTemplateGroup] | None
     ) = None,
     ansible_vars: dict[str, AnsibleValue] | None = None,
+    nice_target_names: dict[str, str] | None = None,
     global_tags: list[str] | None = None,
     default: bool = False,
 ) -> list[str]:
@@ -1049,6 +1059,7 @@ def add_ansible_test_integration_sessions(
         session_templates or [],
         session_template_groups or [],
         ansible_vars or {},
+        nice_target_names or {},
         global_tags or [],
     )
     session_by_name: dict[str, AnsibleTestIntegrationSession] = {}

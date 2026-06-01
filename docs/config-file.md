@@ -1415,6 +1415,10 @@ You explicitly have to list all sessions in `antsibull-nox.toml`.
   See below for the available variables.
   This can also be overriden for specific sessions.
 
+* `nice_target_names: dict[str, str]` (default: `{}`)
+  Translation map that translates ansible-test target names to "nice", human-readable strings.
+  This can be used in templates as `target_nice`.
+
 * `retry_on_error: "never" | "always" | "in-ci"` (default `"never"`):
   If set to `"always"`, or set to `"in-ci"` and antsibull-nox detects it is run in a CI environment,
   ansible-test will be passed the `--retry-on-error` flag.
@@ -1627,6 +1631,7 @@ A list of variables that can be used is generated from a base list of variables:
 * `target`: The target, or empty if not provided.
 * `target_dashized`: The target with `/` replaced by `-`, and trailing `-` removed.
   Empty if no target is provided.
+* `target_nice`: The "nice" target name (see the `nice_target_names` option).
 * `gha_container`: The value of `gha_container`, or empty if not provided.
 * `gha_arm`: `"ARM"` if `gha_container` references to an ARM image.
 * `gha_arm_lower`: `arm` if `gha_container` references to an ARM image.

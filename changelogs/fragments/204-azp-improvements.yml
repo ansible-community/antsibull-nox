@@ -1,0 +1,4 @@
+minor_changes:
+  - >-
+    Expose ``nice_target_names`` map in ``sessions.ansible_test_integration`` that allows to translate ansible-test target names into "nice", human-readable strings for use in display-name templating
+    (https://github.com/ansible-community/antsibull-nox/pull/204).
