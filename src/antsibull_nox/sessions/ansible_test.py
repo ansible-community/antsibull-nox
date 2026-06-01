@@ -132,33 +132,34 @@ def add_ansible_test_session(
         ]
         return deps
 
-    @install_packages(package_callback=compose_dependencies)
-    def run_ansible_test(session: nox.Session) -> None:
-        change_detection_args: list[str] | None = None
+    def get_change_detection_args() -> list[str] | None:
         if support_cd and get_vcs_name() == "git" and is_config_dir_the_repo_dir():
             changes = get_changes()
             base_branch = get_base_branch()
             if changes is not None and base_branch is not None:
                 if all(file != Path(CONFIG_FILENAME) for file in changes):
-                    change_detection_args = [
+                    return [
                         "--changed",
                         "--untracked",
                         "--base-branch",
                         base_branch,
                     ]
+        return None
 
-        always_copy_repo_structure = (
-            os.environ.get("ANTSIBULL_NOX_ALWAYS_COPY_REPO_STRUCTURE") == "true"
+    @install_packages(package_callback=compose_dependencies)
+    def run_ansible_test(session: nox.Session) -> None:
+        change_detection_args = get_change_detection_args()
+        copy_repo_structure = (
+            change_detection_args is not None
+            or os.environ.get("ANTSIBULL_NOX_ALWAYS_COPY_REPO_STRUCTURE") == "true"
         )
-
         prepared_collections = prepare_collections(
             session,
             ansible_core_version=parsed_ansible_core_version,
             install_in_site_packages=False,
             extra_deps_files=extra_deps_files,
             install_out_of_tree=True,
-            copy_repo_structure=change_detection_args is not None
-            or always_copy_repo_structure,
+            copy_repo_structure=copy_repo_structure,
         )
         if not prepared_collections:
             session.warn("Skipping ansible-test...")
@@ -168,6 +169,11 @@ def add_ansible_test_session(
             if callback_before:
                 callback_before()
 
+            env_env = get_ansible_test_env()
+            if not copy_repo_structure:
+                # Work around bug in 'ansible-test env's AZP detection:
+                # https://github.com/ansible/ansible/issues/87052#issuecomment-4595624857
+                env_env["SYSTEM_COLLECTIONURI"] = ""
             env_command = [
                 "ansible-test",
                 "env",
@@ -178,7 +184,7 @@ def add_ansible_test_session(
             timeout = os.environ.get("ANTSIBULL_NOX_TIMEOUT")
             if timeout:
                 env_command.extend(["--timeout", timeout])
-            session.run(*env_command, env=get_ansible_test_env())
+            session.run(*env_command, env=env_env)
 
             command = ["ansible-test"]
             for param in ansible_test_params:
