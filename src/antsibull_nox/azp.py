@@ -22,6 +22,7 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 _YAML_NO_NEED_TO_ESCAPE = re.compile(r"^[a-zA-Z0-9_ .,;/()+-]+$")
+_ANSIBLE_CORE_VERSION = re.compile(r"Ⓐ\s*(?:devel|milestone|\d+\.\d+)")
 
 
 def _run_nox(
@@ -122,19 +123,19 @@ class _Group:
     sessions: list[_Session]
 
 
-def _get_title(session: dict[str, t.Any], *, with_ansible_core_prefix: bool) -> str:
+def _get_title(session: dict[str, t.Any], *, with_ansible_core_version: bool) -> str:
     display_name = session.get("display-name")
     if display_name:
-        if with_ansible_core_prefix:
-            display_name = display_name.replace("Ⓐ", "ansible-core ")
-        else:
+        if with_ansible_core_version:
             display_name = display_name.replace("Ⓐ", "")
+        else:
+            display_name = _ANSIBLE_CORE_VERSION.sub("", display_name).lstrip(" +/,")
         display_name = display_name.replace("+", " + ")
     return display_name or session["name"]
 
 
 def _convert_sessions(
-    sessions: list[dict[str, t.Any]], *, with_ansible_core_prefix: bool
+    sessions: list[dict[str, t.Any]], *, with_ansible_core_version: bool
 ) -> list[_Session]:
     result = []
     for session in sessions:
@@ -142,7 +143,7 @@ def _convert_sessions(
             _Session(
                 name=session["name"],
                 title=_get_title(
-                    session, with_ansible_core_prefix=with_ansible_core_prefix
+                    session, with_ansible_core_version=with_ansible_core_version
                 ),
             )
         )
@@ -158,7 +159,7 @@ def _create_groups(data: dict[str, list[dict[str, t.Any]]]) -> list[_Group]:
                 title="Sanity",
                 dependencies=[],
                 sessions=_convert_sessions(
-                    data["sanity"], with_ansible_core_prefix=True
+                    data["sanity"], with_ansible_core_version=True
                 ),
             )
         )
@@ -169,7 +170,7 @@ def _create_groups(data: dict[str, list[dict[str, t.Any]]]) -> list[_Group]:
                 title="Unit tests",
                 dependencies=[],
                 sessions=_convert_sessions(
-                    data["units"], with_ansible_core_prefix=True
+                    data["units"], with_ansible_core_version=True
                 ),
             )
         )
@@ -205,7 +206,7 @@ def _create_groups(data: dict[str, list[dict[str, t.Any]]]) -> list[_Group]:
                         title=f"{what.title()} ansible-core {ansible_core}",
                         dependencies=[],
                         sessions=_convert_sessions(
-                            sessions, with_ansible_core_prefix=False
+                            sessions, with_ansible_core_version=False
                         ),
                     )
                 )
