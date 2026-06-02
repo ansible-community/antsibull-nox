@@ -766,6 +766,9 @@ class SessionAnsibleTestIntegration(_BaseModel):
         "Run integration tests with ansible-core {ansible_core}, {docker_short}{remote}"
     )
 
+    nice_target_names: dict[str, str] = {}
+    nice_docker_names: dict[str, str] = {}
+
     # Tags for session registration; can be used by matrix generator
     tags: list[str] = []
 
