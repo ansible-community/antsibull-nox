@@ -13,6 +13,7 @@ from __future__ import annotations
 import dataclasses
 import itertools
 import os
+import re
 import typing as t
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -899,12 +900,58 @@ def _get_templator(**kwargs: t.Any) -> t.Callable[[str], str]:
     return tmpl
 
 
+_NICE_REMOTE_NAMES: dict[str, str] = {
+    "aix": "AIX",
+    "freebsd": "FreeBSD",
+    "macos": "macOS",
+    "osx": "OS X",
+    "rhel": "RHEL",
+}
+
+
+def _make_nice_remote(remote: str) -> str:
+    parts = remote.split("/", 1)
+    if len(parts) == 1:
+        return remote
+    name, version = parts
+    name = _NICE_REMOTE_NAMES.get(name, name.title())
+    return f"{name} {version}"
+
+
+_DOCKER_NAME_SPLIT = re.compile("^([a-zA-Z]+)([0-9.]+)$")
+
+_NICE_DOCKER_NAMES: dict[str, str] = {
+    "archlinux": "Arch Linux",
+    "opensuse": "OpenSuSE",
+    "opensusepy2": "OpenSuSE-Py2",
+}
+
+
+def _make_nice_docker(
+    docker: str, docker_short: str, nice_docker_names: dict[str, str]
+) -> str:
+    if docker == "default":
+        return "Generic"
+    nice = nice_docker_names.get(docker)
+    if nice is not None:
+        return nice
+    m = _DOCKER_NAME_SPLIT.match(docker)
+    if not m:
+        return docker_short
+    name, version = m.groups()
+    if name in ("ubuntu", "alpine") and len(version) >= 3:
+        version = f"{version[:-2]}.{version[-2:]}"
+    name = _NICE_DOCKER_NAMES.get(name, name.title())
+    return f"{name} {version}"
+
+
 def _template_session(
     session_template: AnsibleTestIntegrationSessionTemplate,
     source: str,
     part_of_group: bool,
     ansible_vars: list[dict[str, AnsibleValue] | None],
     nice_target_names: dict[str, str],
+    nice_docker_names: dict[str, str],
     tags: set[str] | list[str],
 ) -> t.Generator[AnsibleTestIntegrationSession]:
     session_ansible_vars = {}
@@ -937,20 +984,29 @@ def _template_session(
         session_template.gha_container,
     ):
         gha_arm = gha_container and "-arm" in gha_container
+        docker_short = (
+            (
+                docker.removeprefix(
+                    "quay.io/ansible-community/test-image:"
+                ).removeprefix("localhost/test-image:")
+            )
+            if docker
+            else None
+        )
+        remote_nice = _make_nice_remote(remote) if remote else None
+        docker_nice = (
+            _make_nice_docker(docker, docker_short, nice_docker_names)
+            if docker and docker_short
+            else None
+        )
         vars_values.update(
             {
                 "ansible_core": ansible_core,
                 "docker": docker,
-                "docker_short": (
-                    (
-                        docker.removeprefix(
-                            "quay.io/ansible-community/test-image:"
-                        ).removeprefix("localhost/test-image:")
-                    )
-                    if docker
-                    else None
-                ),
+                "docker_nice": docker_nice,
+                "docker_short": docker_short,
                 "remote": remote,
+                "remote_nice": remote_nice,
                 "python_version": python_version,
                 "py_python_version": f"py{python_version}" if python_version else None,
                 "target": target,
@@ -1000,6 +1056,7 @@ def _template_sessions(
     session_template_groups: list[AnsibleTestIntegrationSessionTemplateGroup],
     ansible_vars: dict[str, AnsibleValue],
     nice_target_names: dict[str, str],
+    nice_docker_names: dict[str, str],
     tags: list[str],
 ) -> tuple[
     list[AnsibleTestIntegrationSession], list[AnsibleTestIntegrationSessionGroup]
@@ -1013,6 +1070,7 @@ def _template_sessions(
             False,
             [ansible_vars],
             nice_target_names,
+            nice_docker_names,
             tags,
         ):
             result.append(session)
@@ -1027,6 +1085,7 @@ def _template_sessions(
                 True,
                 [ansible_vars, group.ansible_vars],
                 nice_target_names,
+                nice_docker_names,
                 group_tags,
             ):
                 result.append(session)
@@ -1049,6 +1108,7 @@ def add_ansible_test_integration_sessions(
     ) = None,
     ansible_vars: dict[str, AnsibleValue] | None = None,
     nice_target_names: dict[str, str] | None = None,
+    nice_docker_names: dict[str, str] | None = None,
     global_tags: list[str] | None = None,
     default: bool = False,
 ) -> list[str]:
@@ -1060,6 +1120,7 @@ def add_ansible_test_integration_sessions(
         session_template_groups or [],
         ansible_vars or {},
         nice_target_names or {},
+        nice_docker_names or {},
         global_tags or [],
     )
     session_by_name: dict[str, AnsibleTestIntegrationSession] = {}

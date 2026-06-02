@@ -1419,6 +1419,12 @@ You explicitly have to list all sessions in `antsibull-nox.toml`.
   Translation map that translates ansible-test target names to "nice", human-readable strings.
   This can be used in templates as `target_nice`.
 
+* `nice_docker_names: dict[str, str]` (default: `{}`)
+  Translation map that translates ansible-test container image names to "nice", human-readable strings.
+  This can be used in templates as `docker_nice`.
+  All names known to ansible-test are handled automatically,
+  this option is mainly meant for custom container images.
+
 * `retry_on_error: "never" | "always" | "in-ci"` (default `"never"`):
   If set to `"always"`, or set to `"in-ci"` and antsibull-nox detects it is run in a CI environment,
   ansible-test will be passed the `--retry-on-error` flag.
@@ -1622,10 +1628,12 @@ The session name, display name, and description of a session are templated with 
 A list of variables that can be used is generated from a base list of variables:
 
 * `ansible_core`: The ansible-core version.
-* `docker`: The Docker image name, or empty if not provided.
+* `docker`: The Docker image name (for example `alpine322`), or empty if not provided.
+* `docker_nice`: The Docker image name in a nicer form (for example `Alpine 3.22`), or empty if not provided (see the `nice_docker_names` option).
 * `docker_short`: A shortened Docker image name, or empty if not provided.
   The prefixes `"quay.io/ansible-community/test-image:"` and `"localhost/test-image:"` will be removed from Docker images.
-* `remote`: The remote VM name, or empty if not provided.
+* `remote`: The remote VM name (for example `ubuntu2204`), or empty if not provided.
+* `remote_nice`: The remote VM name in a nicer form (for example `Ubuntu 22.04`), or empty if not provided.
 * `python_version`: The Python version, or empty if not provided.
 * `py_python_version`: The Python version prefixed by `"py"`, or empty if not provided.
 * `target`: The target, or empty if not provided.

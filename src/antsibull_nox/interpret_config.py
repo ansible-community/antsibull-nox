@@ -279,6 +279,7 @@ def _add_ansible_test_sessions(sessions: Sessions, cconfig: CollectionConfig) ->
                     for k, v in sessions.ansible_test_integration.ansible_vars.items()
                 },
                 nice_target_names=sessions.ansible_test_integration.nice_target_names,
+                nice_docker_names=sessions.ansible_test_integration.nice_docker_names,
                 global_tags=sessions.ansible_test_integration.tags,
                 session_templates=[
                     AnsibleTestIntegrationSessionTemplate(

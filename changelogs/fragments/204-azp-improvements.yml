@@ -2,3 +2,9 @@ minor_changes:
   - >-
     Expose ``nice_target_names`` map in ``sessions.ansible_test_integration`` that allows to translate ansible-test target names into "nice", human-readable strings for use in display-name templating
     (https://github.com/ansible-community/antsibull-nox/pull/204).
+  - >-
+    Provide ``docker_nice`` and ``remote_nice`` names for use in display-name templating for ``sessions.ansible_test_integration``
+    (https://github.com/ansible-community/antsibull-nox/pull/204).
+  - >-
+    Expose ``nice_docker_names`` map in ``sessions.ansible_test_integration`` that allows to translate custom Docker container names into "nice", human-readable strings for use in display-name templating
+    (https://github.com/ansible-community/antsibull-nox/pull/204).

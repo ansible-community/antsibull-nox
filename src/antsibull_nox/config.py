@@ -767,6 +767,7 @@ class SessionAnsibleTestIntegration(_BaseModel):
     )
 
     nice_target_names: dict[str, str] = {}
+    nice_docker_names: dict[str, str] = {}
 
     # Tags for session registration; can be used by matrix generator
     tags: list[str] = []
