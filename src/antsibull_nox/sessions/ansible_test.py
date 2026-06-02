@@ -922,6 +922,7 @@ _DOCKER_NAME_SPLIT = re.compile("^([a-zA-Z]+)([0-9.]+)$")
 
 _NICE_DOCKER_NAMES: dict[str, str] = {
     "archlinux": "Arch Linux",
+    "centos": "CentOS",
     "opensuse": "OpenSuSE",
     "opensusepy2": "OpenSuSE-Py2",
 }
