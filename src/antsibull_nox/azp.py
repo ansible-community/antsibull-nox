@@ -138,7 +138,11 @@ def _get_title(session: dict[str, t.Any], *, with_ansible_core_version: bool) ->
     display_name = session.get("display-name")
     if display_name:
         if with_ansible_core_version:
-            display_name = display_name.replace("Ⓐ", "")
+            ansible_core: str | None = session.get("ansible-core")
+            ansible_core_name = _ansible_core_name(
+                parse_ansible_core_version(ansible_core) if ansible_core else None
+            )
+            display_name = display_name.replace("Ⓐ", f"{ansible_core_name} ")
         else:
             display_name = _ANSIBLE_CORE_VERSION.sub("", display_name).lstrip(" +/,")
         display_name = display_name.replace("+", " + ")
