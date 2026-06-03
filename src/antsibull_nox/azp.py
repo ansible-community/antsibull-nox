@@ -21,6 +21,9 @@ import typing as t
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
+from .ansible import AnsibleCoreVersion, parse_ansible_core_version
+from .utils import Version
+
 _YAML_NO_NEED_TO_ESCAPE = re.compile(r"^[a-zA-Z0-9_ .,;/()+-]+$")
 _ANSIBLE_CORE_VERSION = re.compile(r"Ⓐ\s*(?:devel|milestone|\d+\.\d+)")
 
@@ -123,6 +126,14 @@ class _Group:
     sessions: list[_Session]
 
 
+def _ansible_core_name(version: AnsibleCoreVersion | None = None) -> str:
+    if version == Version.parse("2.9"):
+        return "Ansible"
+    if version == Version.parse("2.10"):
+        return "ansible-base"
+    return "ansible-core"
+
+
 def _get_title(session: dict[str, t.Any], *, with_ansible_core_version: bool) -> str:
     display_name = session.get("display-name")
     if display_name:
@@ -200,10 +211,13 @@ def _create_groups(data: dict[str, list[dict[str, t.Any]]]) -> list[_Group]:
             for (w, ansible_core), sessions in int_sessions.items():
                 if what != w:
                     continue
+                ansible_core_name = _ansible_core_name(
+                    parse_ansible_core_version(ansible_core)
+                )
                 result.append(
                     _Group(
                         name=f"{what}_{ansible_core.replace('-', '_').replace('.', '_')}",
-                        title=f"{what.title()} ansible-core {ansible_core}",
+                        title=f"{what.title()} {ansible_core_name} {ansible_core}",
                         dependencies=[],
                         sessions=_convert_sessions(
                             sessions, with_ansible_core_version=False
