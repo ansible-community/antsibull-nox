@@ -92,6 +92,66 @@ class _ColorFlagType:
 COLOR_FLAG = _ColorFlagType()
 
 
+def _have_coverage_data() -> bool:
+    path = "tests/output/coverage"
+    return os.path.isdir(path) and os.listdir(path) != []
+
+
+def _process_coverage_data(
+    *, session: nox.Session, ansible_core_version: AnsibleCoreVersion
+) -> None:
+    if not _have_coverage_data():
+        return
+
+    group_by = [
+        "--group-by",
+        "command",
+        "--group-by",
+        "version",
+    ]
+
+    coverage_destination = os.environ.get("ANTSIBULL_NOX_COVERAGE_DESTINATION")
+    if coverage_destination:
+        os.makedirs(coverage_destination, exist_ok=True)
+        session.run(
+            "ansible-test",
+            "coverage",
+            "combine",
+            *get_ansible_test_color_flag(session),
+            "-v",
+            "--requirements",
+            *group_by,
+            "--export",
+            coverage_destination,
+        )
+
+    coverage_analysis_file = os.environ.get("ANTSIBULL_NOX_COVERAGE_ANALYSIS_FILE")
+    if coverage_analysis_file and ansible_core_version != Version.parse("2.9"):
+        # the analyze subcommand was added in ansible-base 2.10.
+        session.run(
+            "ansible-test",
+            "coverage",
+            "analyze",
+            "targets",
+            "generate",
+            *get_ansible_test_color_flag(session),
+            "-v",
+            "--requirements",
+            coverage_analysis_file,
+        )
+
+    if os.environ.get("ANTSIBULL_NOX_COVERAGE_NO_XML") != "true":
+        session.run(
+            "ansible-test",
+            "coverage",
+            "xml",
+            *get_ansible_test_color_flag(session),
+            "-v",
+            "--requirements",
+            *group_by,
+        )
+
+
 # NOTE: This is publicly documented API!
 # Any change to the API must not be breaking, and must be
 # updated in docs/reference.md!
@@ -203,17 +263,8 @@ def add_ansible_test_session(
                 handle_coverage == "always"
             )
             if coverage:
-                session.run(
-                    "ansible-test",
-                    "coverage",
-                    "xml",
-                    *get_ansible_test_color_flag(session),
-                    "-v",
-                    "--requirements",
-                    "--group-by",
-                    "command",
-                    "--group-by",
-                    "version",
+                _process_coverage_data(
+                    session=session, ansible_core_version=parsed_ansible_core_version
                 )
 
             if callback_after:
