@@ -1,0 +1,4 @@
+minor_changes:
+  - Allow to control ansible-test coverage analysis more throught the environment variables ``ANTSIBULL_NOX_COVERAGE_DESTINATION``,
+    ``ANTSIBULL_NOX_COVERAGE_ANALYSIS_FILE``, and ``ANTSIBULL_NOX_COVERAGE_NO_XML``
+    (https://github.com/ansible-community/antsibull-nox/pull/205).
