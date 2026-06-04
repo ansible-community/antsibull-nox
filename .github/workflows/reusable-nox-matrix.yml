@@ -150,6 +150,7 @@ jobs:
       - name: Check out collection
         uses: actions/checkout@v6
         with:
+          fetch-depth: 3
           persist-credentials: false
       - name: Determine parameters
         shell: python
