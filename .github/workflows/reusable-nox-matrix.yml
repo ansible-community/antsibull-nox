@@ -121,6 +121,15 @@ name: Run sanity, unit, integration, and EE tests
           as-is to `run`.
         required: false
         default: ""
+      allow-coverage-cd-override:
+        type: boolean
+        description: >-
+          Whether `ci_complete` and `ci_coverage` in the last commit of a PR or push disable change detection
+          respectively enable code coverage.
+
+          This provides similar functionality to the AZP CI scripts in ansible-core and several collections.
+        required: false
+        default: false
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -148,6 +157,7 @@ jobs:
           CHANGE_DETECTION_IN_PRS: ${{ inputs.change-detection-in-prs }}
           GHA_EVENT_NAME: ${{ github.event_name }}
           GHA_PULL_REQUEST_BASE_REF: ${{ github.event.pull_request.base.ref || '' }}
+          GHA_PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
           UPLOAD_CODECOV: ${{ inputs.upload-codecov }}
           UPLOAD_CODECOV_PR: ${{ inputs.upload-codecov-pr }}
           UPLOAD_CODECOV_SCHEDULE: ${{ inputs.upload-codecov-schedule }}
@@ -156,6 +166,7 @@ jobs:
           MAX_ANSIBLE_CORE: ${{ inputs.max-ansible-core }}
           INCLUDE_TAGS: ${{ inputs.include-tags }}
           EXCLUDE_TAGS: ${{ inputs.exclude-tags }}
+          ALLOW_COVERAGE_CD_OVERRIDE: ${{ inputs.allow-coverage-cd-override }}
         id: determine-parameters
         run: |
           # Compute job Python version
@@ -163,6 +174,7 @@ jobs:
           import os
           import pathlib
           import shlex
+          import subprocess
 
           FILE_APPEND_MODE = "a"
           OUTPUTS_FILE_PATH = pathlib.Path(os.environ["GITHUB_OUTPUT"])
@@ -180,6 +192,7 @@ jobs:
           )
           gha_event_name = os.environ.get("GHA_EVENT_NAME", "")
           gha_pull_request_branch = os.environ.get("GHA_PULL_REQUEST_BASE_REF", "")
+          gha_pull_request_last_commit = os.environ.get("GHA_PULL_REQUEST_HEAD_SHA", "")
           upload_codecov = os.environ.get("UPLOAD_CODECOV", "").lower() == "true"
           upload_codecov_pr = os.environ.get("UPLOAD_CODECOV_PR", "").lower() == "true"
           upload_codecov_schedule = os.environ.get("UPLOAD_CODECOV_SCHEDULE", "").lower() == "true"
@@ -188,18 +201,42 @@ jobs:
           max_ansible_core = os.environ.get("MAX_ANSIBLE_CORE", "")
           include_tags = os.environ.get("INCLUDE_TAGS", "")
           exclude_tags = os.environ.get("EXCLUDE_TAGS", "")
+          allow_coverage_cd_override = os.environ.get("ALLOW_COVERAGE_CD_OVERRIDE", "").lower() == "true"
+
+          on_demand_coverage = False
+          on_demand_complete = False
+          if allow_coverage_cd_override:
+              # Try to get hold of the last commit message (for PRs and pushes)
+              pr_last_commit = None
+              if gha_pull_request_last_commit:
+                  pr_last_commit = subprocess.check_output([
+                      "git", "show", "-s", "--format=%B", gha_pull_request_last_commit
+                  ])
+              elif gha_event_name == "push":
+                  pr_last_commit = subprocess.check_output([
+                      "git", "show", "-s", "--format=%B"
+                  ])
+              # If present, check for 'ci_coverage' and 'ci_complete'
+              if pr_last_commit:
+                  on_demand_coverage = "ci_coverage" in pr_last_commit
+                  on_demand_complete = "ci_complete" in pr_last_commit
+                  if on_demand_coverage and upload_codecov:
+                      print("Code coverage requested.")
+                  if on_demand_complete and change_detection_in_prs:
+                      print("Complete CI run requested.")
 
           change_detection = False
           change_detection_base_branch = ""
           if gha_event_name == "pull_request" and gha_pull_request_branch:
-              if not upload_codecov_pr:
+              if not upload_codecov_pr and not on_demand_coverage:
                   upload_codecov = False
-              if change_detection_in_prs and gha_pull_request_branch:
+              if change_detection_in_prs and not on_demand_complete:
                   change_detection = True
                   change_detection_base_branch = gha_pull_request_branch
-                  upload_codecov = False
+                  if not on_demand_coverage:
+                      upload_codecov = False
           if gha_event_name == "push":
-              if not upload_codecov_push:
+              if not upload_codecov_push and not on_demand_coverage:
                   upload_codecov = False
           if gha_event_name == "schedule":
               if not upload_codecov_schedule:
