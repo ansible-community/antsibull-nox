@@ -1,0 +1,4 @@
+minor_changes:
+  - Allow to control whether ansible-test integration tests should run tests marked as ``unstable`` if changes affect them
+    throught the environment variable ``ANTSIBULL_NOX_INTEGRATION_ALLOW_UNSTABLE_CHANGED``
+    (https://github.com/ansible-community/antsibull-nox/pull/208).

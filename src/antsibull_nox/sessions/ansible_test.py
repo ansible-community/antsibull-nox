@@ -61,6 +61,9 @@ _COVERAGE_ANALYSIS_FILE_ENV_VAR = "ANTSIBULL_NOX_COVERAGE_ANALYSIS_FILE"
 _COVERAGE_NO_XML_FLAG_ENV_VAR = "ANTSIBULL_NOX_COVERAGE_NO_XML"
 _ALWAYS_COPY_REPO_STRUCTURE_FLAG_ENV_VAR = "ANTSIBULL_NOX_ALWAYS_COPY_REPO_STRUCTURE"
 _TIMEOUT_ENV_VAR = "ANTSIBULL_NOX_TIMEOUT"
+_ALLOW_UNSTABLE_CHANGED_FLAG_ENV_VAR = (
+    "ANTSIBULL_NOX_INTEGRATION_ALLOW_UNSTABLE_CHANGED"
+)
 
 
 def get_ansible_test_env() -> dict[str, str]:
@@ -643,6 +646,11 @@ def _add_continue_on_error_params(
         parameters.append("--continue-on-error")
 
 
+def _add_allow_unsable_changed_param(parameters: list[str | _ColorFlagType]) -> None:
+    if os.environ.get(_ALLOW_UNSTABLE_CHANGED_FLAG_ENV_VAR) == "true":
+        parameters.append("--allow-unstable-changed")
+
+
 def add_ansible_test_integration_sessions_default_container(
     *,
     include_devel: bool = False,
@@ -770,6 +778,7 @@ def add_ansible_test_integration_sessions_default_container(
             )
             _add_retry_on_error_params(parameters, retry_on_error)
             _add_continue_on_error_params(parameters, continue_on_error)
+            _add_allow_unsable_changed_param(parameters)
             add_ansible_test_session(
                 name=name,
                 description=description,
@@ -1203,6 +1212,7 @@ def add_ansible_test_integration_sessions(
         _add_version_specific_interation_test_params(cmd, session.ansible_core)
         _add_retry_on_error_params(cmd, session.retry_on_error)
         _add_continue_on_error_params(cmd, session.continue_on_error)
+        _add_allow_unsable_changed_param(cmd)
         if session.docker:
             cmd.extend(
                 [
