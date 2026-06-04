@@ -416,6 +416,7 @@ jobs:
           !matrix.skip
         uses: ansible-community/antsibull-nox@main
         with:
+          allow-unstable-changed: ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
           change-detection: ${{ needs.create-matrixes.outputs.change-detection }}
           change-detection-base-branch: ${{ needs.create-matrixes.outputs.change-detection-base-branch }}
           extra-python-versions: ${{ matrix.python }}

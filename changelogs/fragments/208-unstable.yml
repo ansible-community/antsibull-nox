@@ -2,3 +2,8 @@ minor_changes:
   - Allow to control whether ansible-test integration tests should run tests marked as ``unstable`` if changes affect them
     throught the environment variable ``ANTSIBULL_NOX_INTEGRATION_ALLOW_UNSTABLE_CHANGED``
     (https://github.com/ansible-community/antsibull-nox/pull/208).
+  - In the GH action, allow to control whether ansible-test integration tests should run tests marked as ``unstable``
+    if changes affect them with the ``allow-unstable-changed`` option
+    (https://github.com/ansible-community/antsibull-nox/pull/208).
+  - In the GHA shared workflow, integration tests now always run tests marked as ``unstable`` if changes affect them in pull requests
+    (https://github.com/ansible-community/antsibull-nox/pull/208).
