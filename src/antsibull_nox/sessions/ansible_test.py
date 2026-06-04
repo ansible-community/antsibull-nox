@@ -55,13 +55,23 @@ if t.TYPE_CHECKING:
     DevelLikeBranch = tuple[str | None, str]
     NeverAlwaysInCI = t.Literal["never", "always", "in-ci"]
 
+_ANSIBLE_TEST_PREFER_PODMAN_ENV_VAR = "ANSIBLE_TEST_PREFER_PODMAN"
+_COVERAGE_DESTINATION_ENV_VAR = "ANTSIBULL_NOX_COVERAGE_DESTINATION"
+_COVERAGE_ANALYSIS_FILE_ENV_VAR = "ANTSIBULL_NOX_COVERAGE_ANALYSIS_FILE"
+_COVERAGE_NO_XML_FLAG_ENV_VAR = "ANTSIBULL_NOX_COVERAGE_NO_XML"
+_ALWAYS_COPY_REPO_STRUCTURE_FLAG_ENV_VAR = "ANTSIBULL_NOX_ALWAYS_COPY_REPO_STRUCTURE"
+_TIMEOUT_ENV_VAR = "ANTSIBULL_NOX_TIMEOUT"
+_ALLOW_UNSTABLE_CHANGED_FLAG_ENV_VAR = (
+    "ANTSIBULL_NOX_INTEGRATION_ALLOW_UNSTABLE_CHANGED"
+)
+
 
 def get_ansible_test_env() -> dict[str, str]:
     """
     Set ANSIBLE_TEST_PREFER_PODMAN if the user prefers one of podman or docker over the other.
     """
     # Check whether the user explicitly set ANSIBLE_TEST_PREFER_PODMAN
-    if os.environ.get("ANSIBLE_TEST_PREFER_PODMAN") is not None:
+    if os.environ.get(_ANSIBLE_TEST_PREFER_PODMAN_ENV_VAR) is not None:
         return {}
     # Check whether the user explicitly requested a container engine for antsibull-nox
     preference, explicitly_set = get_container_engine_preference()
@@ -70,10 +80,10 @@ def get_ansible_test_env() -> dict[str, str]:
     # Check whether the users prefers one of podman and docker over the other
     if preference in ("auto-prefer-podman", "podman"):
         # Yes, the user prefers podman.
-        return {"ANSIBLE_TEST_PREFER_PODMAN": "1"}
+        return {_ANSIBLE_TEST_PREFER_PODMAN_ENV_VAR: "1"}
     if preference in ("auto-prefer-docker", "docker"):
         # Yes, the user prefers docker.
-        return {"ANSIBLE_TEST_PREFER_PODMAN": ""}
+        return {_ANSIBLE_TEST_PREFER_PODMAN_ENV_VAR: ""}
     # Apparently not: do nothing.
     return {}
 
@@ -110,7 +120,7 @@ def _process_coverage_data(
         "version",
     ]
 
-    coverage_destination = os.environ.get("ANTSIBULL_NOX_COVERAGE_DESTINATION")
+    coverage_destination = os.environ.get(_COVERAGE_DESTINATION_ENV_VAR)
     if coverage_destination:
         os.makedirs(coverage_destination, exist_ok=True)
         session.run(
@@ -125,7 +135,7 @@ def _process_coverage_data(
             coverage_destination,
         )
 
-    coverage_analysis_file = os.environ.get("ANTSIBULL_NOX_COVERAGE_ANALYSIS_FILE")
+    coverage_analysis_file = os.environ.get(_COVERAGE_ANALYSIS_FILE_ENV_VAR)
     if coverage_analysis_file and ansible_core_version != Version.parse("2.9"):
         # the analyze subcommand was added in ansible-base 2.10.
         session.run(
@@ -140,7 +150,7 @@ def _process_coverage_data(
             coverage_analysis_file,
         )
 
-    if os.environ.get("ANTSIBULL_NOX_COVERAGE_NO_XML") != "true":
+    if os.environ.get(_COVERAGE_NO_XML_FLAG_ENV_VAR) != "true":
         session.run(
             "ansible-test",
             "coverage",
@@ -212,7 +222,7 @@ def add_ansible_test_session(
         change_detection_args = get_change_detection_args()
         copy_repo_structure = (
             change_detection_args is not None
-            or os.environ.get("ANTSIBULL_NOX_ALWAYS_COPY_REPO_STRUCTURE") == "true"
+            or os.environ.get(_ALWAYS_COPY_REPO_STRUCTURE_FLAG_ENV_VAR) == "true"
         )
         prepared_collections = prepare_collections(
             session,
@@ -242,7 +252,7 @@ def add_ansible_test_session(
                 "--show",
                 "-v",
             ] + get_ansible_test_color_flag(session)
-            timeout = os.environ.get("ANTSIBULL_NOX_TIMEOUT")
+            timeout = os.environ.get(_TIMEOUT_ENV_VAR)
             if timeout:
                 env_command.extend(["--timeout", timeout])
             session.run(*env_command, env=env_env)
@@ -636,6 +646,11 @@ def _add_continue_on_error_params(
         parameters.append("--continue-on-error")
 
 
+def _add_allow_unsable_changed_param(parameters: list[str | _ColorFlagType]) -> None:
+    if os.environ.get(_ALLOW_UNSTABLE_CHANGED_FLAG_ENV_VAR) == "true":
+        parameters.append("--allow-unstable-changed")
+
+
 def add_ansible_test_integration_sessions_default_container(
     *,
     include_devel: bool = False,
@@ -763,6 +778,7 @@ def add_ansible_test_integration_sessions_default_container(
             )
             _add_retry_on_error_params(parameters, retry_on_error)
             _add_continue_on_error_params(parameters, continue_on_error)
+            _add_allow_unsable_changed_param(parameters)
             add_ansible_test_session(
                 name=name,
                 description=description,
@@ -1196,6 +1212,7 @@ def add_ansible_test_integration_sessions(
         _add_version_specific_interation_test_params(cmd, session.ansible_core)
         _add_retry_on_error_params(cmd, session.retry_on_error)
         _add_continue_on_error_params(cmd, session.continue_on_error)
+        _add_allow_unsable_changed_param(cmd)
         if session.docker:
             cmd.extend(
                 [

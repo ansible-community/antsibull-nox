@@ -47,6 +47,11 @@ inputs:
     description: |-
       Allows to explicitly set the base branch for change detection.
     default: ""
+  allow-unstable-changed:
+    description: |-
+      Whether the `--allow-unstable-changed` flag is passed to ansible-test integration tests.
+    required: false
+    default: "false"
 outputs:
   run-nox:
     description: Output of the 'run nox' step.
@@ -90,5 +95,6 @@ runs:
         ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS: "true"
         ANTSIBULL_CHANGE_DETECTION: "${{ inputs.change-detection }}"
         ANTSIBULL_BASE_BRANCH: "${{ inputs.change-detection-base-branch }}"
+        ANTSIBULL_NOX_INTEGRATION_ALLOW_UNSTABLE_CHANGED: "${{ inputs.allow-unstable-changed }}"
       shell: bash
       working-directory: "${{ inputs.working-directory }}"
