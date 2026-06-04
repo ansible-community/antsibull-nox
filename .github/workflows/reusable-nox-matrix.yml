@@ -219,8 +219,8 @@ jobs:
                   ])
               # If present, check for 'ci_coverage' and 'ci_complete'
               if pr_last_commit:
-                  on_demand_coverage = "ci_coverage" in pr_last_commit
-                  on_demand_complete = "ci_complete" in pr_last_commit
+                  on_demand_coverage = b"ci_coverage" in pr_last_commit
+                  on_demand_complete = b"ci_complete" in pr_last_commit
                   if on_demand_coverage and upload_codecov:
                       print("Code coverage requested.")
                   if on_demand_complete and change_detection_in_prs:
