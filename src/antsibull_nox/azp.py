@@ -215,13 +215,10 @@ def _create_groups(data: dict[str, list[dict[str, t.Any]]]) -> list[_Group]:
             for (w, ansible_core), sessions in int_sessions.items():
                 if what != w:
                     continue
-                ansible_core_name = _ansible_core_name(
-                    parse_ansible_core_version(ansible_core)
-                )
                 result.append(
                     _Group(
                         name=f"{what}_{ansible_core.replace('-', '_').replace('.', '_')}",
-                        title=f"{what.title()} {ansible_core_name} {ansible_core}",
+                        title=f"{what.title()} {ansible_core}",
                         dependencies=[],
                         sessions=_convert_sessions(
                             sessions, with_ansible_core_version=False
