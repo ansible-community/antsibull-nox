@@ -557,6 +557,23 @@ class SessionAnsibleTestUnits(_BaseModel):
     min_version: t.Optional[PVersion] = None
     max_version: t.Optional[PVersion] = None
     except_versions: list[PAnsibleCoreVersion] = []
+    split_by_python_version: bool = False
+    core_python_versions: dict[t.Union[PAnsibleCoreVersion, str], list[PVersion]] = {}
+    controller_python_versions_only: bool = False
+
+    @p.model_validator(mode="after")
+    def _validate_split_by_python_version(self) -> t.Self:
+        if not self.split_by_python_version:
+            if self.core_python_versions:
+                raise ValueError(
+                    "You cannot use core_python_versions if split_by_python_version=false"
+                )
+            if self.controller_python_versions_only:
+                raise ValueError(
+                    "You cannot set controller_python_versions_only=true"
+                    " if split_by_python_version=false"
+                )
+        return self
 
 
 class AnsibleValueExplicit(p.BaseModel):

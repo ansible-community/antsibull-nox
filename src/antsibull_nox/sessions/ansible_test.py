@@ -522,14 +522,18 @@ def add_ansible_test_unit_test_session(
     ansible_core_repo_name: str | None = None,
     ansible_core_branch_name: str | None = None,
     register_extra_data: dict[str, t.Any] | None = None,
+    python_version: Version | str | None = None,
 ) -> None:
     """
     Add generic ansible-test unit test session.
     """
+    args: list[str | _ColorFlagType] = ["units", COLOR_FLAG, "-v", "--docker"]
+    if python_version is not None:
+        args.extend(["--python", str(python_version)])
     add_ansible_test_session(
         name=name,
         description=description,
-        ansible_test_params=["units", COLOR_FLAG, "-v", "--docker"],
+        ansible_test_params=args,
         extra_deps_files=["tests/unit/requirements.yml"],
         default=default,
         ansible_core_version=ansible_core_version,
@@ -543,6 +547,57 @@ def add_ansible_test_unit_test_session(
     )
 
 
+def _add_ansible_test_unit_test_session_group(
+    *,
+    name_prefix: str,
+    description_prefix: str,
+    ansible_core_version: str | AnsibleCoreVersion,
+    ansible_core_source: t.Literal["git", "pypi"] = "git",
+    ansible_core_repo_name: str | None = None,
+    ansible_core_branch_name: str | None = None,
+    python_versions: list[str | Version],
+) -> list[str]:
+    """
+    Add generic ansible-test unit test session.
+    """
+    unit_test_sessions = []
+    for python_version in python_versions:
+        name = f"{name_prefix}-{python_version}"
+        description = f"{description_prefix} with Python {python_version}"
+        ans_vers_id = ansible_core_branch_name or ansible_core_version
+        add_ansible_test_unit_test_session(
+            name=name,
+            description=description,
+            default=False,
+            ansible_core_version=ansible_core_version,
+            ansible_core_source=ansible_core_source,
+            ansible_core_repo_name=ansible_core_repo_name,
+            ansible_core_branch_name=ansible_core_branch_name,
+            register_extra_data={"display-name": f"Ⓐ{ans_vers_id}+py{python_version}"},
+            python_version=python_version,
+        )
+        unit_test_sessions.append(name)
+
+    if not unit_test_sessions:
+        return []
+
+    def run_all_unit_tests(
+        session: nox.Session,  # pylint: disable=unused-argument
+    ) -> None:
+        pass
+
+    run_all_unit_tests.__doc__ = (
+        f"Meta session for running all {name_prefix}-* sessions."
+    )
+    nox.session(
+        name=name_prefix,
+        default=False,
+        requires=unit_test_sessions,
+    )(run_all_unit_tests)
+
+    return [name_prefix]
+
+
 def add_all_ansible_test_unit_test_sessions(
     *,
     default: bool = False,
@@ -552,6 +607,11 @@ def add_all_ansible_test_unit_test_sessions(
     min_version: Version | str | None = None,
     max_version: Version | str | None = None,
     except_versions: list[AnsibleCoreVersion | str] | None = None,
+    split_by_python_version: bool = False,
+    core_python_versions: (
+        dict[str | AnsibleCoreVersion, list[str | Version]] | None
+    ) = None,
+    controller_python_versions_only: bool = False,
 ) -> None:
     """
     Add ansible-test unit test meta session that runs ansible-test units
@@ -559,6 +619,11 @@ def add_all_ansible_test_unit_test_sessions(
     """
     parsed_min_version, parsed_max_version, parsed_except_versions = (
         _parse_min_max_except(min_version, max_version, except_versions)
+    )
+    effective_min_python_version = (
+        _get_effective_min_python_version(min_python_version=None)
+        if split_by_python_version
+        else "default"
     )
 
     units_sessions = []
@@ -570,14 +635,32 @@ def add_all_ansible_test_unit_test_sessions(
         except_versions=parsed_except_versions,
     ):
         name = f"ansible-test-units-{ansible_core_version}"
-        add_ansible_test_unit_test_session(
-            name=name,
-            description=f"Run unit tests with ansible-core {ansible_core_version}'s ansible-test",
-            ansible_core_version=ansible_core_version,
-            register_extra_data={"display-name": f"Ⓐ{ansible_core_version}"},
-            default=False,
-        )
-        units_sessions.append(name)
+        if split_by_python_version:
+            py_versions = _get_python_versions(
+                ansible_core_version=ansible_core_version,
+                effective_min_python_version=effective_min_python_version,
+                core_python_versions=core_python_versions,
+                controller_python_versions_only=controller_python_versions_only,
+            )
+            units_sessions.extend(
+                _add_ansible_test_unit_test_session_group(
+                    name_prefix=name,
+                    description_prefix=f"Run unit tests with ansible-core {ansible_core_version}'s"
+                    " ansible-test",
+                    ansible_core_version=ansible_core_version,
+                    python_versions=py_versions,
+                )
+            )
+        else:
+            add_ansible_test_unit_test_session(
+                name=name,
+                description=f"Run unit tests with ansible-core {ansible_core_version}'s"
+                " ansible-test",
+                ansible_core_version=ansible_core_version,
+                register_extra_data={"display-name": f"Ⓐ{ansible_core_version}"},
+                default=False,
+            )
+            units_sessions.append(name)
     if add_devel_like_branches:
         for repo_name, branch_name in add_devel_like_branches:
             repo_prefix = (
@@ -585,19 +668,41 @@ def add_all_ansible_test_unit_test_sessions(
             )
             repo_postfix = f", {repo_name} repository" if repo_name is not None else ""
             name = f"ansible-test-units-{repo_prefix}{branch_name.replace('/', '-')}"
-            add_ansible_test_unit_test_session(
-                name=name,
-                description=(
-                    "Run unit tests from ansible-test in ansible-core's"
-                    f" {branch_name} branch{repo_postfix}"
-                ),
-                ansible_core_version="devel",
-                ansible_core_repo_name=repo_name,
-                ansible_core_branch_name=branch_name,
-                register_extra_data={"display-name": f"Ⓐ{branch_name}"},
-                default=False,
-            )
-            units_sessions.append(name)
+            if split_by_python_version:
+                py_versions = _get_python_versions(
+                    ansible_core_version="devel",
+                    effective_min_python_version=effective_min_python_version,
+                    core_python_versions=core_python_versions,
+                    controller_python_versions_only=controller_python_versions_only,
+                    branch_name=branch_name,
+                )
+                units_sessions.extend(
+                    _add_ansible_test_unit_test_session_group(
+                        name_prefix=name,
+                        description_prefix=(
+                            "Run unit tests from ansible-test in ansible-core's"
+                            f" {branch_name} branch{repo_postfix}"
+                        ),
+                        ansible_core_version="devel",
+                        ansible_core_repo_name=repo_name,
+                        ansible_core_branch_name=branch_name,
+                        python_versions=py_versions,
+                    )
+                )
+            else:
+                add_ansible_test_unit_test_session(
+                    name=name,
+                    description=(
+                        "Run unit tests from ansible-test in ansible-core's"
+                        f" {branch_name} branch{repo_postfix}"
+                    ),
+                    ansible_core_version="devel",
+                    ansible_core_repo_name=repo_name,
+                    ansible_core_branch_name=branch_name,
+                    register_extra_data={"display-name": f"Ⓐ{branch_name}"},
+                    default=False,
+                )
+                units_sessions.append(name)
 
     def run_all_unit_tests(
         session: nox.Session,  # pylint: disable=unused-argument
