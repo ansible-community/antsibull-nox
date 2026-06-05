@@ -19,6 +19,7 @@ import nox
 from ..collection import (
     load_collection_data_from_disk,
 )
+from ..lint_config import NOXFILE_PY
 from ..messages import Message
 from ..messages.parse import (
     parse_mypy_errors,
@@ -69,7 +70,7 @@ CODE_FILES = [
 CODE_FILES_W_NOXFILE = [
     Path("plugins"),
     Path("tests/unit"),
-    Path("noxfile.py"),
+    Path(NOXFILE_PY),
 ]
 
 MODULE_PATHS = FileCollector.create(
