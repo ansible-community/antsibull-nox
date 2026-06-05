@@ -1,0 +1,2 @@
+minor_changes:
+  - Update supported Python versions for ansible-core devel (https://github.com/ansible-community/antsibull-nox/pull/210).
