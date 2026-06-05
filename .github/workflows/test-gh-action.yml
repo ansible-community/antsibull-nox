@@ -42,6 +42,9 @@ jobs:
         with:
           working-directory: tests/coverage-collection/
           python-version: ${{ matrix.python }}
+          # Make sure that ansible-core devel can be installed with
+          # at least one Python version that is available:
+          extra-python-versions: 3.14
       - name: Run matrix generator
         id: run-nox
         run: |
