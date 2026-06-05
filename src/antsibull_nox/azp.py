@@ -22,6 +22,11 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 from .ansible import AnsibleCoreVersion, parse_ansible_core_version
+from .config import (
+    CONFIG_FILENAME,
+    load_config_from_toml,
+)
+from .lint_config import NOXFILE_PY
 from .utils import Version
 
 _YAML_NO_NEED_TO_ESCAPE = re.compile(r"^[a-zA-Z0-9_ .,;/()+-]+$")
@@ -134,7 +139,9 @@ def _ansible_core_name(version: AnsibleCoreVersion | None = None) -> str:
     return "ansible-core"
 
 
-def _get_title(session: dict[str, t.Any], *, with_ansible_core_version: bool) -> str:
+def _get_title(
+    session: dict[str, t.Any], *, with_ansible_core_version: bool, convert_py: bool
+) -> str:
     display_name = session.get("display-name")
     if display_name:
         if with_ansible_core_version:
@@ -145,12 +152,17 @@ def _get_title(session: dict[str, t.Any], *, with_ansible_core_version: bool) ->
             display_name = display_name.replace("Ⓐ", f"{ansible_core_name} ")
         else:
             display_name = _ANSIBLE_CORE_VERSION.sub("", display_name).lstrip(" +/,")
+        if convert_py:
+            display_name = display_name.replace("py", "Python ")
         display_name = display_name.replace("+", " + ")
     return display_name or session["name"]
 
 
 def _convert_sessions(
-    sessions: list[dict[str, t.Any]], *, with_ansible_core_version: bool
+    sessions: list[dict[str, t.Any]],
+    *,
+    with_ansible_core_version: bool,
+    convert_py: bool = False,
 ) -> list[_Session]:
     result = []
     for session in sessions:
@@ -158,14 +170,102 @@ def _convert_sessions(
             _Session(
                 name=session["name"],
                 title=_get_title(
-                    session, with_ansible_core_version=with_ansible_core_version
+                    session,
+                    with_ansible_core_version=with_ansible_core_version,
+                    convert_py=convert_py,
                 ),
             )
         )
     return result
 
 
-def _create_groups(data: dict[str, list[dict[str, t.Any]]]) -> list[_Group]:
+def _create_unit_groups(
+    data: dict[str, list[dict[str, t.Any]]], *, split_up_unit_tests: bool
+) -> list[_Group]:
+    if "units" not in data:
+        return []
+    if not split_up_unit_tests:
+        return [
+            _Group(
+                name="units",
+                title="Unit tests",
+                dependencies=[],
+                sessions=_convert_sessions(
+                    data["units"], with_ansible_core_version=True
+                ),
+            )
+        ]
+
+    unit_sessions: dict[str, list[dict[str, t.Any]]] = {}
+    for session in data["units"]:
+        ansible_core: str | None = session.get("ansible-core")
+        if ansible_core is None:
+            raise ValueError("Found unit test session without ansible-core information")
+        unit_session_list = unit_sessions.get(ansible_core)
+        if unit_session_list is None:
+            unit_session_list = []
+            unit_sessions[ansible_core] = unit_session_list
+        unit_session_list.append(session)
+    result = []
+    for ansible_core, sessions in unit_sessions.items():
+        result.append(
+            _Group(
+                name=f"units_{ansible_core.replace('-', '_').replace('.', '_')}",
+                title=f"Units {ansible_core}",
+                dependencies=[],
+                sessions=_convert_sessions(
+                    sessions, with_ansible_core_version=False, convert_py=True
+                ),
+            )
+        )
+    return result
+
+
+def _create_integration_groups(data: dict[str, list[dict[str, t.Any]]]) -> list[_Group]:
+    if "integration" not in data:
+        return []
+    int_sessions: dict[
+        tuple[t.Literal["docker", "remote", "other"], str], list[dict[str, t.Any]]
+    ] = {}
+    for session in data["integration"]:
+        ansible_core: str | None = session.get("ansible-core")
+        if ansible_core is None:
+            raise ValueError(
+                "Found integration test session without ansible-core information"
+            )
+        tags: list[str] = session.get("tags") or []
+        is_docker = "docker" in tags
+        is_remote = "remote" in tags
+        key: tuple[t.Literal["docker", "remote", "other"], str] = (
+            "remote" if is_remote else "docker" if is_docker else "other",
+            ansible_core,
+        )
+        int_session_list = int_sessions.get(key)
+        if int_session_list is None:
+            int_session_list = []
+            int_sessions[key] = int_session_list
+        int_session_list.append(session)
+    result = []
+    for what in sorted({w for w, _ in int_sessions}):
+        for (w, ansible_core), sessions in int_sessions.items():
+            if what != w:
+                continue
+            result.append(
+                _Group(
+                    name=f"{what}_{ansible_core.replace('-', '_').replace('.', '_')}",
+                    title=f"{what.title()} {ansible_core}",
+                    dependencies=[],
+                    sessions=_convert_sessions(
+                        sessions, with_ansible_core_version=False
+                    ),
+                )
+            )
+    return result
+
+
+def _create_groups(
+    data: dict[str, list[dict[str, t.Any]]], *, split_up_unit_tests: bool = False
+) -> list[_Group]:
     result = []
     if "sanity" in data:
         result.append(
@@ -178,53 +278,8 @@ def _create_groups(data: dict[str, list[dict[str, t.Any]]]) -> list[_Group]:
                 ),
             )
         )
-    if "units" in data:
-        result.append(
-            _Group(
-                name="units",
-                title="Unit tests",
-                dependencies=[],
-                sessions=_convert_sessions(
-                    data["units"], with_ansible_core_version=True
-                ),
-            )
-        )
-    if "integration" in data:
-        int_sessions: dict[
-            tuple[t.Literal["docker", "remote", "other"], str], list[dict[str, t.Any]]
-        ] = {}
-        for session in data["integration"]:
-            ansible_core: str | None = session.get("ansible-core")
-            if ansible_core is None:
-                raise ValueError(
-                    "Found integration test session without ansible-core information"
-                )
-            tags: list[str] = session.get("tags") or []
-            is_docker = "docker" in tags
-            is_remote = "remote" in tags
-            key: tuple[t.Literal["docker", "remote", "other"], str] = (
-                "remote" if is_remote else "docker" if is_docker else "other",
-                ansible_core,
-            )
-            int_session_list = int_sessions.get(key)
-            if int_session_list is None:
-                int_session_list = []
-                int_sessions[key] = int_session_list
-            int_session_list.append(session)
-        for what in sorted({w for w, _ in int_sessions}):
-            for (w, ansible_core), sessions in int_sessions.items():
-                if what != w:
-                    continue
-                result.append(
-                    _Group(
-                        name=f"{what}_{ansible_core.replace('-', '_').replace('.', '_')}",
-                        title=f"{what.title()} {ansible_core}",
-                        dependencies=[],
-                        sessions=_convert_sessions(
-                            sessions, with_ansible_core_version=False
-                        ),
-                    )
-                )
+    result.extend(_create_unit_groups(data, split_up_unit_tests=split_up_unit_tests))
+    result.extend(_create_integration_groups(data))
     return result
 
 
@@ -293,12 +348,18 @@ def update_azp_config(
     """
     azp_definition: Path = Path(".azure-pipelines/azure-pipelines.yml")
     for expected_file in (
-        "antsibull-nox.toml",
-        "noxfile.py",
+        CONFIG_FILENAME,
+        NOXFILE_PY,
         azp_definition,
     ):
         if not os.path.isfile(expected_file):
             raise ValueError(f"{expected_file} does not exist or is not a file")
+
+    config_path = Path(CONFIG_FILENAME)
+    config = load_config_from_toml(config_path)
+    split_up_unit_tests = False
+    if config.sessions.ansible_test_units:
+        split_up_unit_tests = config.sessions.ansible_test_units.split_by_python_version
 
     data = get_ci_matrix(
         min_ansible_core=min_ansible_core,
@@ -310,7 +371,7 @@ def update_azp_config(
     pre, old_main, post = _get_azp_definition_content(azp_definition)
     main: list[str] = []
 
-    groups = _create_groups(data)
+    groups = _create_groups(data, split_up_unit_tests=split_up_unit_tests)
     for group in groups:
         main.append(f"  - stage: {_escape_yaml(group.name)}")
         main.append(f"    displayName: {_escape_yaml(group.title)}")

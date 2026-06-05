@@ -1179,6 +1179,40 @@ The function supports the following parameters:
   The list elements can be strings of the form `"devel"`, `"milestone"`,
   and `"x.y"` where `x` and `y` are integers that specify a minor ansible-core x.y release.
 
+* `split_by_python_version: bool` (default: `false`):
+  If set to `false`, there will be one session per ansible-core version.
+  If set to `true`, every ansible-core and Python version combination will get its own session.
+  For collections with large unit test suites it can make sense to set this to `true`.
+
+* `core_python_versions: dict[AnsibleCoreVersion | str, list[Version]]` (default `{}`):
+  Restrict the number of Python versions per ansible-core release.
+  An empty list means that the ansible-core version will be skipped completely.
+  If no restrictions are provided, all Python versions supported by this version of ansible-core are used;
+  see `controller_python_versions_only` below for more details.
+
+    Note that this setting can only be set to a non-empty value if `split_by_python_version=true`.
+
+    Note that this setting is a new section `[sessions.ansible_test_units.core_python_versions]`.
+    The keys can be strings `"devel"`, `"milestone"`, and `"x.y"`, where ansible-core x.y is a minor ansible-core release;
+    if `add_devel_like_branches`, the branch names appearing in `add_devel_like_branches` can also be specified.
+    The values can be strings `"x.y"`, where Python x.y is a minor Python release.
+
+    If this is set, `min_python_version` is ignored.
+
+* `controller_python_versions_only: bool` (default `false`):
+  For ansible-core versions where `core_python_versions` does not provide a list of Python versions,
+  usually all Python versions supported on the remote side are used.
+  If this is set to `true`, only all Python versions uspported on the controller side are used.
+
+    Note that this setting can only be set to `true` if `split_by_python_version=true`.
+    If you want to restrict unit tests to controller Python versions if `split_by_python_version=false`,
+    consider using an ansible-test configuration file.
+
+    When set to `true`,
+    this behaves the same as when `min_python_version` is set to `"controller"`,
+    or when `min_python_version` is set to `"ansible-test-config"`
+    and `tests/config.yml` has `modules.python_requires` set to `"controller"`.
+
 #### Example code
 
 This example is from `community.dns`.

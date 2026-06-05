@@ -229,6 +229,13 @@ def _add_ansible_test_sessions(sessions: Sessions, cconfig: CollectionConfig) ->
             except_versions=_convert_except_versions(
                 sessions.ansible_test_units.except_versions
             ),
+            split_by_python_version=sessions.ansible_test_units.split_by_python_version,
+            core_python_versions=_convert_core_python_versions(
+                sessions.ansible_test_units.core_python_versions
+            ),
+            controller_python_versions_only=(
+                sessions.ansible_test_units.controller_python_versions_only
+            ),
         )
 
     # Handle integration tests
