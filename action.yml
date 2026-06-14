@@ -68,10 +68,42 @@ runs:
           ${{ inputs.extra-python-versions }}
           ${{ inputs.python-version }}
 
+    - name: "Determine Python restrictions"
+      id: python-restrictions
+      env:
+        ANTSIBULL_NOX_EXTRA_PYTHON_VERSIONS: ${{ inputs.extra-python-versions }}
+        ANTSIBULL_NOX_PYTHON_VERSION: ${{ inputs.python-version }}
+      run: |
+        # Determine Python restrictions
+        import os
+        import pathlib
+        import shlex
+
+        FILE_APPEND_MODE = "a"
+        OUTPUTS_FILE_PATH = pathlib.Path(os.environ["GITHUB_OUTPUT"])
+
+        def set_output(name, value):
+            with OUTPUTS_FILE_PATH.open(FILE_APPEND_MODE) as outputs_file:
+                outputs_file.writelines(f"{name}={value}{os.linesep}")
+            print(f"Setting {name} to {value}")
+
+        python_versions = (
+            [version for version in os.environ["ANTSIBULL_NOX_EXTRA_PYTHON_VERSIONS"].splitlines() if version]
+            + [os.environ["ANTSIBULL_NOX_PYTHON_VERSION"]]
+        )
+        python_major_versions = {".".join(version.split(".")[:2]) for version in python_versions}
+
+        restrictions = []
+        if "3.8" in python_major_versions:
+            restrictions.append("virtualenv<21.5.0")
+
+        set_output("restrictions", shlex.join(restrictions))
+      shell: python
+
     - name: "Install nox and antsibull-nox"
       run: |
         echo "::group::Install nox and antsibull-nox"
-        ${{ steps.python.outputs.python-path }} -m pip install ${{ github.action_path }} "virtualenv<21.5.0"
+        ${{ steps.python.outputs.python-path }} -m pip install ${{ github.action_path }} ${{ steps.python-restrictions.outputs.restrictions }}
         echo "::endgroup::"
       shell: bash
 

@@ -1,0 +1,2 @@
+bugfixes:
+  - "The GitHub action now restricts virtualenv to < 21.5.0 when Python 3.8 is used (for example to run Ansible 2.9 tests). virtualenv 21.5.0 no longer supports Python 3.8 (https://github.com/ansible-community/antsibull-nox/issues/216, https://github.com/ansible-community/antsibull-nox/pull/217)."
