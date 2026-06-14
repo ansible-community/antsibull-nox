@@ -757,7 +757,7 @@ It accepts the following options:
 * `run_reuse: bool` (default `true`):
   Whether to run `reuse lint`.
 
-* `reuse_package: PackageType` (default `"reuse"`):
+* `reuse_package: PackageType` (default `"reuse[charset-normalizer]"`):
   The package to install for `reuse` in this session.
   You can specify a value here to add restrictions to the `reuse` version,
   or to pin the version,

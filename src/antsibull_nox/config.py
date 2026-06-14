@@ -326,7 +326,7 @@ class SessionLicenseCheck(_BaseModel):
     default: bool = True
 
     run_reuse: bool = True
-    reuse_package: Packages = PackageName(name="reuse")
+    reuse_package: Packages = PackageName(name="reuse[charset-normalizer]")
     run_license_check: bool = True
     license_check_extra_ignore_paths: list[str] = []
 

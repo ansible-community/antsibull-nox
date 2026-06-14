@@ -31,7 +31,7 @@ def add_license_check(
     *,
     make_license_check_default: bool = True,
     run_reuse: bool = True,
-    reuse_package: PackageTypeOrList = "reuse",
+    reuse_package: PackageTypeOrList = "reuse[charset-normalizer]",
     run_license_check: bool = True,
     license_check_extra_ignore_paths: list[str] | None = None,
 ) -> None:
