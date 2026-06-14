@@ -113,7 +113,10 @@ def filter_paths(
 
 
 def filter_files_cd(
-    files: Sequence[Path], *, paths_to_trigger_full_build: Sequence[Path] | None = None
+    files: Sequence[Path],
+    *,
+    paths_to_trigger_full_build: Sequence[Path] | None = None,
+    paths_are_absolute: bool = False,
 ) -> list[Path]:
     """
     Given a sequence of paths, filters out changed files if change detection is enabled.
@@ -123,6 +126,12 @@ def filter_files_cd(
         paths_to_trigger_full_build
     )
     changed_files = get_changes(relative_to=Path.cwd())
+    if paths_are_absolute and changed_files is not None:
+        cwd = Path.cwd()
+        paths_to_trigger_full_build = [
+            cwd / path for path in paths_to_trigger_full_build
+        ]
+        changed_files = [cwd / path for path in changed_files]
     if changed_files is None or (
         any(file in paths_to_trigger_full_build for file in changed_files)
     ):

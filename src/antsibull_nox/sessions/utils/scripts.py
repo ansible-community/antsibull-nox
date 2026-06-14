@@ -46,7 +46,7 @@ def run_bare_script(
     if files is None:
         files = list_all_files()
     if with_cd:
-        files = filter_files_cd(files)
+        files = filter_files_cd(files, paths_are_absolute=True)
         if not files:
             session.warn(f"Skipping {name} (no files to process)")
             return None

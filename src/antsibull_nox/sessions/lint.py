@@ -1074,6 +1074,7 @@ def add_yamllint(
                 if file.name.lower().endswith((".yml", ".yaml"))
             ],
             paths_to_trigger_full_build=_as_list(yamllint_config),
+            paths_are_absolute=True,
         )
         if not all_yaml_filenames:
             session.warn("Skipping yamllint (no files to process)")
@@ -1111,6 +1112,7 @@ def add_yamllint(
                 yamllint_config_plugins or yamllint_config,
                 yamllint_config_plugins_examples,
             ),
+            paths_are_absolute=True,
         )
         if not all_plugin_files:
             session.warn("Skipping yamllint for modules/plugins (no files to process)")
@@ -1140,6 +1142,7 @@ def add_yamllint(
                 or yamllint_config_plugins
                 or yamllint_config
             ),
+            paths_are_absolute=True,
         )
         if not all_extra_docs:
             session.warn("Skipping yamllint for extra docs (no files to process)")
