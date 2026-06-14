@@ -11,6 +11,7 @@ Generate job matrix for use in CI systems.
 from __future__ import annotations
 
 import dataclasses
+import difflib
 import json
 import os
 import re
@@ -18,8 +19,10 @@ import subprocess
 import sys
 import tempfile
 import typing as t
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
+
+import pydantic as _p
 
 from .ansible import AnsibleCoreVersion, parse_ansible_core_version
 from .config import (
@@ -27,10 +30,24 @@ from .config import (
     load_config_from_toml,
 )
 from .lint_config import NOXFILE_PY
+from .sessions.utils.output import _BOLD, _RESET, Color
 from .utils import Version
 
 _YAML_NO_NEED_TO_ESCAPE = re.compile(r"^[a-zA-Z0-9_ .,;/()+-]+$")
 _ANSIBLE_CORE_VERSION = re.compile(r"Ⓐ\s*(?:devel|milestone|\d+\.\d+)")
+_AZURE_PIPELINES_CONFIG = ".azure-pipelines/azure-pipelines.yml"
+
+
+class ExtraSession(_p.BaseModel):
+    """
+    Extra session for AZP.
+    """
+
+    model_config = _p.ConfigDict(frozen=True, extra="forbid")
+
+    group: str
+    title: str
+    session: str
 
 
 def _run_nox(
@@ -283,6 +300,22 @@ def _create_groups(
     return result
 
 
+def _add_extra_sessions(
+    groups: list[_Group], extra_sessions: Sequence[ExtraSession]
+) -> None:
+    groups_by_title: dict[str, _Group] = {}
+    for group in groups:
+        groups_by_title[group.title] = group
+    for extra_session in extra_sessions:
+        session = _Session(title=extra_session.title, name=extra_session.session)
+        try:
+            groups_by_title[extra_session.group].sessions.append(session)
+        except KeyError:
+            raise ValueError(
+                f"Unknown AZP stage title {extra_session.group!r}"
+            ) from None
+
+
 def _get_azp_definition_content(path: Path) -> tuple[list[str], list[str], list[str]]:
     state = 0
     data: tuple[list[str], list[str], list[str]] = [], [], []
@@ -334,26 +367,60 @@ def _escape_yaml(value: str) -> str:
     return "".join(result)
 
 
+def _show_diff(
+    pre: list[str],
+    old_main: list[str],
+    main: list[str],
+    post: list[str],
+    *,
+    use_color: bool = True,
+    filename: str = _AZURE_PIPELINES_CONFIG,
+) -> None:
+    reset = _RESET if use_color else ""
+    for line in difflib.unified_diff(
+        pre + old_main + post,
+        pre + main + post,
+        fromfile=filename,
+        tofile=filename,
+        lineterm="",
+    ):
+        col = ""
+        if use_color:
+            if line.startswith("+"):
+                col = Color.GREEN.value
+            elif line.startswith("-"):
+                col = Color.RED.value
+            elif line.startswith("@"):
+                col = _BOLD
+        print(f"{col}{line}{reset}")
+
+
+def _check_azp_files() -> None:
+    for expected_file in (
+        CONFIG_FILENAME,
+        NOXFILE_PY,
+        _AZURE_PIPELINES_CONFIG,
+    ):
+        if not os.path.isfile(expected_file):
+            raise ValueError(f"{expected_file} does not exist or is not a file")
+
+
 def update_azp_config(
     *,
     min_ansible_core: str | None = None,
     max_ansible_core: str | None = None,
     include_tags: str | None = None,
     exclude_tags: str | None = None,
+    extra_sessions: Sequence[ExtraSession] | None = None,
+    show_diff: bool = False,
 ) -> bool:
     """
     Update AZP config.
 
     Return true if the config changed.
     """
-    azp_definition: Path = Path(".azure-pipelines/azure-pipelines.yml")
-    for expected_file in (
-        CONFIG_FILENAME,
-        NOXFILE_PY,
-        azp_definition,
-    ):
-        if not os.path.isfile(expected_file):
-            raise ValueError(f"{expected_file} does not exist or is not a file")
+    _check_azp_files()
+    azp_definition: Path = Path(_AZURE_PIPELINES_CONFIG)
 
     config_path = Path(CONFIG_FILENAME)
     config = load_config_from_toml(config_path)
@@ -372,6 +439,8 @@ def update_azp_config(
     main: list[str] = []
 
     groups = _create_groups(data, split_up_unit_tests=split_up_unit_tests)
+    if extra_sessions:
+        _add_extra_sessions(groups, extra_sessions)
     for group in groups:
         main.append(f"  - stage: {_escape_yaml(group.name)}")
         main.append(f"    displayName: {_escape_yaml(group.title)}")
@@ -403,4 +472,8 @@ def update_azp_config(
     main.append("      - template: templates/coverage.yml")
 
     _write_azp_definition(azp_definition, pre + main + post)
-    return old_main != main
+    if old_main == main:
+        return False
+    if show_diff:
+        _show_diff(pre, old_main, main, post, use_color=True)
+    return True
