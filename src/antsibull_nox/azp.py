@@ -18,8 +18,10 @@ import subprocess
 import sys
 import tempfile
 import typing as t
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
+
+import pydantic as _p
 
 from .ansible import AnsibleCoreVersion, parse_ansible_core_version
 from .config import (
@@ -31,6 +33,18 @@ from .utils import Version
 
 _YAML_NO_NEED_TO_ESCAPE = re.compile(r"^[a-zA-Z0-9_ .,;/()+-]+$")
 _ANSIBLE_CORE_VERSION = re.compile(r"Ⓐ\s*(?:devel|milestone|\d+\.\d+)")
+
+
+class ExtraSession(_p.BaseModel):
+    """
+    Extra session for AZP.
+    """
+
+    model_config = _p.ConfigDict(frozen=True, extra="forbid")
+
+    group: str
+    title: str
+    session: str
 
 
 def _run_nox(
@@ -283,6 +297,22 @@ def _create_groups(
     return result
 
 
+def _add_extra_sessions(
+    groups: list[_Group], extra_sessions: Sequence[ExtraSession]
+) -> None:
+    groups_by_title: dict[str, _Group] = {}
+    for group in groups:
+        groups_by_title[group.title] = group
+    for extra_session in extra_sessions:
+        session = _Session(title=extra_session.title, name=extra_session.session)
+        try:
+            groups_by_title[extra_session.group].sessions.append(session)
+        except KeyError:
+            raise ValueError(
+                f"Unknown AZP stage title {extra_session.group!r}"
+            ) from None
+
+
 def _get_azp_definition_content(path: Path) -> tuple[list[str], list[str], list[str]]:
     state = 0
     data: tuple[list[str], list[str], list[str]] = [], [], []
@@ -340,6 +370,7 @@ def update_azp_config(
     max_ansible_core: str | None = None,
     include_tags: str | None = None,
     exclude_tags: str | None = None,
+    extra_sessions: Sequence[ExtraSession] | None = None,
 ) -> bool:
     """
     Update AZP config.
@@ -372,6 +403,8 @@ def update_azp_config(
     main: list[str] = []
 
     groups = _create_groups(data, split_up_unit_tests=split_up_unit_tests)
+    if extra_sessions:
+        _add_extra_sessions(groups, extra_sessions)
     for group in groups:
         main.append(f"  - stage: {_escape_yaml(group.name)}")
         main.append(f"    displayName: {_escape_yaml(group.title)}")

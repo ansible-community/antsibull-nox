@@ -11,13 +11,18 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import os.path
 import sys
 from collections.abc import Callable
 from pathlib import Path
 
+import pydantic as _p
+
 from . import __version__
+from ._pydantic import get_formatted_error_messages as _get_formatted_error_messages
+from .azp import ExtraSession as _AzpExtraSession
 from .azp import update_azp_config as _update_azp_config
 from .cd import get_base_branch, get_changes, init_cd, supports_cd
 from .config import CONFIG_FILENAME, load_config_from_toml
@@ -117,12 +122,33 @@ def update_azp_config(args: argparse.Namespace) -> int:
     include_tags: str | None = args.include_tags
     exclude_tags: str | None = args.exclude_tags
     fail_on_change: bool = args.fail_on_change
+    extra_session_strs: list[str] = args.extra_session
     try:
+        extra_sessions = []
+        for index, extra_session_str in enumerate(extra_session_strs):
+            try:
+                extra_session_json = json.loads(extra_session_str)
+            except Exception as exc:
+                raise ValueError(
+                    f"--extra-session parameter #{index + 1} {extra_session_str!r}"
+                    f" cannot be parsed: {exc}"
+                ) from exc
+            try:
+                extra_sessions.append(
+                    _AzpExtraSession.model_validate(extra_session_json)
+                )
+            except _p.ValidationError as exc:
+                errors = "\n".join(_get_formatted_error_messages(exc))
+                raise ValueError(
+                    f"--extra-session parameter #{index + 1} {extra_session_str!r}"
+                    f" has invalid structure:\n{errors}"
+                ) from None
         changed = _update_azp_config(
             min_ansible_core=min_ansible_core,
             max_ansible_core=max_ansible_core,
             include_tags=include_tags,
             exclude_tags=exclude_tags,
+            extra_sessions=extra_sessions,
         )
         if fail_on_change and changed:
             return 1
@@ -205,6 +231,12 @@ def parse_args(program_name: str, args: list[str]) -> argparse.Namespace:
     )
     update_azp_parser.add_argument(
         "--exclude-tags", help="Comma-separated list of tags that must not be present"
+    )
+    update_azp_parser.add_argument(
+        "--extra-session",
+        action="append",
+        default=[],
+        help="JSON object describing an extra session. Needs keys 'group', 'title', and 'session'",
     )
     update_azp_parser.add_argument(
         "--fail-on-change",
