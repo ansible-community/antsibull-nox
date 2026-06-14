@@ -71,7 +71,7 @@ runs:
     - name: "Install nox and antsibull-nox"
       run: |
         echo "::group::Install nox and antsibull-nox"
-        ${{ steps.python.outputs.python-path }} -m pip install ${{ github.action_path }}
+        ${{ steps.python.outputs.python-path }} -m pip install ${{ github.action_path }} "virtualenv<21.5.0"
         echo "::endgroup::"
       shell: bash
 
