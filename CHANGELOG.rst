@@ -4,6 +4,42 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.8.0
+======
+
+Release Summary
+---------------
+
+Bugfix and feature release.
+
+Minor Changes
+-------------
+
+- Add ``antsibull-nox update-azp-config`` subcommand for updating an AZP configuration file to list all ansible-test nox sessions matching certain restrictions (https://github.com/ansible-community/antsibull-nox/pull/200, https://github.com/ansible-community/antsibull-nox/pull/206, https://github.com/ansible-community/antsibull-nox/pull/220).
+- Allow to always copy the repository structure before invoking ``ansible-test env`` by setting the ``ANTSIBULL_NOX_ALWAYS_COPY_REPO_STRUCTURE`` environment variable to ``true``. This is mainly needed to work around a bug in ``ansible-test env`` in conjunction with AZP (https://github.com/ansible-community/antsibull-nox/pull/202).
+- Allow to configure whether ``ansible-test integration`` is passed the ``--continue-on-error`` flag (https://github.com/ansible-community/antsibull-nox/pull/201).
+- Allow to configure whether ``ansible-test integration`` is passed the ``--retry-on-error`` flag (https://github.com/ansible-community/antsibull-nox/pull/201).
+- Allow to control ansible-test coverage analysis more throught the environment variables ``ANTSIBULL_NOX_COVERAGE_DESTINATION``, ``ANTSIBULL_NOX_COVERAGE_ANALYSIS_FILE``, and ``ANTSIBULL_NOX_COVERAGE_NO_XML`` (https://github.com/ansible-community/antsibull-nox/pull/205).
+- Allow to control whether ansible-test integration tests should run tests marked as ``unstable`` if changes affect them throught the environment variable ``ANTSIBULL_NOX_INTEGRATION_ALLOW_UNSTABLE_CHANGED`` (https://github.com/ansible-community/antsibull-nox/pull/208).
+- Allow to split up unit test sessions per Python version, and allow finer control which Python versions for every ansible-core version to control a unit test session for (https://github.com/ansible-community/antsibull-nox/pull/209).
+- Expose ``antsibull_nox.IN_CI`` constant that can be used in nox sessions to determine whether the session runs in CI (https://github.com/ansible-community/antsibull-nox/pull/203).
+- Expose ``nice_docker_names`` map in ``sessions.ansible_test_integration`` that allows to translate custom Docker container names into "nice", human-readable strings for use in display-name templating (https://github.com/ansible-community/antsibull-nox/pull/204).
+- Expose ``nice_target_names`` map in ``sessions.ansible_test_integration`` that allows to translate ansible-test target names into "nice", human-readable strings for use in display-name templating (https://github.com/ansible-community/antsibull-nox/pull/204).
+- In the GH action, allow to control whether ansible-test integration tests should run tests marked as ``unstable`` if changes affect them with the ``allow-unstable-changed`` option (https://github.com/ansible-community/antsibull-nox/pull/208).
+- In the GHA shared workflow, integration tests now always run tests marked as ``unstable`` if changes affect them in pull requests (https://github.com/ansible-community/antsibull-nox/pull/208).
+- Provide ``docker_nice`` and ``remote_nice`` names for use in display-name templating for ``sessions.ansible_test_integration`` (https://github.com/ansible-community/antsibull-nox/pull/204).
+- Run ``ansible-test env`` before running ansible-test tests. Also allow to supply ``--timeout`` parameter by setting ``ANTSIBULL_NOX_TIMEOUT`` environment variable; this is for use in CI systems such as Azure Pipelines (https://github.com/ansible-community/antsibull-nox/pull/199).
+- The shared GHA workflow can now be configured with ``allow-coverage-cd-override: true`` to also interpret ``ci_complete`` and ``ci_coverage`` in the last commit message of a PR or push, similar to the AZP CI scripts in ansible-core and several collections (https://github.com/ansible-community/antsibull-nox/pull/207).
+- Update supported Python versions for ansible-core devel (https://github.com/ansible-community/antsibull-nox/pull/210).
+
+Bugfixes
+--------
+
+- Fix accidentally completely skipping yamllint and extra checks during change detection (https://github.com/ansible-community/antsibull-nox/issues/212, https://github.com/ansible-community/antsibull-nox/issues/215, https://github.com/ansible-community/antsibull-nox/pull/218).
+- Make CI detection also work in Azure Pipelines (https://github.com/ansible-community/antsibull-nox/pull/203).
+- The GitHub action now restricts virtualenv to < 21.5.0 when Python 3.8 is used (for example to run Ansible 2.9 tests). virtualenv 21.5.0 no longer supports Python 3.8 (https://github.com/ansible-community/antsibull-nox/issues/216, https://github.com/ansible-community/antsibull-nox/pull/217).
+- The license-check session now installs resuse per default as ``resuse[charset-normalizer]`` and not simply ``reuse``. This is necessary in Ansible's AZP environment (https://github.com/ansible-community/antsibull-nox/pull/219).
+
 v1.7.0
 ======
 

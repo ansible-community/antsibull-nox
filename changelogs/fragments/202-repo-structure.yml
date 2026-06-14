@@ -1,5 +1,0 @@
-minor_changes:
-  - "Allow to always copy the repository structure before invoking ``ansible-test env``
-     by setting the ``ANTSIBULL_NOX_ALWAYS_COPY_REPO_STRUCTURE`` environment variable to ``true``.
-     This is mainly needed to work around a bug in ``ansible-test env`` in conjunction with AZP
-     (https://github.com/ansible-community/antsibull-nox/pull/202)."

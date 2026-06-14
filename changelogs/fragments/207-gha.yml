@@ -1,3 +1,0 @@
-minor_changes:
-  - "The shared GHA workflow can now be configured with ``allow-coverage-cd-override: true`` to also interpret ``ci_complete`` and ``ci_coverage`` in the last commit message of a PR or push,
-     similar to the AZP CI scripts in ansible-core and several collections (https://github.com/ansible-community/antsibull-nox/pull/207)."

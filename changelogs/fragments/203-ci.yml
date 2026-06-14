@@ -1,6 +1,0 @@
-minor_changes:
-  - "Expose ``antsibull_nox.IN_CI`` constant that can be used in nox sessions to determine whether the session runs in CI
-     (https://github.com/ansible-community/antsibull-nox/pull/203)."
-bugfixes:
-  - "Make CI detection also work in Azure Pipelines
-     (https://github.com/ansible-community/antsibull-nox/pull/203)."

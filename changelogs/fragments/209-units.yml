@@ -1,4 +1,0 @@
-minor_changes:
-  - Allow to split up unit test sessions per Python version,
-    and allow finer control which Python versions for every ansible-core version to control a unit test session for
-    (https://github.com/ansible-community/antsibull-nox/pull/209).
