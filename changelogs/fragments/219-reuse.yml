@@ -1,0 +1,2 @@
+bugfixes:
+  - "The license-check session now installs resuse per default as ``resuse[charset-normalizer]`` and not simply ``reuse``. This is necessary in Ansible's AZP environment (https://github.com/ansible-community/antsibull-nox/pull/219)."
