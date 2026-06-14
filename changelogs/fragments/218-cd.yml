@@ -1,0 +1,2 @@
+bugfixes:
+  - "Fix accidentally completely skipping yamllint and extra checks during change detection (https://github.com/ansible-community/antsibull-nox/issues/212, https://github.com/ansible-community/antsibull-nox/issues/215, https://github.com/ansible-community/antsibull-nox/pull/218)."
