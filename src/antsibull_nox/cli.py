@@ -122,6 +122,7 @@ def update_azp_config(args: argparse.Namespace) -> int:
     include_tags: str | None = args.include_tags
     exclude_tags: str | None = args.exclude_tags
     fail_on_change: bool = args.fail_on_change
+    show_diff: bool = args.show_diff
     extra_session_strs: list[str] = args.extra_session
     try:
         extra_sessions = []
@@ -149,6 +150,7 @@ def update_azp_config(args: argparse.Namespace) -> int:
             include_tags=include_tags,
             exclude_tags=exclude_tags,
             extra_sessions=extra_sessions,
+            show_diff=show_diff,
         )
         if fail_on_change and changed:
             return 1
@@ -243,6 +245,12 @@ def parse_args(program_name: str, args: list[str]) -> argparse.Namespace:
         default=False,
         action="store_true",
         help="Fail if the configuration file is changed",
+    )
+    update_azp_parser.add_argument(
+        "--show-diff",
+        default=False,
+        action="store_true",
+        help="Show differences if configuration file is modified",
     )
 
     # This must come after all parser setup
