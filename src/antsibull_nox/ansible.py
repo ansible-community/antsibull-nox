@@ -125,8 +125,10 @@ _SUPPORTED_CORE_VERSIONS: dict[Version | t.Literal["milestone"], AnsibleCoreInfo
         # It contains commented-out entries for future ansible-core versions.
         "2.22": [
             ["3.13", "3.14", "3.15"],
+            # Every 6th release supports seven Python versions on the target
+            # pylint: disable-next=line-too-long
+            # (https://docs.ansible.com/projects/ansible-core/devel/reference_appendices/release_and_maintenance.html#ansible-core-target-node-python-support)
             ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"],
-            # ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"],
         ],
         "2.23": [
             ["3.13", "3.14", "3.15"],
@@ -139,6 +141,25 @@ _SUPPORTED_CORE_VERSIONS: dict[Version | t.Literal["milestone"], AnsibleCoreInfo
         "2.25": [
             ["3.14", "3.15", "3.16"],
             ["3.11", "3.12", "3.13", "3.14", "3.15", "3.16"],
+        ],
+        "2.26": [
+            ["3.15", "3.16", "3.17"],
+            ["3.12", "3.13", "3.14", "3.15", "3.16", "3.17"],
+        ],
+        "2.27": [
+            ["3.15", "3.16", "3.17"],
+            ["3.12", "3.13", "3.14", "3.15", "3.16", "3.17"],
+        ],
+        "2.28": [
+            ["3.16", "3.17", "3.18"],
+            # Every 6th release supports seven Python versions on the target
+            # pylint: disable-next=line-too-long
+            # (https://docs.ansible.com/projects/ansible-core/devel/reference_appendices/release_and_maintenance.html#ansible-core-target-node-python-support)
+            ["3.12", "3.13", "3.14", "3.15", "3.16", "3.17", "3.18"],
+        ],
+        "2.29": [
+            ["3.16", "3.17", "3.18"],
+            ["3.13", "3.14", "3.15", "3.16", "3.17", "3.18"],
         ],
     }.items()
 }
