@@ -116,8 +116,8 @@ _SUPPORTED_CORE_VERSIONS: dict[Version | t.Literal["milestone"], AnsibleCoreInfo
             ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"],
         ],
         "milestone": [
-            ["3.12", "3.13", "3.14"],
-            ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"],
+            ["3.13", "3.14", "3.15"],
+            ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"],
             # Note: might lag behind devel
         ],
         # The following might need updates. Look for the "``ansible-core`` support matrix" table in:
