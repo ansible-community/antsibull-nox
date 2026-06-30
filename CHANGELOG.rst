@@ -4,6 +4,20 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.8.1
+======
+
+Release Summary
+---------------
+
+Maintenance release.
+
+Bugfixes
+--------
+
+- Add estimated Python versions for ansible-core 2.26 to 2.29, including the 'every 6th release' rule for target Python support (https://github.com/ansible-community/antsibull-nox/pull/223).
+- Adjust internal ansible-core metadata to the latest ``milestone`` branch bump (https://github.com/ansible-community/antsibull-nox/pull/224).
+
 v1.8.0
 ======
 

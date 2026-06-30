@@ -1,2 +1,0 @@
-bugfixes:
-  - "Adjust internal ansible-core metadata to the latest ``milestone`` branch bump (https://github.com/ansible-community/antsibull-nox/pull/224)."

@@ -660,3 +660,16 @@ releases:
       - 218-cd.yml
       - 219-reuse.yml
     release_date: '2026-06-14'
+  1.8.1:
+    changes:
+      bugfixes:
+        - Add estimated Python versions for ansible-core 2.26 to 2.29, including the
+          'every 6th release' rule for target Python support (https://github.com/ansible-community/antsibull-nox/pull/223).
+        - Adjust internal ansible-core metadata to the latest ``milestone`` branch
+          bump (https://github.com/ansible-community/antsibull-nox/pull/224).
+      release_summary: Maintenance release.
+    fragments:
+      - 1.8.1.yml
+      - 223-python.yml
+      - 224-milestone.yml
+    release_date: '2026-06-30'

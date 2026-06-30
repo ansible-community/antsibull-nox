@@ -1,3 +1,0 @@
-bugfixes:
-  - "Add estimated Python versions for ansible-core 2.26 to 2.29, including the 'every 6th release' rule for target Python support
-     (https://github.com/ansible-community/antsibull-nox/pull/223)."
