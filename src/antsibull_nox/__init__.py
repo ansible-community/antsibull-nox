@@ -21,7 +21,7 @@ from .interpret_config import interpret_config
 from .sessions.ansible_test import add_ansible_test_session
 from .sessions.utils import IN_CI
 
-__version__ = "1.8.1"
+__version__ = "1.8.1.post0"
 
 
 def load_antsibull_nox_toml() -> None:
