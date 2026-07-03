@@ -427,6 +427,11 @@ class Reporter:
 
     def _setup(self) -> None:
         if self._is_setup:
+            # This is OK as long as we don't have any sessions.
+            # For example, when nox is run through `python noxfile.py`
+            # Reporter._setup() will be called twice.
+            if not self.sessions:
+                return
             raise RuntimeError("Reporter is already set up")
         atexit.register(self._shutdown)
         self._is_setup = True
