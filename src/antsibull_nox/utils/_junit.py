@@ -17,7 +17,7 @@ import typing as t
 from ._xml import Node as _Node
 from ._xml import Text as _Text
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Sequence
 
     _T = t.TypeVar("_T")

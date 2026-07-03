@@ -13,7 +13,7 @@ from __future__ import annotations
 import re
 import typing as t
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     _T = t.TypeVar("_T")
 
 
@@ -29,11 +29,6 @@ _ESCAPE_STRINGS: dict[str, str] = {
     "<": "&lt;",
     ">": "&gt;",
 }
-
-
-def _valid_char(ch: str) -> bool:
-    value = ord(ch)
-    return not (value == 0 or 0xD7FF < value < 0xE000 or 0xFFFD < value < 0x10000)
 
 
 def _needs_to_escape(ch: str) -> bool:
@@ -181,8 +176,6 @@ class Node:
             str_result = [part for part in result if part is not _LINE_BREAK]  # type: ignore
         else:
             str_result = ["\n" if part is _LINE_BREAK else part for part in result]  # type: ignore
-            if str_result:
-                str_result.append("\n")
         return "".join(str_result)
 
 

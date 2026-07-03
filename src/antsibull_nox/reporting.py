@@ -29,7 +29,7 @@ from .messages import Level, Message
 from .sessions.utils.output import format_messages_plain
 from .utils import _junit
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Sequence
     from types import TracebackType
 
