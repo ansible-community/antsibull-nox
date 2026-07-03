@@ -107,6 +107,10 @@ class ProgramRun:
         return "\n".join(part.rstrip() for part in parts if part)
 
 
+def _make_timestamp() -> datetime.datetime:
+    return datetime.datetime.now(tz=datetime.timezone.utc)
+
+
 class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
     """
     Base class for a reporter that accepts messages and other information
@@ -125,13 +129,13 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         self._start: datetime.datetime | None = None
         self._end: datetime.datetime | None = None
         self._duration: datetime.timedelta | None = None
-        self.timestamp = datetime.datetime.now(tz=datetime.UTC)
+        self.timestamp = _make_timestamp()
 
     def __enter__(self) -> t.Self:
         if self._open:
             raise RuntimeError(f"{type(self).__name__} used more than once")
         self._open = True
-        self._start = datetime.datetime.now(tz=datetime.UTC)
+        self._start = _make_timestamp()
         return self
 
     def __exit__(
@@ -144,7 +148,7 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         assert self._start is not None
         self._open = False
         self._status = _get_status_from_exception(value)
-        self._end = datetime.datetime.now(tz=datetime.UTC)
+        self._end = _make_timestamp()
         self._duration = self._end - self._start
         return False
 
