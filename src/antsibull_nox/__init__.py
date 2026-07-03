@@ -18,6 +18,7 @@ from .config import (
     load_config_from_toml,
 )
 from .interpret_config import interpret_config
+from .reporting import setup as _setup_reporting
 from .sessions.ansible_test import add_ansible_test_session
 from .sessions.utils import IN_CI
 
@@ -28,6 +29,7 @@ def load_antsibull_nox_toml() -> None:
     """
     Load and interpret antsibull-nox.toml config file.
     """
+    _setup_reporting()
     config_path = Path(CONFIG_FILENAME)
     config = load_config_from_toml(config_path)
     init_cd(config=config, config_path=config_path, ignore_previous_calls=True)

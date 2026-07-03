@@ -33,6 +33,7 @@ from ..paths.utils import (
     list_all_files,
     relative_to_walk_up,
 )
+from ..reporting import PartReporter, get_session_reporter
 from .collections import (
     CollectionSetup,
     prepare_collections,
@@ -218,6 +219,7 @@ def _execute_isort_for(
     paths: list[Path],
     isort_config: str | os.PathLike | None,
     what_for: str = "",
+    reporter: PartReporter,  # pylint: disable=unused-argument
 ) -> None:
     if not paths:
         session.warn(f"Skipping isort{what_for} (no files to process)")
@@ -241,6 +243,8 @@ def _execute_isort_for(
     for file in paths:
         command.append(str(relative_dir / file))
     session.run(*command)
+    # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+    # TODO: find out whether isort can output error information somehow else than stdout/stderr
 
 
 def _execute_isort(
@@ -253,6 +257,7 @@ def _execute_isort(
     module_files: list[Path] | FileCollector,
     isort_config: str | os.PathLike | None,
     isort_modules_config: str | os.PathLike | None,
+    reporter: PartReporter,
 ) -> None:
     files, files_modules, files_other = _get_files(
         code_files=code_files,
@@ -273,6 +278,7 @@ def _execute_isort(
                 run_check=run_check,
                 paths=files,
                 isort_config=isort_config,
+                reporter=reporter,
             )
         if files_modules is not None:
             _execute_isort_for(
@@ -284,6 +290,7 @@ def _execute_isort(
                 paths=files_modules,
                 isort_config=isort_modules_config or isort_config,
                 what_for=" for modules and module utils",
+                reporter=reporter,
             )
         if files_other is not None:
             _execute_isort_for(
@@ -295,6 +302,7 @@ def _execute_isort(
                 paths=files_other,
                 isort_config=isort_config,
                 what_for=" for other files",
+                reporter=reporter,
             )
 
 
@@ -305,6 +313,7 @@ def _execute_black_for(
     run_check: bool,
     black_config: str | os.PathLike | None,
     what_for: str = "",
+    reporter: PartReporter,  # pylint: disable=unused-argument
 ) -> None:
     if not paths:
         session.warn(f"Skipping black{what_for} (no files to process)")
@@ -317,6 +326,8 @@ def _execute_black_for(
     command.extend(session.posargs)
     command.extend(str(path) for path in paths)
     session.run(*command)
+    # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+    # TODO: find out whether black can output error information somehow else than stdout/stderr
 
 
 def _execute_black(
@@ -329,6 +340,7 @@ def _execute_black(
     run_black_modules: bool | None,
     black_config: str | os.PathLike | None,
     black_modules_config: str | os.PathLike | None,
+    reporter: PartReporter,
 ) -> None:
     if (
         run_black
@@ -345,6 +357,7 @@ def _execute_black(
             ),
             run_check=run_check,
             black_config=black_config,
+            reporter=reporter,
         )
         return
     if run_black:
@@ -361,6 +374,7 @@ def _execute_black(
             run_check=run_check,
             black_config=black_config,
             what_for=" for other plugins",
+            reporter=reporter,
         )
     if run_black_modules:
         paths = filter_paths(
@@ -376,6 +390,7 @@ def _execute_black(
             run_check=run_check,
             black_config=black_modules_config or black_config,
             what_for=" for modules and module utils",
+            reporter=reporter,
         )
 
 
@@ -386,6 +401,7 @@ def _execute_ruff_format_for(
     files: list[Path],
     ruff_format_config: str | os.PathLike | None,
     what_for: str = "",
+    reporter: PartReporter,  # pylint: disable=unused-argument
 ) -> None:
     if not files:
         session.warn(f"Skipping ruff format{what_for} (no files to process)")
@@ -401,6 +417,9 @@ def _execute_ruff_format_for(
     command.extend(session.posargs)
     command.extend(str(file) for file in files)
     session.run(*command)
+    # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+    # TODO: find out whether ruff format can output error information somehow else
+    #       than stdout/stderr
 
 
 def _execute_ruff_format(
@@ -411,6 +430,7 @@ def _execute_ruff_format(
     module_files: list[Path] | FileCollector,
     ruff_format_config: str | os.PathLike | None,
     ruff_format_modules_config: str | os.PathLike | None,
+    reporter: PartReporter,
 ) -> None:
     files, files_modules, files_other = _get_files(
         code_files=code_files,
@@ -426,6 +446,7 @@ def _execute_ruff_format(
             run_check=run_check,
             files=files,
             ruff_format_config=ruff_format_config,
+            reporter=reporter,
         )
     if files_modules is not None:
         _execute_ruff_format_for(
@@ -434,6 +455,7 @@ def _execute_ruff_format(
             files=files_modules,
             ruff_format_config=ruff_format_modules_config or ruff_format_config,
             what_for=" for modules and module utils",
+            reporter=reporter,
         )
     if files_other is not None:
         _execute_ruff_format_for(
@@ -442,6 +464,7 @@ def _execute_ruff_format(
             files=files_other,
             ruff_format_config=ruff_format_config,
             what_for=" for other files",
+            reporter=reporter,
         )
 
 
@@ -456,6 +479,7 @@ def _execute_ruff_autofix_for(
     ruff_autofix_config: str | os.PathLike | None,
     ruff_autofix_select: list[str],
     what_for: str = "",
+    reporter: PartReporter,  # pylint: disable=unused-argument
 ) -> None:
     if not files:
         session.warn(f"Skipping ruff autofix{what_for} (no files to process)")
@@ -484,6 +508,9 @@ def _execute_ruff_autofix_for(
     for file in files:
         command.append(str(relative_dir / file))
     session.run(*command)
+    # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+    # TODO: find out whether ruff autofix can output error information somehow else
+    #       than stdout/stderr
 
 
 def _execute_ruff_autofix(
@@ -497,6 +524,7 @@ def _execute_ruff_autofix(
     ruff_autofix_config: str | os.PathLike | None,
     ruff_autofix_modules_config: str | os.PathLike | None,
     ruff_autofix_select: list[str],
+    reporter: PartReporter,
 ) -> None:
     files, files_modules, files_other = _get_files(
         code_files=code_files,
@@ -518,6 +546,7 @@ def _execute_ruff_autofix(
                 files=files,
                 ruff_autofix_config=ruff_autofix_config,
                 ruff_autofix_select=ruff_autofix_select,
+                reporter=reporter,
             )
         if files_modules is not None:
             _execute_ruff_autofix_for(
@@ -530,6 +559,7 @@ def _execute_ruff_autofix(
                 ruff_autofix_config=ruff_autofix_modules_config or ruff_autofix_config,
                 ruff_autofix_select=ruff_autofix_select,
                 what_for=" for modules and module utils",
+                reporter=reporter,
             )
         if files_other is not None:
             _execute_ruff_autofix_for(
@@ -542,6 +572,7 @@ def _execute_ruff_autofix(
                 ruff_autofix_config=ruff_autofix_config,
                 ruff_autofix_select=ruff_autofix_select,
                 what_for=" for other files",
+                reporter=reporter,
             )
 
 
@@ -630,61 +661,70 @@ def add_formatters(
 
     @install_packages(package_callback=compose_dependencies)
     def formatters(session: nox.Session) -> None:
-        if run_isort or run_ruff_autofix:
-            cwd = Path.cwd()
-            cd = load_collection_data_from_disk(cwd)
-            root_dir = Path(session.create_tmp()).resolve() / "collection-root"
-            namespace_dir = root_dir / "ansible_collections" / cd.namespace
-            namespace_dir.mkdir(parents=True, exist_ok=True)
-            collection_path = namespace_dir / cd.name
-            if not collection_path.exists():
-                collection_path.symlink_to(
-                    relative_to_walk_up(cwd, namespace_dir),
-                    target_is_directory=True,
-                )
-        if run_isort:
-            _execute_isort(
-                session,
-                root_dir=root_dir,
-                collection_dir=collection_path,
-                run_check=run_check,
-                code_files=code_files,
-                module_files=module_files,
-                isort_config=isort_config,
-                isort_modules_config=isort_modules_config,
-            )
-        if run_black or run_black_modules:
-            _execute_black(
-                session,
-                run_check=run_check,
-                code_files=code_files,
-                module_files=module_files,
-                run_black=run_black,
-                run_black_modules=run_black_modules,
-                black_config=black_config,
-                black_modules_config=black_modules_config,
-            )
-        if run_ruff_format:
-            _execute_ruff_format(
-                session,
-                run_check=run_check,
-                code_files=code_files,
-                module_files=module_files,
-                ruff_format_config=ruff_format_config,
-                ruff_format_modules_config=ruff_format_modules_config,
-            )
-        if run_ruff_autofix:
-            _execute_ruff_autofix(
-                session,
-                root_dir=root_dir,
-                collection_dir=collection_path,
-                run_check=run_check,
-                code_files=code_files,
-                module_files=module_files,
-                ruff_autofix_config=ruff_autofix_config,
-                ruff_autofix_modules_config=ruff_autofix_modules_config,
-                ruff_autofix_select=ruff_autofix_select,
-            )
+        with get_session_reporter(session) as reporter:
+            if run_isort or run_ruff_autofix:
+                cwd = Path.cwd()
+                cd = load_collection_data_from_disk(cwd)
+                root_dir = Path(session.create_tmp()).resolve() / "collection-root"
+                namespace_dir = root_dir / "ansible_collections" / cd.namespace
+                namespace_dir.mkdir(parents=True, exist_ok=True)
+                collection_path = namespace_dir / cd.name
+                if not collection_path.exists():
+                    collection_path.symlink_to(
+                        relative_to_walk_up(cwd, namespace_dir),
+                        target_is_directory=True,
+                    )
+            if run_isort:
+                with reporter.get_part_reporter("isort") as sr:
+                    _execute_isort(
+                        session,
+                        root_dir=root_dir,
+                        collection_dir=collection_path,
+                        run_check=run_check,
+                        code_files=code_files,
+                        module_files=module_files,
+                        isort_config=isort_config,
+                        isort_modules_config=isort_modules_config,
+                        reporter=sr,
+                    )
+            if run_black or run_black_modules:
+                with reporter.get_part_reporter("black") as sr:
+                    _execute_black(
+                        session,
+                        run_check=run_check,
+                        code_files=code_files,
+                        module_files=module_files,
+                        run_black=run_black,
+                        run_black_modules=run_black_modules,
+                        black_config=black_config,
+                        black_modules_config=black_modules_config,
+                        reporter=sr,
+                    )
+            if run_ruff_format:
+                with reporter.get_part_reporter("ruff format") as sr:
+                    _execute_ruff_format(
+                        session,
+                        run_check=run_check,
+                        code_files=code_files,
+                        module_files=module_files,
+                        ruff_format_config=ruff_format_config,
+                        ruff_format_modules_config=ruff_format_modules_config,
+                        reporter=sr,
+                    )
+            if run_ruff_autofix:
+                with reporter.get_part_reporter("ruff autofix") as sr:
+                    _execute_ruff_autofix(
+                        session,
+                        root_dir=root_dir,
+                        collection_dir=collection_path,
+                        run_check=run_check,
+                        code_files=code_files,
+                        module_files=module_files,
+                        ruff_autofix_config=ruff_autofix_config,
+                        ruff_autofix_modules_config=ruff_autofix_modules_config,
+                        ruff_autofix_select=ruff_autofix_select,
+                        reporter=sr,
+                    )
 
     formatters.__doc__ = compose_description(
         prefix={
@@ -819,6 +859,8 @@ def add_codeqa(  # noqa: C901
     def execute_ruff_check(
         session: nox.Session,
         prepared_collections: CollectionSetup,
+        *,
+        reporter: PartReporter,
     ) -> None:
         files, files_modules, files_other = _get_files(
             code_files=code_files,
@@ -861,6 +903,7 @@ def add_codeqa(  # noqa: C901
                     )
                 )
 
+        reporter.report_messages(messages)
         print_messages(
             session=session,
             messages=messages,
@@ -873,6 +916,7 @@ def add_codeqa(  # noqa: C901
         files: list[Path],
         config: str | os.PathLike | None,
         what_for: str = "",
+        reporter: PartReporter,  # pylint: disable=unused-argument
     ) -> None:
         if not files:
             session.warn(f"Skipping flake8{what_for} (no files to process)")
@@ -885,8 +929,14 @@ def add_codeqa(  # noqa: C901
         command.extend(session.posargs)
         command.extend(str(file) for file in files)
         session.run(*command)
+        # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+        # TODO: find out whether flake8 can output error information somehow else than stdout/stderr
 
-    def execute_flake8(session: nox.Session) -> None:
+    def execute_flake8(
+        session: nox.Session,
+        *,
+        reporter: PartReporter,
+    ) -> None:
         files, files_modules, files_other = _get_files(
             code_files=code_files,
             module_files=module_files,
@@ -896,13 +946,19 @@ def add_codeqa(  # noqa: C901
             config_modules=flake8_modules_config or flake8_config,
         )
         if files is not None:
-            execute_flake8_impl(session, files=files, config=flake8_config)
+            execute_flake8_impl(
+                session,
+                files=files,
+                config=flake8_config,
+                reporter=reporter,
+            )
         if files_modules is not None:
             execute_flake8_impl(
                 session,
                 files=files_modules,
                 config=flake8_modules_config or flake8_config,
                 what_for=" for modules and module utils",
+                reporter=reporter,
             )
         if files_other is not None:
             execute_flake8_impl(
@@ -910,11 +966,13 @@ def add_codeqa(  # noqa: C901
                 files=files_other,
                 config=flake8_config,
                 what_for=" for other files",
+                reporter=reporter,
             )
 
     def execute_pylint_impl(
         session: nox.Session,
         prepared_collections: CollectionSetup,
+        *,
         config: os.PathLike | str | None,
         paths: list[Path],
         what_for: str = "",
@@ -952,7 +1010,10 @@ def add_codeqa(  # noqa: C901
         )
 
     def execute_pylint(
-        session: nox.Session, prepared_collections: CollectionSetup
+        session: nox.Session,
+        prepared_collections: CollectionSetup,
+        *,
+        reporter: PartReporter,
     ) -> None:
         files, files_modules, files_other = _get_files(
             code_files=code_files_pylint,
@@ -971,8 +1032,8 @@ def add_codeqa(  # noqa: C901
                     execute_pylint_impl(
                         session,
                         prepared_collections,
-                        pylint_modules_rcfile or pylint_rcfile,
-                        files,
+                        config=pylint_modules_rcfile or pylint_rcfile,
+                        paths=files,
                     )
                 )
             if files_modules is not None:
@@ -980,8 +1041,8 @@ def add_codeqa(  # noqa: C901
                     execute_pylint_impl(
                         session,
                         prepared_collections,
-                        pylint_modules_rcfile or pylint_rcfile,
-                        files_modules,
+                        config=pylint_modules_rcfile or pylint_rcfile,
+                        paths=files_modules,
                         what_for=" for modules and module utils",
                     )
                 )
@@ -990,31 +1051,36 @@ def add_codeqa(  # noqa: C901
                     execute_pylint_impl(
                         session,
                         prepared_collections,
-                        pylint_modules_rcfile or pylint_rcfile,
-                        files_other,
+                        config=pylint_modules_rcfile or pylint_rcfile,
+                        paths=files_other,
                         what_for=" for other files",
                     )
                 )
 
+        reporter.report_messages(messages)
         print_messages(session=session, messages=messages, fail_msg="Pylint failed")
 
     @install_packages(package_callback=compose_dependencies)
     def codeqa(session: nox.Session) -> None:
-        prepared_collections: CollectionSetup | None = None
-        if run_ruff_check or run_pylint:
-            prepared_collections = prepare_collections(
-                session,
-                install_in_site_packages=False,
-                extra_deps_files=["tests/unit/requirements.yml"],
-            )
-            if not prepared_collections:
-                session.warn("Skipping pylint...")
-        if run_ruff_check and prepared_collections:
-            execute_ruff_check(session, prepared_collections)
-        if run_flake8:
-            execute_flake8(session)
-        if run_pylint and prepared_collections:
-            execute_pylint(session, prepared_collections)
+        with get_session_reporter(session) as reporter:
+            prepared_collections: CollectionSetup | None = None
+            if run_ruff_check or run_pylint:
+                prepared_collections = prepare_collections(
+                    session,
+                    install_in_site_packages=False,
+                    extra_deps_files=["tests/unit/requirements.yml"],
+                )
+                if not prepared_collections:
+                    session.warn("Skipping pylint...")
+            if run_ruff_check and prepared_collections:
+                with reporter.get_part_reporter("ruff check") as sr:
+                    execute_ruff_check(session, prepared_collections, reporter=sr)
+            if run_flake8:
+                with reporter.get_part_reporter("flake8") as sr:
+                    execute_flake8(session, reporter=sr)
+            if run_pylint and prepared_collections:
+                with reporter.get_part_reporter("pylint") as sr:
+                    execute_pylint(session, prepared_collections, reporter=sr)
 
     codeqa.__doc__ = compose_description(
         prefix={
@@ -1065,7 +1131,11 @@ def add_yamllint(
     def to_str(config: str | os.PathLike | None) -> str | None:
         return str(config) if config else None
 
-    def execute_yamllint(session: nox.Session) -> None:
+    def execute_yamllint(
+        session: nox.Session,
+        *,
+        reporter: PartReporter,
+    ) -> None:
         all_files = list_all_files()
         all_yaml_filenames = filter_files_cd(
             [
@@ -1089,9 +1159,14 @@ def add_yamllint(
                 "config": to_str(yamllint_config),
             },
             process_messages=True,
+            reporter=reporter,
         )
 
-    def execute_plugin_yamllint(session: nox.Session) -> None:
+    def execute_plugin_yamllint(
+        session: nox.Session,
+        *,
+        reporter: PartReporter,
+    ) -> None:
         all_files = list_all_files()
         cwd = Path.cwd()
         plugins_dir = cwd / "plugins"
@@ -1131,9 +1206,14 @@ def add_yamllint(
                 ),
             },
             process_messages=True,
+            reporter=reporter,
         )
 
-    def execute_extra_docs_yamllint(session: nox.Session) -> None:
+    def execute_extra_docs_yamllint(
+        session: nox.Session,
+        *,
+        reporter: PartReporter,
+    ) -> None:
         all_extra_docs = filter_files_cd(
             find_extra_docs_rst_files(),
             paths_to_trigger_full_build=_as_list(
@@ -1161,14 +1241,19 @@ def add_yamllint(
                 ),
             },
             process_messages=True,
+            reporter=reporter,
         )
 
     @install_packages(package_callback=compose_dependencies)
     def yamllint(session: nox.Session) -> None:
-        if run_yamllint:
-            execute_yamllint(session)
-            execute_plugin_yamllint(session)
-            execute_extra_docs_yamllint(session)
+        with get_session_reporter(session) as reporter:
+            if run_yamllint:
+                with reporter.get_part_reporter("files") as sr:
+                    execute_yamllint(session, reporter=sr)
+                with reporter.get_part_reporter("plugins") as sr:
+                    execute_plugin_yamllint(session, reporter=sr)
+                with reporter.get_part_reporter("extra-docs") as sr:
+                    execute_extra_docs_yamllint(session, reporter=sr)
 
     yamllint.__doc__ = compose_description(
         prefix={
@@ -1269,7 +1354,10 @@ def add_typing(
         )
 
     def execute_mypy(
-        session: nox.Session, prepared_collections: CollectionSetup
+        session: nox.Session,
+        prepared_collections: CollectionSetup,
+        *,
+        reporter: PartReporter,
     ) -> None:
         files, files_modules, files_other = _get_files(
             code_files=code_files,
@@ -1286,7 +1374,10 @@ def add_typing(
             if files is not None:
                 messages.extend(
                     execute_mypy_impl(
-                        session, prepared_collections, files=files, config=mypy_config
+                        session,
+                        prepared_collections,
+                        files=files,
+                        config=mypy_config,
                     )
                 )
             if files_modules is not None:
@@ -1310,6 +1401,7 @@ def add_typing(
                     )
                 )
 
+        reporter.report_messages(messages)
         print_messages(
             session=session,
             messages=messages,
@@ -1318,15 +1410,17 @@ def add_typing(
 
     @install_packages(package_callback=compose_dependencies)
     def typing(session: nox.Session) -> None:
-        prepared_collections = prepare_collections(
-            session,
-            install_in_site_packages=False,
-            extra_deps_files=["tests/unit/requirements.yml"],
-        )
-        if not prepared_collections:
-            session.warn("Skipping mypy...")
-        if run_mypy and prepared_collections:
-            execute_mypy(session, prepared_collections)
+        with get_session_reporter(session) as reporter:
+            prepared_collections = prepare_collections(
+                session,
+                install_in_site_packages=False,
+                extra_deps_files=["tests/unit/requirements.yml"],
+            )
+            if not prepared_collections:
+                session.warn("Skipping mypy...")
+            if run_mypy and prepared_collections:
+                with reporter.get_part_reporter("mypy") as sr:
+                    execute_mypy(session, prepared_collections, reporter=sr)
 
     typing.__doc__ = compose_description(
         prefix={
@@ -1349,12 +1443,16 @@ def add_config_lint(
     """
 
     def antsibull_nox_config(session: nox.Session) -> None:
-        if run_antsibullnox_config_lint:
-            run_bare_script(
-                session,
-                "antsibull-nox-lint-config",
-                process_messages=True,
-            )
+        with get_session_reporter(
+            session, url="https://docs.ansible.com/projects/antsibull-nox/config-file/"
+        ) as reporter:
+            if run_antsibullnox_config_lint:
+                run_bare_script(
+                    session,
+                    "antsibull-nox-lint-config",
+                    process_messages=True,
+                    reporter=reporter,
+                )
 
     antsibull_nox_config.__doc__ = "Lint antsibull-nox config"
     nox.session(name="antsibull-nox-config", python=False, default=False)(

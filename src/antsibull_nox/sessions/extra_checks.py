@@ -14,6 +14,7 @@ from dataclasses import asdict, dataclass
 
 import nox
 
+from ..reporting import PartReporter, get_session_reporter
 from .utils import (
     compose_description,
 )
@@ -93,7 +94,7 @@ def add_extra_checks(
     Add extra-checks session for extra checks.
     """
 
-    def execute_no_unwanted_files(session: nox.Session) -> None:
+    def execute_no_unwanted_files(session: nox.Session, sr: PartReporter) -> None:
         run_bare_script(
             session,
             "no-unwanted-files",
@@ -112,9 +113,10 @@ def add_extra_checks(
             },
             with_cd=True,
             process_messages=True,
+            reporter=sr,
         )
 
-    def execute_action_groups(session: nox.Session) -> None:
+    def execute_action_groups(session: nox.Session, sr: PartReporter) -> None:
         if action_groups_config is None:
             session.warn("Skipping action-groups since config is not provided...")
             return
@@ -126,9 +128,10 @@ def add_extra_checks(
             },
             with_cd=True,
             process_messages=True,
+            reporter=sr,
         )
 
-    def execute_no_trailing_whitespace(session: nox.Session) -> None:
+    def execute_no_trailing_whitespace(session: nox.Session, sr: PartReporter) -> None:
         run_bare_script(
             session,
             "no-trailing-whitespace",
@@ -138,9 +141,10 @@ def add_extra_checks(
             },
             with_cd=True,
             process_messages=True,
+            reporter=sr,
         )
 
-    def execute_avoid_characters(session: nox.Session) -> None:
+    def execute_avoid_characters(session: nox.Session, sr: PartReporter) -> None:
         if avoid_character_group is None:
             session.warn("Skipping avoid-characters since config is not provided...")
             return
@@ -152,17 +156,23 @@ def add_extra_checks(
             },
             with_cd=True,
             process_messages=True,
+            reporter=sr,
         )
 
     def extra_checks(session: nox.Session) -> None:
-        if run_no_unwanted_files:
-            execute_no_unwanted_files(session)
-        if run_action_groups:
-            execute_action_groups(session)
-        if run_no_trailing_whitespace:
-            execute_no_trailing_whitespace(session)
-        if run_avoid_characters:
-            execute_avoid_characters(session)
+        with get_session_reporter(session) as reporter:
+            if run_no_unwanted_files:
+                with reporter.get_part_reporter("no-unwanted-files") as sr:
+                    execute_no_unwanted_files(session, sr)
+            if run_action_groups:
+                with reporter.get_part_reporter("action-groups") as sr:
+                    execute_action_groups(session, sr)
+            if run_no_trailing_whitespace:
+                with reporter.get_part_reporter("no-trailing-whitespace") as sr:
+                    execute_no_trailing_whitespace(session, sr)
+            if run_avoid_characters:
+                with reporter.get_part_reporter("avoid-characters") as sr:
+                    execute_avoid_characters(session, sr)
 
     extra_checks.__doc__ = compose_description(
         prefix={

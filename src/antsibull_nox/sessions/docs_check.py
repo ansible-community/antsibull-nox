@@ -23,6 +23,7 @@ from ..messages.parse import parse_antsibull_docs_errors
 from ..paths.utils import (
     list_all_files,
 )
+from ..reporting import PartReporter, get_session_reporter
 from .collections import (
     CollectionSetup,
     prepare_collections,
@@ -132,7 +133,7 @@ def add_docs_check(
             )
         return deps
 
-    def execute_extra_checks(session: nox.Session) -> None:
+    def execute_extra_checks(session: nox.Session, sr: PartReporter) -> None:
         all_extra_docs = find_extra_docs_rst_files()
         if not all_extra_docs:
             session.warn(
@@ -152,10 +153,11 @@ def add_docs_check(
             },
             with_cd=True,
             process_messages=True,
+            reporter=sr,
         )
 
     def execute_antsibull_docs(
-        session: nox.Session, prepared_collections: CollectionSetup
+        session: nox.Session, prepared_collections: CollectionSetup, sr: PartReporter
     ) -> None:
         changes = get_changes()
         if changes is not None:
@@ -193,11 +195,13 @@ def add_docs_check(
                     )
 
                 if output:
+                    messages = parse_antsibull_docs_errors(
+                        output=output,
+                    )
+                    sr.report_messages(messages)
                     print_messages(
                         session=session,
-                        messages=parse_antsibull_docs_errors(
-                            output=output,
-                        ),
+                        messages=messages,
                         fail_msg="antsibull-docs lint-collection-docs failed",
                     )
             else:
@@ -205,18 +209,21 @@ def add_docs_check(
 
     @install_packages(package_callback=compose_dependencies)
     def docs_check(session: nox.Session) -> None:
-        prepared_collections = prepare_collections(
-            session,
-            install_in_site_packages=False,
-            extra_collections=extra_collections,
-            install_out_of_tree=True,
-        )
-        if run_extra_checks:
-            execute_extra_checks(session)
-        if not prepared_collections:
-            session.warn("Skipping antsibull-docs...")
-        if prepared_collections:
-            execute_antsibull_docs(session, prepared_collections)
+        with get_session_reporter(session) as reporter:
+            prepared_collections = prepare_collections(
+                session,
+                install_in_site_packages=False,
+                extra_collections=extra_collections,
+                install_out_of_tree=True,
+            )
+            if run_extra_checks:
+                with reporter.get_part_reporter("extra-checks") as sr:
+                    execute_extra_checks(session, sr)
+            if not prepared_collections:
+                session.warn("Skipping antsibull-docs...")
+            if prepared_collections:
+                with reporter.get_part_reporter("antsibull-docs") as sr:
+                    execute_antsibull_docs(session, prepared_collections, sr)
 
     docs_check.__doc__ = "Run 'antsibull-docs lint-collection-docs'"
     nox.session(

@@ -18,6 +18,7 @@ import nox
 from ..collection import (
     build_collection,
 )
+from ..reporting import get_session_reporter
 from .utils import (
     ci_group,
     compose_description,
@@ -63,44 +64,53 @@ def add_build_import_check(
 
     @install_packages(package_callback=compose_dependencies)
     def build_import_check(session: nox.Session) -> None:
-        tarball, _, __ = build_collection(session)
+        with get_session_reporter(session) as reporter:
+            with reporter.get_part_reporter("build"):
+                tarball, _, __ = build_collection(session)
+                # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+                # TODO: find out whether ansible-galaxy can output error information somehow
+                #       else next to stdout/stderr
 
-        if run_galaxy_importer and tarball:
-            env = {}
-            if galaxy_importer_config_path:
-                env["GALAXY_IMPORTER_CONFIG"] = str(
-                    Path(galaxy_importer_config_path).absolute()
-                )
-            assert tarball.parent is not None
-            with session.chdir(tarball.parent), silence_run_verbosity():
-                import_log = session.run(
-                    "python",
-                    "-m",
-                    "galaxy_importer.main",
-                    tarball.name,
-                    env=env,
-                    silent=True,
-                )
-            if import_log is not None:
-                with ci_group("Run Galaxy importer") as (indent, is_collapsed):
-                    if (
-                        is_collapsed
-                        or galaxy_importer_always_show_logs
-                        or nox_has_verbosity()
-                    ):
+            if run_galaxy_importer and tarball:
+                with reporter.get_part_reporter("galaxy-importer"):
+                    env = {}
+                    if galaxy_importer_config_path:
+                        env["GALAXY_IMPORTER_CONFIG"] = str(
+                            Path(galaxy_importer_config_path).absolute()
+                        )
+                    assert tarball.parent is not None
+                    with session.chdir(tarball.parent), silence_run_verbosity():
+                        import_log = session.run(
+                            "python",
+                            "-m",
+                            "galaxy_importer.main",
+                            tarball.name,
+                            env=env,
+                            silent=True,
+                        )
+                        # TODO: use https://github.com/wntrblm/nox/pull/1124
+                        #       to get hold of return code
+                        # TODO: catch failures and dump output to reporter in that case
+                    if import_log is not None:
+                        with ci_group("Run Galaxy importer") as (indent, is_collapsed):
+                            if (
+                                is_collapsed
+                                or galaxy_importer_always_show_logs
+                                or nox_has_verbosity()
+                            ):
+                                for line in import_log.splitlines():
+                                    print(f"{indent}{line}")
+                        error_prefix = "ERROR:"
+                        errors = []
                         for line in import_log.splitlines():
-                            print(f"{indent}{line}")
-                error_prefix = "ERROR:"
-                errors = []
-                for line in import_log.splitlines():
-                    if line.startswith(error_prefix):
-                        errors.append(line[len(error_prefix) :].strip())
-                if errors:
-                    messages = "\n".join(f"* {error}" for error in errors)
-                    session.warn(
-                        "Galaxy importer emitted the following non-fatal"
-                        f" error{'' if len(errors) == 1 else 's'}:\n{messages}"
-                    )
+                            if line.startswith(error_prefix):
+                                errors.append(line[len(error_prefix) :].strip())
+                        if errors:
+                            messages = "\n".join(f"* {error}" for error in errors)
+                            session.warn(
+                                "Galaxy importer emitted the following non-fatal"
+                                f" error{'' if len(errors) == 1 else 's'}:\n{messages}"
+                            )
 
     build_import_check.__doc__ = compose_description(
         prefix={
