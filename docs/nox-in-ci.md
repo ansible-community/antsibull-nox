@@ -21,6 +21,10 @@ You can define environment variables to output run information for automatic pro
 * `ANTSIBULL_NOX_OUTPUT_JUNIT_XML_PATH`:
   a path where a JUnit XML file will be written to.
 
+Note that while this is supported by all built-in sessions,
+there is right now no public API that user-defined sessions can use reporting.
+This will change in a later version.
+
 ## GitHub Actions
 
 The antsibull-nox repository contains a GitHub Action which makes it easy to run nox in GitHub's CI.
