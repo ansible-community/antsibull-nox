@@ -336,13 +336,15 @@ def test_BaseReporter() -> None:
     with r:
         assert r._status == Status.SUCCESS
         assert r.effective_status == Status.SUCCESS
-        r._program_runs.append(ProgramRun(
-            success=True,
-            command=["baz", "bam bar"],
-            stdout="asdf",
-            stderr=None,
-            exit_code=0,
-        ))
+        r._program_runs.append(
+            ProgramRun(
+                success=True,
+                command=["baz", "bam bar"],
+                stdout="asdf",
+                stderr=None,
+                exit_code=0,
+            )
+        )
         assert r._status == Status.SUCCESS
         assert r.effective_status == Status.SUCCESS
         r.add_failure_output(
