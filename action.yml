@@ -52,6 +52,18 @@ inputs:
       Whether the `--allow-unstable-changed` flag is passed to ansible-test integration tests.
     required: false
     default: "false"
+  output-bot-directory:
+    description: |-
+      Directory into which [ansibullbot](https://github.com/ansible-community/collection_bot/) JSON files are written.
+      This is passed to antsibull-nox through the `ANTSIBULL_NOX_OUTPUT_BOT_DIRECTORY` environment variable.
+    required: false
+    default: ""
+  output-junit-xml-path:
+    description: |-
+      Path to which a JUnit XML file is written.
+      This is passed to antsibull-nox through the `ANTSIBULL_NOX_OUTPUT_JUNIT_XML_PATH` environment variable.
+    required: false
+    default: ""
 outputs:
   run-nox:
     description: Output of the 'run nox' step.
@@ -128,5 +140,7 @@ runs:
         ANTSIBULL_CHANGE_DETECTION: "${{ inputs.change-detection }}"
         ANTSIBULL_BASE_BRANCH: "${{ inputs.change-detection-base-branch }}"
         ANTSIBULL_NOX_INTEGRATION_ALLOW_UNSTABLE_CHANGED: "${{ inputs.allow-unstable-changed }}"
+        ANTSIBULL_NOX_OUTPUT_BOT_DIRECTORY: "${{ inputs.output-bot-directory }}"
+        ANTSIBULL_NOX_OUTPUT_JUNIT_XML_PATH: "${{ inputs.output-junit-xml-path }}"
       shell: bash
       working-directory: "${{ inputs.working-directory }}"
