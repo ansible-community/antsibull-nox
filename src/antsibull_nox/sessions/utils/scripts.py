@@ -23,9 +23,12 @@ from ...paths.utils import (
     find_data_directory,
     list_all_files,
 )
-from ..utils.output import print_messages
 from . import silence_run_verbosity
+from .output import print_messages
 from .paths import filter_files_cd
+
+if t.TYPE_CHECKING:  # pragma: no cover
+    from ...reporting import BaseReporter
 
 
 def run_bare_script(
@@ -39,6 +42,7 @@ def run_bare_script(
     silent: bool = False,
     with_cd: bool = False,
     process_messages: bool = False,
+    reporter: BaseReporter | None = None,
 ) -> str | None:
     """
     Run a bare script included in antsibull-nox's data directory.
@@ -80,11 +84,14 @@ def run_bare_script(
             output = session.run(*command, **kwargs)
 
         if output:
+            messages = parse_bare_framework_errors(
+                output=output,
+            )
+            if reporter:
+                reporter.report_messages(messages)
             print_messages(
                 session=session,
-                messages=parse_bare_framework_errors(
-                    output=output,
-                ),
+                messages=messages,
                 fail_msg=f"{name} failed",
             )
 

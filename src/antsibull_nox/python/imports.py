@@ -17,7 +17,7 @@ from pathlib import Path
 
 from ..paths.utils import path_walk
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Sequence
 
 

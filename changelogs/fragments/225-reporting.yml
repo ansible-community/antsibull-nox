@@ -1,0 +1,6 @@
+minor_changes:
+  - "Antsibull-nox now allows to write output on succeeded and failed sessions
+     for consumption by `ansibullbot <https://github.com/ansible-community/collection_bot/>`__
+     and as JUnit XML files for consumption by other tools.
+     All built-in sessions support this, with varying degrees of useful information in the reports
+     (https://github.com/ansible-community/antsibull-nox/pull/225)."

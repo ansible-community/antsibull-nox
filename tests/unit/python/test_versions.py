@@ -6,26 +6,12 @@
 
 from __future__ import annotations
 
-import contextlib
-import os
-import typing as t
 from pathlib import Path
 
 from antsibull_nox.python.versions import get_installed_python_versions
 from antsibull_nox.utils import Version
 
-
-@contextlib.contextmanager
-def set_environ(env_var: str, value: str) -> t.Iterator[None]:
-    old_value = os.environ.get(env_var)
-    try:
-        os.environ[env_var] = value
-        yield
-    finally:
-        if old_value is None:
-            os.environ.pop(env_var, None)
-        else:
-            os.environ[env_var] = old_value
+from ..utils import set_environ
 
 
 def fake_binary(path: Path, content: str) -> Path:

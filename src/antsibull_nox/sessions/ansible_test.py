@@ -36,6 +36,7 @@ from ..config import CONFIG_FILENAME
 from ..container import get_container_engine_preference
 from ..paths.utils import copy_directory_tree_into
 from ..python.versions import get_installed_python_versions
+from ..reporting import get_session_reporter
 from ..utils import Version
 from .collections import prepare_collections
 from .utils import (
@@ -51,7 +52,7 @@ from .utils.values import (
     AnsibleValueExplicit,
 )
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     DevelLikeBranch = tuple[str | None, str]
     NeverAlwaysInCI = t.Literal["never", "always", "in-ci"]
 
@@ -219,71 +220,84 @@ def add_ansible_test_session(
 
     @install_packages(package_callback=compose_dependencies)
     def run_ansible_test(session: nox.Session) -> None:
-        change_detection_args = get_change_detection_args()
-        copy_repo_structure = (
-            change_detection_args is not None
-            or os.environ.get(_ALWAYS_COPY_REPO_STRUCTURE_FLAG_ENV_VAR) == "true"
-        )
-        prepared_collections = prepare_collections(
-            session,
-            ansible_core_version=parsed_ansible_core_version,
-            install_in_site_packages=False,
-            extra_deps_files=extra_deps_files,
-            install_out_of_tree=True,
-            copy_repo_structure=copy_repo_structure,
-        )
-        if not prepared_collections:
-            session.warn("Skipping ansible-test...")
-            return
-        cwd = Path.cwd()
-        with session.chdir(prepared_collections.current_path):
-            if callback_before:
-                callback_before()
-
-            env_env = get_ansible_test_env()
-            if not copy_repo_structure:
-                # Work around bug in 'ansible-test env's AZP detection:
-                # https://github.com/ansible/ansible/issues/87052#issuecomment-4595624857
-                env_env["SYSTEM_COLLECTIONURI"] = ""
-            env_command = [
-                "ansible-test",
-                "env",
-                "--dump",
-                "--show",
-                "-v",
-            ] + get_ansible_test_color_flag(session)
-            timeout = os.environ.get(_TIMEOUT_ENV_VAR)
-            if timeout:
-                env_command.extend(["--timeout", timeout])
-            session.run(*env_command, env=env_env)
-
-            command = ["ansible-test"]
-            for param in ansible_test_params:
-                if isinstance(param, _ColorFlagType):
-                    command.extend(get_ansible_test_color_flag(session))
-                else:
-                    command.append(param)
-            if change_detection_args is not None:
-                command.extend(change_detection_args)
-            if add_posargs and session.posargs:
-                command.extend(session.posargs)
-            session.run(*command, env=get_ansible_test_env())
-
-            coverage = (handle_coverage == "auto" and "--coverage" in command) or (
-                handle_coverage == "always"
+        with get_session_reporter(session):
+            change_detection_args = get_change_detection_args()
+            copy_repo_structure = (
+                change_detection_args is not None
+                or os.environ.get(_ALWAYS_COPY_REPO_STRUCTURE_FLAG_ENV_VAR) == "true"
             )
-            if coverage:
-                _process_coverage_data(
-                    session=session, ansible_core_version=parsed_ansible_core_version
+            prepared_collections = prepare_collections(
+                session,
+                ansible_core_version=parsed_ansible_core_version,
+                install_in_site_packages=False,
+                extra_deps_files=extra_deps_files,
+                install_out_of_tree=True,
+                copy_repo_structure=copy_repo_structure,
+            )
+            if not prepared_collections:
+                session.warn("Skipping ansible-test...")
+                return
+            cwd = Path.cwd()
+            with session.chdir(prepared_collections.current_path):
+                if callback_before:
+                    callback_before()
+
+                env_env = get_ansible_test_env()
+                if not copy_repo_structure:
+                    # Work around bug in 'ansible-test env's AZP detection:
+                    # https://github.com/ansible/ansible/issues/87052#issuecomment-4595624857
+                    env_env["SYSTEM_COLLECTIONURI"] = ""
+                env_command = [
+                    "ansible-test",
+                    "env",
+                    "--dump",
+                    "--show",
+                    "-v",
+                ] + get_ansible_test_color_flag(session)
+                timeout = os.environ.get(_TIMEOUT_ENV_VAR)
+                if timeout:
+                    env_command.extend(["--timeout", timeout])
+                session.run(*env_command, env=env_env)
+                # pylint: disable-next=fixme
+                # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+                # pylint: disable-next=fixme
+                # TODO: use ansible-test's bot and junit output to extract messages
+                #       WARNING: when a timeout happens, this isn't reported in the junit output,
+                #                and ansible-test exits with the same exit code as a regular test
+                #                failure (which with nox right now we cannot catch).
+                #                Also the junit output probably does not contain information on
+                #                failed runme.sh tests.
+                #                So this won't help a bit if we can't access the exit code,
+                #                for which we need https://github.com/wntrblm/nox/pull/1124.
+
+                command = ["ansible-test"]
+                for param in ansible_test_params:
+                    if isinstance(param, _ColorFlagType):
+                        command.extend(get_ansible_test_color_flag(session))
+                    else:
+                        command.append(param)
+                if change_detection_args is not None:
+                    command.extend(change_detection_args)
+                if add_posargs and session.posargs:
+                    command.extend(session.posargs)
+                session.run(*command, env=get_ansible_test_env())
+
+                coverage = (handle_coverage == "auto" and "--coverage" in command) or (
+                    handle_coverage == "always"
                 )
+                if coverage:
+                    _process_coverage_data(
+                        session=session,
+                        ansible_core_version=parsed_ansible_core_version,
+                    )
 
-            if callback_after:
-                callback_after()
+                if callback_after:
+                    callback_after()
 
-            copy_directory_tree_into(
-                prepared_collections.current_path / "tests" / "output",
-                cwd / "tests" / "output",
-            )
+                copy_directory_tree_into(
+                    prepared_collections.current_path / "tests" / "output",
+                    cwd / "tests" / "output",
+                )
 
     # Determine Python version(s)
     core_info = get_ansible_core_info(parsed_ansible_core_version)

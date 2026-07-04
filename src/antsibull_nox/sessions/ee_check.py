@@ -20,6 +20,7 @@ from ..collection import CollectionData, build_collection
 from ..container import get_container_engine_preference, get_preferred_container_engine
 from ..ee_config import generate_ee_config
 from ..paths.utils import get_outside_temp_directory
+from ..reporting import PartReporter, get_session_reporter
 from .utils import register
 from .utils.package_decorator import install_packages
 from .utils.packages import (
@@ -91,6 +92,7 @@ def prepare_execution_environment(
     session: nox.Session,
     execution_environment: ExecutionEnvironmentData,
     container_engine: str,
+    reporter: PartReporter,  # pylint: disable=unused-argument
 ) -> tuple[Path | None, str | None, CollectionData]:
     """
     Generate execution environments for a collection.
@@ -131,6 +133,11 @@ def prepare_execution_environment(
         collection_data=collection_data,
         container_engine=container_engine,
     )
+    # pylint: disable-next=fixme
+    # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+    # pylint: disable-next=fixme
+    # TODO: find out whether ansible-builder can output error information somehow else
+    #       next to stdout/stderr
 
     return collection_tarball_path, built_image, collection_data
 
@@ -175,67 +182,77 @@ def add_execution_environment_session(
 
     @install_packages(package_callback=compose_dependencies)
     def session_func(session: nox.Session) -> None:
-        container_engine = get_preferred_container_engine()
-        session.log(f"Using container engine {container_engine}")
+        with get_session_reporter(session) as reporter:
+            container_engine = get_preferred_container_engine()
+            session.log(f"Using container engine {container_engine}")
 
-        collection_tarball, built_image, collection_data = (
-            prepare_execution_environment(
-                session=session,
-                execution_environment=execution_environment,
-                container_engine=container_engine,
+            with reporter.get_part_reporter("prepare-ee") as sr:
+                collection_tarball, built_image, collection_data = (
+                    prepare_execution_environment(
+                        session=session,
+                        execution_environment=execution_environment,
+                        container_engine=container_engine,
+                        reporter=sr,
+                    )
+                )
+
+            if collection_tarball is None or built_image is None:
+                # Install only
+                return
+
+            session.log(
+                f"Building execution environment {execution_environment.description}"
+                f" for {collection_data.namespace}.{collection_data.name}. Image: {built_image}"
+                f" using {container_engine}"
             )
-        )
 
-        if collection_tarball is None or built_image is None:
-            # Install only
-            return
-
-        session.log(
-            f"Building execution environment {execution_environment.description}"
-            f" for {collection_data.namespace}.{collection_data.name}. Image: {built_image}"
-            f" using {container_engine}"
-        )
-
-        playbook_dir = Path.cwd()
-        temp_dir = get_outside_temp_directory(
-            [playbook_dir.absolute(), playbook_dir.resolve()]
-        )
-
-        for playbook in execution_environment.test_playbooks:
-            env = {"TMPDIR": str(temp_dir)}
-            command = [
-                "ansible-navigator",
-                "run",
-                "--mode",
-                "stdout",
-                "--container-engine",
-                container_engine,
-            ]
-            if execution_environment.runtime_container_options:
-                for value in execution_environment.runtime_container_options:
-                    command.append(f"--container-options={value}")
-            command.extend(["--pull-policy", "never"])
-            if execution_environment.runtime_environment:
-                for k, v in execution_environment.runtime_environment.items():
-                    command.extend(["--set-environment-variable", f"{k}={v}"])
-            command.extend(["--execution-environment-image", built_image])
-            # Note that another parameter must follow after --set-environment-variable
-            # to prevent an argument parsing SNAFU by ansible-navigator.
-            # Otherwise you get errors such as "Error: The following set-environment-variable
-            # entry could not be parsed: tests/ee/all.yml"...
-            command.extend(
-                [
-                    "-v",
-                    playbook,
-                ]
+            playbook_dir = Path.cwd()
+            temp_dir = get_outside_temp_directory(
+                [playbook_dir.absolute(), playbook_dir.resolve()]
             )
-            if execution_environment.runtime_extra_vars:
-                for k, v in execution_environment.runtime_extra_vars.items():
-                    command.extend(["-e", f"{k}={v}"])
-            session.run(
-                *command,
-                env=env,
-            )
+
+            for playbook in execution_environment.test_playbooks:
+                with reporter.get_part_reporter(f"playbook-{playbook}"):
+                    env = {"TMPDIR": str(temp_dir)}
+                    command = [
+                        "ansible-navigator",
+                        "run",
+                        "--mode",
+                        "stdout",
+                        "--container-engine",
+                        container_engine,
+                    ]
+                    if execution_environment.runtime_container_options:
+                        for value in execution_environment.runtime_container_options:
+                            command.append(f"--container-options={value}")
+                    command.extend(["--pull-policy", "never"])
+                    if execution_environment.runtime_environment:
+                        for k, v in execution_environment.runtime_environment.items():
+                            command.extend(["--set-environment-variable", f"{k}={v}"])
+                    command.extend(["--execution-environment-image", built_image])
+                    # Note that another parameter must follow after --set-environment-variable
+                    # to prevent an argument parsing SNAFU by ansible-navigator.
+                    # Otherwise you get errors such as "Error: The following
+                    # set-environment-variable entry could not be parsed: tests/ee/all.yml"...
+                    command.extend(
+                        [
+                            "-v",
+                            playbook,
+                        ]
+                    )
+                    if execution_environment.runtime_extra_vars:
+                        for k, v in execution_environment.runtime_extra_vars.items():
+                            command.extend(["-e", f"{k}={v}"])
+                    session.run(
+                        *command,
+                        env=env,
+                    )
+                    # pylint: disable-next=fixme
+                    # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+                    # pylint: disable-next=fixme
+                    # TODO: maybe use the following:
+                    # https://docs.ansible.com/projects/ansible/latest/reference_appendices/config.html#envvar-ANSIBLE_LOG_PATH
+                    #       the output is pretty ugly though :(
 
     # Get container engine preference to check for valid values
     get_container_engine_preference()

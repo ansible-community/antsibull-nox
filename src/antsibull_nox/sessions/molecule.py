@@ -18,6 +18,7 @@ from pathlib import Path
 import nox
 
 from ..paths.utils import list_all_files
+from ..reporting import get_session_reporter
 from .collections import prepare_collections
 from .utils.constants import _ANSIBLE_COMPAT_REQUIREMENTS_FILES
 from .utils.package_decorator import install_packages
@@ -86,57 +87,63 @@ def add_molecule(
 
     @install_packages(package_callback=compose_dependencies)
     def molecule(session: nox.Session) -> None:
-        ansible_compat_req_files = list(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
-        molecule_collection_root_exists = check_molecule_collection_root()
-        if not molecule_collection_root_exists:
-            # Fail if molecule collection root directory does not exist
-            # https://github.com/ansible/molecule/blob/main/src/molecule/util.py#L651
-            session.error(
-                f"Molecule collection root directory {_MOLECULE_COLLECTION_ROOT} was not found."
-                f" Molecule scenarios should be migrated to {_MOLECULE_COLLECTION_ROOT}."
+        with get_session_reporter(session):
+            ansible_compat_req_files = list(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
+            molecule_collection_root_exists = check_molecule_collection_root()
+            if not molecule_collection_root_exists:
+                # Fail if molecule collection root directory does not exist
+                # https://github.com/ansible/molecule/blob/main/src/molecule/util.py#L651
+                session.error(
+                    f"Molecule collection root directory {_MOLECULE_COLLECTION_ROOT} was not found."
+                    f" Molecule scenarios should be migrated to {_MOLECULE_COLLECTION_ROOT}."
+                )
+            ansible_compat_req_files.extend(find_molecule_scenario_requirements())
+            # pylint: disable=duplicate-code
+            if additional_requirements_files:
+                ansible_compat_req_files.extend(additional_requirements_files)
+            prepared_collections = prepare_collections(
+                session,
+                install_in_site_packages=False,
+                install_out_of_tree=True,
+                extra_deps_files=ansible_compat_req_files,
             )
-        ansible_compat_req_files.extend(find_molecule_scenario_requirements())
-        # pylint: disable=duplicate-code
-        if additional_requirements_files:
-            ansible_compat_req_files.extend(additional_requirements_files)
-        prepared_collections = prepare_collections(
-            session,
-            install_in_site_packages=False,
-            install_out_of_tree=True,
-            extra_deps_files=ansible_compat_req_files,
-        )
-        if not prepared_collections:
-            session.warn("Skipping molecule...")
-            return
-        env = {"ANSIBLE_COLLECTIONS_PATH": f"{prepared_collections.current_place}"}
-        command = ["molecule", "test"]
-        if debug:
-            command.insert(1, "--debug")
-        if parallel:
-            command.append("--parallel")
-        if report:
-            command.append("--report")
-        if command_borders:
-            command.append("--command-borders")
-        if shared_state:
-            command.append("--shared-state")
-        if isinstance(scenarios, list):
-            for scenario in scenarios:
+            if not prepared_collections:
+                session.warn("Skipping molecule...")
+                return
+            env = {"ANSIBLE_COLLECTIONS_PATH": f"{prepared_collections.current_place}"}
+            command = ["molecule", "test"]
+            if debug:
+                command.insert(1, "--debug")
+            if parallel:
+                command.append("--parallel")
+            if report:
+                command.append("--report")
+            if command_borders:
+                command.append("--command-borders")
+            if shared_state:
+                command.append("--shared-state")
+            if isinstance(scenarios, list):
+                for scenario in scenarios:
+                    command.append("--scenario-name")
+                    command.append(scenario)
+            elif scenarios == "all":
+                command.append("--all")
+            else:
+                # Must be None at this point so run the default scenario
                 command.append("--scenario-name")
-                command.append(scenario)
-        elif scenarios == "all":
-            command.append("--all")
-        else:
-            # Must be None at this point so run the default scenario
-            command.append("--scenario-name")
-            command.append("default")
-        if session.posargs:
-            command.append("--")
-            command.extend(session.posargs)
+                command.append("default")
+            if session.posargs:
+                command.append("--")
+                command.extend(session.posargs)
 
-        # Ensure we are in extensions prior to running molecule test
-        with session.chdir("extensions"):
-            session.run(*command, env=env)
+            # Ensure we are in extensions prior to running molecule test
+            with session.chdir("extensions"):
+                session.run(*command, env=env)
+                # pylint: disable-next=fixme
+                # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+                # pylint: disable-next=fixme
+                # TODO: find out whether molecule can output error information somehow else
+                #       next to stdout/stderr
 
     molecule.__doc__ = "Run molecule."
     nox.session(

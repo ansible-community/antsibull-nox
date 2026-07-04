@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import nox
 
+from ..reporting import get_session_reporter
 from .utils import (
     compose_description,
 )
@@ -53,18 +54,27 @@ def add_license_check(
 
     @install_packages(package_callback=compose_dependencies)
     def license_check(session: nox.Session) -> None:
-        if run_reuse:
-            session.run("reuse", "lint")
-        if run_license_check:
-            run_bare_script(
-                session,
-                "license-check",
-                extra_data={
-                    "extra_ignore_paths": license_check_extra_ignore_paths or [],
-                },
-                with_cd=True,
-                process_messages=True,
-            )
+        with get_session_reporter(session) as reporter:
+            if run_reuse:
+                with reporter.get_part_reporter("reuse"):
+                    session.run("reuse", "lint")
+                    # pylint: disable-next=fixme
+                    # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+                    # pylint: disable-next=fixme
+                    # TODO: use JSON output and parse as messages somehow
+            if run_license_check:
+                with reporter.get_part_reporter("license-check") as sr:
+                    run_bare_script(
+                        session,
+                        "license-check",
+                        extra_data={
+                            "extra_ignore_paths": license_check_extra_ignore_paths
+                            or [],
+                        },
+                        with_cd=True,
+                        process_messages=True,
+                        reporter=sr,
+                    )
 
     license_check.__doc__ = compose_description(
         prefix={

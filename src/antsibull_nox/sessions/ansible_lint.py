@@ -15,6 +15,7 @@ from collections.abc import Sequence
 
 import nox
 
+from ..reporting import get_session_reporter
 from .collections import prepare_collections
 from .utils.constants import _ANSIBLE_COMPAT_REQUIREMENTS_FILES
 from .utils.package_decorator import install_packages
@@ -46,25 +47,31 @@ def add_ansible_lint(
 
     @install_packages(package_callback=compose_dependencies)
     def ansible_lint(session: nox.Session) -> None:
-        ansible_compat_req_files = list(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
-        if additional_requirements_files:
-            ansible_compat_req_files.extend(additional_requirements_files)
-        prepared_collections = prepare_collections(
-            session,
-            install_in_site_packages=False,
-            install_out_of_tree=True,
-            extra_deps_files=ansible_compat_req_files,
-        )
-        if not prepared_collections:
-            session.warn("Skipping ansible-lint...")
-            return
-        env = {"ANSIBLE_COLLECTIONS_PATH": f"{prepared_collections.current_place}"}
-        command = ["ansible-lint", "--offline"]
-        if strict:
-            command.append("--strict")
-        if session.posargs:
-            command.extend(session.posargs)
-        session.run(*command, env=env)
+        with get_session_reporter(session):
+            ansible_compat_req_files = list(_ANSIBLE_COMPAT_REQUIREMENTS_FILES)
+            if additional_requirements_files:
+                ansible_compat_req_files.extend(additional_requirements_files)
+            prepared_collections = prepare_collections(
+                session,
+                install_in_site_packages=False,
+                install_out_of_tree=True,
+                extra_deps_files=ansible_compat_req_files,
+            )
+            if not prepared_collections:
+                session.warn("Skipping ansible-lint...")
+                return
+            env = {"ANSIBLE_COLLECTIONS_PATH": f"{prepared_collections.current_place}"}
+            command = ["ansible-lint", "--offline"]
+            if strict:
+                command.append("--strict")
+            if session.posargs:
+                command.extend(session.posargs)
+            session.run(*command, env=env)
+            # pylint: disable-next=fixme
+            # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+            # pylint: disable-next=fixme
+            # TODO: find out whether ansible-lint can output error information somehow else
+            #       next to stdout/stderr
 
     ansible_lint.__doc__ = "Run ansible-lint."
     nox.session(

@@ -6,6 +6,25 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # Running nox in CI
 
+## Environment variables for CI control
+
+Some behvaior of antsiubll-nox can be controlled through environment variables.
+This is mainly meant for use in CI systems.
+
+### Output
+
+You can define environment variables to output run information for automatic processing:
+
+* `ANTSIBULL_NOX_OUTPUT_BOT_DIRECTORY`:
+  a directory that will be filled with JSON files that can be processed by
+  [ansibullbot](https://github.com/ansible-community/collection_bot).
+* `ANTSIBULL_NOX_OUTPUT_JUNIT_XML_PATH`:
+  a path where a JUnit XML file will be written to.
+
+Note that while this is supported by all built-in sessions,
+there is right now no public API that user-defined sessions can use reporting.
+This will change in a later version.
+
 ## GitHub Actions
 
 The antsibull-nox repository contains a GitHub Action which makes it easy to run nox in GitHub's CI.
