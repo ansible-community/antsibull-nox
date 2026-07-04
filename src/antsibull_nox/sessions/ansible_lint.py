@@ -67,7 +67,9 @@ def add_ansible_lint(
             if session.posargs:
                 command.extend(session.posargs)
             session.run(*command, env=env)
+            # pylint: disable-next=fixme
             # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+            # pylint: disable-next=fixme
             # TODO: find out whether ansible-lint can output error information somehow else
             #       next to stdout/stderr
 

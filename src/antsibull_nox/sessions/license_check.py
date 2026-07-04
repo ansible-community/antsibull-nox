@@ -58,7 +58,9 @@ def add_license_check(
             if run_reuse:
                 with reporter.get_part_reporter("reuse"):
                     session.run("reuse", "lint")
+                    # pylint: disable-next=fixme
                     # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+                    # pylint: disable-next=fixme
                     # TODO: use JSON output and parse as messages somehow
             if run_license_check:
                 with reporter.get_part_reporter("license-check") as sr:

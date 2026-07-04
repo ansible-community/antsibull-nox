@@ -133,7 +133,9 @@ def prepare_execution_environment(
         collection_data=collection_data,
         container_engine=container_engine,
     )
+    # pylint: disable-next=fixme
     # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+    # pylint: disable-next=fixme
     # TODO: find out whether ansible-builder can output error information somehow else
     #       next to stdout/stderr
 
@@ -245,7 +247,9 @@ def add_execution_environment_session(
                         *command,
                         env=env,
                     )
+                    # pylint: disable-next=fixme
                     # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+                    # pylint: disable-next=fixme
                     # TODO: maybe use the following:
                     # https://docs.ansible.com/projects/ansible/latest/reference_appendices/config.html#envvar-ANSIBLE_LOG_PATH
                     #       the output is pretty ugly though :(

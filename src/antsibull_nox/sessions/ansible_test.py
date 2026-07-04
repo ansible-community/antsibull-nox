@@ -258,8 +258,17 @@ def add_ansible_test_session(
                 if timeout:
                     env_command.extend(["--timeout", timeout])
                 session.run(*env_command, env=env_env)
+                # pylint: disable-next=fixme
                 # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+                # pylint: disable-next=fixme
                 # TODO: use ansible-test's bot and junit output to extract messages
+                #       WARNING: when a timeout happens, this isn't reported in the junit output,
+                #                and ansible-test exits with the same exit code as a regular test
+                #                failure (which with nox right now we cannot catch).
+                #                Also the junit output probably does not contain information on
+                #                failed runme.sh tests.
+                #                So this won't help a bit if we can't access the exit code,
+                #                for which we need https://github.com/wntrblm/nox/pull/1124.
 
                 command = ["ansible-test"]
                 for param in ansible_test_params:

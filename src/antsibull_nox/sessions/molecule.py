@@ -139,7 +139,9 @@ def add_molecule(
             # Ensure we are in extensions prior to running molecule test
             with session.chdir("extensions"):
                 session.run(*command, env=env)
+                # pylint: disable-next=fixme
                 # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+                # pylint: disable-next=fixme
                 # TODO: find out whether molecule can output error information somehow else
                 #       next to stdout/stderr
 

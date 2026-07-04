@@ -243,7 +243,9 @@ def _execute_isort_for(
     for file in paths:
         command.append(str(relative_dir / file))
     session.run(*command)
+    # pylint: disable-next=fixme
     # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+    # pylint: disable-next=fixme
     # TODO: find out whether isort can output error information somehow else than stdout/stderr
 
 
@@ -326,7 +328,9 @@ def _execute_black_for(
     command.extend(session.posargs)
     command.extend(str(path) for path in paths)
     session.run(*command)
+    # pylint: disable-next=fixme
     # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+    # pylint: disable-next=fixme
     # TODO: find out whether black can output error information somehow else than stdout/stderr
 
 
@@ -417,7 +421,9 @@ def _execute_ruff_format_for(
     command.extend(session.posargs)
     command.extend(str(file) for file in files)
     session.run(*command)
+    # pylint: disable-next=fixme
     # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+    # pylint: disable-next=fixme
     # TODO: find out whether ruff format can output error information somehow else
     #       than stdout/stderr
 
@@ -508,7 +514,9 @@ def _execute_ruff_autofix_for(
     for file in files:
         command.append(str(relative_dir / file))
     session.run(*command)
+    # pylint: disable-next=fixme
     # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+    # pylint: disable-next=fixme
     # TODO: find out whether ruff autofix can output error information somehow else
     #       than stdout/stderr
 
@@ -929,7 +937,9 @@ def add_codeqa(  # noqa: C901
         command.extend(session.posargs)
         command.extend(str(file) for file in files)
         session.run(*command)
+        # pylint: disable-next=fixme
         # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+        # pylint: disable-next=fixme
         # TODO: find out whether flake8 can output error information somehow else than stdout/stderr
 
     def execute_flake8(

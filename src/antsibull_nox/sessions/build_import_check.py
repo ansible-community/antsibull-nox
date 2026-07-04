@@ -67,7 +67,9 @@ def add_build_import_check(
         with get_session_reporter(session) as reporter:
             with reporter.get_part_reporter("build"):
                 tarball, _, __ = build_collection(session)
+                # pylint: disable-next=fixme
                 # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
+                # pylint: disable-next=fixme
                 # TODO: find out whether ansible-galaxy can output error information somehow
                 #       else next to stdout/stderr
 
@@ -88,8 +90,10 @@ def add_build_import_check(
                             env=env,
                             silent=True,
                         )
+                        # pylint: disable-next=fixme
                         # TODO: use https://github.com/wntrblm/nox/pull/1124
                         #       to get hold of return code
+                        # pylint: disable-next=fixme
                         # TODO: catch failures and dump output to reporter in that case
                     if import_log is not None:
                         with ci_group("Run Galaxy importer") as (indent, is_collapsed):
