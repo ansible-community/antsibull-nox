@@ -546,8 +546,12 @@ class Reporter:
     def _shutdown(self) -> None:
         self._is_dead = True
         if not self.sessions:
-            # This is likely because we are in a subprocess...
-            # TODO: is it possible to know this for sure, and avoid this?
+            # Early exit if nothing ran. This can happen because the user ran
+            # `nox --list`, the user ran `python noxfile.py` (setup() will be
+            # called twice), the user asked for a non-existing session, the
+            # user ran a user-defined session not managed by antsibull-nox,
+            # or something else happened that caused no session to be run.
+            # We do not want to write the result files in that case.
             return
         for session in self.sessions:
             if session.active:
