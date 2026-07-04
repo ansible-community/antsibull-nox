@@ -16,4 +16,5 @@ ignore = E203, E704, W503
 per-file-ignores =
     src/antsibull_nox/init.py:E501
     tests/unit/messages/test_parse.py:E501
+    tests/unit/test_reporting.py:E501
     tests/unit/utils/test__junit.py:E501

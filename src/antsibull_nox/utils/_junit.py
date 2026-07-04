@@ -80,16 +80,16 @@ class Stats:
             node.set("time", f"{time_in_seconds:.3f}")
 
 
+@dataclasses.dataclass
 class Testsuite:
     """
     A test suite.
     """
 
-    def __init__(self, *, name: str) -> None:
-        self.name = name
-        self.children: list[Testsuite | Testcase] = []
-        self.timestamp: datetime.datetime | None = None
-        self.url: str | None = None
+    name: str
+    children: list[Testsuite | Testcase] = dataclasses.field(default_factory=list)
+    timestamp: datetime.datetime | None = None
+    url: str | None = None
 
     def _serialize(self) -> tuple[_Node, Stats]:
         node = _Node("testsuite")
@@ -164,22 +164,23 @@ class Error:
         return node
 
 
+@dataclasses.dataclass
 class Testcase:
     """
     A test case.
     """
 
-    def __init__(self, *, name: str) -> None:
-        self.name = name
-        self.stats = Stats()
+    name: str
 
-        # The following should always be set together with values in self.stats!
-        self.failure: Failure | None = None
-        self.error: Error | None = None
-        self.skipped: Skipped | None = None
+    stats: Stats = dataclasses.field(default_factory=Stats)
 
-        self.stdout: str | None = None
-        self.stderr: str | None = None
+    # The following should always be set together with values in self.stats!
+    failure: Failure | None = None
+    error: Error | None = None
+    skipped: Skipped | None = None
+
+    stdout: str | None = None
+    stderr: str | None = None
 
     def _serialize(self) -> tuple[_Node, Stats]:
         node = _Node("testcase")

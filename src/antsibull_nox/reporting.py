@@ -132,7 +132,7 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         self.timestamp = _make_timestamp()
 
     def __enter__(self) -> t.Self:
-        if self._open:
+        if self._open or self._end:
             raise RuntimeError(f"{type(self).__name__} used more than once")
         self._open = True
         self._start = _make_timestamp()
@@ -393,9 +393,11 @@ class SessionReporter(BaseReporter):
         }
 
     def _get_junit_testsuite(self) -> _junit.Testsuite:
-        result = _junit.Testsuite(name=self.title)
-        result.timestamp = self.timestamp
-        result.url = self.url
+        result = _junit.Testsuite(
+            name=self.title,
+            timestamp=self.timestamp,
+            url=self.url,
+        )
         first_case: _junit.Testcase | None = None
         if not self.is_empty:
             first_case = self._get_junit_testcase()
@@ -411,6 +413,38 @@ class SessionReporter(BaseReporter):
                 and testcase.stats.time is not None
             ):
                 first_case.stats.time -= testcase.stats.time
+        if not result.children:
+            effective_status = self.effective_status
+            if effective_status == Status.FAILED:
+                result.children.append(
+                    _junit.Testcase(
+                        name=self.title,
+                        stats=_junit.Stats(tests=1, failures=1, time=self._duration),
+                        failure=_junit.Failure(
+                            message=None,
+                            description="Please see the CI output for details.",
+                        ),
+                    )
+                )
+            if effective_status == Status.ABORTED:
+                result.children.append(
+                    _junit.Testcase(
+                        name=self.title,
+                        stats=_junit.Stats(tests=1, errors=1, time=self._duration),
+                        error=_junit.Error(
+                            message=None,
+                            description="Please see the CI output for details.",
+                        ),
+                    )
+                )
+            if effective_status == Status.SKIPPED:
+                result.children.append(
+                    _junit.Testcase(
+                        name=self.title,
+                        stats=_junit.Stats(tests=1, skipped=1, time=self._duration),
+                        skipped=_junit.Skipped(message=None),
+                    )
+                )
         return result
 
 

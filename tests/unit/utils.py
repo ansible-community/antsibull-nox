@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import contextlib
 import os
+import typing as t
 from pathlib import Path
 
 
@@ -25,3 +26,20 @@ def chdir(dir: Path):
         yield
     finally:
         os.chdir(current)
+
+
+def set_environ_value(env_var: str, value: str | None) -> None:
+    if value is None:
+        os.environ.pop(env_var, None)
+    else:
+        os.environ[env_var] = value
+
+
+@contextlib.contextmanager
+def set_environ(env_var: str, value: str | None) -> t.Iterator[None]:
+    old_value = os.environ.get(env_var)
+    try:
+        set_environ_value(env_var, value)
+        yield
+    finally:
+        set_environ_value(env_var, old_value)
