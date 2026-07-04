@@ -330,10 +330,19 @@ def test_BaseReporter() -> None:
         failure=Failure(None, description="foo/bar.baz:0:0: An error"),
     )
 
-    # Single run with error due failed program run
+    # Single run with error due failed program run (and one successful run)
 
     r = MyReporter(title="foo")
     with r:
+        assert r._status == Status.SUCCESS
+        assert r.effective_status == Status.SUCCESS
+        r._program_runs.append(ProgramRun(
+            success=True,
+            command=["baz", "bam bar"],
+            stdout="asdf",
+            stderr=None,
+            exit_code=0,
+        ))
         assert r._status == Status.SUCCESS
         assert r.effective_status == Status.SUCCESS
         r.add_failure_output(
@@ -348,7 +357,7 @@ def test_BaseReporter() -> None:
     assert r.status == Status.SUCCESS
     assert r.effective_status == Status.FAILED
     assert r._get_output() == (
-        "",
+        "asdf",
         "",
         "",
         "$ foo bar",

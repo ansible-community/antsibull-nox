@@ -27,7 +27,7 @@ from . import silence_run_verbosity
 from .output import print_messages
 from .paths import filter_files_cd
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     from ...reporting import BaseReporter
 
 

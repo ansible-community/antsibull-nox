@@ -498,7 +498,7 @@ class Reporter:
     @staticmethod
     def _write_test_results(output_path: Path, content: str):
         output_dir = output_path.parent
-        if output_dir:
+        if output_dir:  # pragma: no branch
             output_dir.mkdir(parents=True, exist_ok=True)
         with output_path.open("w", encoding="utf-8") as file_obj:
             file_obj.write(content)

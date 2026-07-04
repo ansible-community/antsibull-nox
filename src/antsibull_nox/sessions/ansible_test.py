@@ -52,7 +52,7 @@ from .utils.values import (
     AnsibleValueExplicit,
 )
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     DevelLikeBranch = tuple[str | None, str]
     NeverAlwaysInCI = t.Literal["never", "always", "in-ci"]
 

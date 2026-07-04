@@ -23,7 +23,7 @@ import nox
 from ...messages import Level, Location, Message
 from . import IN_CI, nox_has_color
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     Formatter = t.Callable[[list[Message]], t.Generator[str]]
 
 

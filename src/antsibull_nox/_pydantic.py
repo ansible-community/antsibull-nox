@@ -26,7 +26,7 @@ from collections.abc import Callable, Collection
 
 import pydantic as p
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     from typing_extensions import TypeGuard
 
 
