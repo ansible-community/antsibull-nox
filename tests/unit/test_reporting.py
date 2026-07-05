@@ -11,6 +11,8 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from nox.command import CommandFailed
+from nox.sessions import Session
 
 from antsibull_nox.messages import Level, Message
 from antsibull_nox.reporting import (
@@ -22,36 +24,44 @@ from antsibull_nox.reporting import (
     Reporter,
     SessionReporter,
     Status,
+    _combine_errors,
+    _get_message,
     _get_status_from_exception,
+    _is_test_failure,
 )
 from antsibull_nox.utils._junit import (
     Error,
     Failure,
     Skipped,
     Stats,
-    Testcase,
-    Testsuite,
 )
+from antsibull_nox.utils._junit import Testcase as _Testcase
+from antsibull_nox.utils._junit import Testsuite as _Testsuite
 
 from .utils import set_environ
 
 
-def test_session_skip_import() -> None:
+def test_session_skip_error_import() -> None:
     """
     antsibull_nox.reporting assumes that an internal exception
-    nox.sessions._SessionSkip is used when Session.skip() is called.
+    nox.sessions._SessionSkip is used when Session.skip() is called,
+    and that an internal exception nox.sessions._SessionQuit is used
+    when Session.error() is called (directly or indirectly).
     """
     # We import this locally in the function to avoid a global failure
-    # if _SessionSkip is removed / renamed.
-    from nox.sessions import Session, _SessionSkip
+    # if _SessionSkip and/or _SessionQuit is removed / renamed.
+    from nox.sessions import _SessionQuit, _SessionSkip
 
     assert issubclass(_SessionSkip, Exception)
+    assert issubclass(_SessionQuit, Exception)
 
     # Note that None is not a valid value for runner, but since neither
     # __init__() nor skip() use it, it's fine for this test.
     session = Session(runner=None)  # type: ignore[arg-type]
     with pytest.raises(_SessionSkip):
         session.skip()
+    with pytest.raises(_SessionQuit):
+        session.error("foo")
 
 
 def test__get_status_from_exception() -> None:
@@ -63,6 +73,78 @@ def test__get_status_from_exception() -> None:
     assert _get_status_from_exception(_SessionSkip()) == Status.SKIPPED
     assert _get_status_from_exception(KeyboardInterrupt()) == Status.ABORTED
     assert _get_status_from_exception(ValueError()) == Status.FAILED
+
+
+def test__is_test_failure() -> None:
+    # We import this locally in the function to avoid a global failure
+    # if _SessionSkip and/or _SessionQuit is removed / renamed.
+    from nox.sessions import _SessionQuit, _SessionSkip
+
+    assert _is_test_failure(None) is False
+    assert _is_test_failure(_SessionSkip()) is False
+    assert _is_test_failure(KeyboardInterrupt()) is False
+    assert _is_test_failure(RuntimeError()) is False
+    assert _is_test_failure(Exception()) is False
+    assert _is_test_failure(ValueError()) is False
+
+    assert _is_test_failure(_SessionQuit()) is True
+    assert _is_test_failure(CommandFailed()) is True
+
+
+def test__get_message() -> None:
+    # We import this locally in the function to avoid a global failure
+    # if _SessionQuit is removed / renamed.
+    from nox.sessions import _SessionQuit
+
+    assert _get_message(ValueError("foo")) is None
+    assert _get_message(Exception("foo")) is None
+    assert _get_message(RuntimeError("foo")) is None
+    assert _get_message(_SessionQuit("foo")) == "foo"
+    assert _get_message(_SessionQuit()) == ""
+    assert _get_message(CommandFailed("foo")) == "foo"
+
+
+def test__combine_errors() -> None:
+    # We import this locally in the function to avoid a global failure
+    # if _SessionQuit is removed / renamed.
+    from nox.sessions import _SessionQuit
+
+    with pytest.raises(AssertionError):
+        _combine_errors([])
+
+    exc1 = Exception("exc1")
+    cf1 = CommandFailed("cf1")
+    cf2 = CommandFailed("cf2")
+    sq1 = _SessionQuit("sq1")
+    sq2 = _SessionQuit("sq2")
+    sq3 = _SessionQuit()
+
+    # A single exception is always returned
+    assert _combine_errors([exc1]) is exc1
+    assert _combine_errors([cf1]) is cf1
+    assert _combine_errors([sq1]) is sq1
+
+    # Having a non-supported exception always gives the first
+    assert _combine_errors([exc1, cf1, sq1]) is exc1
+    assert _combine_errors([cf1, sq1, exc1]) is cf1
+    assert _combine_errors([sq1, exc1, cf1]) is sq1
+
+    # Multiple exceptions are combined
+    cf1sq1 = _combine_errors([cf1, sq1])
+    assert isinstance(cf1sq1, _SessionQuit)
+    assert str(cf1sq1) == "cf1; sq1"
+
+    cf12 = _combine_errors([cf1, cf2])
+    assert isinstance(cf12, CommandFailed)
+    assert cf12.reason == "cf1; cf2"
+
+    sq12 = _combine_errors([sq1, sq2])
+    assert isinstance(sq12, _SessionQuit)
+    assert str(sq12) == "sq1; sq2"
+
+    sq132 = _combine_errors([sq1, sq3, sq2])
+    assert isinstance(sq132, _SessionQuit)
+    assert str(sq132) == "sq1; (unknown); sq2"
 
 
 TEST_PROGRAM_RUN_DATA: list[tuple[ProgramRun, str]] = [
@@ -178,7 +260,7 @@ def test_BaseReporter() -> None:
     )
     assert r._get_bot_report() == []
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo", stats=Stats(tests=1, time=testcase.stats.time)
     )
 
@@ -215,7 +297,7 @@ def test_BaseReporter() -> None:
         },
     ]
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, errors=1, time=testcase.stats.time),
         error=Error("The test case was forcefully aborted", type="aborted"),
@@ -276,7 +358,7 @@ def test_BaseReporter() -> None:
     )
     assert r._get_bot_report() == []
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, time=testcase.stats.time),
         stdout="foo/bar.baz:0:0: A warning",
@@ -324,7 +406,7 @@ def test_BaseReporter() -> None:
         },
     ]
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, failures=1, time=testcase.stats.time),
         failure=Failure(None, description="foo/bar.baz:0:0: An error"),
@@ -371,7 +453,7 @@ def test_BaseReporter() -> None:
         },
     ]
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, failures=1, time=testcase.stats.time),
         failure=Failure(None, description="$ foo bar"),
@@ -415,7 +497,7 @@ def test_BaseReporter() -> None:
         },
     ]
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, failures=1, time=testcase.stats.time),
         failure=Failure(
@@ -444,7 +526,7 @@ def test_BaseReporter() -> None:
     )
     assert r._get_bot_report() == []
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, skipped=1, time=testcase.stats.time),
         skipped=Skipped(None),
@@ -471,6 +553,23 @@ def test_PartReporter() -> None:
         assert session_reporter.current_part is part_reporter
     assert session_reporter.current_part is None
 
+    part_reporter = PartReporter(owner=session_reporter, title="bar part")
+    with pytest.raises(CommandFailed):
+        with part_reporter:
+            raise CommandFailed("foo")
+    assert session_reporter.current_part is None
+
+    part_reporter = PartReporter(
+        owner=session_reporter, title="bar part", continue_on_error=True
+    )
+    assert len(session_reporter._collected_errors) == 0
+    with part_reporter:
+        exception = CommandFailed("foo")
+        raise exception
+    assert session_reporter.current_part is None
+    assert len(session_reporter._collected_errors) == 1
+    assert session_reporter._collected_errors[0] is exception
+
 
 def test_SessionReporter() -> None:
     reporter = Reporter()
@@ -488,10 +587,59 @@ def test_SessionReporter() -> None:
 
     assert session_reporter._get_bot_report_file() is None
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[],
+    )
+
+    # One part with continue_on_error == True, but exception
+
+    session_reporter = SessionReporter(
+        owner=reporter,
+        session=nox_session,  # type: ignore[arg-type]
+        url=None,
+    )
+    session_reporter.__enter__()
+    assert session_reporter.current_part is None
+    with session_reporter.get_part_reporter(
+        "foo part", continue_on_error=True
+    ) as part_reporter:
+        assert part_reporter.title == "foo part"
+        assert session_reporter.current_part is part_reporter
+        raise CommandFailed("foo bar")
+    assert session_reporter.current_part is None
+    with pytest.raises(CommandFailed, match="^foo bar$"):
+        session_reporter.__exit__(None, None, None)
+
+    assert session_reporter._get_bot_report_file() == {
+        "verified": True,
+        "docs": "",
+        "results": [
+            {
+                "message": "Failures in nox session `foo session`, part `foo part`.",
+                "output": "Please see the CI output for details.",
+            }
+        ],
+    }
+    testsuite = session_reporter._get_junit_testsuite()
+    assert testsuite == _Testsuite(
+        name="foo session",
+        timestamp=session_reporter.timestamp,
+        children=[
+            _Testcase(
+                name="foo session/foo part",
+                stats=Stats(
+                    failures=1,
+                    tests=1,
+                    time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
+                ),
+                failure=Failure(
+                    message=None,
+                    description="Please see the CI output for details.",
+                ),
+            ),
+        ],
     )
 
     # Two parts
@@ -525,23 +673,23 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session/foo part",
                 stats=Stats(
                     tests=1,
-                    time=testsuite.children[0].stats.time,
+                    time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
                 ),
             ),
-            Testcase(
+            _Testcase(
                 name="foo session/bar part",
                 stats=Stats(
                     failures=1,
                     tests=1,
-                    time=testsuite.children[1].stats.time,
+                    time=testsuite.children[1].stats.time,  # type: ignore[union-attr]
                 ),
                 failure=Failure(
                     message=None,
@@ -575,15 +723,15 @@ def test_SessionReporter() -> None:
 
     assert session_reporter._get_bot_report_file() is None
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     tests=1,
-                    time=testsuite.children[0].stats.time,
+                    time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
                 ),
                 stdout="foo/bar.baz:0:0: A warning",
             ),
@@ -623,16 +771,16 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     failures=1,
                     tests=1,
-                    time=testsuite.children[0].stats.time,
+                    time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
                 ),
                 failure=Failure(
                     message=None,
@@ -689,35 +837,35 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     tests=1,
                     failures=1,
-                    time=testsuite.children[0].stats.time,
+                    time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
                 ),
                 failure=Failure(
                     message=None,
                     description="foo/bar.baz:0:0: An error",
                 ),
             ),
-            Testcase(
+            _Testcase(
                 name="foo session/foo part",
                 stats=Stats(
                     tests=1,
-                    time=testsuite.children[1].stats.time,
+                    time=testsuite.children[1].stats.time,  # type: ignore[union-attr]
                 ),
             ),
-            Testcase(
+            _Testcase(
                 name="foo session/bar part",
                 stats=Stats(
                     failures=1,
                     tests=1,
-                    time=testsuite.children[2].stats.time,
+                    time=testsuite.children[2].stats.time,  # type: ignore[union-attr]
                 ),
                 failure=Failure(
                     message=None,
@@ -749,16 +897,16 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     tests=1,
                     failures=1,
-                    time=testsuite.children[0].stats.time,
+                    time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
                 ),
                 failure=Failure(
                     message=None,
@@ -790,16 +938,16 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     tests=1,
                     errors=1,
-                    time=testsuite.children[0].stats.time,
+                    time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
                 ),
                 error=Error(
                     message=None,
@@ -835,16 +983,16 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     tests=1,
                     skipped=1,
-                    time=testsuite.children[0].stats.time,
+                    time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
                 ),
                 skipped=Skipped(message=None),
             ),

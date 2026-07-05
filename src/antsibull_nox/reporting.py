@@ -23,6 +23,7 @@ import typing as t
 from pathlib import Path
 
 import nox
+import nox.command
 import nox.sessions
 
 from .messages import Level, Message
@@ -66,9 +67,14 @@ class Status(enum.Enum):
     ABORTED = 4
 
 
-# The type of nox' internal "skip session" exception.
-# That this still exists is validated in tests/unit/test_reporting.py.
-_NoxSessionSkip: type = getattr(nox.sessions, "_SessionSkip", Status)
+class _FakeException(Exception):
+    pass
+
+
+# The type of nox' internal "skip session" and "quit session" exceptions.
+# That these still exist and are being used is validated in tests/unit/test_reporting.py.
+_NoxSessionSkip: type = getattr(nox.sessions, "_SessionSkip", _FakeException)
+_NoxSessionQuit: type = getattr(nox.sessions, "_SessionQuit", _FakeException)
 
 
 def _get_status_from_exception(value: BaseException | None) -> Status:
@@ -79,6 +85,25 @@ def _get_status_from_exception(value: BaseException | None) -> Status:
     if isinstance(value, KeyboardInterrupt):
         return Status.ABORTED
     return Status.FAILED
+
+
+def _is_test_failure(value: BaseException | None) -> bool:
+    """
+    Decide whether the exception is a test failure that can potentially
+    be eaten and raised later.
+    """
+    if value is None:
+        return False
+    # In case the session is skipped or aborted (Ctrl+C), do not
+    # do not keep going.
+    if isinstance(value, (_NoxSessionSkip, KeyboardInterrupt)):
+        return False
+    # In case session.error() is called or session.run() fails,
+    # keep going.
+    if isinstance(value, (_NoxSessionQuit, nox.command.CommandFailed)):
+        return True
+    # Any other exception type:
+    return False
 
 
 @dataclasses.dataclass
@@ -138,12 +163,12 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         self._start = _make_timestamp()
         return self
 
-    def __exit__(
+    def __exit__(  # type: ignore[exit-return]
         self,
         type_: type[BaseException] | None,
         value: BaseException | None,
         traceback: TracebackType | None,
-    ) -> t.Literal[False]:
+    ) -> bool:
         assert self._open
         assert self._start is not None
         self._open = False
@@ -301,14 +326,51 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         return result
 
 
+def _get_message(error: BaseException) -> str | None:
+    if isinstance(error, _NoxSessionQuit):
+        return str(error)
+    if isinstance(error, nox.command.CommandFailed):
+        return error.reason
+    return None
+
+
+def _combine_errors(errors: list[BaseException]) -> BaseException:
+    assert len(errors) > 0
+    if len(errors) > 1:
+        messages = [
+            (message or "(unknown)")
+            for error in errors
+            if (message := _get_message(error)) is not None
+        ]
+        if len(messages) == len(errors):
+            new_message = "; ".join(messages)
+            # We use _FakeException if we cannot import _SessionQuit
+            if _NoxSessionQuit is not _FakeException and any(
+                not isinstance(error, nox.command.CommandFailed) for error in errors
+            ):
+                try:
+                    return _NoxSessionQuit(new_message)
+                except Exception:  # pylint: disable=broad-exception-caught
+                    # If for some reason the implementation of _SessionQuit
+                    # changed and trying to create the instance results in
+                    # some error, we call back to using CommandFailed.
+                    pass  # parma: no cover
+            return nox.command.CommandFailed(new_message)
+    return errors[0]
+
+
 class PartReporter(BaseReporter):
     """
     Reporter for a session's part.
     """
 
-    def __init__(self, *, owner: SessionReporter, title: str) -> None:
+    def __init__(
+        self, *, owner: SessionReporter, title: str, continue_on_error: bool = False
+    ) -> None:
         super().__init__(title=title)
         self.owner = owner
+        self.continue_on_error = continue_on_error
+        self._error: BaseException | None = None
 
     def __enter__(self) -> t.Self:
         super().__enter__()
@@ -320,9 +382,14 @@ class PartReporter(BaseReporter):
         type_: type[BaseException] | None,
         value: BaseException | None,
         traceback: TracebackType | None,
-    ) -> t.Literal[False]:
+    ) -> bool:
         super().__exit__(type_, value, traceback)
         self.owner.current_part = None
+        if self.continue_on_error and value is not None and _is_test_failure(value):
+            # Store and then "eat" exception, so it can be re-raised
+            # at the end of the session.
+            self.owner._collected_errors.append(value)
+            return True
         return False
 
 
@@ -341,6 +408,7 @@ class SessionReporter(BaseReporter):
         self.parts: list[PartReporter] = []
         self.current_part: PartReporter | None = None
         self.url = url
+        self._collected_errors: list[BaseException] = []
 
     def __exit__(
         self,
@@ -355,14 +423,20 @@ class SessionReporter(BaseReporter):
                     f"PartReporter {part.title!r} still active"
                     f" at end of SessionReporter {self.title!r}"
                 )
+        if self._collected_errors:
+            raise _combine_errors(self._collected_errors)
         return False
 
-    def get_part_reporter(self, title: str) -> PartReporter:
+    def get_part_reporter(
+        self, title: str, *, continue_on_error: bool = False
+    ) -> PartReporter:
         """
         Given a part's title, return a part reporter for it.
         """
 
-        part_reporter = PartReporter(owner=self, title=title)
+        part_reporter = PartReporter(
+            owner=self, title=title, continue_on_error=continue_on_error
+        )
         self.parts.append(part_reporter)
         return part_reporter
 

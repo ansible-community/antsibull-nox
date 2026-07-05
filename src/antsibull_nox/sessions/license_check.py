@@ -56,14 +56,16 @@ def add_license_check(
     def license_check(session: nox.Session) -> None:
         with get_session_reporter(session) as reporter:
             if run_reuse:
-                with reporter.get_part_reporter("reuse"):
+                with reporter.get_part_reporter("reuse", continue_on_error=True):
                     session.run("reuse", "lint")
                     # pylint: disable-next=fixme
                     # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
                     # pylint: disable-next=fixme
                     # TODO: use JSON output and parse as messages somehow
             if run_license_check:
-                with reporter.get_part_reporter("license-check") as sr:
+                with reporter.get_part_reporter(
+                    "license-check", continue_on_error=True
+                ) as sr:
                     run_bare_script(
                         session,
                         "license-check",

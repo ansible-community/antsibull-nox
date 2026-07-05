@@ -683,7 +683,7 @@ def add_formatters(
                         target_is_directory=True,
                     )
             if run_isort:
-                with reporter.get_part_reporter("isort") as sr:
+                with reporter.get_part_reporter("isort", continue_on_error=True) as sr:
                     _execute_isort(
                         session,
                         root_dir=root_dir,
@@ -696,7 +696,7 @@ def add_formatters(
                         reporter=sr,
                     )
             if run_black or run_black_modules:
-                with reporter.get_part_reporter("black") as sr:
+                with reporter.get_part_reporter("black", continue_on_error=True) as sr:
                     _execute_black(
                         session,
                         run_check=run_check,
@@ -709,7 +709,9 @@ def add_formatters(
                         reporter=sr,
                     )
             if run_ruff_format:
-                with reporter.get_part_reporter("ruff format") as sr:
+                with reporter.get_part_reporter(
+                    "ruff format", continue_on_error=True
+                ) as sr:
                     _execute_ruff_format(
                         session,
                         run_check=run_check,
@@ -720,7 +722,9 @@ def add_formatters(
                         reporter=sr,
                     )
             if run_ruff_autofix:
-                with reporter.get_part_reporter("ruff autofix") as sr:
+                with reporter.get_part_reporter(
+                    "ruff autofix", continue_on_error=True
+                ) as sr:
                     _execute_ruff_autofix(
                         session,
                         root_dir=root_dir,
@@ -1083,13 +1087,15 @@ def add_codeqa(  # noqa: C901
                 if not prepared_collections:
                     session.warn("Skipping pylint...")
             if run_ruff_check and prepared_collections:
-                with reporter.get_part_reporter("ruff check") as sr:
+                with reporter.get_part_reporter(
+                    "ruff check", continue_on_error=True
+                ) as sr:
                     execute_ruff_check(session, prepared_collections, reporter=sr)
             if run_flake8:
-                with reporter.get_part_reporter("flake8") as sr:
+                with reporter.get_part_reporter("flake8", continue_on_error=True) as sr:
                     execute_flake8(session, reporter=sr)
             if run_pylint and prepared_collections:
-                with reporter.get_part_reporter("pylint") as sr:
+                with reporter.get_part_reporter("pylint", continue_on_error=True) as sr:
                     execute_pylint(session, prepared_collections, reporter=sr)
 
     codeqa.__doc__ = compose_description(
@@ -1258,11 +1264,15 @@ def add_yamllint(
     def yamllint(session: nox.Session) -> None:
         with get_session_reporter(session) as reporter:
             if run_yamllint:
-                with reporter.get_part_reporter("files") as sr:
+                with reporter.get_part_reporter("files", continue_on_error=True) as sr:
                     execute_yamllint(session, reporter=sr)
-                with reporter.get_part_reporter("plugins") as sr:
+                with reporter.get_part_reporter(
+                    "plugins", continue_on_error=True
+                ) as sr:
                     execute_plugin_yamllint(session, reporter=sr)
-                with reporter.get_part_reporter("extra-docs") as sr:
+                with reporter.get_part_reporter(
+                    "extra-docs", continue_on_error=True
+                ) as sr:
                     execute_extra_docs_yamllint(session, reporter=sr)
 
     yamllint.__doc__ = compose_description(
@@ -1429,7 +1439,7 @@ def add_typing(
             if not prepared_collections:
                 session.warn("Skipping mypy...")
             if run_mypy and prepared_collections:
-                with reporter.get_part_reporter("mypy") as sr:
+                with reporter.get_part_reporter("mypy", continue_on_error=True) as sr:
                     execute_mypy(session, prepared_collections, reporter=sr)
 
     typing.__doc__ = compose_description(

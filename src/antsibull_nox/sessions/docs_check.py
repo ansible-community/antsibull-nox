@@ -217,13 +217,17 @@ def add_docs_check(
                 install_out_of_tree=True,
             )
             if run_extra_checks:
-                with reporter.get_part_reporter("extra-checks") as sr:
+                with reporter.get_part_reporter(
+                    "extra-checks", continue_on_error=True
+                ) as sr:
                     execute_extra_checks(session, sr)
-            if not prepared_collections:
-                session.warn("Skipping antsibull-docs...")
             if prepared_collections:
-                with reporter.get_part_reporter("antsibull-docs") as sr:
+                with reporter.get_part_reporter(
+                    "antsibull-docs", continue_on_error=True
+                ) as sr:
                     execute_antsibull_docs(session, prepared_collections, sr)
+            else:
+                session.warn("Skipping antsibull-docs...")
 
     docs_check.__doc__ = "Run 'antsibull-docs lint-collection-docs'"
     nox.session(
