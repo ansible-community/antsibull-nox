@@ -87,6 +87,7 @@ class Testsuite:
     """
 
     name: str
+    stats: Stats | None = None  # only used for parsing!
     children: list[Testsuite | Testcase] = dataclasses.field(default_factory=list)
     timestamp: datetime.datetime | None = None
     url: str | None = None
