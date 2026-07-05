@@ -38,7 +38,16 @@ def _create_testsuite_1() -> _Testsuite:
         second=59,
         tzinfo=datetime.timezone.utc,
     )
-    result.children.append(_Testsuite(name="world"))
+    result.stats = Stats(
+        disabled=15,
+        errors=3,
+        failures=1,
+        skipped=2,
+        tests=2,
+        assertions=2,
+        time=datetime.timedelta(seconds=32),
+    )
+    result.children.append(_Testsuite(name="world", stats=Stats()))
     result.children.append(child := _Testcase(name="test case one"))
     child.stats.tests = 1
     child.stats.assertions = 2
@@ -67,7 +76,7 @@ def _create_testsuite_1() -> _Testsuite:
 
 
 def _create_testsuite_2() -> _Testsuite:
-    result = _Testsuite(name="test suite two")
+    result = _Testsuite(name="test suite two", stats=Stats())
     result.url = "https://example.com/"
     return result
 
@@ -128,7 +137,7 @@ DESERIALIZATION_TEST_CASES: list[tuple[str, JUnitXML]] = [
             name="hello world",
             stats=Stats(),
             testsuites=[
-                _Testsuite(name="hello"),
+                _Testsuite(name="hello", stats=Stats()),
             ],
         ),
     ),
@@ -187,7 +196,7 @@ e2
                 time=datetime.timedelta(seconds=32),
             ),
             testsuites=[
-                _Testsuite(name="hello"),
+                _Testsuite(name="hello", stats=Stats()),
                 _create_testsuite_1(),
                 _create_testsuite_2(),
             ],

@@ -275,6 +275,7 @@ class _TestsuiteParser(_ElementParser):
     def __init__(self, attrs: dict[str, str]) -> None:
         super().__init__("testsuite")
         self.suite_name = _required("testsuite", attrs, "name")
+        self.stats = _parse_stats(attrs)
         self.children: list[Testsuite | Testcase] = []
         self.timestamp = _parse_timestamp(attrs.get("timestamp"))
         self.url = attrs.get("url")
@@ -285,6 +286,7 @@ class _TestsuiteParser(_ElementParser):
         """
         return Testsuite(
             name=self.suite_name,
+            stats=self.stats,
             children=self.children,
             timestamp=self.timestamp,
             url=self.url,
