@@ -34,9 +34,9 @@ from antsibull_nox.utils._junit import (
     Failure,
     Skipped,
     Stats,
-    Testcase,
-    Testsuite,
 )
+from antsibull_nox.utils._junit import Testcase as _Testcase
+from antsibull_nox.utils._junit import Testsuite as _Testsuite
 
 from .utils import set_environ
 
@@ -260,7 +260,7 @@ def test_BaseReporter() -> None:
     )
     assert r._get_bot_report() == []
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo", stats=Stats(tests=1, time=testcase.stats.time)
     )
 
@@ -297,7 +297,7 @@ def test_BaseReporter() -> None:
         },
     ]
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, errors=1, time=testcase.stats.time),
         error=Error("The test case was forcefully aborted", type="aborted"),
@@ -358,7 +358,7 @@ def test_BaseReporter() -> None:
     )
     assert r._get_bot_report() == []
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, time=testcase.stats.time),
         stdout="foo/bar.baz:0:0: A warning",
@@ -406,7 +406,7 @@ def test_BaseReporter() -> None:
         },
     ]
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, failures=1, time=testcase.stats.time),
         failure=Failure(None, description="foo/bar.baz:0:0: An error"),
@@ -453,7 +453,7 @@ def test_BaseReporter() -> None:
         },
     ]
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, failures=1, time=testcase.stats.time),
         failure=Failure(None, description="$ foo bar"),
@@ -497,7 +497,7 @@ def test_BaseReporter() -> None:
         },
     ]
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, failures=1, time=testcase.stats.time),
         failure=Failure(
@@ -526,7 +526,7 @@ def test_BaseReporter() -> None:
     )
     assert r._get_bot_report() == []
     testcase = r._get_junit_testcase()
-    assert testcase == Testcase(
+    assert testcase == _Testcase(
         name="foo",
         stats=Stats(tests=1, skipped=1, time=testcase.stats.time),
         skipped=Skipped(None),
@@ -587,7 +587,7 @@ def test_SessionReporter() -> None:
 
     assert session_reporter._get_bot_report_file() is None
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[],
@@ -623,11 +623,11 @@ def test_SessionReporter() -> None:
         ],
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session/foo part",
                 stats=Stats(
                     failures=1,
@@ -673,18 +673,18 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session/foo part",
                 stats=Stats(
                     tests=1,
                     time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
                 ),
             ),
-            Testcase(
+            _Testcase(
                 name="foo session/bar part",
                 stats=Stats(
                     failures=1,
@@ -723,11 +723,11 @@ def test_SessionReporter() -> None:
 
     assert session_reporter._get_bot_report_file() is None
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     tests=1,
@@ -771,11 +771,11 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     failures=1,
@@ -837,11 +837,11 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     tests=1,
@@ -853,14 +853,14 @@ def test_SessionReporter() -> None:
                     description="foo/bar.baz:0:0: An error",
                 ),
             ),
-            Testcase(
+            _Testcase(
                 name="foo session/foo part",
                 stats=Stats(
                     tests=1,
                     time=testsuite.children[1].stats.time,  # type: ignore[union-attr]
                 ),
             ),
-            Testcase(
+            _Testcase(
                 name="foo session/bar part",
                 stats=Stats(
                     failures=1,
@@ -897,11 +897,11 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     tests=1,
@@ -938,11 +938,11 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     tests=1,
@@ -983,11 +983,11 @@ def test_SessionReporter() -> None:
         "verified": True,
     }
     testsuite = session_reporter._get_junit_testsuite()
-    assert testsuite == Testsuite(
+    assert testsuite == _Testsuite(
         name="foo session",
         timestamp=session_reporter.timestamp,
         children=[
-            Testcase(
+            _Testcase(
                 name="foo session",
                 stats=Stats(
                     tests=1,
