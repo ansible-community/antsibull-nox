@@ -135,7 +135,9 @@ def create_temp_directory(basename: str) -> Path:
     return path
 
 
-def copy_directory_tree_into(source: Path, destination: Path) -> None:
+def copy_directory_tree_into(
+    source: Path, destination: Path, *, exclusions: Sequence[Path] | None = None
+) -> None:
     """
     Copy the directory tree from ``source`` into the tree at ``destination``.
 
@@ -143,11 +145,20 @@ def copy_directory_tree_into(source: Path, destination: Path) -> None:
     """
     if not source.is_dir():
         return
+    exclusions_set: set[Path] = set()
+    if exclusions:
+        exclusions_set.update(exclusions)
     destination.mkdir(parents=True, exist_ok=True)
-    for root, _, files in path_walk(source):
+    for root, directories, files in path_walk(source, top_down=bool(exclusions_set)):
         path = destination / root.relative_to(source)
         path.mkdir(exist_ok=True)
+        if exclusions_set:
+            for directory in list(directories):
+                if root / directory in exclusions_set:
+                    directories.remove(directory)
         for file in files:
+            if root / file in exclusions_set:
+                continue
             dest = path / file
             remove_path(dest)
             shutil.copy2(root / file, dest, follow_symlinks=False)
