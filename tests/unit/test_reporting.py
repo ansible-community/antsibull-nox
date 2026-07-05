@@ -666,7 +666,8 @@ def test_SessionReporter() -> None:
         timestamp=session_reporter.timestamp,
         children=[
             _Testcase(
-                name="foo session/foo part",
+                name="foo part",
+                classname="foo session",
                 stats=Stats(
                     failures=1,
                     tests=1,
@@ -716,14 +717,16 @@ def test_SessionReporter() -> None:
         timestamp=session_reporter.timestamp,
         children=[
             _Testcase(
-                name="foo session/foo part",
+                name="foo part",
+                classname="foo session",
                 stats=Stats(
                     tests=1,
                     time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
                 ),
             ),
             _Testcase(
-                name="foo session/bar part",
+                name="bar part",
+                classname="foo session",
                 stats=Stats(
                     failures=1,
                     tests=1,
@@ -767,6 +770,7 @@ def test_SessionReporter() -> None:
         children=[
             _Testcase(
                 name="foo session",
+                classname="foo session",
                 stats=Stats(
                     tests=1,
                     time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
@@ -815,6 +819,7 @@ def test_SessionReporter() -> None:
         children=[
             _Testcase(
                 name="foo session",
+                classname="foo session",
                 stats=Stats(
                     failures=1,
                     tests=1,
@@ -881,6 +886,7 @@ def test_SessionReporter() -> None:
         children=[
             _Testcase(
                 name="foo session",
+                classname="foo session",
                 stats=Stats(
                     tests=1,
                     failures=1,
@@ -892,14 +898,16 @@ def test_SessionReporter() -> None:
                 ),
             ),
             _Testcase(
-                name="foo session/foo part",
+                name="foo part",
+                classname="foo session",
                 stats=Stats(
                     tests=1,
                     time=testsuite.children[1].stats.time,  # type: ignore[union-attr]
                 ),
             ),
             _Testcase(
-                name="foo session/bar part",
+                name="bar part",
+                classname="foo session",
                 stats=Stats(
                     failures=1,
                     tests=1,
@@ -941,6 +949,7 @@ def test_SessionReporter() -> None:
         children=[
             _Testcase(
                 name="foo session",
+                classname="foo session",
                 stats=Stats(
                     tests=1,
                     failures=1,
@@ -982,6 +991,7 @@ def test_SessionReporter() -> None:
         children=[
             _Testcase(
                 name="foo session",
+                classname="foo session",
                 stats=Stats(
                     tests=1,
                     errors=1,
@@ -1027,6 +1037,7 @@ def test_SessionReporter() -> None:
         children=[
             _Testcase(
                 name="foo session",
+                classname="foo session",
                 stats=Stats(
                     tests=1,
                     skipped=1,
@@ -1193,7 +1204,7 @@ def test_Reporter(tmp_path: Path) -> None:
 <testsuites name="antsibull-nox" timestamp="2026-01-15T13:14:16+00:00" failures="1" tests="1" time="42.123">
   <testsuite name="foo" timestamp="2026-01-15T13:14:16+00:00"/>
   <testsuite name="bar" timestamp="2026-01-15T13:14:18+00:00" failures="1" tests="1" time="42.123">
-    <testcase name="bar" failures="1" tests="1" time="42.123">
+    <testcase name="bar" classname="bar" failures="1" tests="1" time="42.123">
       <failure type="failure">foo/bar.baz:0:0: An error</failure>
     </testcase>
   </testsuite>
