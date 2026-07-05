@@ -171,6 +171,7 @@ class Testcase:
     """
 
     name: str
+    classname: str | None = None
 
     stats: Stats = dataclasses.field(default_factory=Stats)
 
@@ -185,6 +186,8 @@ class Testcase:
     def _serialize(self) -> tuple[_Node, Stats]:
         node = _Node("testcase")
         node.set("name", self.name)
+        if self.classname is not None:
+            node.set("classname", self.classname)
         if self.skipped:
             node.append(self.skipped._serialize())  # pylint: disable=protected-access
         if self.failure:
