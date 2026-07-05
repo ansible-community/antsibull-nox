@@ -672,11 +672,27 @@ def get_session_reporter(
     return get_reporter().get_session_reporter(session, url=url)
 
 
+def is_writing_bot_jsons() -> bool:
+    """
+    Whether the reporter will write ansibullbot JSON files.
+    """
+    return bool(os.environ.get(_BOT_DIRECTORY_ENV_VAR))
+
+
+def is_writing_junit_xml() -> bool:
+    """
+    Whether the reporter will write JUnit XML files.
+    """
+    return bool(os.environ.get(_JUNIT_XML_PATH_ENV_VAR))
+
+
 __all__ = (
     "PartReporter",
     "SessionReporter",
     "Reporter",
     "get_reporter",
     "get_session_reporter",
+    "is_writing_bot_jsons",
+    "is_writing_junit_xml",
     "setup",
 )
