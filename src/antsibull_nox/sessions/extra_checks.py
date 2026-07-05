@@ -162,16 +162,24 @@ def add_extra_checks(
     def extra_checks(session: nox.Session) -> None:
         with get_session_reporter(session) as reporter:
             if run_no_unwanted_files:
-                with reporter.get_part_reporter("no-unwanted-files") as sr:
+                with reporter.get_part_reporter(
+                    "no-unwanted-files", continue_on_error=True
+                ) as sr:
                     execute_no_unwanted_files(session, sr)
             if run_action_groups:
-                with reporter.get_part_reporter("action-groups") as sr:
+                with reporter.get_part_reporter(
+                    "action-groups", continue_on_error=True
+                ) as sr:
                     execute_action_groups(session, sr)
             if run_no_trailing_whitespace:
-                with reporter.get_part_reporter("no-trailing-whitespace") as sr:
+                with reporter.get_part_reporter(
+                    "no-trailing-whitespace", continue_on_error=True
+                ) as sr:
                     execute_no_trailing_whitespace(session, sr)
             if run_avoid_characters:
-                with reporter.get_part_reporter("avoid-characters") as sr:
+                with reporter.get_part_reporter(
+                    "avoid-characters", continue_on_error=True
+                ) as sr:
                     execute_avoid_characters(session, sr)
 
     extra_checks.__doc__ = compose_description(

@@ -1,0 +1,4 @@
+minor_changes:
+  - "Run all tests in built-in sessions ``extra-checks``, ``docs-check``, ``license-check``, ``formatters``, ``codeqa``, and ``yamllint``,
+     even if earlier tests in the same session fail
+     (https://github.com/ansible-community/antsibull-nox/issues/228, https://github.com/ansible-community/antsibull-nox/pull/229)."
