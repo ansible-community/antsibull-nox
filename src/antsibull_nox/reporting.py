@@ -579,10 +579,10 @@ class Reporter:
 
     @staticmethod
     def _write_test_results_to_dir(
-        output_dir: Path, name: str, extension: str, content: str
+        output_dir: Path, name: str, extension: str, content: str, *, prefix: str = ""
     ):
         Reporter._write_test_results(
-            output_dir / f"antsibull-nox-{name}.{extension}", content
+            output_dir / f"{prefix}antsibull-nox-{name}.{extension}", content
         )
 
     def _get_bot_reports(self) -> dict[str, BotFile]:
@@ -599,7 +599,11 @@ class Reporter:
             bot_content = json.dumps(
                 content, sort_keys=True, indent=4, separators=(", ", ": ")
             )
-            self._write_test_results_to_dir(output_dir, file, "json", bot_content)
+            # The collection bot will only consider files with 'ansible-test-' in it,
+            # and the collection AZP scripts assume that the filename starts with it.
+            self._write_test_results_to_dir(
+                output_dir, file, "json", bot_content, prefix="ansible-test-"
+            )
 
     def _get_junit_xml(self) -> str:
         testsuites = []
