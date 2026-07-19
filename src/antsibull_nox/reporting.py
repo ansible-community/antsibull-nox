@@ -293,8 +293,12 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
             }
         ]
 
-    def _get_junit_testcase(self, *, prefix: str | None = None) -> _junit.Testcase:
-        result = _junit.Testcase(name=f"{prefix or ''}{self.title}")
+    def _get_junit_testcase(
+        self, *, classname: str | None = None, prefix: str | None = None
+    ) -> _junit.Testcase:
+        result = _junit.Testcase(
+            name=f"{prefix or ''}{self.title}", classname=classname
+        )
         result.stats.time = self._duration
         result.stats.tests = 1
         status = self.effective_status
@@ -474,12 +478,11 @@ class SessionReporter(BaseReporter):
         )
         first_case: _junit.Testcase | None = None
         if not self.is_empty:
-            first_case = self._get_junit_testcase()
+            first_case = self._get_junit_testcase(classname=self.title)
             result.children.append(first_case)
-        prefix = f"{self.title}/"
         for part in self.parts:
             # pylint: disable-next=protected-access
-            testcase = part._get_junit_testcase(prefix=prefix)
+            testcase = part._get_junit_testcase(classname=self.title)
             result.children.append(testcase)
             if (
                 first_case
@@ -493,6 +496,7 @@ class SessionReporter(BaseReporter):
                 result.children.append(
                     _junit.Testcase(
                         name=self.title,
+                        classname=self.title,
                         stats=_junit.Stats(tests=1, failures=1, time=self._duration),
                         failure=_junit.Failure(
                             message=None,
@@ -504,6 +508,7 @@ class SessionReporter(BaseReporter):
                 result.children.append(
                     _junit.Testcase(
                         name=self.title,
+                        classname=self.title,
                         stats=_junit.Stats(tests=1, errors=1, time=self._duration),
                         error=_junit.Error(
                             message=None,
@@ -515,6 +520,7 @@ class SessionReporter(BaseReporter):
                 result.children.append(
                     _junit.Testcase(
                         name=self.title,
+                        classname=self.title,
                         stats=_junit.Stats(tests=1, skipped=1, time=self._duration),
                         skipped=_junit.Skipped(message=None),
                     )
@@ -672,11 +678,27 @@ def get_session_reporter(
     return get_reporter().get_session_reporter(session, url=url)
 
 
+def is_writing_bot_jsons() -> bool:
+    """
+    Whether the reporter will write ansibullbot JSON files.
+    """
+    return bool(os.environ.get(_BOT_DIRECTORY_ENV_VAR))
+
+
+def is_writing_junit_xml() -> bool:
+    """
+    Whether the reporter will write JUnit XML files.
+    """
+    return bool(os.environ.get(_JUNIT_XML_PATH_ENV_VAR))
+
+
 __all__ = (
     "PartReporter",
     "SessionReporter",
     "Reporter",
     "get_reporter",
     "get_session_reporter",
+    "is_writing_bot_jsons",
+    "is_writing_junit_xml",
     "setup",
 )

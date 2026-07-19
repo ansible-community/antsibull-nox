@@ -163,6 +163,27 @@ def _process_coverage_data(
         )
 
 
+def _run_ansible_test_env_setup(
+    session: nox.Session, *, copy_repo_structure: bool
+) -> None:
+    env_env = get_ansible_test_env()
+    if not copy_repo_structure:
+        # Work around bug in 'ansible-test env's AZP detection:
+        # https://github.com/ansible/ansible/issues/87052#issuecomment-4595624857
+        env_env["SYSTEM_COLLECTIONURI"] = ""
+    env_command = [
+        "ansible-test",
+        "env",
+        "--dump",
+        "--show",
+        "-v",
+    ] + get_ansible_test_color_flag(session)
+    timeout = os.environ.get(_TIMEOUT_ENV_VAR)
+    if timeout:
+        env_command.extend(["--timeout", timeout])
+    session.run(*env_command, env=env_env)
+
+
 # NOTE: This is publicly documented API!
 # Any change to the API must not be breaking, and must be
 # updated in docs/reference.md!
@@ -242,33 +263,14 @@ def add_ansible_test_session(
                 if callback_before:
                     callback_before()
 
-                env_env = get_ansible_test_env()
-                if not copy_repo_structure:
-                    # Work around bug in 'ansible-test env's AZP detection:
-                    # https://github.com/ansible/ansible/issues/87052#issuecomment-4595624857
-                    env_env["SYSTEM_COLLECTIONURI"] = ""
-                env_command = [
-                    "ansible-test",
-                    "env",
-                    "--dump",
-                    "--show",
-                    "-v",
-                ] + get_ansible_test_color_flag(session)
-                timeout = os.environ.get(_TIMEOUT_ENV_VAR)
-                if timeout:
-                    env_command.extend(["--timeout", timeout])
-                session.run(*env_command, env=env_env)
+                _run_ansible_test_env_setup(
+                    session, copy_repo_structure=copy_repo_structure
+                )
+
                 # pylint: disable-next=fixme
                 # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
                 # pylint: disable-next=fixme
                 # TODO: use ansible-test's bot and junit output to extract messages
-                #       WARNING: when a timeout happens, this isn't reported in the junit output,
-                #                and ansible-test exits with the same exit code as a regular test
-                #                failure (which with nox right now we cannot catch).
-                #                Also the junit output probably does not contain information on
-                #                failed runme.sh tests.
-                #                So this won't help a bit if we can't access the exit code,
-                #                for which we need https://github.com/wntrblm/nox/pull/1124.
 
                 command = ["ansible-test"]
                 for param in ansible_test_params:
