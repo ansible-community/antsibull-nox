@@ -1177,7 +1177,7 @@ def test_Reporter(tmp_path: Path) -> None:
 
                 files = list(bot_dir.iterdir())
                 assert len(files) == 1
-                assert files[0].name == "antsibull-nox-bar.json"
+                assert files[0].name == "ansible-test-antsibull-nox-bar.json"
                 assert files[0].read_text() == (
                     """{\n"""
                     """    "docs": "", \n"""
