@@ -23,6 +23,7 @@ run_black = true
 run_ruff_format = true
 run_ruff_autofix = true
 run_ruff_check = true
+ruff_config = "ruff.toml"
 run_flake8 = true
 run_pylint = true
 run_yamllint = true
