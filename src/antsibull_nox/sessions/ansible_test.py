@@ -38,6 +38,7 @@ from ..paths.utils import copy_directory_tree_into
 from ..python.versions import get_installed_python_versions
 from ..reporting import get_session_reporter
 from ..utils import Version
+from ..utils.nox import is_nox_newer_than
 from .collections import prepare_collections
 from .utils import (
     IN_CI,
@@ -55,6 +56,8 @@ from .utils.values import (
 if t.TYPE_CHECKING:  # pragma: no cover
     DevelLikeBranch = tuple[str | None, str]
     NeverAlwaysInCI = t.Literal["never", "always", "in-ci"]
+
+    from ..ansible import AnsibleCoreInfo
 
 _ANSIBLE_TEST_PREFER_PODMAN_ENV_VAR = "ANSIBLE_TEST_PREFER_PODMAN"
 _COVERAGE_DESTINATION_ENV_VAR = "ANTSIBULL_NOX_COVERAGE_DESTINATION"
@@ -161,6 +164,31 @@ def _process_coverage_data(
             "--requirements",
             *group_by,
         )
+
+
+def _pick_python_version(core_info: AnsibleCoreInfo) -> str | list[str]:
+    if is_nox_newer_than(Version(2026, 8)):
+        # Python ranges need https://github.com/wntrblm/nox/pull/1086,
+        # which appears after 2026.7.11.
+        min_py = min(core_info.controller_python_versions)
+        max_py_p1 = min(core_info.controller_python_versions).next_minor_version()
+        return f">={min_py},<{max_py_p1}"
+
+    # Compatibility for older nox versions: figure out the installed Python
+    # versions, and pick the largest one installed that is supported by
+    # ansible-core on the controller side.
+    all_versions = get_installed_python_versions()
+
+    installed_versions = [
+        version
+        for version in core_info.controller_python_versions
+        if version in all_versions
+    ]
+    # If there's none, simply pick the largest one supported by ansible-core
+    # on the controller side.
+    python = max(installed_versions or core_info.controller_python_versions)
+    python_versions = [python]
+    return [str(python_version) for python_version in python_versions]
 
 
 # NOTE: This is publicly documented API!
@@ -299,23 +327,15 @@ def add_ansible_test_session(
                     cwd / "tests" / "output",
                 )
 
-    # Determine Python version(s)
+    # Determine Python version (range)
     core_info = get_ansible_core_info(parsed_ansible_core_version)
-    all_versions = get_installed_python_versions()
-
-    installed_versions = [
-        version
-        for version in core_info.controller_python_versions
-        if version in all_versions
-    ]
-    python = max(installed_versions or core_info.controller_python_versions)
-    python_versions = [python]
+    python_arg = _pick_python_version(core_info)
 
     run_ansible_test.__doc__ = description
     nox.session(
         name=name,
         default=default,
-        python=[str(python_version) for python_version in python_versions],
+        python=python_arg,
     )(run_ansible_test)
 
     if register_name:
@@ -326,7 +346,7 @@ def add_ansible_test_session(
                 if ansible_core_branch_name is not None
                 else str(parsed_ansible_core_version)
             ),
-            "python": " ".join(str(python) for python in python_versions),
+            "python": str(max(core_info.controller_python_versions)),
         }
         if register_extra_data:
             data.update(register_extra_data)

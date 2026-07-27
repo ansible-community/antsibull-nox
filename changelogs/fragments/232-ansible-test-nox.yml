@@ -1,0 +1,4 @@
+minor_changes:
+  - "When using nox 2026.X.Y or newer, ansible-test sessions get a range of supported Python versions assigned instead of a single version that's determined from the supported versions and the found Python interpreters.
+     This removes the confusing extra Python version from the session names, and avoids having to re-implement a Python interpreter discovery method similar to nox's
+     (https://github.com/ansible-community/antsibull-nox/pull/232)."
