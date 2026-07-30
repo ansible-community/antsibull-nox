@@ -1,0 +1,2 @@
+minor_changes:
+  - "The action and shared workflows now pin all GitHub Actions that are not under direct control of github.com/ansible-community (https://github.com/ansible-community/antsibull-nox/pull/236)."
