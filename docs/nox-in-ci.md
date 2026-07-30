@@ -54,7 +54,7 @@ jobs:
     name: "Run nox"
     steps:
       - name: Check out collection
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Run nox
