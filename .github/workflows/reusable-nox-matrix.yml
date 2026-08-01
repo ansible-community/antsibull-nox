@@ -258,7 +258,7 @@ jobs:
           set_output("upload-codecov", json.dumps(upload_codecov))
           set_output("extra-args", " ".join(extra_args))
       - name: Run nox
-        uses: ansible-community/antsibull-nox@main
+        uses: $/
         id: generate-matrix
         with:
           change-detection: ${{ steps.determine-parameters.outputs.change-detection }}
@@ -319,7 +319,7 @@ jobs:
       - name: Run nox
         if: >-
           !matrix.skip
-        uses: ansible-community/antsibull-nox@main
+        uses: $/
         with:
           change-detection: ${{ needs.create-matrixes.outputs.change-detection }}
           change-detection-base-branch: ${{ needs.create-matrixes.outputs.change-detection-base-branch }}
@@ -385,7 +385,7 @@ jobs:
       - name: Run nox
         if: >-
           !matrix.skip
-        uses: ansible-community/antsibull-nox@main
+        uses: $/
         with:
           change-detection: ${{ needs.create-matrixes.outputs.change-detection }}
           change-detection-base-branch: ${{ needs.create-matrixes.outputs.change-detection-base-branch }}
@@ -452,7 +452,7 @@ jobs:
       - name: Run nox
         if: >-
           !matrix.skip
-        uses: ansible-community/antsibull-nox@main
+        uses: $/
         with:
           allow-unstable-changed: ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
           change-detection: ${{ needs.create-matrixes.outputs.change-detection }}
@@ -532,7 +532,7 @@ jobs:
       - name: Run nox
         if: >-
           !matrix.skip
-        uses: ansible-community/antsibull-nox@main
+        uses: $/
         with:
           sessions: ${{ matrix.name }}
           working-directory: ${{ inputs.collection-root }}

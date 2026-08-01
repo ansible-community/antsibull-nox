@@ -130,7 +130,7 @@ jobs:
           ${{ inputs.pre-test-cmd }}
         working-directory: ${{ inputs.collection-root }}
       - name: Run nox
-        uses: ansible-community/antsibull-nox@main
+        uses: $/
         with:
           change-detection: ${{ steps.determine-parameters.outputs.change-detection }}
           change-detection-base-branch: ${{ steps.determine-parameters.outputs.change-detection-base-branch }}
