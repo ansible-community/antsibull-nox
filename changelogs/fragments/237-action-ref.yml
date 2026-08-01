@@ -1,0 +1,2 @@
+minor_changes:
+  - "The shared workflows now pin the action from this repository by using a `new GitHub Action reference syntax <https://github.blog/changelog/2026-07-30-reference-same-repository-actions-with-self-repository-syntax/>`__ (https://github.com/ansible-community/antsibull-nox/pull/237)."
