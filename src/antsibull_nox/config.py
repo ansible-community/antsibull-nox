@@ -17,7 +17,7 @@ import pydantic as p
 
 from antsibull_nox.ee_config import create_ee_config
 
-from ._pydantic import forbid_extras, get_formatted_error_messages
+from ._pydantic import PYDANTIC_VERSION, forbid_extras, get_formatted_error_messages
 from .ansible import AnsibleCoreVersion, MinPythonVersionConstants
 from .data.antsibull_nox_data_util import Message
 from .sessions.utils.packages import PackageConstraints as _PackageConstraints
@@ -907,11 +907,17 @@ def lint_config_toml_messages() -> list[Message]:
     """
     path = CONFIG_FILENAME
     errors = []
-    forbid_extras(Config)
+
     try:
         with open(path, "rb") as f:
             data = _load_toml(f)
-        Config.model_validate(data)
+
+        # https://github.com/pydantic/pydantic/discussions/2652#discussioncomment-17853656
+        if PYDANTIC_VERSION < (2, 12):
+            forbid_extras(Config)
+            Config.model_validate(data)
+        else:
+            Config.model_validate(data, extra="forbid")
     except p.ValidationError as exc:
         for error in get_formatted_error_messages(exc):
             errors.append(
