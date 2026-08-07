@@ -1,0 +1,2 @@
+bugfixes:
+  - "Fix index error when marking errors at the end of a file (https://github.com/ansible-community/antsibull-nox/pull/240)."
