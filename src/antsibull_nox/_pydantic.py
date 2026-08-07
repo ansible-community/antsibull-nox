@@ -8,9 +8,7 @@
 # **Vendored** from antsibull-core.
 #
 # I vendored this to avoid depending on antsibull-core only for this.
-# TBH, most of this should be part of pydantic anyway. See
-# https://github.com/pydantic/pydantic/discussions/2652 for a discussion
-# on this.
+# Most of this can be removed once we depend on pydantic >= 2.12 anyway.
 #
 # pylint: disable=missing-function-docstring
 # ========================================================================
