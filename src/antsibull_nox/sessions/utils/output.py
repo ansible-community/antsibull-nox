@@ -560,16 +560,17 @@ class _ContentProvider:
         result: list[tuple[int | None, str]] = []
         if first_idx > 0:
             result.append((None, ""))
+        length = len(self.content)
         if act_last_idx - act_first_idx > 5:
             for idx in range(first_idx, act_first_idx + 2):
                 result.append((idx + 1, self._expand(self.content[idx])))
             result.append((None, ""))
-            for idx in range(act_last_idx - 1, last_idx + 1):
+            for idx in range(act_last_idx - 1, min(last_idx + 1, length)):
                 result.append((idx + 1, self._expand(self.content[idx])))
         else:
-            for idx in range(first_idx, last_idx + 1):
+            for idx in range(first_idx, min(last_idx + 1, length)):
                 result.append((idx + 1, self._expand(self.content[idx])))
-        if last_idx + 1 < len(self.content):
+        if last_idx + 1 < length:
             result.append((None, ""))
         return (
             result,
