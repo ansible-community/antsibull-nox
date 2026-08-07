@@ -29,9 +29,20 @@ import pydantic as p
 if t.TYPE_CHECKING:  # pragma: no cover
     from typing_extensions import TypeGuard
 
-PYDANTIC_VERSION: tuple[int, ...] = tuple(
-    int(part) for part in p.VERSION.split(".", 2)[:2]
-)
+
+def _parse_pydantic_version() -> tuple[int, ...]:
+    return tuple(int(part) for part in p.VERSION.split(".", 2)[:2])
+
+
+def _get_pydantic_version() -> tuple[int, ...]:
+    try:
+        return _parse_pydantic_version()
+    except Exception:  # pylint: disable=broad-exception-caught
+        # Return something that's bigger than any explicit comparison we do.
+        return (2, 999)
+
+
+PYDANTIC_VERSION = _get_pydantic_version()
 
 
 def _is_basemodel(a_type: t.Any) -> TypeGuard[type[p.BaseModel]]:
