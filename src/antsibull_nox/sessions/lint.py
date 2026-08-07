@@ -486,10 +486,10 @@ def _execute_ruff_autofix_for(
     ruff_autofix_select: list[str],
     what_for: str = "",
     reporter: PartReporter,  # pylint: disable=unused-argument
-) -> None:
+) -> list[Message]:
     if not files:
         session.warn(f"Skipping ruff autofix{what_for} (no files to process)")
-        return
+        return []
     command: list[str] = [
         "ruff",
         "check",
@@ -509,16 +509,32 @@ def _execute_ruff_autofix_for(
         )
     if ruff_autofix_select:
         command.extend(["--select", ",".join(ruff_autofix_select)])
+    if run_check:
+        command.append("--output-format=json")
     command.extend(session.posargs)
     relative_dir = collection_dir.relative_to(root_dir)
     for file in files:
         command.append(str(relative_dir / file))
+
+    if run_check:
+        # https://docs.astral.sh/ruff/linter/#exit-codes
+        output = session.run(*command, silent=True, success_codes=[0, 1])
+        return (
+            parse_ruff_check_errors(
+                source_path=collection_dir,
+                output=output,
+            )
+            if output
+            else []
+        )
+
     session.run(*command)
     # pylint: disable-next=fixme
     # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
     # pylint: disable-next=fixme
     # TODO: find out whether ruff autofix can output error information somehow else
     #       than stdout/stderr
+    return []
 
 
 def _execute_ruff_autofix(
@@ -543,45 +559,59 @@ def _execute_ruff_autofix(
         config_modules=ruff_autofix_modules_config or ruff_autofix_config,
     )
     old_cwd = Path.cwd()
+    messages = []
     with session.chdir(root_dir):
         if files is not None:
-            _execute_ruff_autofix_for(
-                session,
-                old_cwd=old_cwd,
-                root_dir=root_dir,
-                collection_dir=collection_dir,
-                run_check=run_check,
-                files=files,
-                ruff_autofix_config=ruff_autofix_config,
-                ruff_autofix_select=ruff_autofix_select,
-                reporter=reporter,
+            messages.extend(
+                _execute_ruff_autofix_for(
+                    session,
+                    old_cwd=old_cwd,
+                    root_dir=root_dir,
+                    collection_dir=collection_dir,
+                    run_check=run_check,
+                    files=files,
+                    ruff_autofix_config=ruff_autofix_config,
+                    ruff_autofix_select=ruff_autofix_select,
+                    reporter=reporter,
+                )
             )
         if files_modules is not None:
-            _execute_ruff_autofix_for(
-                session,
-                old_cwd=old_cwd,
-                root_dir=root_dir,
-                collection_dir=collection_dir,
-                run_check=run_check,
-                files=files_modules,
-                ruff_autofix_config=ruff_autofix_modules_config or ruff_autofix_config,
-                ruff_autofix_select=ruff_autofix_select,
-                what_for=" for modules and module utils",
-                reporter=reporter,
+            messages.extend(
+                _execute_ruff_autofix_for(
+                    session,
+                    old_cwd=old_cwd,
+                    root_dir=root_dir,
+                    collection_dir=collection_dir,
+                    run_check=run_check,
+                    files=files_modules,
+                    ruff_autofix_config=ruff_autofix_modules_config
+                    or ruff_autofix_config,
+                    ruff_autofix_select=ruff_autofix_select,
+                    what_for=" for modules and module utils",
+                    reporter=reporter,
+                )
             )
         if files_other is not None:
-            _execute_ruff_autofix_for(
-                session,
-                old_cwd=old_cwd,
-                root_dir=root_dir,
-                collection_dir=collection_dir,
-                run_check=run_check,
-                files=files_other,
-                ruff_autofix_config=ruff_autofix_config,
-                ruff_autofix_select=ruff_autofix_select,
-                what_for=" for other files",
-                reporter=reporter,
+            messages.extend(
+                _execute_ruff_autofix_for(
+                    session,
+                    old_cwd=old_cwd,
+                    root_dir=root_dir,
+                    collection_dir=collection_dir,
+                    run_check=run_check,
+                    files=files_other,
+                    ruff_autofix_config=ruff_autofix_config,
+                    ruff_autofix_select=ruff_autofix_select,
+                    what_for=" for other files",
+                    reporter=reporter,
+                )
             )
+    reporter.report_messages(messages)
+    print_messages(
+        session=session,
+        messages=messages,
+        fail_msg="Ruff autofix check failed",
+    )
 
 
 def add_formatters(
