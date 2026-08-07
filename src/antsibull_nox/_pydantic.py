@@ -113,3 +113,10 @@ def get_formatted_error_messages(error: p.ValidationError) -> list[str]:
         return f'{location}: {err["msg"]}'
 
     return [format_error(err) for err in error.errors()]
+
+
+__all__ = [
+    "PYDANTIC_VERSION",
+    "forbid_extras",
+    "get_formatted_error_messages",
+]
