@@ -1,0 +1,2 @@
+minor_changes:
+  - "Add a top-level ``version`` field to the config file format (https://github.com/ansible-community/antsibull-nox/pull/239)."
