@@ -17,6 +17,8 @@ A basic `antsibull-nox.toml` looks as follows:
 ```toml
 # Comments start with a '#', similar to YAML or Python.
 
+version = 1
+
 [collection]
 # Use ansible-test's config file (tests/config.yml) to determine which
 # Python versions to use when generating test matrixes.
@@ -79,6 +81,20 @@ validate_collection_refs="all"
 
 Make sure that your `noxfile.py` contains the `antsibull_nox.load_antsibull_nox_toml()` function call.
 Otherwise `antsibull-nox.toml` will be ignored.
+
+## Configuration file version
+
+The top-level `version` field only accepts the value `1` right now.
+We recommend that the field is provided;
+antsibull-nox 2.0.0 will require it.
+
+The version field allows to make backwards-incompatible changes to the configuration file format
+that users of antsibull-nox have to explicitly opt in.
+antsibull-nox will never remove support for a specific configuration file format version
+without a deprecation period and outside of a new major release.
+
+For now,
+we recommend to set `version` to `1` in existing configs.
 
 ## General collection configuration
 

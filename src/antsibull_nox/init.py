@@ -46,6 +46,8 @@ if __name__ == "__main__":
 """
 
 CONFIG_CONTENT = r"""
+version = 1
+
 [sessions]
 
 [sessions.lint]

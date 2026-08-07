@@ -880,6 +880,9 @@ class Config(_BaseModel):
     The contents of a antsibull-nox config file.
     """
 
+    # For now the version is optional, and if not specified defaults to 1.
+    version: t.Optional[t.Literal[1]] = 1
+
     collection_sources: dict[CollectionName, CollectionSource] = {}
     collection_sources_per_ansible: dict[
         PAnsibleCoreVersion, dict[CollectionName, CollectionSource]
