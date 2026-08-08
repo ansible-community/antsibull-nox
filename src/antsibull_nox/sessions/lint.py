@@ -346,51 +346,35 @@ def _execute_black(
     black_modules_config: str | os.PathLike | None,
     reporter: PartReporter,
 ) -> None:
-    if (
-        run_black
-        and run_black_modules
-        and (black_modules_config is None or black_modules_config == black_config)
-    ):
+    files, files_modules, files_other = _get_files(
+        code_files=code_files,
+        module_files=module_files,
+        split_modules=run_black != run_black_modules
+        or (black_modules_config is not None and black_modules_config != black_config),
+        config=black_config,
+        config_modules=black_modules_config or black_config,
+    )
+    if files is not None:
         _execute_black_for(
             session,
-            paths=filter_paths(
-                code_files,
-                extensions=[".py"],
-                with_cd=True,
-                paths_to_trigger_full_build=_as_list(black_config),
-            ),
+            paths=files,
             run_check=run_check,
             black_config=black_config,
             reporter=reporter,
         )
-        return
-    if run_black:
-        paths = filter_paths(
-            code_files,
-            remove=module_files,
-            extensions=[".py"],
-            with_cd=True,
-            paths_to_trigger_full_build=_as_list(black_config),
-        )
+    if files_other is not None:
         _execute_black_for(
             session,
-            paths=paths,
+            paths=files_other,
             run_check=run_check,
             black_config=black_config,
             what_for=" for other plugins",
             reporter=reporter,
         )
-    if run_black_modules:
-        paths = filter_paths(
-            code_files,
-            restrict=module_files,
-            extensions=[".py"],
-            with_cd=True,
-            paths_to_trigger_full_build=_as_list(black_modules_config or black_config),
-        )
+    if files_modules is not None:
         _execute_black_for(
             session,
-            paths=paths,
+            paths=files_modules,
             run_check=run_check,
             black_config=black_modules_config or black_config,
             what_for=" for modules and module utils",
@@ -406,10 +390,10 @@ def _execute_ruff_format_for(
     ruff_format_config: str | os.PathLike | None,
     what_for: str = "",
     reporter: PartReporter,  # pylint: disable=unused-argument
-) -> None:
+) -> list[Message]:
     if not files:
         session.warn(f"Skipping ruff format{what_for} (no files to process)")
-        return
+        return []
     command: list[str] = [
         "ruff",
         "format",
@@ -418,14 +402,37 @@ def _execute_ruff_format_for(
         command.append("--check")
     if ruff_format_config is not None:
         command.extend(["--config", str(ruff_format_config)])
+    # Disabled because of https://github.com/astral-sh/ruff/issues/27602, see below.
+    # if run_check:
+    #     command.append("--output-format=json")
     command.extend(session.posargs)
     command.extend(str(file) for file in files)
+
+    # Unfortunately this doesn't work, since 'ruff format --check' uses exit code 2
+    # when encountering syntax errors in files. Until this behavior of ruff is fixed,
+    # we cannot provide better output.
+    # if run_check:
+    #     # https://docs.astral.sh/ruff/linter/#exit-codes
+    #     output = session.run(*command, silent=True, success_codes=[0, 1])
+    #     return (
+    #              pylint: disable-next=fixme
+    #              TODO: does parse_ruff_check_errors() actually work well
+    #                    for 'ruff format --check' output?
+    #         parse_ruff_check_errors(
+    #             source_path=Path.cwd(),
+    #             output=output,
+    #         )
+    #         if output
+    #         else []
+    #     )
+
     session.run(*command)
     # pylint: disable-next=fixme
     # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
     # pylint: disable-next=fixme
     # TODO: find out whether ruff format can output error information somehow else
     #       than stdout/stderr
+    return []
 
 
 def _execute_ruff_format(
@@ -446,32 +453,46 @@ def _execute_ruff_format(
         config=ruff_format_config,
         config_modules=ruff_format_modules_config or ruff_format_config,
     )
+    messages = []
     if files is not None:
-        _execute_ruff_format_for(
-            session,
-            run_check=run_check,
-            files=files,
-            ruff_format_config=ruff_format_config,
-            reporter=reporter,
+        messages.extend(
+            _execute_ruff_format_for(
+                session,
+                run_check=run_check,
+                files=files,
+                ruff_format_config=ruff_format_config,
+                reporter=reporter,
+            )
         )
     if files_modules is not None:
-        _execute_ruff_format_for(
-            session,
-            run_check=run_check,
-            files=files_modules,
-            ruff_format_config=ruff_format_modules_config or ruff_format_config,
-            what_for=" for modules and module utils",
-            reporter=reporter,
+        messages.extend(
+            _execute_ruff_format_for(
+                session,
+                run_check=run_check,
+                files=files_modules,
+                ruff_format_config=ruff_format_modules_config or ruff_format_config,
+                what_for=" for modules and module utils",
+                reporter=reporter,
+            )
         )
     if files_other is not None:
-        _execute_ruff_format_for(
-            session,
-            run_check=run_check,
-            files=files_other,
-            ruff_format_config=ruff_format_config,
-            what_for=" for other files",
-            reporter=reporter,
+        messages.extend(
+            _execute_ruff_format_for(
+                session,
+                run_check=run_check,
+                files=files_other,
+                ruff_format_config=ruff_format_config,
+                what_for=" for other files",
+                reporter=reporter,
+            )
         )
+
+    reporter.report_messages(messages)
+    print_messages(
+        session=session,
+        messages=messages,
+        fail_msg="Ruff format check failed",
+    )
 
 
 def _execute_ruff_autofix_for(
@@ -486,10 +507,10 @@ def _execute_ruff_autofix_for(
     ruff_autofix_select: list[str],
     what_for: str = "",
     reporter: PartReporter,  # pylint: disable=unused-argument
-) -> None:
+) -> list[Message]:
     if not files:
         session.warn(f"Skipping ruff autofix{what_for} (no files to process)")
-        return
+        return []
     command: list[str] = [
         "ruff",
         "check",
@@ -509,16 +530,32 @@ def _execute_ruff_autofix_for(
         )
     if ruff_autofix_select:
         command.extend(["--select", ",".join(ruff_autofix_select)])
+    if run_check:
+        command.append("--output-format=json")
     command.extend(session.posargs)
     relative_dir = collection_dir.relative_to(root_dir)
     for file in files:
         command.append(str(relative_dir / file))
+
+    if run_check:
+        # https://docs.astral.sh/ruff/linter/#exit-codes
+        output = session.run(*command, silent=True, success_codes=[0, 1])
+        return (
+            parse_ruff_check_errors(
+                source_path=collection_dir,
+                output=output,
+            )
+            if output
+            else []
+        )
+
     session.run(*command)
     # pylint: disable-next=fixme
     # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
     # pylint: disable-next=fixme
     # TODO: find out whether ruff autofix can output error information somehow else
     #       than stdout/stderr
+    return []
 
 
 def _execute_ruff_autofix(
@@ -543,45 +580,59 @@ def _execute_ruff_autofix(
         config_modules=ruff_autofix_modules_config or ruff_autofix_config,
     )
     old_cwd = Path.cwd()
+    messages = []
     with session.chdir(root_dir):
         if files is not None:
-            _execute_ruff_autofix_for(
-                session,
-                old_cwd=old_cwd,
-                root_dir=root_dir,
-                collection_dir=collection_dir,
-                run_check=run_check,
-                files=files,
-                ruff_autofix_config=ruff_autofix_config,
-                ruff_autofix_select=ruff_autofix_select,
-                reporter=reporter,
+            messages.extend(
+                _execute_ruff_autofix_for(
+                    session,
+                    old_cwd=old_cwd,
+                    root_dir=root_dir,
+                    collection_dir=collection_dir,
+                    run_check=run_check,
+                    files=files,
+                    ruff_autofix_config=ruff_autofix_config,
+                    ruff_autofix_select=ruff_autofix_select,
+                    reporter=reporter,
+                )
             )
         if files_modules is not None:
-            _execute_ruff_autofix_for(
-                session,
-                old_cwd=old_cwd,
-                root_dir=root_dir,
-                collection_dir=collection_dir,
-                run_check=run_check,
-                files=files_modules,
-                ruff_autofix_config=ruff_autofix_modules_config or ruff_autofix_config,
-                ruff_autofix_select=ruff_autofix_select,
-                what_for=" for modules and module utils",
-                reporter=reporter,
+            messages.extend(
+                _execute_ruff_autofix_for(
+                    session,
+                    old_cwd=old_cwd,
+                    root_dir=root_dir,
+                    collection_dir=collection_dir,
+                    run_check=run_check,
+                    files=files_modules,
+                    ruff_autofix_config=ruff_autofix_modules_config
+                    or ruff_autofix_config,
+                    ruff_autofix_select=ruff_autofix_select,
+                    what_for=" for modules and module utils",
+                    reporter=reporter,
+                )
             )
         if files_other is not None:
-            _execute_ruff_autofix_for(
-                session,
-                old_cwd=old_cwd,
-                root_dir=root_dir,
-                collection_dir=collection_dir,
-                run_check=run_check,
-                files=files_other,
-                ruff_autofix_config=ruff_autofix_config,
-                ruff_autofix_select=ruff_autofix_select,
-                what_for=" for other files",
-                reporter=reporter,
+            messages.extend(
+                _execute_ruff_autofix_for(
+                    session,
+                    old_cwd=old_cwd,
+                    root_dir=root_dir,
+                    collection_dir=collection_dir,
+                    run_check=run_check,
+                    files=files_other,
+                    ruff_autofix_config=ruff_autofix_config,
+                    ruff_autofix_select=ruff_autofix_select,
+                    what_for=" for other files",
+                    reporter=reporter,
+                )
             )
+    reporter.report_messages(messages)
+    print_messages(
+        session=session,
+        messages=messages,
+        fail_msg="Ruff autofix check failed",
+    )
 
 
 def add_formatters(
@@ -669,6 +720,9 @@ def add_formatters(
 
     @install_packages(package_callback=compose_dependencies)
     def formatters(session: nox.Session) -> None:
+        nox_e_formatters_message = (
+            "Run 'nox -e formatters' to fix these issues." if run_check else None
+        )
         with get_session_reporter(session) as reporter:
             if run_isort or run_ruff_autofix:
                 cwd = Path.cwd()
@@ -683,7 +737,11 @@ def add_formatters(
                         target_is_directory=True,
                     )
             if run_isort:
-                with reporter.get_part_reporter("isort", continue_on_error=True) as sr:
+                with reporter.get_part_reporter(
+                    "isort",
+                    continue_on_error=True,
+                    default_fail_message=nox_e_formatters_message,
+                ) as sr:
                     _execute_isort(
                         session,
                         root_dir=root_dir,
@@ -696,7 +754,11 @@ def add_formatters(
                         reporter=sr,
                     )
             if run_black or run_black_modules:
-                with reporter.get_part_reporter("black", continue_on_error=True) as sr:
+                with reporter.get_part_reporter(
+                    "black",
+                    continue_on_error=True,
+                    default_fail_message=nox_e_formatters_message,
+                ) as sr:
                     _execute_black(
                         session,
                         run_check=run_check,
@@ -710,7 +772,9 @@ def add_formatters(
                     )
             if run_ruff_format:
                 with reporter.get_part_reporter(
-                    "ruff format", continue_on_error=True
+                    "ruff format",
+                    continue_on_error=True,
+                    default_fail_message=nox_e_formatters_message,
                 ) as sr:
                     _execute_ruff_format(
                         session,
@@ -723,7 +787,9 @@ def add_formatters(
                     )
             if run_ruff_autofix:
                 with reporter.get_part_reporter(
-                    "ruff autofix", continue_on_error=True
+                    "ruff autofix",
+                    continue_on_error=True,
+                    prepend_fail_message=nox_e_formatters_message,
                 ) as sr:
                     _execute_ruff_autofix(
                         session,
@@ -945,6 +1011,9 @@ def add_codeqa(  # noqa: C901
         # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
         # pylint: disable-next=fixme
         # TODO: find out whether flake8 can output error information somehow else than stdout/stderr
+        # Resources of interest:
+        # * https://github.com/PyCQA/flake8/issues/1458
+        # * https://github.com/PyCQA/flake8-json
 
     def execute_flake8(
         session: nox.Session,
