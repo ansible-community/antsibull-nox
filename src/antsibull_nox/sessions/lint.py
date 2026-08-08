@@ -683,6 +683,9 @@ def add_formatters(
 
     @install_packages(package_callback=compose_dependencies)
     def formatters(session: nox.Session) -> None:
+        nox_e_formatters_message = (
+            "Run 'nox -e formatters' to fix these issues." if run_check else None
+        )
         with get_session_reporter(session) as reporter:
             if run_isort or run_ruff_autofix:
                 cwd = Path.cwd()
@@ -697,7 +700,11 @@ def add_formatters(
                         target_is_directory=True,
                     )
             if run_isort:
-                with reporter.get_part_reporter("isort", continue_on_error=True) as sr:
+                with reporter.get_part_reporter(
+                    "isort",
+                    continue_on_error=True,
+                    default_fail_message=nox_e_formatters_message,
+                ) as sr:
                     _execute_isort(
                         session,
                         root_dir=root_dir,
@@ -710,7 +717,11 @@ def add_formatters(
                         reporter=sr,
                     )
             if run_black or run_black_modules:
-                with reporter.get_part_reporter("black", continue_on_error=True) as sr:
+                with reporter.get_part_reporter(
+                    "black",
+                    continue_on_error=True,
+                    default_fail_message=nox_e_formatters_message,
+                ) as sr:
                     _execute_black(
                         session,
                         run_check=run_check,
@@ -724,7 +735,9 @@ def add_formatters(
                     )
             if run_ruff_format:
                 with reporter.get_part_reporter(
-                    "ruff format", continue_on_error=True
+                    "ruff format",
+                    continue_on_error=True,
+                    default_fail_message=nox_e_formatters_message,
                 ) as sr:
                     _execute_ruff_format(
                         session,
@@ -737,7 +750,9 @@ def add_formatters(
                     )
             if run_ruff_autofix:
                 with reporter.get_part_reporter(
-                    "ruff autofix", continue_on_error=True
+                    "ruff autofix",
+                    continue_on_error=True,
+                    prepend_fail_message=nox_e_formatters_message,
                 ) as sr:
                     _execute_ruff_autofix(
                         session,
@@ -959,6 +974,9 @@ def add_codeqa(  # noqa: C901
         # TODO: use https://github.com/wntrblm/nox/pull/1124 to include error output
         # pylint: disable-next=fixme
         # TODO: find out whether flake8 can output error information somehow else than stdout/stderr
+        # Resources of interest:
+        # * https://github.com/PyCQA/flake8/issues/1458
+        # * https://github.com/PyCQA/flake8-json
 
     def execute_flake8(
         session: nox.Session,

@@ -303,6 +303,44 @@ def test_BaseReporter() -> None:
         error=Error("The test case was forcefully aborted", type="aborted"),
     )
 
+    # Single run with interruption and default error (Ctrl+C)
+
+    r = MyReporter(title="foo", default_fail_message="bar", prepend_fail_message="baz")
+    with pytest.raises(KeyboardInterrupt):
+        with r:
+            assert r.status == Status.SUCCESS
+            assert r.effective_status == Status.SUCCESS
+            raise KeyboardInterrupt()
+
+    assert r._open is False
+    assert r.status == Status.ABORTED
+    assert r.effective_status == Status.ABORTED
+    assert r._start is not None
+    assert r._end is not None
+    assert r._duration == r._end - r._start
+    assert r.active is False
+    assert r.is_empty
+    assert r._get_output() == (
+        "",
+        "",
+        "",
+        "",
+    )
+    assert r._get_bot_report() == [
+        {
+            "message": "Failures in nox `foo`.",
+            "output": "baz\n\nbar",
+        },
+    ]
+    testcase = r._get_junit_testcase()
+    assert testcase == _Testcase(
+        name="foo",
+        stats=Stats(tests=1, errors=1, time=testcase.stats.time),
+        error=Error(
+            "The test case was forcefully aborted", description="baz", type="aborted"
+        ),
+    )
+
     # Single run with error due to exception
 
     r = MyReporter(title="foo")
