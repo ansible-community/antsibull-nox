@@ -385,11 +385,13 @@ def _combine_errors(errors: list[BaseException]) -> BaseException:
             ):
                 try:
                     return _NoxSessionQuit(new_message)
-                except Exception:  # pylint: disable=broad-exception-caught
+                except (
+                    Exception  # pylint: disable=broad-exception-caught
+                ):  # pragma: no cover
                     # If for some reason the implementation of _SessionQuit
                     # changed and trying to create the instance results in
                     # some error, we call back to using CommandFailed.
-                    pass  # parma: no cover
+                    pass
             return nox.command.CommandFailed(new_message)
     return errors[0]
 
