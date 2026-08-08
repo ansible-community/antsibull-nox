@@ -346,51 +346,35 @@ def _execute_black(
     black_modules_config: str | os.PathLike | None,
     reporter: PartReporter,
 ) -> None:
-    if (
-        run_black
-        and run_black_modules
-        and (black_modules_config is None or black_modules_config == black_config)
-    ):
+    files, files_modules, files_other = _get_files(
+        code_files=code_files,
+        module_files=module_files,
+        split_modules=run_black != run_black_modules
+        or (black_modules_config is not None and black_modules_config != black_config),
+        config=black_config,
+        config_modules=black_modules_config or black_config,
+    )
+    if files is not None:
         _execute_black_for(
             session,
-            paths=filter_paths(
-                code_files,
-                extensions=[".py"],
-                with_cd=True,
-                paths_to_trigger_full_build=_as_list(black_config),
-            ),
+            paths=files,
             run_check=run_check,
             black_config=black_config,
             reporter=reporter,
         )
-        return
-    if run_black:
-        paths = filter_paths(
-            code_files,
-            remove=module_files,
-            extensions=[".py"],
-            with_cd=True,
-            paths_to_trigger_full_build=_as_list(black_config),
-        )
+    if files_other is not None:
         _execute_black_for(
             session,
-            paths=paths,
+            paths=files_other,
             run_check=run_check,
             black_config=black_config,
             what_for=" for other plugins",
             reporter=reporter,
         )
-    if run_black_modules:
-        paths = filter_paths(
-            code_files,
-            restrict=module_files,
-            extensions=[".py"],
-            with_cd=True,
-            paths_to_trigger_full_build=_as_list(black_modules_config or black_config),
-        )
+    if files_modules is not None:
         _execute_black_for(
             session,
-            paths=paths,
+            paths=files_modules,
             run_check=run_check,
             black_config=black_modules_config or black_config,
             what_for=" for modules and module utils",
