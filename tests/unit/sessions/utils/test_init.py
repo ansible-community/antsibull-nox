@@ -40,6 +40,14 @@ def test__is_in_ci() -> None:
                 with set_environ("SYSTEM_COLLECTIONURI", "foobar"):
                     assert _is_in_ci() is False
 
+                # Explicitly force not being in CI environment
+                with set_environ("CI", "false"):  # must be lower-case
+                    with set_environ("TF_BUILD", "True"):
+                        with set_environ(
+                            "SYSTEM_COLLECTIONURI", "https://dev.azure.com/"
+                        ):
+                            assert _is_in_ci() is False
+
                 # Inside CI
                 with set_environ("CI", "true"):
                     assert _is_in_ci() is True

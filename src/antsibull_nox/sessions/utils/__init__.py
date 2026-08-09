@@ -32,6 +32,10 @@ def _is_in_ci() -> bool:
     if os.environ.get("CI") == "true":
         return True
 
+    # Allow to explicitly disable CI detection
+    if os.environ.get("CI") == "false":
+        return False
+
     # The following seems to detect Azure Pipelines:
     # https://stackoverflow.com/a/68771148
     # https://stackoverflow.com/a/77218424
