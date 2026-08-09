@@ -165,6 +165,7 @@ __all__ = [
     "PackageName",
     "PackageEditable",
     "PackageRequirements",
+    "PackageConstraints",
     "PackageType",
     "check_package_types",
     "install",
