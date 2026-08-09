@@ -167,7 +167,9 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         self._start: datetime.datetime | None = None
         self._end: datetime.datetime | None = None
         self._duration: datetime.timedelta | None = None
-        self._default_fail_message = default_fail_message
+        self._default_fail_message = (
+            default_fail_message or "Please see the CI output for details."
+        )
         self._prepend_fail_message = prepend_fail_message
         self.timestamp = _make_timestamp()
 
@@ -310,10 +312,7 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
             return [
                 {
                     "message": f"Failures in nox {prefix}`{self.title}`{suffix}.",
-                    "output": self._prepend_output(
-                        self._default_fail_message
-                        or "Please see the CI output for details."
-                    ),
+                    "output": self._prepend_output(self._default_fail_message),
                 }
             ]
         _, __, ___, output = self._get_output()
@@ -341,11 +340,7 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         elif status == Status.FAILED:
             result.failure = _junit.Failure(
                 message=None,
-                description=self._prepend_output(
-                    output
-                    or self._default_fail_message
-                    or "Please see the CI output for details."
-                ),
+                description=self._prepend_output(output or self._default_fail_message),
             )
             result.stats.failures = 1
             has_output = True
@@ -512,10 +507,7 @@ class SessionReporter(BaseReporter):
             reports.append(
                 {
                     "message": f"Session `{self.title}` failed.",
-                    "output": self._prepend_output(
-                        self._default_fail_message
-                        or "Please see the CI output for details."
-                    ),
+                    "output": self._prepend_output(self._default_fail_message),
                 }
             )
         return {
@@ -556,7 +548,6 @@ class SessionReporter(BaseReporter):
                             message=None,
                             description=self._prepend_output(
                                 self._default_fail_message
-                                or "Please see the CI output for details."
                             ),
                         ),
                     )
@@ -571,7 +562,6 @@ class SessionReporter(BaseReporter):
                             message=None,
                             description=self._prepend_output(
                                 self._default_fail_message
-                                or "Please see the CI output for details."
                             ),
                         ),
                     )
