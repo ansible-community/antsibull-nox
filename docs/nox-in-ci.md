@@ -142,3 +142,18 @@ jobs:
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 ```
+
+## CI detection
+
+Antsibull-nox detects whether it runs in a CI environment as follows:
+
+* If the `CI` environment variable is set to `true`
+  (this is the case for GitHub Actions, GitLab CI, Travis, and others);
+* If the `TF_BUILD` environment variable is set to `True`
+  (this is the case for Azure Pipelines);
+* If the `SYSTEM_COLLECTIONURI` environment variable is set to a string starting with `https://dev.azure.com/`
+  (this is how ansible-test detects Ansible's AZP environment).
+
+If none of these conditions is true, it assumes it runs outside of a CI environment.
+You can explicitly set `CI` to `false` to make antsibull-nox behave as outside of a CI environment,
+even if one of the above conditions holds.
