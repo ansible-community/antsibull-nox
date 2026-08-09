@@ -51,6 +51,14 @@ if t.TYPE_CHECKING:  # pragma: no cover
         docs: str  # URL describing tests
         results: list[BotResult]
 
+    class CommonParameters(t.TypedDict):
+        """
+        Common parameters for reporters.
+        """
+
+        default_fail_message: t.NotRequired[str | None]
+        prepend_fail_message: t.NotRequired[str | None]
+
 
 _BOT_DIRECTORY_ENV_VAR = "ANTSIBULL_NOX_OUTPUT_BOT_DIRECTORY"
 _JUNIT_XML_PATH_ENV_VAR = "ANTSIBULL_NOX_OUTPUT_JUNIT_XML_PATH"
@@ -143,7 +151,12 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
     """
 
     def __init__(
-        self, *, title: str, is_active: Callable[[], bool] | None = None
+        self,
+        *,
+        title: str,
+        is_active: Callable[[], bool] | None = None,
+        default_fail_message: str | None = None,
+        prepend_fail_message: str | None = None,
     ) -> None:
         self._title = title
         self._is_active = is_active
@@ -154,6 +167,8 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         self._start: datetime.datetime | None = None
         self._end: datetime.datetime | None = None
         self._duration: datetime.timedelta | None = None
+        self._default_fail_message = default_fail_message
+        self._prepend_fail_message = prepend_fail_message
         self.timestamp = _make_timestamp()
 
     def __enter__(self) -> t.Self:
@@ -275,6 +290,19 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
                 outputs.append(run.output)
         return "\n".join(stdout), "\n".join(stderr), messages, "\n\n".join(outputs)
 
+    @t.overload
+    def _prepend_output(self, output: str) -> str: ...
+
+    @t.overload
+    def _prepend_output(self, output: str | None) -> str | None: ...
+
+    def _prepend_output(self, output: str | None) -> str | None:
+        if self._prepend_fail_message is None:
+            return output
+        if output is None:
+            return self._prepend_fail_message
+        return f"{self._prepend_fail_message}\n\n{output}"
+
     def _get_bot_report(self, *, prefix: str = "", suffix: str = "") -> list[BotResult]:
         if self.effective_status in {Status.SUCCESS, Status.SKIPPED}:
             return []
@@ -282,14 +310,17 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
             return [
                 {
                     "message": f"Failures in nox {prefix}`{self.title}`{suffix}.",
-                    "output": "Please see the CI output for details.",
+                    "output": self._prepend_output(
+                        self._default_fail_message
+                        or "Please see the CI output for details."
+                    ),
                 }
             ]
         _, __, ___, output = self._get_output()
         return [
             {
                 "message": f"Failures in nox {prefix}`{self.title}`{suffix}:",
-                "output": output,
+                "output": self._prepend_output(output),
             }
         ]
 
@@ -306,7 +337,11 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         elif status == Status.FAILED:
             result.failure = _junit.Failure(
                 message=None,
-                description=output or "Please see the CI output for details.",
+                description=self._prepend_output(
+                    output
+                    or self._default_fail_message
+                    or "Please see the CI output for details."
+                ),
             )
             result.stats.failures = 1
             has_output = True
@@ -314,7 +349,7 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
             result.error = _junit.Error(
                 message="The test case was forcefully aborted",
                 type="aborted",
-                description=output or None,
+                description=self._prepend_output(output or None),
             )
             result.stats.errors = 1
             has_output = True
@@ -350,11 +385,13 @@ def _combine_errors(errors: list[BaseException]) -> BaseException:
             ):
                 try:
                     return _NoxSessionQuit(new_message)
-                except Exception:  # pylint: disable=broad-exception-caught
+                except (
+                    Exception  # pylint: disable=broad-exception-caught
+                ):  # pragma: no cover
                     # If for some reason the implementation of _SessionQuit
                     # changed and trying to create the instance results in
                     # some error, we call back to using CommandFailed.
-                    pass  # parma: no cover
+                    pass
             return nox.command.CommandFailed(new_message)
     return errors[0]
 
@@ -365,9 +402,14 @@ class PartReporter(BaseReporter):
     """
 
     def __init__(
-        self, *, owner: SessionReporter, title: str, continue_on_error: bool = False
+        self,
+        *,
+        owner: SessionReporter,
+        title: str,
+        continue_on_error: bool = False,
+        **kwargs: t.Unpack[CommonParameters],
     ) -> None:
-        super().__init__(title=title)
+        super().__init__(title=title, **kwargs)
         self.owner = owner
         self.continue_on_error = continue_on_error
         self._error: BaseException | None = None
@@ -401,9 +443,14 @@ class SessionReporter(BaseReporter):
     """
 
     def __init__(
-        self, *, owner: Reporter, session: nox.Session, url: str | None
+        self,
+        *,
+        owner: Reporter,
+        session: nox.Session,
+        url: str | None,
+        **kwargs: t.Unpack[CommonParameters],
     ) -> None:
-        super().__init__(title=session.name)
+        super().__init__(title=session.name, **kwargs)
         self.owner = owner
         self.parts: list[PartReporter] = []
         self.current_part: PartReporter | None = None
@@ -428,14 +475,18 @@ class SessionReporter(BaseReporter):
         return False
 
     def get_part_reporter(
-        self, title: str, *, continue_on_error: bool = False
+        self,
+        title: str,
+        *,
+        continue_on_error: bool = False,
+        **kwargs: t.Unpack[CommonParameters],
     ) -> PartReporter:
         """
         Given a part's title, return a part reporter for it.
         """
 
         part_reporter = PartReporter(
-            owner=self, title=title, continue_on_error=continue_on_error
+            owner=self, title=title, continue_on_error=continue_on_error, **kwargs
         )
         self.parts.append(part_reporter)
         return part_reporter
@@ -457,7 +508,10 @@ class SessionReporter(BaseReporter):
             reports.append(
                 {
                     "message": f"Session `{self.title}` failed.",
-                    "output": "Please see the CI output for details.",
+                    "output": self._prepend_output(
+                        self._default_fail_message
+                        or "Please see the CI output for details."
+                    ),
                 }
             )
         return {
@@ -496,7 +550,10 @@ class SessionReporter(BaseReporter):
                         stats=_junit.Stats(tests=1, failures=1, time=self._duration),
                         failure=_junit.Failure(
                             message=None,
-                            description="Please see the CI output for details.",
+                            description=self._prepend_output(
+                                self._default_fail_message
+                                or "Please see the CI output for details."
+                            ),
                         ),
                     )
                 )
@@ -507,7 +564,10 @@ class SessionReporter(BaseReporter):
                         stats=_junit.Stats(tests=1, errors=1, time=self._duration),
                         error=_junit.Error(
                             message=None,
-                            description="Please see the CI output for details.",
+                            description=self._prepend_output(
+                                self._default_fail_message
+                                or "Please see the CI output for details."
+                            ),
                         ),
                     )
                 )
@@ -556,14 +616,20 @@ class Reporter:
             raise RuntimeError("The reporter is already shutting down.")
 
     def get_session_reporter(
-        self, session: nox.Session, *, url: str | None = None
+        self,
+        session: nox.Session,
+        *,
+        url: str | None = None,
+        **kwargs: t.Unpack[CommonParameters],
     ) -> SessionReporter:
         """
         Given a nox session, return a session reporter for it.
         """
 
         self.assert_setup()
-        session_reporter = SessionReporter(owner=self, session=session, url=url)
+        session_reporter = SessionReporter(
+            owner=self, session=session, url=url, **kwargs
+        )
         if self.timestamp is None:
             self.timestamp = session_reporter.timestamp
         self.sessions.append(session_reporter)
@@ -664,12 +730,15 @@ def get_reporter() -> Reporter:
 
 
 def get_session_reporter(
-    session: nox.Session, *, url: str | None = None
+    session: nox.Session,
+    *,
+    url: str | None = None,
+    **kwargs: t.Unpack[CommonParameters],
 ) -> SessionReporter:
     """
     Return a session reporter for a specific nox session.
     """
-    return get_reporter().get_session_reporter(session, url=url)
+    return get_reporter().get_session_reporter(session, url=url, **kwargs)
 
 
 __all__ = (
