@@ -390,6 +390,11 @@ It accepts the following parameters:
   In case change detection is enabled, `--changed --base-branch <base_branch>` will be passed after `ansible_test_params`.
   Note that setting this to `True` will fail if the configuration file has not been loaded before calling `antsibull_nox.add_ansible_test_session()`.
 
+* `outputs_junit_xml: bool` (default `False`):
+  Whether the command returns test results as JUnit XML files in `tests/output/junit`.
+  For unit and integration tests this should always be the case,
+  and for sanity tests `--junit` has to be passed to `ansible-test`.
+
 ### Example code
 
 This adds a session called `ansible-test-integration-devel-ubuntu2404` that runs integration tests with ansible-core's development branch using its Ubuntu 24.04 container.
