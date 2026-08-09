@@ -1,0 +1,4 @@
+minor_changes:
+  - "Make output parsing more strict and stable (https://github.com/ansible-community/antsibull-nox/pull/243)."
+  - "Improve ``ruff check`` output parsing; use name if code is not supplied (https://github.com/ansible-community/antsibull-nox/pull/243)."
+  - "Improve ``mypy`` output parsing; now support end position (https://github.com/ansible-community/antsibull-nox/pull/243)."

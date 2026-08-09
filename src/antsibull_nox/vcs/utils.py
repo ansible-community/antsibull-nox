@@ -52,6 +52,8 @@ class SortableBranchName:
             if a[0] == b[0]:
                 if a[-1] != b[-1]:
                     # a[1] and b[1] are of the same type, but mypy doesn't notice...
+                    if a[1] == b[1]:  # handle things like '01' < '1'
+                        return a[-1] < b[-1]
                     return a[1] < b[1]  # type: ignore
             elif a[0] == "l":  # and b[0] == "i"
                 # a[1] is a string, but mypy doesn't notice...
@@ -60,6 +62,11 @@ class SortableBranchName:
                 # b[1] is a string, but mypy doesn't notice...
                 return "9" < b[1]  # type: ignore
         return len(self.parts) < len(other.parts)
+
+    def __le__(self, other: SortableBranchName) -> bool:
+        if self.branch_name == other.branch_name:
+            return True
+        return self.__lt__(other)
 
 
 def matches(branch: str, branch_list: list[str]) -> bool:

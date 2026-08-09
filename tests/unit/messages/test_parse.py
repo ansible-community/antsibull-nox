@@ -23,7 +23,7 @@ from antsibull_nox.messages.parse import (
 
 PARSE_ANTSIBULL_DOCS_ERRORS_DATA: list[tuple[str, list[Message]]] = [
     (
-        r"""{"messages": []}""",
+        r"""{"messages": [], "success": true}""",
         [],
     ),
     (
@@ -413,6 +413,25 @@ PARSE_MYPY_ERRORS_DATA: list[tuple[str, list[Message]]] = [
         ],
     ),
     (
+        r"""{"file": "ansible_collections/community/general/plugins/cache/memcached.py", "line": 254,"""
+        r""" "column": 11, "end_line": 255, "message": "Incompatible types in assignment (expression has type \"None\","""
+        r""" variable has type \"str\")", "hint": null, "code": "assignment", "severity": "error"}""",
+        [
+            Message(
+                file="plugins/cache/memcached.py",
+                position=Location(line=254, column=12),
+                end_position=Location(line=255, column=None),
+                level=Level.ERROR,
+                id="assignment",
+                message='Incompatible types in assignment (expression has type "None", variable has type "str")',
+                symbol=None,
+                hint=None,
+                note=None,
+                url=None,
+            )
+        ],
+    ),
+    (
         r"""Bad output.""",
         [
             Message(
@@ -667,6 +686,42 @@ PARSE_RUFF_CHECK_ERRORS_DATA: list[tuple[str, list[Message]]] = [
                 hint="Replace with `return bool(foo)`",
                 note=None,
                 url="https://docs.astral.sh/ruff/rules/needless-bool",
+            ),
+        ],
+    ),
+    (
+        r"""
+[
+  {
+    "cell": null,
+    "code": "invalid-syntax",
+    "filename": "/ansible_collections/community/general/plugins/cache/memcached.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 242
+    },
+    "message": "Expected `:`, found newline",
+    "noqa_row": null,
+    "url": null
+  }
+]
+""",
+        [
+            Message(
+                file="plugins/cache/memcached.py",
+                position=Location(
+                    line=242,
+                    column=33,
+                ),
+                end_position=None,
+                level=Level.ERROR,
+                id="invalid-syntax",
+                message="Expected `:`, found newline",
+                symbol=None,
+                hint=None,
+                note=None,
+                url=None,
             ),
         ],
     ),
