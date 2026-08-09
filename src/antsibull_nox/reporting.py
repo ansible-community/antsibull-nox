@@ -31,7 +31,7 @@ from .sessions.utils.output import format_messages_plain
 from .utils import _junit
 
 if t.TYPE_CHECKING:  # pragma: no cover
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Mapping, Sequence
     from types import TracebackType
 
     class BotResult(t.TypedDict):
@@ -144,6 +144,41 @@ def _make_timestamp() -> datetime.datetime:
     return datetime.datetime.now(tz=datetime.timezone.utc)
 
 
+def _complete_testcase(testcase: _junit.Testcase) -> None:
+    if testcase.stats.tests is None:
+        testcase.stats.tests = 1
+    if testcase.error is not None and testcase.stats.errors is None:
+        testcase.stats.errors = 1
+    if testcase.skipped is not None and testcase.stats.skipped is None:
+        testcase.stats.skipped = 1
+    if testcase.failure is not None and testcase.stats.failures is None:
+        testcase.stats.failures = 1
+
+
+def _complete_testsuite(testsuite: _junit.Testsuite) -> None:
+    for child in testsuite.children:
+        if isinstance(child, _junit.Testsuite):
+            _complete_testsuite(child)
+        elif isinstance(child, _junit.Testcase):
+            _complete_testcase(child)
+
+
+def _collect_time(testsuite: _junit.Testsuite) -> datetime.timedelta | None:
+    result: datetime.timedelta | None = None
+    for child in testsuite.children:
+        child_time: datetime.timedelta | None = None
+        if isinstance(child, _junit.Testsuite):
+            child_time = _collect_time(child)
+        elif isinstance(child, _junit.Testcase):
+            child_time = child.stats.time
+        if child_time is not None:
+            if result is None:
+                result = child_time
+            else:
+                result = result + child_time
+    return result
+
+
 class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
     """
     Base class for a reporter that accepts messages and other information
@@ -164,6 +199,7 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         self._status = Status.SUCCESS
         self._messages: list[Message] = []
         self._program_runs: list[ProgramRun] = []
+        self._testcases: list[_junit.Testcase] = []
         self._start: datetime.datetime | None = None
         self._end: datetime.datetime | None = None
         self._duration: datetime.timedelta | None = None
@@ -218,11 +254,15 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         return self._is_active() if self._is_active else True
 
     @property
+    def _is_empty_except_testcases(self) -> bool:
+        return not self._messages and not self._program_runs
+
+    @property
     def is_empty(self) -> bool:
         """
         Whether nothing has been logged.
         """
-        return not self._messages and not self._program_runs
+        return self._is_empty_except_testcases and not self._testcases
 
     def _assert_active(self) -> None:
         if not self.active:
@@ -258,6 +298,15 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
             )
         )
 
+    def add_junit_testcase(self, testcase: _junit.Testcase) -> None:
+        """
+        Add JUnit test case.
+
+        Note that this transfers the ownership of test case object to the reporter.
+        """
+        _complete_testcase(testcase)
+        self._testcases.append(testcase)
+
     # Report generation
 
     @property
@@ -273,7 +322,13 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
         for run in self._program_runs:
             if not run.success:
                 return Status.FAILED
+        for tc in self._testcases:
+            if tc.stats.failures:
+                return Status.FAILED
         return Status.SUCCESS
+
+    def _has_any_testcase_failures(self) -> bool:
+        return any(testcase.stats.failures != 0 for testcase in self._testcases)
 
     def _get_output(self) -> tuple[str, str, str, str]:
         stdout = []
@@ -305,39 +360,77 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
             return self._prepend_fail_message
         return f"{self._prepend_fail_message}\n\n{output}"
 
+    def _get_bot_reports_for_testcase(
+        self, testcase: _junit.Testcase, *, title: str, suffix: str
+    ) -> list[BotResult]:
+        if testcase.stats.failures == 0 or not testcase.failure:
+            return []
+        name = f"`{testcase.name}`"
+        if testcase.classname:
+            name = f"`{testcase.classname}` - {name}"
+        output = self._prepend_output(
+            testcase.failure.description or self._default_fail_message
+        )
+        dot = ":" if testcase.failure.description else "."
+        return [
+            {
+                "message": f"Failures in nox {title} in {name}{suffix}{dot}",
+                "output": output,
+            },
+        ]
+
     def _get_bot_report(self, *, prefix: str = "", suffix: str = "") -> list[BotResult]:
         if self.effective_status in {Status.SUCCESS, Status.SKIPPED}:
             return []
-        if self.is_empty:
+        result: list[BotResult] = []
+        if not self._is_empty_except_testcases:
+            _, __, ___, output = self._get_output()
+            result.append(
+                {
+                    "message": f"Failures in nox {prefix}`{self.title}`{suffix}:",
+                    "output": self._prepend_output(output),
+                }
+            )
+        for testcase in self._testcases:
+            result.extend(
+                self._get_bot_reports_for_testcase(
+                    testcase,
+                    title=f"{prefix}`{self.title}`",
+                    suffix=suffix,
+                )
+            )
+        if not result:
             return [
                 {
                     "message": f"Failures in nox {prefix}`{self.title}`{suffix}.",
                     "output": self._prepend_output(self._default_fail_message),
                 }
             ]
-        _, __, ___, output = self._get_output()
-        return [
-            {
-                "message": f"Failures in nox {prefix}`{self.title}`{suffix}:",
-                "output": self._prepend_output(output),
-            }
-        ]
+        return result
 
-    def _get_junit_testcase(
+    def _get_junit_testcases(
         self, *, classname: str | None = None, prefix: str | None = None
-    ) -> _junit.Testcase:
+    ) -> list[_junit.Testcase]:
         result = _junit.Testcase(
             name=f"{prefix or ''}{self.title}", classname=classname
         )
-        result.stats.time = self._duration
+        duration = self._duration
+        assert duration is not None
+        for testcase in self._testcases:
+            if testcase.stats.time:
+                duration -= testcase.stats.time
+        result.stats.time = duration
         result.stats.tests = 1
+
         status = self.effective_status
         stdout, stderr, messages, output = self._get_output()
         has_output = False
         if status == Status.SKIPPED:
             result.skipped = _junit.Skipped()
             result.stats.skipped = 1
-        elif status == Status.FAILED:
+        elif status == Status.FAILED and (
+            not self._is_empty_except_testcases or not self._has_any_testcase_failures()
+        ):
             result.failure = _junit.Failure(
                 message=None,
                 description=self._prepend_output(output or self._default_fail_message),
@@ -352,12 +445,13 @@ class BaseReporter(contextlib.AbstractContextManager, metaclass=abc.ABCMeta):
             )
             result.stats.errors = 1
             has_output = True
+
         if not has_output:
             result.stderr = stderr or None
             result.stdout = (
                 "\n\n".join(part for part in [messages, stdout] if part) or None
             )
-        return result
+        return [result] + self._testcases
 
 
 def _get_message(error: BaseException) -> str | None:
@@ -434,6 +528,25 @@ class PartReporter(BaseReporter):
         return False
 
 
+class _CollisionAvoider:
+    def __init__(self, data: Mapping[str, t.Any]) -> None:
+        self.data = data
+        self.counters: dict[str, int] = {}
+
+    def avoid(self, name: str) -> str:
+        """
+        Given a dictionary key, make it unique.
+        """
+        counter = self.counters.get(name, 0)
+        while True:
+            test_name = f"{name}-{counter}" if counter else name
+            counter += 1
+            if test_name not in self.data:
+                self.counters[name] = counter
+                return test_name
+        return name
+
+
 class SessionReporter(BaseReporter):
     """
     Reporter for a session.
@@ -455,6 +568,7 @@ class SessionReporter(BaseReporter):
         self.current_part: PartReporter | None = None
         self.url = url
         self._collected_errors: list[BaseException] = []
+        self._testsuites: list[_junit.Testsuite] = []
 
     def __exit__(
         self,
@@ -490,31 +604,90 @@ class SessionReporter(BaseReporter):
         self.parts.append(part_reporter)
         return part_reporter
 
-    def _get_bot_report_file(self, *, prefix: str = "") -> BotFile | None:
-        reports = []
-        suffix = f" [[details]({self.url})]" if self.url else ""
+    def add_junit_testsuite(self, testsuite: _junit.Testsuite) -> None:
+        """
+        Add JUnit test suite.
+
+        Note that this transfers the ownership of test suite object to the reporter.
+        """
+        _complete_testsuite(testsuite)
+        self._testsuites.append(testsuite)
+
+    @staticmethod
+    def _get_url_suffix(url: str | None) -> str:
+        return f" [[details]({url})]" if url else ""
+
+    def _collect_bot_reports_for_testsuite(
+        self, testsuite: _junit.Testsuite, *, title: str, suffix: str
+    ) -> list[BotResult]:
+        result = []
+        for child in testsuite.children:
+            if isinstance(child, _junit.Testsuite):
+                result.extend(
+                    self._collect_bot_reports_for_testsuite(
+                        child, title=title, suffix=suffix
+                    )
+                )
+            elif isinstance(child, _junit.Testcase):
+                result.extend(
+                    self._get_bot_reports_for_testcase(
+                        child, title=title, suffix=suffix
+                    )
+                )
+        return result
+
+    def _get_session_bot_reports(self) -> dict[str, BotFile]:
+        reports: dict[str, BotFile] = {}
+        suffix = self._get_url_suffix(self.url)
         if not self.is_empty:
-            reports.extend(
-                self._get_bot_report(prefix=f"{prefix}session ", suffix=suffix)
-            )
-        our_prefix = f"{prefix}session `{self.title}`, part "
+            report = self._get_bot_report(prefix="session ", suffix=suffix)
+            if report:
+                reports[self.title] = {
+                    "verified": True,
+                    "docs": self.url or "",
+                    "results": report,
+                }
+        our_prefix = f"session `{self.title}`, part "
         for part in self.parts:
             # pylint: disable-next=protected-access
-            reports.extend(part._get_bot_report(prefix=our_prefix, suffix=suffix))
-        if not reports:
-            if self.effective_status == Status.SUCCESS:
-                return None
-            reports.append(
-                {
-                    "message": f"Session `{self.title}` failed.",
-                    "output": self._prepend_output(self._default_fail_message),
+            report = part._get_bot_report(prefix=our_prefix, suffix=suffix)
+            if report:
+                reports[f"{self.title}-{part.title}"] = {
+                    "verified": True,
+                    "docs": self.url or "",
+                    "results": report,
                 }
+        collision_avoider = _CollisionAvoider(reports)
+        for testsuite in self._testsuites:
+            ts_url = testsuite.url or self.url
+            ts_suffix = self._get_url_suffix(ts_url)
+            report = self._collect_bot_reports_for_testsuite(
+                testsuite,
+                title=f"session `{self.title}`",
+                suffix=ts_suffix,
             )
-        return {
-            "verified": True,
-            "docs": self.url or "",
-            "results": reports,
-        }
+            if report:
+                file = collision_avoider.avoid(f"{self.title}-{testsuite.name}")
+                reports[file] = {
+                    "verified": True,
+                    "docs": ts_url or "",
+                    "results": report,
+                }
+        if not reports and self.effective_status not in (
+            Status.SUCCESS,
+            Status.SKIPPED,
+        ):
+            reports[self.title] = {
+                "verified": True,
+                "docs": self.url or "",
+                "results": [
+                    {
+                        "message": f"Session `{self.title}` failed.",
+                        "output": self._prepend_output(self._default_fail_message),
+                    }
+                ],
+            }
+        return reports
 
     def _get_junit_testsuite(self) -> _junit.Testsuite:
         result = _junit.Testsuite(
@@ -522,20 +695,35 @@ class SessionReporter(BaseReporter):
             timestamp=self.timestamp,
             url=self.url,
         )
+
         first_case: _junit.Testcase | None = None
         if not self.is_empty:
-            first_case = self._get_junit_testcase(classname=self.title)
+            testcases = self._get_junit_testcases(classname=self.title)
+            first_case = testcases[0]
+            result.children.extend(testcases)
+        elif self._testsuites:
+            # Create dummy entry for remaining time
+            first_case = _junit.Testcase(name=self.title, classname=self.title)
+            first_case.stats.time = self._duration
             result.children.append(first_case)
+
         for part in self.parts:
             # pylint: disable-next=protected-access
-            testcase = part._get_junit_testcase(classname=self.title)
-            result.children.append(testcase)
-            if (
-                first_case
-                and first_case.stats.time is not None
-                and testcase.stats.time is not None
-            ):
-                first_case.stats.time -= testcase.stats.time
+            testcases = part._get_junit_testcases(classname=self.title)
+            result.children.extend(testcases)
+            if first_case and first_case.stats.time is not None:
+                for testcase in testcases:
+                    if testcase.stats.time is not None:
+                        first_case.stats.time -= testcase.stats.time
+
+        for testsuite in self._testsuites:
+            if first_case and first_case.stats.time is not None:
+                first_case.stats.time -= _collect_time(testsuite) or datetime.timedelta(
+                    0
+                )
+            result.children.append(testsuite)
+
+        # Make sure there is something in there
         if not result.children:
             effective_status = self.effective_status
             if effective_status == Status.FAILED:
@@ -648,12 +836,12 @@ class Reporter:
         )
 
     def _get_bot_reports(self) -> dict[str, BotFile]:
-        reports = {}
+        reports: dict[str, BotFile] = {}
+        collision_avoider = _CollisionAvoider(reports)
         for session in self.sessions:
             # pylint: disable-next=protected-access
-            file = session._get_bot_report_file()
-            if file:
-                reports[session.title] = file
+            for name, file in session._get_session_bot_reports().items():
+                reports[collision_avoider.avoid(name)] = file
         return reports
 
     def _write_bot_reports(self, output_dir: Path) -> None:

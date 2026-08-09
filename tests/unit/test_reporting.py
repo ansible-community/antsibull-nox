@@ -24,7 +24,11 @@ from antsibull_nox.reporting import (
     Reporter,
     SessionReporter,
     Status,
+    _collect_time,
+    _CollisionAvoider,
     _combine_errors,
+    _complete_testcase,
+    _complete_testsuite,
     _get_message,
     _get_status_from_exception,
     _is_test_failure,
@@ -89,6 +93,89 @@ def test__is_test_failure() -> None:
 
     assert _is_test_failure(_SessionQuit()) is True
     assert _is_test_failure(CommandFailed()) is True
+
+
+def test__complete_testcase() -> None:
+    tc = _Testcase("foo")
+    _complete_testcase(tc)
+    assert tc == _Testcase("foo", stats=Stats(tests=1))
+
+    tc = _Testcase("foo", stats=Stats(tests=23))
+    _complete_testcase(tc)
+    assert tc == _Testcase("foo", stats=Stats(tests=23))
+
+    tc = _Testcase("foo")
+    tc.error = Error("bar")
+    _complete_testcase(tc)
+    assert tc == _Testcase("foo", error=tc.error, stats=Stats(tests=1, errors=1))
+
+    tc = _Testcase("foo")
+    tc.skipped = Skipped()
+    _complete_testcase(tc)
+    assert tc == _Testcase("foo", skipped=tc.skipped, stats=Stats(tests=1, skipped=1))
+
+    tc = _Testcase("foo")
+    tc.failure = Failure("baz")
+    _complete_testcase(tc)
+    assert tc == _Testcase("foo", failure=tc.failure, stats=Stats(tests=1, failures=1))
+
+
+def test__complete_testsuite() -> None:
+    ts = _Testsuite("bar")
+    _complete_testsuite(ts)
+    assert ts.children == []
+
+    ts = _Testsuite("bar", children=[_Testcase("foo")])
+    _complete_testsuite(ts)
+    assert ts.children == [_Testcase("foo", stats=Stats(tests=1))]
+
+    ts = _Testsuite("bar", children=[_Testsuite("bam", children=[_Testcase("baz")])])
+    _complete_testsuite(ts)
+    assert ts.children == [
+        _Testsuite("bam", children=[_Testcase("baz", stats=Stats(tests=1))])
+    ]
+
+    ts = _Testsuite("bar", children=[42])  # type: ignore[list-item]
+    _complete_testsuite(ts)
+    assert ts.children == [42]
+
+
+def test__collect_time() -> None:
+    # assert _collect_time(_Testsuite("foo")) == datetime.timedelta(0)
+
+    ts = _Testsuite("bar")
+    assert _collect_time(ts) is None
+
+    ts = _Testsuite(
+        "bar", children=[_Testcase("foo", stats=Stats(time=datetime.timedelta(23)))]
+    )
+    assert _collect_time(ts) == datetime.timedelta(23)
+
+    ts = _Testsuite(
+        "bar",
+        children=[
+            _Testcase("foo", stats=Stats(time=datetime.timedelta(23))),
+            _Testcase("baz", stats=Stats(time=datetime.timedelta(42))),
+        ],
+    )
+    assert _collect_time(ts) == datetime.timedelta(23 + 42)
+
+    ts = _Testsuite("bar", children=[_Testsuite("bam", children=[_Testcase("baz")])])
+    assert _collect_time(ts) is None
+
+    ts = _Testsuite(
+        "bar",
+        children=[
+            _Testsuite(
+                "bam",
+                children=[_Testcase("baz", stats=Stats(time=datetime.timedelta(23)))],
+            )
+        ],
+    )
+    assert _collect_time(ts) == datetime.timedelta(23)
+
+    ts = _Testsuite("bar", children=[42])  # type: ignore[list-item]
+    assert _collect_time(ts) is None
 
 
 def test__get_message() -> None:
@@ -259,10 +346,10 @@ def test_BaseReporter() -> None:
         "",
     )
     assert r._get_bot_report() == []
-    testcase = r._get_junit_testcase()
-    assert testcase == _Testcase(
-        name="foo", stats=Stats(tests=1, time=testcase.stats.time)
-    )
+    testcases = r._get_junit_testcases()
+    assert testcases == [
+        _Testcase(name="foo", stats=Stats(tests=1, time=testcases[0].stats.time))
+    ]
 
     with pytest.raises(RuntimeError):
         r.__enter__()
@@ -296,12 +383,14 @@ def test_BaseReporter() -> None:
             "output": "Please see the CI output for details.",
         },
     ]
-    testcase = r._get_junit_testcase()
-    assert testcase == _Testcase(
-        name="foo",
-        stats=Stats(tests=1, errors=1, time=testcase.stats.time),
-        error=Error("The test case was forcefully aborted", type="aborted"),
-    )
+    testcases = r._get_junit_testcases()
+    assert testcases == [
+        _Testcase(
+            name="foo",
+            stats=Stats(tests=1, errors=1, time=testcases[0].stats.time),
+            error=Error("The test case was forcefully aborted", type="aborted"),
+        )
+    ]
 
     # Single run with interruption and default error (Ctrl+C)
 
@@ -332,14 +421,18 @@ def test_BaseReporter() -> None:
             "output": "baz\n\nbar",
         },
     ]
-    testcase = r._get_junit_testcase()
-    assert testcase == _Testcase(
-        name="foo",
-        stats=Stats(tests=1, errors=1, time=testcase.stats.time),
-        error=Error(
-            "The test case was forcefully aborted", description="baz", type="aborted"
-        ),
-    )
+    testcases = r._get_junit_testcases()
+    assert testcases == [
+        _Testcase(
+            name="foo",
+            stats=Stats(tests=1, errors=1, time=testcases[0].stats.time),
+            error=Error(
+                "The test case was forcefully aborted",
+                description="baz",
+                type="aborted",
+            ),
+        )
+    ]
 
     # Single run with error due to exception
 
@@ -395,12 +488,14 @@ def test_BaseReporter() -> None:
         "foo/bar.baz:0:0: A warning",
     )
     assert r._get_bot_report() == []
-    testcase = r._get_junit_testcase()
-    assert testcase == _Testcase(
-        name="foo",
-        stats=Stats(tests=1, time=testcase.stats.time),
-        stdout="foo/bar.baz:0:0: A warning",
-    )
+    testcases = r._get_junit_testcases()
+    assert testcases == [
+        _Testcase(
+            name="foo",
+            stats=Stats(tests=1, time=testcases[0].stats.time),
+            stdout="foo/bar.baz:0:0: A warning",
+        )
+    ]
 
     # Single run with error due to messages
 
@@ -443,12 +538,14 @@ def test_BaseReporter() -> None:
             "output": "foo/bar.baz:0:0: An error",
         },
     ]
-    testcase = r._get_junit_testcase()
-    assert testcase == _Testcase(
-        name="foo",
-        stats=Stats(tests=1, failures=1, time=testcase.stats.time),
-        failure=Failure(None, description="foo/bar.baz:0:0: An error"),
-    )
+    testcases = r._get_junit_testcases()
+    assert testcases == [
+        _Testcase(
+            name="foo",
+            stats=Stats(tests=1, failures=1, time=testcases[0].stats.time),
+            failure=Failure(None, description="foo/bar.baz:0:0: An error"),
+        )
+    ]
 
     # Single run with error due failed program run (and one successful run)
 
@@ -490,12 +587,78 @@ def test_BaseReporter() -> None:
             "output": "$ foo bar",
         },
     ]
-    testcase = r._get_junit_testcase()
-    assert testcase == _Testcase(
-        name="foo",
-        stats=Stats(tests=1, failures=1, time=testcase.stats.time),
-        failure=Failure(None, description="$ foo bar"),
+    testcases = r._get_junit_testcases()
+    assert testcases == [
+        _Testcase(
+            name="foo",
+            stats=Stats(tests=1, failures=1, time=testcases[0].stats.time),
+            failure=Failure(None, description="$ foo bar"),
+        )
+    ]
+
+    # Single run with JUnit test-cases
+
+    r = MyReporter(title="foo")
+    with r:
+        assert r._status == Status.SUCCESS
+        assert r.effective_status == Status.SUCCESS
+        r.add_junit_testcase(_Testcase("bar"))
+        assert r._status == Status.SUCCESS
+        assert r.effective_status == Status.SUCCESS
+        r.add_junit_testcase(_Testcase("baz", failure=Failure("foobarbaz")))
+        assert r._status == Status.SUCCESS
+        assert r.effective_status == Status.FAILED
+        r.add_junit_testcase(
+            _Testcase(
+                "bam",
+                classname="foobar",
+                stats=Stats(tests=3, failures=2, time=datetime.timedelta(123)),
+                failure=Failure("joo", description="asdf"),
+            )
+        )
+        assert r._status == Status.SUCCESS
+        assert r.effective_status == Status.FAILED
+
+    assert r.status == Status.SUCCESS
+    assert r.effective_status == Status.FAILED
+    assert r._get_output() == (
+        "",
+        "",
+        "",
+        "",
     )
+    assert r._get_bot_report() == [
+        {
+            "message": "Failures in nox `foo` in `baz`.",
+            "output": "Please see the CI output for details.",
+        },
+        {
+            "message": "Failures in nox `foo` in `foobar` - `bam`:",
+            "output": "asdf",
+        },
+    ]
+    testcases = r._get_junit_testcases()
+    assert testcases == [
+        _Testcase(
+            name="foo",
+            stats=Stats(tests=1, time=testcases[0].stats.time),
+        ),
+        _Testcase(
+            name="bar",
+            stats=Stats(tests=1),
+        ),
+        _Testcase(
+            name="baz",
+            stats=Stats(failures=1, tests=1),
+            failure=Failure("foobarbaz"),
+        ),
+        _Testcase(
+            name="bam",
+            classname="foobar",
+            stats=Stats(failures=2, tests=3, time=datetime.timedelta(123)),
+            failure=Failure("joo", description="asdf"),
+        ),
+    ]
 
     # Single run with error due to messages and a failed program run
 
@@ -534,14 +697,17 @@ def test_BaseReporter() -> None:
             "output": "foo/bar.baz:0:0: An error\n" "\n" "$ foo bar\nstderr\nstdout",
         },
     ]
-    testcase = r._get_junit_testcase()
-    assert testcase == _Testcase(
-        name="foo",
-        stats=Stats(tests=1, failures=1, time=testcase.stats.time),
-        failure=Failure(
-            None, description="foo/bar.baz:0:0: An error\n\n$ foo bar\nstderr\nstdout"
-        ),
-    )
+    testcases = r._get_junit_testcases()
+    assert testcases == [
+        _Testcase(
+            name="foo",
+            stats=Stats(tests=1, failures=1, time=testcases[0].stats.time),
+            failure=Failure(
+                None,
+                description="foo/bar.baz:0:0: An error\n\n$ foo bar\nstderr\nstdout",
+            ),
+        )
+    ]
 
     # Single run with skipped part
 
@@ -563,12 +729,14 @@ def test_BaseReporter() -> None:
         "",
     )
     assert r._get_bot_report() == []
-    testcase = r._get_junit_testcase()
-    assert testcase == _Testcase(
-        name="foo",
-        stats=Stats(tests=1, skipped=1, time=testcase.stats.time),
-        skipped=Skipped(None),
-    )
+    testcases = r._get_junit_testcases()
+    assert testcases == [
+        _Testcase(
+            name="foo",
+            stats=Stats(tests=1, skipped=1, time=testcases[0].stats.time),
+            skipped=Skipped(None),
+        )
+    ]
 
 
 class FakeNoxSession:
@@ -623,7 +791,7 @@ def test_SessionReporter() -> None:
     with session_reporter:
         assert session_reporter.current_part is None
 
-    assert session_reporter._get_bot_report_file() is None
+    assert session_reporter._get_session_bot_reports() == {}
     testsuite = session_reporter._get_junit_testsuite()
     assert testsuite == _Testsuite(
         name="foo session",
@@ -650,15 +818,17 @@ def test_SessionReporter() -> None:
     with pytest.raises(CommandFailed, match="^foo bar$"):
         session_reporter.__exit__(None, None, None)
 
-    assert session_reporter._get_bot_report_file() == {
-        "verified": True,
-        "docs": "",
-        "results": [
-            {
-                "message": "Failures in nox session `foo session`, part `foo part`.",
-                "output": "Please see the CI output for details.",
-            }
-        ],
+    assert session_reporter._get_session_bot_reports() == {
+        "foo session-foo part": {
+            "verified": True,
+            "docs": "",
+            "results": [
+                {
+                    "message": "Failures in nox session `foo session`, part `foo part`.",
+                    "output": "Please see the CI output for details.",
+                }
+            ],
+        },
     }
     testsuite = session_reporter._get_junit_testsuite()
     assert testsuite == _Testsuite(
@@ -701,15 +871,17 @@ def test_SessionReporter() -> None:
                 raise ValueError("meh")
         assert session_reporter.current_part is None
 
-    assert session_reporter._get_bot_report_file() == {
-        "docs": "",
-        "results": [
-            {
-                "message": "Failures in nox session `foo session`, part `bar part`.",
-                "output": "Please see the CI output for details.",
-            },
-        ],
-        "verified": True,
+    assert session_reporter._get_session_bot_reports() == {
+        "foo session-bar part": {
+            "docs": "",
+            "results": [
+                {
+                    "message": "Failures in nox session `foo session`, part `bar part`.",
+                    "output": "Please see the CI output for details.",
+                },
+            ],
+            "verified": True,
+        }
     }
     testsuite = session_reporter._get_junit_testsuite()
     assert testsuite == _Testsuite(
@@ -762,7 +934,7 @@ def test_SessionReporter() -> None:
             ]
         )
 
-    assert session_reporter._get_bot_report_file() is None
+    assert session_reporter._get_session_bot_reports() == {}
     testsuite = session_reporter._get_junit_testsuite()
     assert testsuite == _Testsuite(
         name="foo session",
@@ -802,15 +974,17 @@ def test_SessionReporter() -> None:
             ]
         )
 
-    assert session_reporter._get_bot_report_file() == {
-        "docs": "",
-        "results": [
-            {
-                "message": "Failures in nox session `foo session`:",
-                "output": "foo/bar.baz:0:0: An error",
-            },
-        ],
-        "verified": True,
+    assert session_reporter._get_session_bot_reports() == {
+        "foo session": {
+            "docs": "",
+            "results": [
+                {
+                    "message": "Failures in nox session `foo session`:",
+                    "output": "foo/bar.baz:0:0: An error",
+                },
+            ],
+            "verified": True,
+        }
     }
     testsuite = session_reporter._get_junit_testsuite()
     assert testsuite == _Testsuite(
@@ -865,19 +1039,27 @@ def test_SessionReporter() -> None:
                 raise ValueError("meh")
         assert session_reporter.current_part is None
 
-    assert session_reporter._get_bot_report_file() == {
-        "docs": "",
-        "results": [
-            {
-                "message": "Failures in nox session `foo session`:",
-                "output": "foo/bar.baz:0:0: An error",
-            },
-            {
-                "message": "Failures in nox session `foo session`, part `bar part`.",
-                "output": "Please see the CI output for details.",
-            },
-        ],
-        "verified": True,
+    assert session_reporter._get_session_bot_reports() == {
+        "foo session": {
+            "docs": "",
+            "results": [
+                {
+                    "message": "Failures in nox session `foo session`:",
+                    "output": "foo/bar.baz:0:0: An error",
+                },
+            ],
+            "verified": True,
+        },
+        "foo session-bar part": {
+            "docs": "",
+            "results": [
+                {
+                    "message": "Failures in nox session `foo session`, part `bar part`.",
+                    "output": "Please see the CI output for details.",
+                },
+            ],
+            "verified": True,
+        },
     }
     testsuite = session_reporter._get_junit_testsuite()
     assert testsuite == _Testsuite(
@@ -932,15 +1114,17 @@ def test_SessionReporter() -> None:
         with session_reporter:
             raise ValueError()
 
-    assert session_reporter._get_bot_report_file() == {
-        "docs": "",
-        "results": [
-            {
-                "message": "Session `foo session` failed.",
-                "output": "Please see the CI output for details.",
-            },
-        ],
-        "verified": True,
+    assert session_reporter._get_session_bot_reports() == {
+        "foo session": {
+            "docs": "",
+            "results": [
+                {
+                    "message": "Session `foo session` failed.",
+                    "output": "Please see the CI output for details.",
+                },
+            ],
+            "verified": True,
+        }
     }
     testsuite = session_reporter._get_junit_testsuite()
     assert testsuite == _Testsuite(
@@ -974,15 +1158,17 @@ def test_SessionReporter() -> None:
         with session_reporter:
             raise KeyboardInterrupt()
 
-    assert session_reporter._get_bot_report_file() == {
-        "docs": "",
-        "results": [
-            {
-                "message": "Session `foo session` failed.",
-                "output": "Please see the CI output for details.",
-            },
-        ],
-        "verified": True,
+    assert session_reporter._get_session_bot_reports() == {
+        "foo session": {
+            "docs": "",
+            "results": [
+                {
+                    "message": "Session `foo session` failed.",
+                    "output": "Please see the CI output for details.",
+                },
+            ],
+            "verified": True,
+        }
     }
     testsuite = session_reporter._get_junit_testsuite()
     assert testsuite == _Testsuite(
@@ -1020,16 +1206,7 @@ def test_SessionReporter() -> None:
         with session_reporter:
             raise _SessionSkip()
 
-    assert session_reporter._get_bot_report_file() == {
-        "docs": "",
-        "results": [
-            {
-                "message": "Session `foo session` failed.",
-                "output": "Please see the CI output for details.",
-            },
-        ],
-        "verified": True,
-    }
+    assert session_reporter._get_session_bot_reports() == {}
     testsuite = session_reporter._get_junit_testsuite()
     assert testsuite == _Testsuite(
         name="foo session",
@@ -1061,6 +1238,130 @@ def test_SessionReporter() -> None:
             assert session_reporter.current_part is None
             part_reporter.__enter__()
             assert session_reporter.current_part is part_reporter
+
+    # JUnit test cases
+
+    session_reporter = SessionReporter(
+        owner=reporter,
+        session=nox_session,  # type: ignore[arg-type]
+        url=None,
+    )
+    with session_reporter:
+        with session_reporter.get_part_reporter("moomeh") as part_reporter:
+            part_reporter.add_junit_testcase(_Testcase("foobar", stats=Stats(tests=2)))
+        session_reporter.add_junit_testcase(_Testcase("meh", stats=Stats(tests=3)))
+        session_reporter.add_junit_testcase(
+            _Testcase("moo", stats=Stats(tests=2, time=datetime.timedelta(0.1)))
+        )
+
+    assert session_reporter._get_session_bot_reports() == {}
+    testsuite = session_reporter._get_junit_testsuite()
+    assert testsuite == _Testsuite(
+        name="foo session",
+        timestamp=session_reporter.timestamp,
+        children=[
+            _Testcase(
+                name="foo session",
+                classname="foo session",
+                stats=Stats(
+                    tests=1,
+                    time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
+                ),
+            ),
+            _Testcase("meh", stats=Stats(tests=3)),
+            _Testcase("moo", stats=Stats(tests=2, time=datetime.timedelta(0.1))),
+            _Testcase(
+                name="moomeh",
+                classname="foo session",
+                stats=Stats(
+                    tests=1,
+                    time=testsuite.children[3].stats.time,  # type: ignore[union-attr]
+                ),
+            ),
+            _Testcase(
+                name="foobar",
+                stats=Stats(tests=2),
+            ),
+        ],
+    )
+
+    # JUnit test suites
+
+    session_reporter = SessionReporter(
+        owner=reporter,
+        session=nox_session,  # type: ignore[arg-type]
+        url=None,
+    )
+    with session_reporter:
+        session_reporter.add_junit_testsuite(
+            _Testsuite(
+                "asdf",
+                children=[
+                    _Testcase("bar"),
+                    _Testcase("baz", failure=Failure("foobarbaz")),
+                    _Testcase(
+                        "bam",
+                        classname="foobar",
+                        stats=Stats(tests=3, failures=2, time=datetime.timedelta(123)),
+                        failure=Failure("joo", description="asdf"),
+                    ),
+                    _Testsuite("boo"),
+                    42,  # type: ignore[list-item]
+                ],
+            )
+        )
+        session_reporter.add_junit_testsuite(_Testsuite("moo"))
+
+    assert session_reporter._get_session_bot_reports() == {
+        "foo session-asdf": {
+            "docs": "",
+            "results": [
+                {
+                    "message": "Failures in nox session `foo session` in `baz`.",
+                    "output": "Please see the CI output for details.",
+                },
+                {
+                    "message": "Failures in nox session `foo session` in `foobar` - `bam`:",
+                    "output": "asdf",
+                },
+            ],
+            "verified": True,
+        },
+    }
+    testsuite = session_reporter._get_junit_testsuite()
+    assert testsuite == _Testsuite(
+        name="foo session",
+        timestamp=session_reporter.timestamp,
+        children=[
+            _Testcase(
+                name="foo session",
+                classname="foo session",
+                stats=Stats(
+                    time=testsuite.children[0].stats.time,  # type: ignore[union-attr]
+                ),
+            ),
+            _Testsuite(
+                "asdf",
+                children=[
+                    _Testcase("bar", stats=Stats(tests=1)),
+                    _Testcase(
+                        "baz",
+                        stats=Stats(failures=1, tests=1),
+                        failure=Failure("foobarbaz"),
+                    ),
+                    _Testcase(
+                        "bam",
+                        classname="foobar",
+                        stats=Stats(tests=3, failures=2, time=datetime.timedelta(123)),
+                        failure=Failure("joo", description="asdf"),
+                    ),
+                    _Testsuite("boo"),
+                    42,  # type: ignore[list-item]
+                ],
+            ),
+            _Testsuite("moo"),
+        ],
+    )
 
 
 def test_Reporter(tmp_path: Path) -> None:
@@ -1241,3 +1542,13 @@ def test_Reporter(tmp_path: Path) -> None:
                 )
 
                 assert junit_file.read_text() == junit_xml
+
+
+def test__CollisionAvoider() -> None:
+    data: dict[str, None] = {}
+    ca = _CollisionAvoider(data)
+    assert ca.avoid("foo") == "foo"
+    assert ca.avoid("foo") == "foo-1"
+    assert ca.avoid("foo") == "foo-2"
+    data["foo-3"] = None
+    assert ca.avoid("foo") == "foo-4"
