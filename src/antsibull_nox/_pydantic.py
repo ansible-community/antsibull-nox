@@ -8,9 +8,7 @@
 # **Vendored** from antsibull-core.
 #
 # I vendored this to avoid depending on antsibull-core only for this.
-# TBH, most of this should be part of pydantic anyway. See
-# https://github.com/pydantic/pydantic/discussions/2652 for a discussion
-# on this.
+# Most of this can be removed once we depend on pydantic >= 2.12 anyway.
 #
 # pylint: disable=missing-function-docstring
 # ========================================================================
@@ -28,6 +26,21 @@ import pydantic as p
 
 if t.TYPE_CHECKING:  # pragma: no cover
     from typing_extensions import TypeGuard
+
+
+def _parse_pydantic_version() -> tuple[int, ...]:
+    return tuple(int(part) for part in p.VERSION.split(".", 2)[:2])
+
+
+def _get_pydantic_version() -> tuple[int, ...]:
+    try:
+        return _parse_pydantic_version()
+    except Exception:  # pylint: disable=broad-exception-caught
+        # Return something that's bigger than any explicit comparison we do.
+        return (2, 999)
+
+
+PYDANTIC_VERSION = _get_pydantic_version()
 
 
 def _is_basemodel(a_type: t.Any) -> TypeGuard[type[p.BaseModel]]:
@@ -68,6 +81,8 @@ def _modify_config(
     return change
 
 
+# This should eventually be removed, once we require pydantic >= 2.12
+# (https://github.com/pydantic/pydantic/discussions/2652#discussioncomment-17853656)
 def set_extras(
     models: type[p.BaseModel] | Collection[type[p.BaseModel]],
     value: t.Literal["allow", "ignore", "forbid"],
@@ -86,6 +101,8 @@ def set_extras(
         _modify_config(models, processed_classes, change_config)
 
 
+# This should eventually be removed, once we require pydantic >= 2.12
+# (https://github.com/pydantic/pydantic/discussions/2652#discussioncomment-17853656)
 def forbid_extras(models: type[p.BaseModel] | Collection[type[p.BaseModel]]) -> None:
     set_extras(models, "forbid")
 
@@ -96,3 +113,10 @@ def get_formatted_error_messages(error: p.ValidationError) -> list[str]:
         return f'{location}: {err["msg"]}'
 
     return [format_error(err) for err in error.errors()]
+
+
+__all__ = [
+    "PYDANTIC_VERSION",
+    "forbid_extras",
+    "get_formatted_error_messages",
+]

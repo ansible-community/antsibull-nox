@@ -1,0 +1,2 @@
+minor_changes:
+  - "Use new validation feature of pydantic dependency if available (https://github.com/ansible-community/antsibull-nox/pull/238)."
