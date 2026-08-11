@@ -13,9 +13,14 @@ from __future__ import annotations
 import functools
 import shutil
 import subprocess
+import typing as t
 from pathlib import Path
 
 from ..utils import Version
+
+if t.TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Sequence
+
 
 # The following contains Python version candidates
 _PYTHON_VERSIONS_TO_TRY: tuple[Version, ...] = tuple(
@@ -42,6 +47,8 @@ _PYTHON_VERSIONS_TO_TRY: tuple[Version, ...] = tuple(
         # "3.19",
     ]
 )
+
+_LATEST_PYTHON_VERSION = Version.parse("3.14")
 
 
 @functools.cache
@@ -77,6 +84,18 @@ def get_installed_python_versions() -> dict[Version, Path]:
                     result.setdefault(version, Path(exe))
 
     return result
+
+
+def get_recent_python_version(versions: Sequence[Version]) -> Version:
+    """
+    Given a sequence of Python versions, extract a recent one that is publicly available.
+    """
+    acceptable_versions = [
+        version for version in versions if version <= _LATEST_PYTHON_VERSION
+    ]
+    if not acceptable_versions:
+        return max(versions)
+    return max(acceptable_versions)
 
 
 __all__ = [
