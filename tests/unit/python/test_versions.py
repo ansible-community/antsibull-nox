@@ -9,7 +9,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from antsibull_nox.python.versions import _LATEST_PYTHON_VERSION, get_installed_python_versions, get_recent_python_version
+from antsibull_nox.python.versions import (
+    _LATEST_PYTHON_VERSION,
+    get_installed_python_versions,
+    get_recent_python_version,
+)
 from antsibull_nox.utils import Version
 
 from ..utils import set_environ
