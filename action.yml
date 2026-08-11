@@ -94,10 +94,10 @@ runs:
         FILE_APPEND_MODE = "a"
         OUTPUTS_FILE_PATH = pathlib.Path(os.environ["GITHUB_OUTPUT"])
 
-        def set_output(name, value):
+        def set_output(name, value, empty_placeholder="(empty)"):
             with OUTPUTS_FILE_PATH.open(FILE_APPEND_MODE) as outputs_file:
                 outputs_file.writelines(f"{name}={value}{os.linesep}")
-            print(f"Setting {name} to {value}")
+            print(f"Setting {name} to {value or empty_placeholder}")
 
         python_versions = (
             [version for version in os.environ["ANTSIBULL_NOX_EXTRA_PYTHON_VERSIONS"].splitlines() if version]
@@ -114,16 +114,12 @@ runs:
 
     - name: "Install nox and antsibull-nox"
       run: |
-        echo "::group::Install nox and antsibull-nox"
         ${{ steps.python.outputs.python-path }} -m pip install ${{ github.action_path }} ${{ steps.python-restrictions.outputs.restrictions }}
-        echo "::endgroup::"
       shell: bash
 
     - name: "Set up nox environments"
       run: |
-        echo "::group::Set up nox environments"
         nox --verbose --install-only${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }} 2>&1
-        echo "::endgroup::"
       env:
         FORCE_COLOR: "1"
         ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS: "true"

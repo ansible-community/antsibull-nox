@@ -1,0 +1,2 @@
+minor_changes:
+  - "Improve the GitHub Action by avoiding unnecessary nested groups (https://github.com/ansible-community/antsibull-nox/pull/247)."
