@@ -114,16 +114,12 @@ runs:
 
     - name: "Install nox and antsibull-nox"
       run: |
-        echo "::group::Install nox and antsibull-nox"
         ${{ steps.python.outputs.python-path }} -m pip install ${{ github.action_path }} ${{ steps.python-restrictions.outputs.restrictions }}
-        echo "::endgroup::"
       shell: bash
 
     - name: "Set up nox environments"
       run: |
-        echo "::group::Set up nox environments"
         nox --verbose --install-only${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }} 2>&1
-        echo "::endgroup::"
       env:
         FORCE_COLOR: "1"
         ANTSIBULL_NOX_IGNORE_INSTALLED_COLLECTIONS: "true"
