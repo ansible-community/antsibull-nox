@@ -94,10 +94,10 @@ runs:
         FILE_APPEND_MODE = "a"
         OUTPUTS_FILE_PATH = pathlib.Path(os.environ["GITHUB_OUTPUT"])
 
-        def set_output(name, value):
+        def set_output(name, value, empty_placeholder="(empty)"):
             with OUTPUTS_FILE_PATH.open(FILE_APPEND_MODE) as outputs_file:
                 outputs_file.writelines(f"{name}={value}{os.linesep}")
-            print(f"Setting {name} to {value}")
+            print(f"Setting {name} to {value or empty_placeholder}")
 
         python_versions = (
             [version for version in os.environ["ANTSIBULL_NOX_EXTRA_PYTHON_VERSIONS"].splitlines() if version]
