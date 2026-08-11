@@ -35,7 +35,7 @@ from ..cd import get_base_branch, get_changes, get_vcs_name, is_config_dir_the_r
 from ..config import CONFIG_FILENAME
 from ..container import get_container_engine_preference
 from ..paths.utils import copy_directory_tree_into
-from ..python.versions import get_installed_python_versions
+from ..python.versions import get_installed_python_versions, get_recent_python_version
 from ..reporting import get_session_reporter
 from ..utils import Version
 from ..utils.nox import is_nox_newer_than
@@ -349,7 +349,9 @@ def add_ansible_test_session(
                 if ansible_core_branch_name is not None
                 else str(parsed_ansible_core_version)
             ),
-            "python": str(max(core_info.controller_python_versions)),
+            "python": str(
+                get_recent_python_version(core_info.controller_python_versions)
+            ),
         }
         if register_extra_data:
             data.update(register_extra_data)
