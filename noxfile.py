@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import contextlib
 import os
+import re
 import shlex
 import tempfile
 from functools import partial
@@ -324,6 +325,16 @@ def mkdocs(session: nox.Session) -> None:
     session.run("mkdocs", *(session.posargs or ["build"]))
 
 
+def get_pyproject_python_version() -> str:
+    reqpy = re.compile(r'^requires-python\s*=\s*">=\s*([0-9.]+)"$')
+    with open("pyproject.toml", "r", encoding="utf-8") as f:
+        for line in f:
+            m = reqpy.match(line.strip())
+            if m:
+                return m.group(1)
+    raise ValueError("Cannot parse python-requires in pyproject.toml")
+
+
 requirements_files = sorted(p.stem for p in Path("requirements").glob("*.in"))
 
 
@@ -331,6 +342,7 @@ requirements_files = sorted(p.stem for p in Path("requirements").glob("*.in"))
 @nox.parametrize(["req"], requirements_files, requirements_files)
 def pip_compile(session: nox.Session, req: str) -> None:
     session.install("-r", "requirements/pip-compile.txt")
+    python_version = ".".join(get_pyproject_python_version().split(".")[:2])
 
     in_file = f"requirements/{req}.in"
     out_file = f"requirements/{req}.txt"
@@ -345,6 +357,8 @@ def pip_compile(session: nox.Session, req: str) -> None:
         "compile",
         "--universal",
         "--quiet",
+        "--python-version",
+        python_version,
         "--output-file",
         out_file,
         *args,
