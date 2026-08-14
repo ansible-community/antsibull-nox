@@ -24,7 +24,7 @@ ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not IN_CI)).lower() in (
 nox.options.sessions = "lint", "test"
 
 
-def install(session: nox.Session, *args, editable=False, **kwargs):
+def install(session: nox.Session, *args: str, editable: bool = False, **kwargs) -> None:
     # nox --no-venv
     if isinstance(session.virtualenv, nox.virtualenv.PassthroughEnv):
         session.warn(f"No venv. Skipping installation of {args}")
@@ -73,7 +73,7 @@ def other_antsibull(
 
 
 @nox.session
-def integration(session: nox.Session):
+def integration(session: nox.Session) -> None:
     install(session, ".[coverage]", *other_antsibull(), editable=True)
     tmp = Path(session.create_tmp())
     covfile = tmp / ".coverage"
@@ -114,7 +114,7 @@ def integration(session: nox.Session):
 
 
 @nox.session(python=["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"])
-def test(session: nox.Session):
+def test(session: nox.Session) -> None:
     install(session, ".[test, coverage]", *other_antsibull(), editable=True)
     covfile = Path(session.create_tmp(), ".coverage")
     more_args = []
@@ -134,7 +134,7 @@ def test(session: nox.Session):
 
 
 @nox.session
-def coverage(session: nox.Session):
+def coverage(session: nox.Session) -> None:
     install(session, ".[coverage]", *other_antsibull(), editable=True)
     combined = map(str, Path().glob(".nox/*/tmp/.coverage"))
     # Combine the results into a single .coverage file in the root
@@ -146,14 +146,14 @@ def coverage(session: nox.Session):
 
 
 @nox.session
-def lint(session: nox.Session):
+def lint(session: nox.Session) -> None:
     session.notify("formatters")
     session.notify("codeqa")
     session.notify("typing")
 
 
 @nox.session
-def formatters(session: nox.Session):
+def formatters(session: nox.Session) -> None:
     install(session, ".[formatters]", *other_antsibull())
     posargs = list(session.posargs)
     if IN_CI:
@@ -163,7 +163,7 @@ def formatters(session: nox.Session):
 
 
 @nox.session
-def codeqa(session: nox.Session):
+def codeqa(session: nox.Session) -> None:
     install(session, ".[codeqa]", *other_antsibull(), editable=True)
     session.run("flake8", "src/antsibull_nox", "tests", *session.posargs)
     session.run(
@@ -180,7 +180,7 @@ def codeqa(session: nox.Session):
 
 
 @nox.session
-def typing(session: nox.Session):
+def typing(session: nox.Session) -> None:
     install(
         session,
         ".[typing]",
@@ -209,7 +209,7 @@ def check_no_modifications(session: nox.Session) -> None:
 
 
 @contextlib.contextmanager
-def isolated_src(session: nox.Session):
+def isolated_src(session: nox.Session) -> None:
     """
     Create an isolated directory that only contains the latest git HEAD
     """
@@ -230,7 +230,7 @@ def isolated_src(session: nox.Session):
 
 
 @nox.session
-def bump(session: nox.Session):
+def bump(session: nox.Session) -> None:
     check_no_modifications(session)
     if len(session.posargs) not in (1, 2):
         session.error(
@@ -303,7 +303,7 @@ def bump(session: nox.Session):
 
 
 @nox.session
-def publish(session: nox.Session):
+def publish(session: nox.Session) -> None:
     check_no_modifications(session)
     install(session, "hatch")
     session.run("hatch", "publish", *session.posargs)
@@ -315,6 +315,6 @@ def publish(session: nox.Session):
 
 
 @nox.session
-def mkdocs(session: nox.Session):
+def mkdocs(session: nox.Session) -> None:
     session.install("-r", "docs-requirements.txt")
     session.run("mkdocs", *(session.posargs or ["build"]))
