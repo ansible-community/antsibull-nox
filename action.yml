@@ -115,7 +115,7 @@ runs:
         requirements_postfix = ""
         for version in special_requirements:
             if any(v <= version for v in python_major_version_tuples):
-                requirements_postfix = f"{version[0]}.{version[1]}"
+                requirements_postfix = f"-{version[0]}.{version[1]}"
                 break
 
         set_output("requirements_file", f"requirements/action{requirements_postfix}.txt")
