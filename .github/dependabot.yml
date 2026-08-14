@@ -13,3 +13,5 @@ updates:
       ci:
         patterns:
           - "*"
+    cooldown:
+      default-days: 3
