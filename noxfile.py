@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import contextlib
 import os
+import re
 import shlex
 import tempfile
 from functools import partial
@@ -24,7 +25,7 @@ ALLOW_EDITABLE = os.environ.get("ALLOW_EDITABLE", str(not IN_CI)).lower() in (
 nox.options.sessions = "lint", "test"
 
 
-def install(session: nox.Session, *args, editable=False, **kwargs):
+def install(session: nox.Session, *args: str, editable: bool = False, **kwargs) -> None:
     # nox --no-venv
     if isinstance(session.virtualenv, nox.virtualenv.PassthroughEnv):
         session.warn(f"No venv. Skipping installation of {args}")
@@ -73,7 +74,7 @@ def other_antsibull(
 
 
 @nox.session
-def integration(session: nox.Session):
+def integration(session: nox.Session) -> None:
     install(session, ".[coverage]", *other_antsibull(), editable=True)
     tmp = Path(session.create_tmp())
     covfile = tmp / ".coverage"
@@ -114,7 +115,7 @@ def integration(session: nox.Session):
 
 
 @nox.session(python=["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"])
-def test(session: nox.Session):
+def test(session: nox.Session) -> None:
     install(session, ".[test, coverage]", *other_antsibull(), editable=True)
     covfile = Path(session.create_tmp(), ".coverage")
     more_args = []
@@ -134,7 +135,7 @@ def test(session: nox.Session):
 
 
 @nox.session
-def coverage(session: nox.Session):
+def coverage(session: nox.Session) -> None:
     install(session, ".[coverage]", *other_antsibull(), editable=True)
     combined = map(str, Path().glob(".nox/*/tmp/.coverage"))
     # Combine the results into a single .coverage file in the root
@@ -146,14 +147,14 @@ def coverage(session: nox.Session):
 
 
 @nox.session
-def lint(session: nox.Session):
+def lint(session: nox.Session) -> None:
     session.notify("formatters")
     session.notify("codeqa")
     session.notify("typing")
 
 
 @nox.session
-def formatters(session: nox.Session):
+def formatters(session: nox.Session) -> None:
     install(session, ".[formatters]", *other_antsibull())
     posargs = list(session.posargs)
     if IN_CI:
@@ -163,7 +164,7 @@ def formatters(session: nox.Session):
 
 
 @nox.session
-def codeqa(session: nox.Session):
+def codeqa(session: nox.Session) -> None:
     install(session, ".[codeqa]", *other_antsibull(), editable=True)
     session.run("flake8", "src/antsibull_nox", "tests", *session.posargs)
     session.run(
@@ -180,7 +181,7 @@ def codeqa(session: nox.Session):
 
 
 @nox.session
-def typing(session: nox.Session):
+def typing(session: nox.Session) -> None:
     install(
         session,
         ".[typing]",
@@ -193,23 +194,27 @@ def typing(session: nox.Session):
     )
 
 
-def check_no_modifications(session: nox.Session) -> None:
+def check_no_modifications(
+    session: nox.Session, *, where: list[str] | None = None, message: str | None = None
+) -> None:
     modified = session.run(
         "git",
         "status",
         "--porcelain=v1",
         "--untracked=normal",
+        *(where or []),
         external=True,
         silent=True,
     )
     if modified:
         session.error(
-            "There are modified or untracked files. Commit, restore, or remove them before running this"
+            message
+            or "There are modified or untracked files. Commit, restore, or remove them before running this"
         )
 
 
 @contextlib.contextmanager
-def isolated_src(session: nox.Session):
+def isolated_src(session: nox.Session) -> None:
     """
     Create an isolated directory that only contains the latest git HEAD
     """
@@ -230,7 +235,7 @@ def isolated_src(session: nox.Session):
 
 
 @nox.session
-def bump(session: nox.Session):
+def bump(session: nox.Session) -> None:
     check_no_modifications(session)
     if len(session.posargs) not in (1, 2):
         session.error(
@@ -244,7 +249,7 @@ def bump(session: nox.Session):
             session.error(
                 f"Either {fragment_file} must already exist, or two positional arguments must be provided."
             )
-    install(session, "antsibull-changelog[toml] >= 0.26.0", "hatch")
+    session.install("-r", "requirements/hatch.txt")
     current_version = session.run("hatch", "version", silent=True).strip()
     if version != current_version:
         session.run("hatch", "version", version)
@@ -303,9 +308,9 @@ def bump(session: nox.Session):
 
 
 @nox.session
-def publish(session: nox.Session):
+def publish(session: nox.Session) -> None:
     check_no_modifications(session)
-    install(session, "hatch")
+    session.install("-r", "requirements/publish.txt")
     session.run("hatch", "publish", *session.posargs)
     session.run("hatch", "version", "post")
     session.run("git", "add", "src/antsibull_nox/__init__.py", external=True)
@@ -315,6 +320,52 @@ def publish(session: nox.Session):
 
 
 @nox.session
-def mkdocs(session: nox.Session):
+def mkdocs(session: nox.Session) -> None:
     session.install("-r", "docs-requirements.txt")
     session.run("mkdocs", *(session.posargs or ["build"]))
+
+
+def get_pyproject_python_version() -> str:
+    reqpy = re.compile(r'^requires-python\s*=\s*">=\s*([0-9.]+)"$')
+    with open("pyproject.toml", "r", encoding="utf-8") as f:
+        for line in f:
+            m = reqpy.match(line.strip())
+            if m:
+                return m.group(1)
+    raise ValueError("Cannot parse python-requires in pyproject.toml")
+
+
+requirements_files = sorted(p.stem for p in Path("requirements").glob("*.in"))
+
+
+@nox.session(name="pip-compile")
+@nox.parametrize(["req"], requirements_files, requirements_files)
+def pip_compile(session: nox.Session, req: str) -> None:
+    session.install("-r", "requirements/pip-compile.txt")
+    python_version = ".".join(get_pyproject_python_version().split(".")[:2])
+
+    in_file = f"requirements/{req}.in"
+    out_file = f"requirements/{req}.txt"
+    check_mode = "--check" in session.posargs
+
+    args = []
+    if not check_mode:
+        args.append("--upgrade")
+    session.run(
+        "uv",
+        "pip",
+        "compile",
+        "--universal",
+        "--quiet",
+        "--python-version",
+        python_version,
+        "--output-file",
+        out_file,
+        *args,
+        in_file,
+    )
+
+    if check_mode:
+        check_no_modifications(
+            session, where=[out_file], message=f"Output file {out_file} was changed!"
+        )

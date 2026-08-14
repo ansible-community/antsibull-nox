@@ -131,7 +131,6 @@ dmypy.json
 
 # Output files
 *.tar.gz
-*.in
 *.build
 *.deps
 
