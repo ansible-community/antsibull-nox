@@ -28,18 +28,28 @@ jobs:
           - session: test
             python-versions: "3.9, 3.10, 3.11, 3.12, 3.13, 3.14"
             force-python: ""
+            extra-args: ""
             codecov: true
             packages: ""
 
           - session: integration
             python-versions: "3.14"
             force-python: "3.14"
+            extra-args: ""
             codecov: true
             packages: ""
 
           - session: lint
             python-versions: "3.14"
             force-python: "3.14"
+            extra-args: ""
+            codecov: false
+            packages: ""
+
+          - session: pip-compile
+            python-versions: "3.14"
+            force-python: "3.14"
+            extra-args: "--check"
             codecov: false
             packages: ""
     name: "Run nox ${{ matrix.session }} session"
@@ -73,6 +83,7 @@ jobs:
         uses: ansible-community/github-action-run-nox@v1
         with:
           sessions: ${{ matrix.session }}
+          extra-args: ${{ matrix.extra-args }}
           force-pythons: ${{ matrix.force-python }}
           working-directory: antsibull-nox
           codecov: ${{ matrix.codecov }}

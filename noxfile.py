@@ -193,18 +193,22 @@ def typing(session: nox.Session) -> None:
     )
 
 
-def check_no_modifications(session: nox.Session) -> None:
+def check_no_modifications(
+    session: nox.Session, *, where: list[str] | None = None, message: str | None = None
+) -> None:
     modified = session.run(
         "git",
         "status",
         "--porcelain=v1",
         "--untracked=normal",
+        *(where or []),
         external=True,
         silent=True,
     )
     if modified:
         session.error(
-            "There are modified or untracked files. Commit, restore, or remove them before running this"
+            message
+            or "There are modified or untracked files. Commit, restore, or remove them before running this"
         )
 
 
@@ -327,8 +331,14 @@ requirements_files = sorted(p.stem for p in Path("requirements").glob("*.in"))
 @nox.parametrize(["req"], requirements_files, requirements_files)
 def pip_compile(session: nox.Session, req: str) -> None:
     session.install("-r", "requirements/pip-compile.txt")
+
     in_file = f"requirements/{req}.in"
     out_file = f"requirements/{req}.txt"
+    check_mode = "--check" in session.posargs
+
+    args = []
+    if not check_mode:
+        args.append("--upgrade")
     session.run(
         "uv",
         "pip",
@@ -337,6 +347,11 @@ def pip_compile(session: nox.Session, req: str) -> None:
         "--quiet",
         "--output-file",
         out_file,
-        "--upgrade",
+        *args,
         in_file,
     )
+
+    if check_mode:
+        check_no_modifications(
+            session, where=[out_file], message=f"Output file {out_file} was changed!"
+        )
