@@ -57,6 +57,8 @@ if __name__ == "__main__":
 
 The **`antsibull-nox.toml`** file:
 ```toml
+version = 1
+
 [sessions]
 
 [sessions.lint]
