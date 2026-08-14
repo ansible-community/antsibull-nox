@@ -273,7 +273,7 @@ class SessionLint(_BaseModel):
     pylint_rcfile: t.Optional[p.FilePath] = None
     pylint_modules_rcfile: t.Optional[p.FilePath] = None
     pylint_package: Packages = PackageName(name="pylint")
-    pylint_ansible_core_package: t.Optional[Packages] = PackageName(name="ansible-core")
+    pylint_ansible_core_package: Packages = PackageName(name="ansible-core")
     pylint_extra_deps: list[PackageFieldOrString] = []
 
     # yamllint:
@@ -292,7 +292,7 @@ class SessionLint(_BaseModel):
     mypy_config: t.Optional[p.FilePath] = None
     mypy_modules_config: t.Optional[p.FilePath] = None
     mypy_package: Packages = PackageName(name="mypy")
-    mypy_ansible_core_package: t.Optional[Packages] = PackageName(name="ansible-core")
+    mypy_ansible_core_package: Packages = PackageName(name="ansible-core")
     mypy_extra_deps: list[PackageFieldOrString] = []
 
     # antsibull-nox config lint:
@@ -881,7 +881,7 @@ class Config(_BaseModel):
     """
 
     # For now the version is optional, and if not specified defaults to 1.
-    version: t.Optional[t.Literal[1]] = 1
+    version: t.Literal[1] = 1
 
     collection_sources: dict[CollectionName, CollectionSource] = {}
     collection_sources_per_ansible: dict[
