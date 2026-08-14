@@ -318,3 +318,25 @@ def publish(session: nox.Session) -> None:
 def mkdocs(session: nox.Session) -> None:
     session.install("-r", "docs-requirements.txt")
     session.run("mkdocs", *(session.posargs or ["build"]))
+
+
+requirements_files = sorted(p.stem for p in Path("requirements").glob("*.in"))
+
+
+@nox.session(name="pip-compile")
+@nox.parametrize(["req"], requirements_files, requirements_files)
+def pip_compile(session: nox.Session, req: str) -> None:
+    session.install("-r", "requirements/pip-compile.txt")
+    in_file = f"requirements/{req}.in"
+    out_file = f"requirements/{req}.txt"
+    session.run(
+        "uv",
+        "pip",
+        "compile",
+        "--universal",
+        "--quiet",
+        "--output-file",
+        out_file,
+        "--upgrade",
+        in_file,
+    )

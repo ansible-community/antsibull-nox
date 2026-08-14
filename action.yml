@@ -103,19 +103,29 @@ runs:
             [version for version in os.environ["ANTSIBULL_NOX_EXTRA_PYTHON_VERSIONS"].splitlines() if version]
             + [os.environ["ANTSIBULL_NOX_PYTHON_VERSION"]]
         )
-        python_major_versions = {".".join(version.split(".")[:2]) for version in python_versions}
+        python_major_version_tuples = {
+            tuple([int(part) for part in version.split(".", 2)[:2]]) for version in python_versions
+        }
 
-        restrictions = []
-        if "3.8" in python_major_versions:
-            restrictions.append("virtualenv<21.5.0")
+        # Python verions for which there are special requirements/action-X.Y.txt files
+        special_requirements = [
+            (3, 8),
+        ]
 
-        set_output("restrictions", shlex.join(restrictions))
+        requirements_postfix = ""
+        for version in special_requirements:
+            if any(v <= version for v in python_major_version_tuples):
+                requirements_postfix = f"{version[0]}.{version[1]}"
+                break
+
+        set_output("requirements_file", f"requirements/action{requirements_postfix}.txt")
       shell: python
 
     - name: "Install nox and antsibull-nox"
       run: |
-        ${{ steps.python.outputs.python-path }} -m pip install ${{ github.action_path }} ${{ steps.python-restrictions.outputs.restrictions }}
+        ${{ steps.python.outputs.python-path }} -m pip install --disable-pip-version-check -r ${{ steps.python-restrictions.outputs.requirements_file }}
       shell: bash
+      working-directory: ${{ github.action_path }}
 
     - name: "Set up nox environments"
       run: |
