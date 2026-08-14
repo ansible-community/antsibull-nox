@@ -84,14 +84,12 @@ Otherwise `antsibull-nox.toml` will be ignored.
 
 ## Configuration file version
 
-The top-level `version` field only accepts the value `1` right now.
-We recommend that the field is provided;
-antsibull-nox 2.0.0 will require it.
+The top-level `version` field currently accepts the value `1` only.
+We recommend setting `version = 1` in your existing configuration because `antsibull-nox` version 2.0.0 will require it.
 
-The version field allows to make backwards-incompatible changes to the configuration file format
-that users of antsibull-nox have to explicitly opt in.
-antsibull-nox will never remove support for a specific configuration file format version
-without a deprecation period and outside of a new major release.
+The `version` field lets `antsibull-nox` introduce backwards-incompatible changes to the configuration file format, which users must explicitly opt in to receive.
+
+`antsibull-nox` will never remove support for a specific configuration file format version without a deprecation period or outside of a new major release.
 
 For now,
 we recommend to set `version` to `1` in existing configs.
