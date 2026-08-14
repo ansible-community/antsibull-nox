@@ -1,0 +1,114 @@
+---
+# GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or
+# https://www.gnu.org/licenses/gpl-3.0.txt)
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Ansible Project
+
+name: Update pinned Python dependencies
+'on':
+  # Run once per week (Monday at 02:13 UTC)
+  schedule:
+    - cron: '13 2 * * 1'
+  workflow_dispatch:
+
+env:
+  FORCE_COLOR: "1"
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  nox-pip-compile:
+    runs-on: ubuntu-latest
+    name: "Run nox pip-compile session"
+    outputs:
+      has-changes: ${{ steps.changes.outputs.has-changes }}
+    permissions:
+      contents: read
+    steps:
+      - name: Check out antsibull-nox
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup nox
+        uses: wntrblm/nox@3284968a16fa5bd7fc0cc64a69a531404ccb4756  # 2026.07.11
+        with:
+          python-versions: "${{ env.PYTHON_VERSION }}"
+      - name: Run nox
+        uses: ansible-community/github-action-run-nox@v1
+        with:
+          sessions: pip-compile
+          force-pythons: "${{ env.PYTHON_VERSION }}"
+      - name: Check for changes
+        id: changes
+        run: |
+          changed_files="$(git status --porcelain=v1 --untracked=normal "requirements/*.txt")"
+          if [ "${changed_files}" != "" ]; then
+            echo "Found changes:"
+            git status --untracked=normal "requirements/*.txt"
+            echo "has-changes=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "has-changes=false" >> "${GITHUB_OUTPUT}"
+          fi
+        shell: bash
+      - name: Upload files
+        if: steps.changes.outputs.has-changes == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: requirement-files
+          path: requirements/*.txt
+
+  # We use a separate job to create the PR to minimize the attack surface
+  # while the GH token can write to the repository and create PRs.
+
+  create-pr:
+    runs-on: ubuntu-latest
+    name: "Create PR if necessary"
+    needs:
+      - nox-pip-compile
+    if: needs.nox-pip-compile.outputs.has-changes == 'true'
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      PYTHON_COMMIT_MESSAGE: Update pinned Python dependencies.
+    outputs:
+      pr-url: ${{ steps.create-pr.outputs.pr-url }}
+    steps:
+      - name: Check out antsibull-nox
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: true
+      - name: Download requirements files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: requirement-files
+          path: requirements/
+      - name: Prepare repository
+        run: |
+          echo "PYTHON_BRANCH_NAME=pinned-python-deps-$(date +"%Y%m%d-%H%M%S")" >> ${GITHUB_ENV}
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        shell: bash
+      - name: Commit changes and push branch
+        run: |
+          git checkout -b "${PYTHON_BRANCH_NAME}"
+          git add requirements/*.txt
+          git commit -m "${PYTHON_COMMIT_MESSAGE}"
+          git push origin "${PYTHON_BRANCH_NAME}"
+        shell: bash
+      - name: Create Pull Request
+        id: create-pr
+        run: |
+          echo "${PYTHON_COMMIT_MESSAGE}" > "${BODY_FILE}"
+
+          echo -n "pr-url=" >> "${GITHUB_OUTPUT}"
+          gh pr create \
+            --base main \
+            --head "${PYTHON_BRANCH_NAME}" \
+            --title "Update pinned Python dependencies" \
+            --body-file "${BODY_FILE}" \
+            --assignee "${ACTOR}" \
+          | tee -a "${GITHUB_OUTPUT}"
+        env:
+          BODY_FILE: body
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
