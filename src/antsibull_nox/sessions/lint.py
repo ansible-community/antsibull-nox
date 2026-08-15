@@ -354,7 +354,7 @@ def _execute_black(
         config=black_config,
         config_modules=black_modules_config or black_config,
     )
-    if files is not None:
+    if run_black and run_black_modules and files is not None:
         _execute_black_for(
             session,
             paths=files,
@@ -362,7 +362,7 @@ def _execute_black(
             black_config=black_config,
             reporter=reporter,
         )
-    if files_other is not None:
+    if run_black and files_other is not None:
         _execute_black_for(
             session,
             paths=files_other,
@@ -371,7 +371,7 @@ def _execute_black(
             what_for=" for other plugins",
             reporter=reporter,
         )
-    if files_modules is not None:
+    if run_black_modules and files_modules is not None:
         _execute_black_for(
             session,
             paths=files_modules,
