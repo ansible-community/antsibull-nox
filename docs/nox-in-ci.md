@@ -48,6 +48,9 @@ name: nox
     - cron: '30 7 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   nox:
     runs-on: ubuntu-latest
@@ -87,6 +90,9 @@ name: nox
     - cron: '30 7 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   nox:
     uses: ansible-community/antsibull-nox/.github/workflows/reusable-nox-run.yml@main
@@ -118,6 +124,9 @@ name: nox
   schedule:
     - cron: '30 4 * * *'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   ansible-test:
