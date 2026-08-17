@@ -63,6 +63,9 @@ name: Run nox tests
         required: false
         default: ""
 
+permissions:
+  contents: read
+
 jobs:
   session:
     name: ${{ inputs.session-name }}
@@ -126,7 +129,7 @@ jobs:
         shell: bash
       - name: Run a pre-test command
         if: inputs.pre-test-cmd
-        run: >-
+        run: >-  # zizmor: ignore[template-injection]
           ${{ inputs.pre-test-cmd }}
         working-directory: ${{ inputs.collection-root }}
       - name: Run nox

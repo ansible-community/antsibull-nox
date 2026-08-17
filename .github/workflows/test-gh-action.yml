@@ -18,6 +18,9 @@ name: test-gh-action
 env:
   FORCE_COLOR: "1"
 
+permissions:
+  contents: read
+
 jobs:
   coverage-test:
     runs-on: ubuntu-latest

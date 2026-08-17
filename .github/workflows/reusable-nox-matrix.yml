@@ -134,6 +134,9 @@ name: Run sanity, unit, integration, and EE tests
       CODECOV_TOKEN:
         required: false
 
+permissions:
+  contents: read
+
 jobs:
   create-matrixes:
     name: "Create matrixes"
@@ -307,13 +310,13 @@ jobs:
       - name: Run a pre-test command
         if: >-
           !matrix.skip && inputs.pre-test-cmd
-        run: >-
+        run: >-  # zizmor: ignore[template-injection]
           ${{ inputs.pre-test-cmd }}
         working-directory: ${{ inputs.collection-root }}
       - name: Run a pre-test command for sanity tests
         if: >-
           !matrix.skip && inputs.pre-test-cmd-sanity
-        run: >-
+        run: >-  # zizmor: ignore[template-injection]
           ${{ inputs.pre-test-cmd-sanity }}
         working-directory: ${{ inputs.collection-root }}
       - name: Run nox
@@ -373,13 +376,13 @@ jobs:
       - name: Run a pre-test command
         if: >-
           !matrix.skip && inputs.pre-test-cmd
-        run: >-
+        run: >-  # zizmor: ignore[template-injection]
           ${{ inputs.pre-test-cmd }}
         working-directory: ${{ inputs.collection-root }}
       - name: Run a pre-test command for unit tests
         if: >-
           !matrix.skip && inputs.pre-test-cmd-units
-        run: >-
+        run: >-  # zizmor: ignore[template-injection]
           ${{ inputs.pre-test-cmd-units }}
         working-directory: ${{ inputs.collection-root }}
       - name: Run nox
@@ -440,13 +443,13 @@ jobs:
       - name: Run a pre-test command
         if: >-
           !matrix.skip && inputs.pre-test-cmd
-        run: >-
+        run: >-  # zizmor: ignore[template-injection]
           ${{ inputs.pre-test-cmd }}
         working-directory: ${{ inputs.collection-root }}
       - name: Run a pre-test command for integration tests
         if: >-
           !matrix.skip && inputs.pre-test-cmd-integration
-        run: >-
+        run: >-  # zizmor: ignore[template-injection]
           ${{ inputs.pre-test-cmd-integration }}
         working-directory: ${{ inputs.collection-root }}
       - name: Run nox
@@ -520,13 +523,13 @@ jobs:
       - name: Run a pre-test command
         if: >-
           !matrix.skip && inputs.pre-test-cmd
-        run: >-
+        run: >-  # zizmor: ignore[template-injection]
           ${{ inputs.pre-test-cmd }}
         working-directory: ${{ inputs.collection-root }}
       - name: Run a pre-test command for EE tests
         if: >-
           !matrix.skip && inputs.pre-test-cmd-ee
-        run: >-
+        run: >-  # zizmor: ignore[template-injection]
           ${{ inputs.pre-test-cmd-ee }}
         working-directory: ${{ inputs.collection-root }}
       - name: Run nox

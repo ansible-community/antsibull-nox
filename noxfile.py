@@ -151,6 +151,7 @@ def lint(session: nox.Session) -> None:
     session.notify("formatters")
     session.notify("codeqa")
     session.notify("typing")
+    session.notify("zizmor")
 
 
 @nox.session
@@ -192,6 +193,12 @@ def typing(session: nox.Session) -> None:
         "src/antsibull_nox",
         "tests",
     )
+
+
+@nox.session
+def zizmor(session: nox.Session) -> None:
+    session.install("-r", "requirements/zizmor.txt")
+    session.run("zizmor", ".")
 
 
 def check_no_modifications(

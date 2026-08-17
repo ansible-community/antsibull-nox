@@ -122,13 +122,16 @@ runs:
       shell: python
 
     - name: "Install nox and antsibull-nox"
-      run: |
-        ${{ steps.python.outputs.python-path }} -m pip install --disable-pip-version-check -r ${{ steps.python-restrictions.outputs.requirements_file }}
+      run: |  # zizmor: ignore[template-injection]
+        "${PYTHON_PATH}" -m pip install --disable-pip-version-check -r "${REQUIREMENTS_FILE}"
+      env:
+        PYTHON_PATH: ${{ steps.python.outputs.python-path }}
+        REQUIREMENTS_FILE: ${{ steps.python-restrictions.outputs.requirements_file }}
       shell: bash
       working-directory: ${{ github.action_path }}
 
     - name: "Set up nox environments"
-      run: |
+      run: |  # zizmor: ignore[template-injection]
         nox --verbose --install-only${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }} 2>&1
       env:
         FORCE_COLOR: "1"
@@ -138,7 +141,7 @@ runs:
 
     - name: "Run nox"
       id: run-nox
-      run: |
+      run: |  # zizmor: ignore[template-injection]
         nox --verbose --reuse-existing-virtualenvs --no-install${{ inputs.sessions && ' --sessions ' || '' }}${{ inputs.sessions }}${{ inputs.extra-args && ' -- ' || '' }}${{ inputs.extra-args }} 2>&1
       env:
         FORCE_COLOR: "1"

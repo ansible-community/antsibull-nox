@@ -18,6 +18,9 @@ name: nox
 env:
   FORCE_COLOR: "1"
 
+permissions:
+  contents: read
+
 jobs:
   nox:
     runs-on: ubuntu-latest
@@ -73,7 +76,7 @@ jobs:
           persist-credentials: false
       - name: Install extra packages
         if: "matrix.packages != ''"
-        run: |
+        run: |  # zizmor: ignore[template-injection]
           sudo apt-get install -y ${{ matrix.packages }}
       - name: Setup nox
         uses: wntrblm/nox@3284968a16fa5bd7fc0cc64a69a531404ccb4756  # 2026.07.11
