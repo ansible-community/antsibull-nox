@@ -100,17 +100,15 @@ jobs:
       - name: Create Pull Request
         id: create-pr
         run: |
-          echo "${PYTHON_COMMIT_MESSAGE}" > "${BODY_FILE}"
-
           echo -n "pr-url=" >> "${GITHUB_OUTPUT}"
           gh pr create \
             --base main \
             --head "${PYTHON_BRANCH_NAME}" \
             --title "Update pinned Python dependencies" \
-            --body-file "${BODY_FILE}" \
+            --body "${PYTHON_COMMIT_MESSAGE}" \
             --assignee "${ACTOR}" \
           | tee -a "${GITHUB_OUTPUT}"
         env:
-          BODY_FILE: body
           GH_TOKEN: ${{ github.token }}
+          ACTOR: "${{ github.actor }}"
         shell: bash
