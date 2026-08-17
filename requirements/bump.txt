@@ -26,7 +26,7 @@ anyio==4.14.2 ; python_full_version >= '3.10' and sys_platform != 'emscripten'
     # via httpx2
 backports-tarfile==1.2.0 ; python_full_version < '3.12'
     # via jaraco-context
-backports-zstd==1.6.0 ; python_full_version >= '3.10' and python_full_version < '3.14'
+backports-zstd==1.7.0 ; python_full_version >= '3.10' and python_full_version < '3.14'
     # via hatch
 certifi==2026.7.22 ; python_full_version < '3.10'
     # via
@@ -237,7 +237,7 @@ typing-inspection==0.4.4 ; python_full_version >= '3.10'
     # via pydantic
 userpath==1.9.2
     # via hatch
-uv==0.12.4
+uv==0.12.5
     # via hatch
 virtualenv==21.7.4
     # via hatch
