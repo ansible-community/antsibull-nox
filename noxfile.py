@@ -256,7 +256,7 @@ def bump(session: nox.Session) -> None:
             session.error(
                 f"Either {fragment_file} must already exist, or two positional arguments must be provided."
             )
-    session.install("-r", "requirements/hatch.txt")
+    session.install("-r", "requirements/bump.txt")
     current_version = session.run("hatch", "version", silent=True).strip()
     if version != current_version:
         session.run("hatch", "version", version)
