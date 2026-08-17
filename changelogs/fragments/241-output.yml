@@ -1,2 +1,0 @@
-minor_changes:
-  - "Improve bot output for ``formatter`` session, and general output for ``ruff check --fix`` in CI (https://github.com/ansible-community/antsibull-nox/pull/241)."

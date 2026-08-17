@@ -1,2 +1,0 @@
-minor_changes:
-  - "Allow to explicitly specify that antsibull-nox is not running in an CI environment by setting the ``CI`` environment variable to the string ``false`` (https://github.com/ansible-community/antsibull-nox/pull/245)."

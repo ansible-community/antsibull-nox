@@ -673,3 +673,60 @@ releases:
       - 223-python.yml
       - 224-milestone.yml
     release_date: '2026-06-30'
+  1.9.0:
+    changes:
+      bugfixes:
+        - Fix index error when marking errors at the end of a file (https://github.com/ansible-community/antsibull-nox/pull/240).
+      minor_changes:
+        - Add a top-level ``version`` field to the config file format (https://github.com/ansible-community/antsibull-nox/pull/239).
+        - Allow to explicitly specify that antsibull-nox is not running in an CI environment
+          by setting the ``CI`` environment variable to the string ``false`` (https://github.com/ansible-community/antsibull-nox/pull/245).
+        - Antsibull-nox now allows to write output on succeeded and failed sessions
+          for consumption by `ansibullbot <https://github.com/ansible-community/collection_bot/>`__
+          and as JUnit XML files for consumption by other tools. All built-in sessions
+          support this, with varying degrees of useful information in the reports
+          (https://github.com/ansible-community/antsibull-nox/pull/225).
+        - Explicitly set permissions to minimum for GitHub Actions and shared workflows
+          (https://github.com/ansible-community/antsibull-nox/pull/236).
+        - Improve ``mypy`` output parsing; now support end position (https://github.com/ansible-community/antsibull-nox/pull/243).
+        - Improve ``ruff check`` output parsing; use name if code is not supplied
+          (https://github.com/ansible-community/antsibull-nox/pull/243).
+        - Improve bot output for ``formatter`` session, and general output for ``ruff
+          check --fix`` in CI (https://github.com/ansible-community/antsibull-nox/pull/241).
+        - Improve the GitHub Action by avoiding unnecessary nested groups (https://github.com/ansible-community/antsibull-nox/pull/247).
+        - Make output parsing more strict and stable (https://github.com/ansible-community/antsibull-nox/pull/243).
+        - Pin dependencies for GitHub Action and several important nox sessions (https://github.com/ansible-community/antsibull-nox/issues/246,
+          https://github.com/ansible-community/antsibull-nox/pull/249).
+        - Run all tests in built-in sessions ``extra-checks``, ``docs-check``, ``license-check``,
+          ``formatters``, ``codeqa``, and ``yamllint``, even if earlier tests in the
+          same session fail (https://github.com/ansible-community/antsibull-nox/issues/228,
+          https://github.com/ansible-community/antsibull-nox/pull/229).
+        - The action and shared workflows now pin all GitHub Actions that are not
+          under direct control of github.com/ansible-community (https://github.com/ansible-community/antsibull-nox/pull/236).
+        - The shared workflows now pin the action from this repository by using a
+          `new GitHub Action reference syntax <https://github.blog/changelog/2026-07-30-reference-same-repository-actions-with-self-repository-syntax/>`__
+          (https://github.com/ansible-community/antsibull-nox/pull/237).
+        - Use new validation feature of pydantic dependency if available (https://github.com/ansible-community/antsibull-nox/pull/238).
+        - When using nox 2026.08.10 or newer, ansible-test sessions get a range of
+          supported Python versions assigned instead of a single version that's determined
+          from the supported versions and the found Python interpreters. This removes
+          the confusing extra Python version from the session names, and avoids having
+          to re-implement a Python interpreter discovery method similar to nox's (https://github.com/ansible-community/antsibull-nox/pull/232).
+      release_summary: Feature and bugfix release.
+    fragments:
+      - 1.9.0.yml
+      - 225-reporting.yml
+      - 229-independent.yml
+      - 232-ansible-test-nox.yml
+      - 236-action-pin.yml
+      - 237-action-ref.yml
+      - 238-pydantic.yml
+      - 239-config-version.yml
+      - 240-output.yml
+      - 241-output.yml
+      - 243-messages.yml
+      - 245-ci.yml
+      - 247-action.yml
+      - 249-action.yml
+      - 250-permissions.yml
+    release_date: '2026-08-17'

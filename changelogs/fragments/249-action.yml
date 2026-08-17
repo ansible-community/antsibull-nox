@@ -1,2 +1,0 @@
-minor_changes:
-  - "Pin dependencies for GitHub Action and several important nox sessions (https://github.com/ansible-community/antsibull-nox/issues/246, https://github.com/ansible-community/antsibull-nox/pull/249)."
