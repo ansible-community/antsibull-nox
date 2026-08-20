@@ -24,7 +24,7 @@ _EOL_ANSIBLE_BRANCH_TEST_URL = (
 
 # You can get this value from https://github.com/ansible/ansible/commits/milestone.
 # One this changes, information src/antsibull_nox/ansible.py might need to be updated.
-_MILESTONE_LAST_COMMIT = "b475463834458781505d7d9e3344da40251f48dd"
+_MILESTONE_LAST_COMMIT = "9cf16a4aca7898481c257f1e17ad28d0b67b1f85"
 
 
 def get_branch_version(branch_name: str) -> Version:
