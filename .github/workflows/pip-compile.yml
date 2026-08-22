@@ -31,7 +31,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup nox
-        uses: wntrblm/nox@3284968a16fa5bd7fc0cc64a69a531404ccb4756  # 2026.07.11
+        uses: wntrblm/nox@a976d7ee04ab7a13634adc1016d4755a1348225f  # 2026.08.17
         with:
           python-versions: "${{ env.PYTHON_VERSION }}"
       - name: Run nox
