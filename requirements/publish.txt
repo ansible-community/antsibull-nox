@@ -40,7 +40,7 @@ filelock==3.19.1 ; python_full_version < '3.10'
     # via
     #   python-discovery
     #   virtualenv
-filelock==3.32.3 ; python_full_version >= '3.10'
+filelock==3.32.4 ; python_full_version >= '3.10'
     # via
     #   python-discovery
     #   virtualenv
@@ -58,17 +58,17 @@ hatchling==1.32.0 ; python_full_version >= '3.10'
     # via hatch
 httpcore==1.0.9 ; python_full_version < '3.10'
     # via httpx
-httpcore2==2.10.0 ; python_full_version >= '3.10' and sys_platform != 'emscripten'
+httpcore2==2.12.0 ; python_full_version >= '3.10' and sys_platform != 'emscripten'
     # via httpx2
 httpx==0.28.1 ; python_full_version < '3.10'
     # via hatch
-httpx2==2.10.0 ; python_full_version >= '3.10'
+httpx2==2.12.0 ; python_full_version >= '3.10'
     # via hatch
 httpx2-jsfetch==1.0 ; python_full_version >= '3.12' and sys_platform == 'emscripten'
     # via httpx2
 hyperlink==21.0.0
     # via hatch
-idna==3.18
+idna==3.19
     # via
     #   anyio
     #   httpx
@@ -132,7 +132,7 @@ pycparser==2.23 ; python_full_version < '3.10' and implementation_name != 'PyPy'
     # via cffi
 pycparser==3.0 ; python_full_version >= '3.10' and implementation_name != 'PyPy' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'
     # via cffi
-pygments==2.20.0
+pygments==2.21.0
     # via rich
 pyproject-hooks==1.2.0 ; python_full_version >= '3.10'
     # via hatch
