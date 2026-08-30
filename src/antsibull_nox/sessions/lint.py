@@ -185,7 +185,7 @@ def _get_files(
         files_modules = filter_paths(
             code_files,
             restrict=module_files,
-            extensions=[".py"],
+            extensions=["py"],
             with_cd=True,
             cd_add_python_deps=cd_add_python_deps,
             paths_to_trigger_full_build=_as_list(config_modules),
@@ -193,7 +193,7 @@ def _get_files(
         files_other = filter_paths(
             code_files,
             remove=module_files,
-            extensions=[".py"],
+            extensions=["py"],
             with_cd=True,
             cd_add_python_deps=cd_add_python_deps,
             paths_to_trigger_full_build=_as_list(config),
@@ -201,7 +201,7 @@ def _get_files(
     else:
         files = filter_paths(
             code_files,
-            extensions=[".py"],
+            extensions=["py"],
             with_cd=True,
             cd_add_python_deps=cd_add_python_deps,
             paths_to_trigger_full_build=_as_list(config),
