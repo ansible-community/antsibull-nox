@@ -730,3 +730,14 @@ releases:
       - 249-action.yml
       - 250-permissions.yml
     release_date: '2026-08-17'
+  1.9.1:
+    changes:
+      bugfixes:
+        - When removing files from a set of matches, for example for applying a separate
+          linter configuration for modules, file extensions were handled incorrectly
+          (https://github.com/ansible-community/antsibull-nox/pull/257).
+      release_summary: Bugfix release.
+    fragments:
+      - 1.9.1.yml
+      - 257-extensions.yml
+    release_date: '2026-08-30'

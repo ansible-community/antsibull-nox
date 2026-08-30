@@ -4,6 +4,19 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.9.1
+======
+
+Release Summary
+---------------
+
+Bugfix release.
+
+Bugfixes
+--------
+
+- When removing files from a set of matches, for example for applying a separate linter configuration for modules, file extensions were handled incorrectly (https://github.com/ansible-community/antsibull-nox/pull/257).
+
 v1.9.0
 ======
 
