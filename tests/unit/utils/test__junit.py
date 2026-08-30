@@ -18,9 +18,7 @@ from antsibull_nox.utils._junit import (
 )
 from antsibull_nox.utils._junit import Testcase as _Testcase
 from antsibull_nox.utils._junit import Testsuite as _Testsuite
-from antsibull_nox.utils._junit import (
-    serialize_junit_xml,
-)
+from antsibull_nox.utils._junit import serialize_junit_xml
 
 
 def _create_testsuite_1() -> _Testsuite:

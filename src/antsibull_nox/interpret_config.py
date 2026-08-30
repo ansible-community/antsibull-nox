@@ -18,13 +18,7 @@ from .ansible import AnsibleCoreVersion
 from .collection import CollectionSource, setup_collection_sources
 from .config import ActionGroup as ConfigActionGroup
 from .config import AvoidCharacterGroup as ConfigAvoidCharacterGroup
-from .config import (
-    CollectionConfig,
-    Config,
-    DevelLikeBranch,
-    PackageType,
-    Sessions,
-)
+from .config import CollectionConfig, Config, DevelLikeBranch, PackageType, Sessions
 from .paths.match import FileCollector
 from .sessions.ansible_lint import add_ansible_lint
 from .sessions.ansible_test import (
