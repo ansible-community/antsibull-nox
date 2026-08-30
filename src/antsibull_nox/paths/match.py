@@ -12,10 +12,12 @@ from __future__ import annotations
 
 import dataclasses
 import typing as t
-from collections.abc import Iterable
 from pathlib import Path
 
 from .utils import path_walk
+
+if t.TYPE_CHECKING:  # pragma: no check
+    from collections.abc import Iterable
 
 
 def _split_path(path: Path) -> tuple[str, ...]:
@@ -133,7 +135,7 @@ class _FileSet:
         return [info.path for info in self.infos.values()]
 
 
-class _ExtensionChecker:
+class ExtensionChecker:
     """
     Allows to test filenames for a set of extensions.
     """
@@ -143,6 +145,30 @@ class _ExtensionChecker:
         Create an extension checker, given a list of extensions (without leading period).
         """
         self._extensions = list({f".{ext}" for ext in extensions})
+
+    @t.overload
+    @staticmethod
+    def make(*, extensions: ExtensionChecker | Iterable[str]) -> ExtensionChecker: ...
+
+    @t.overload
+    @staticmethod
+    def make(
+        *, extensions: ExtensionChecker | Iterable[str] | None
+    ) -> ExtensionChecker | None: ...
+
+    @staticmethod
+    def make(
+        *, extensions: ExtensionChecker | Iterable[str] | None
+    ) -> ExtensionChecker | None:
+        """
+        Create ExtensionChecker object from list of extensions.
+        The extensions must not start with a leading period.
+        """
+        if extensions is None:
+            return None
+        if isinstance(extensions, ExtensionChecker):
+            return extensions
+        return ExtensionChecker(extensions=extensions)
 
     def has(self, filename: str) -> bool:
         """
@@ -293,6 +319,9 @@ class FileCollector:
         """
         self._paths = paths if isinstance(paths, _FileSet) else _FileSet.create(paths)
 
+    def __repr__(self) -> str:
+        return f"FileCollector(paths={self._paths})"
+
     def clone(self) -> FileCollector:
         """
         Create a copy of the file collector.
@@ -342,7 +371,7 @@ class FileCollector:
             self._paths.merge_set(_FileSet.create_from_split(split_files=path_files))
 
     def _scan_remove_paths(
-        self, path: Path, *, remove: _FileTree, extensions: _ExtensionChecker | None
+        self, path: Path, *, remove: _FileTree, extensions: ExtensionChecker | None
     ) -> list[Path]:
         result = []
         for root, dirs, files in path_walk(path, top_down=True):
@@ -373,7 +402,10 @@ class FileCollector:
         return result
 
     def remove(
-        self, *, paths: list[Path] | FileCollector, extensions: list[str] | None = None
+        self,
+        *,
+        paths: list[Path] | FileCollector,
+        extensions: Iterable[str] | ExtensionChecker | None = None,
     ) -> None:
         """
         Restrict/refine the list of paths by removing a given list of paths.
@@ -381,9 +413,7 @@ class FileCollector:
         If ``extensions`` is provided, during refinement only files with extensions
         in the given list are added.
         """
-        extensions_checker = (
-            _ExtensionChecker(extensions=extensions) if extensions is not None else None
-        )
+        extensions_checker = ExtensionChecker.make(extensions=extensions)
         paths_tree = self._get_pruned_tree(paths)
         files = set()
         other_files = []

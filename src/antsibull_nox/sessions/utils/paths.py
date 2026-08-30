@@ -16,8 +16,11 @@ from pathlib import Path
 
 from ...cd import get_changes
 from ...config import CONFIG_FILENAME
-from ...paths.match import FileCollector
+from ...paths.match import ExtensionChecker, FileCollector
 from ...python.python_dependencies import get_python_dependency_info
+
+if t.TYPE_CHECKING:  # pragma: no check
+    from collections.abc import Iterable
 
 PythonDependencies = t.Literal["none", "imported-by-changed", "importing-changed"]
 
@@ -72,7 +75,7 @@ def filter_paths(
     /,
     remove: list[Path] | FileCollector | None = None,
     restrict: list[Path] | FileCollector | None = None,
-    extensions: list[str] | None = None,
+    extensions: Iterable[str] | ExtensionChecker | None = None,
     with_cd: bool = False,
     cd_add_python_deps: PythonDependencies = "none",
     paths_to_trigger_full_build: Sequence[Path] | None = None,
@@ -88,6 +91,7 @@ def filter_paths(
         if isinstance(paths, FileCollector)
         else FileCollector(paths=[Path(path) for path in paths])
     )
+    extensions_checker = ExtensionChecker.make(extensions=extensions)
     if with_cd:
         cwd = Path.cwd()
         changed_files = get_changes(relative_to=cwd)
@@ -100,15 +104,15 @@ def filter_paths(
                     forward=cd_add_python_deps == "imported-by-changed",
                     cwd=cwd,
                 )
-            if extensions:
+            if extensions_checker:
                 changed_files = [
-                    file for file in changed_files if file.suffix in extensions
+                    file for file in changed_files if extensions_checker.has(file.name)
                 ]
             collector.restrict(paths=changed_files)
     if restrict:
         collector.restrict(paths=restrict)
     if remove:
-        collector.remove(paths=remove, extensions=extensions)
+        collector.remove(paths=remove, extensions=extensions_checker)
     return collector.get_existing()
 
 
