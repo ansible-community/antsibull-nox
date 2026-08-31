@@ -41,7 +41,7 @@ click==8.1.8 ; python_full_version < '3.10'
     #   hatch
     #   typer
     #   userpath
-click==8.4.2 ; python_full_version >= '3.10'
+click==8.5.0 ; python_full_version >= '3.10'
     # via
     #   hatch
     #   userpath
@@ -51,7 +51,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   typer
 cryptography==47.0.0 ; python_full_version <= '3.9' and sys_platform == 'linux'
     # via secretstorage
-cryptography==50.0.0 ; python_full_version > '3.9' and sys_platform == 'linux'
+cryptography==50.0.1 ; python_full_version > '3.9' and sys_platform == 'linux'
     # via secretstorage
 distlib==0.4.3
     # via virtualenv
@@ -104,7 +104,7 @@ idna==3.19
     #   hyperlink
 importlib-metadata==8.7.1 ; python_full_version < '3.10'
     # via keyring
-importlib-metadata==9.0.0 ; python_full_version >= '3.10' and python_full_version < '3.12'
+importlib-metadata==9.0.1 ; python_full_version >= '3.10' and python_full_version < '3.12'
     # via keyring
 jaraco-classes==3.4.0
     # via keyring
@@ -149,7 +149,7 @@ platformdirs==4.4.0 ; python_full_version < '3.10'
     # via
     #   hatch
     #   virtualenv
-platformdirs==4.11.3 ; python_full_version >= '3.10'
+platformdirs==4.11.5 ; python_full_version >= '3.10'
     # via
     #   hatch
     #   virtualenv
@@ -161,17 +161,17 @@ pycparser==2.23 ; python_full_version < '3.10' and implementation_name != 'PyPy'
     # via cffi
 pycparser==3.0 ; python_full_version >= '3.10' and implementation_name != 'PyPy' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'
     # via cffi
-pydantic==2.13.4
+pydantic==2.13.5
     # via
     #   antsibull-changelog
     #   rstcheck-core
-pydantic-core==2.46.4
+pydantic-core==2.46.5
     # via pydantic
 pygments==2.21.0
     # via rich
 pyproject-hooks==1.2.0 ; python_full_version >= '3.10'
     # via hatch
-python-discovery==1.5.2
+python-discovery==1.6.0
     # via
     #   hatch
     #   virtualenv
@@ -219,7 +219,7 @@ truststore==0.10.4 ; python_full_version >= '3.10' and sys_platform != 'emscript
     #   httpx2
 typer==0.23.2 ; python_full_version < '3.10'
     # via rstcheck
-typer==0.27.1 ; python_full_version >= '3.10'
+typer==0.27.2 ; python_full_version >= '3.10'
     # via rstcheck
 typing-extensions==4.16.0
     # via
@@ -237,9 +237,9 @@ typing-inspection==0.4.4 ; python_full_version >= '3.10'
     # via pydantic
 userpath==1.9.2
     # via hatch
-uv==0.12.5
+uv==0.12.7
     # via hatch
-virtualenv==21.7.4
+virtualenv==21.7.7
     # via hatch
 zipp==3.23.1 ; python_full_version < '3.10'
     # via importlib-metadata
