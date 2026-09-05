@@ -2,7 +2,7 @@
 #    uv pip compile --universal --python-version 3.9 --output-file requirements/publish.txt requirements/publish.in
 anyio==4.12.1 ; python_full_version < '3.10'
     # via httpx
-anyio==4.14.2 ; python_full_version >= '3.10' and sys_platform != 'emscripten'
+anyio==4.15.0 ; python_full_version >= '3.10' and sys_platform != 'emscripten'
     # via httpx2
 backports-tarfile==1.2.0 ; python_full_version < '3.12'
     # via jaraco-context
@@ -40,7 +40,7 @@ filelock==3.19.1 ; python_full_version < '3.10'
     # via
     #   python-discovery
     #   virtualenv
-filelock==3.32.4 ; python_full_version >= '3.10'
+filelock==3.32.5 ; python_full_version >= '3.10'
     # via
     #   python-discovery
     #   virtualenv
@@ -120,7 +120,7 @@ platformdirs==4.4.0 ; python_full_version < '3.10'
     # via
     #   hatch
     #   virtualenv
-platformdirs==4.11.5 ; python_full_version >= '3.10'
+platformdirs==4.11.7 ; python_full_version >= '3.10'
     # via
     #   hatch
     #   virtualenv
@@ -164,7 +164,7 @@ truststore==0.10.4 ; python_full_version >= '3.10' and sys_platform != 'emscript
     # via
     #   httpcore2
     #   httpx2
-typing-extensions==4.16.0 ; python_full_version < '3.13'
+typing-extensions==4.16.0 ; (python_full_version < '3.15' and sys_platform != 'emscripten') or (python_full_version < '3.13' and sys_platform == 'emscripten')
     # via
     #   anyio
     #   cryptography
@@ -173,9 +173,9 @@ typing-extensions==4.16.0 ; python_full_version < '3.13'
     #   virtualenv
 userpath==1.9.2
     # via hatch
-uv==0.12.7
+uv==0.12.10
     # via hatch
-virtualenv==21.7.7
+virtualenv==21.7.8
     # via hatch
 zipp==3.23.1 ; python_full_version < '3.10'
     # via importlib-metadata
