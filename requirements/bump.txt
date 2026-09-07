@@ -22,7 +22,7 @@ antsibull-fileutils==1.5.3
     # via antsibull-changelog
 anyio==4.12.1 ; python_full_version < '3.10'
     # via httpx
-anyio==4.15.0 ; python_full_version >= '3.10' and sys_platform != 'emscripten'
+anyio==4.15.1 ; python_full_version >= '3.10' and sys_platform != 'emscripten'
     # via httpx2
 backports-tarfile==1.2.0 ; python_full_version < '3.12'
     # via jaraco-context
