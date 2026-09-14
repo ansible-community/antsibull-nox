@@ -14,6 +14,7 @@ import dataclasses
 import itertools
 import os
 import re
+import shutil
 import typing as t
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -36,8 +37,15 @@ from ..config import CONFIG_FILENAME
 from ..container import get_container_engine_preference
 from ..paths.utils import copy_directory_tree_into
 from ..python.versions import get_installed_python_versions, get_recent_python_version
-from ..reporting import get_session_reporter
+from ..reporting import (
+    SessionReporter,
+    get_session_reporter,
+    is_writing_bot_jsons,
+    is_writing_junit_xml,
+)
 from ..utils import Version
+from ..utils._junit import Testcase as _JUnitTestcase
+from ..utils._junit_parser import parse_junit_xml as _parse_junit_xml
 from ..utils.nox import is_nox_newer_than
 from .collections import prepare_collections
 from .utils import (
@@ -213,6 +221,76 @@ def _pick_python_version(core_info: AnsibleCoreInfo) -> str | list[str]:
     return [str(python_version) for python_version in python_versions]
 
 
+def _process_junit_xml(
+    session: nox.Session, *, file: Path, reporter: SessionReporter
+) -> None:
+    try:
+        data = _parse_junit_xml(file)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        session.warn(f"Error while parsing {file}: {exc}")
+        return
+
+    # In case of unit tests, the important information comes from the file name.
+    # The file's name is always "pytest tests", and the testsuite's name is always
+    # "pytest", which is not very helpful and doesn't distinguish all the different
+    # unit tests.
+    if (
+        len(data.testsuites) == 1
+        and data.name == "pytest tests"
+        and data.testsuites[0].name == "pytest"
+    ):
+        data.testsuites[0].name = file.stem
+
+    for testsuite in data.testsuites:
+        # In case of sanity tests, the testsuite's name is "ansible-test", the testcase's
+        # classname is "sanity", and the testcase's name is the sanity test. We move it
+        # over to the testsuite's name, and move the testsuite's stats to the testcase
+        # (since it doesn't have any).
+        if (
+            len(testsuite.children) == 1
+            and testsuite.stats
+            and testsuite.name == "ansible-test"
+        ):
+            testcase = testsuite.children[0]
+            if isinstance(testcase, _JUnitTestcase) and testcase.classname == "sanity":
+                testsuite.name = testcase.name
+                testcase.stats = testsuite.stats
+                testcase.classname = None
+
+        reporter.add_junit_testsuite(testsuite)
+
+
+def _run_ansible_test_with_junit(
+    session: nox.Session, *, path: Path, command: list[str], reporter: SessionReporter
+) -> None:
+    # First clean up JUnit XML output directory
+    junit_dir = path / "tests" / "output" / "junit"
+    if junit_dir.is_dir():
+        shutil.rmtree(junit_dir)
+    # Run ansible-test
+    try:
+        session.run(*command, env=get_ansible_test_env())
+    finally:
+        # Process JUnit XML files
+        if junit_dir.is_dir():
+            for file in junit_dir.glob("*.xml"):
+                _process_junit_xml(session, file=file, reporter=reporter)
+
+
+def _copy_tests_output(path: Path, cwd: Path) -> None:
+    source = path / "tests" / "output"
+    exclusions = []
+    if is_writing_bot_jsons():
+        exclusions.append(source / "bot")
+    if is_writing_junit_xml():
+        exclusions.append(source / "junit")
+    copy_directory_tree_into(
+        source,
+        cwd / "tests" / "output",
+        exclusions=exclusions,
+    )
+
+
 # NOTE: This is publicly documented API!
 # Any change to the API must not be breaking, and must be
 # updated in docs/reference.md!
@@ -235,6 +313,7 @@ def add_ansible_test_session(
     callback_before: Callable[[], None] | None = None,
     callback_after: Callable[[], None] | None = None,
     support_cd: bool = False,
+    outputs_junit_xml: bool = False,
 ) -> None:
     """
     Add generic ansible-test session.
@@ -270,7 +349,7 @@ def add_ansible_test_session(
 
     @install_packages(package_callback=compose_dependencies)
     def run_ansible_test(session: nox.Session) -> None:
-        with get_session_reporter(session):
+        with get_session_reporter(session) as reporter:
             change_detection_args = get_change_detection_args()
             copy_repo_structure = (
                 change_detection_args is not None
@@ -311,7 +390,15 @@ def add_ansible_test_session(
                     command.extend(change_detection_args)
                 if add_posargs and session.posargs:
                     command.extend(session.posargs)
-                session.run(*command, env=get_ansible_test_env())
+                if outputs_junit_xml:
+                    _run_ansible_test_with_junit(
+                        session,
+                        path=prepared_collections.current_path,
+                        command=command,
+                        reporter=reporter,
+                    )
+                else:
+                    session.run(*command, env=get_ansible_test_env())
 
                 coverage = (handle_coverage == "auto" and "--coverage" in command) or (
                     handle_coverage == "always"
@@ -325,10 +412,7 @@ def add_ansible_test_session(
                 if callback_after:
                     callback_after()
 
-                copy_directory_tree_into(
-                    prepared_collections.current_path / "tests" / "output",
-                    cwd / "tests" / "output",
-                )
+                _copy_tests_output(prepared_collections.current_path, cwd)
 
     # Determine Python version (range)
     core_info = get_ansible_core_info(parsed_ansible_core_version)
@@ -377,7 +461,13 @@ def add_ansible_test_sanity_test_session(
     """
     Add generic ansible-test sanity test session.
     """
-    command: list[str | _ColorFlagType] = ["sanity", COLOR_FLAG, "-v", "--docker"]
+    command: list[str | _ColorFlagType] = [
+        "sanity",
+        COLOR_FLAG,
+        "-v",
+        "--junit",
+        "--docker",
+    ]
     if skip_tests:
         for test in skip_tests:
             command.extend(["--skip", test])
@@ -398,6 +488,7 @@ def add_ansible_test_sanity_test_session(
         register_extra_data=register_extra_data,
         register_tags=["sanity", "docker"],
         support_cd=True,
+        outputs_junit_xml=True,
     )
 
 
@@ -583,6 +674,7 @@ def add_ansible_test_unit_test_session(
         register_extra_data=register_extra_data,
         register_tags=["units", "docker"],
         support_cd=True,
+        outputs_junit_xml=True,
     )
 
 
@@ -963,6 +1055,7 @@ def add_ansible_test_integration_sessions_default_container(
                 },
                 register_tags=["integration", "docker", "docker-default"],
                 support_cd=True,
+                outputs_junit_xml=True,
             )
             integration_sessions_core.append(name)
         return integration_sessions_core
@@ -1426,6 +1519,7 @@ def add_ansible_test_integration_sessions(
             register_extra_data=extra_data,
             register_tags=sorted(register_tags),
             support_cd=True,
+            outputs_junit_xml=True,
         )
 
     def add_group_session(
