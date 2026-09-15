@@ -495,6 +495,7 @@ class _CollectionListSingleton:
     _lock = threading.Lock()
 
     _global_cache_dir: Path | None = None
+    _global_cache_dir_orig: Path | None = None
     _global_collection_list: CollectionList | None = None
     _global_collection_list_per_ansible_core_version: dict[
         AnsibleCoreVersion, CollectionList
@@ -506,14 +507,15 @@ class _CollectionListSingleton:
         """
         with self._lock:
             if (
-                self._global_cache_dir is not None
-                and self._global_cache_dir != global_cache_dir
+                self._global_cache_dir_orig is not None
+                and self._global_cache_dir_orig != global_cache_dir
             ):
                 raise ValueError(
                     "Setup mismatch: global cache dir cannot be both"
-                    f" {self._global_cache_dir} and {global_cache_dir}"
+                    f" {self._global_cache_dir_orig} and {global_cache_dir}"
                 )
-            self._global_cache_dir = global_cache_dir
+            self._global_cache_dir_orig = global_cache_dir
+            self._global_cache_dir = global_cache_dir.resolve()
 
     def clear(self) -> None:
         """
@@ -613,6 +615,14 @@ class _CollectionListSingleton:
                 ansible_core_version=ansible_core_version,
             )
 
+    def get_global_cache_dir(self) -> Path:
+        """
+        Return the global cache dir.
+        """
+        if self._global_cache_dir is None:
+            raise ValueError("Internal error: global cache dir not setup")
+        return self._global_cache_dir
+
 
 _COLLECTION_LIST = _CollectionListSingleton()
 
@@ -640,8 +650,18 @@ def get_collection_list(
     )
 
 
+def get_global_cache_dir() -> Path:
+    """
+    Return the global cache dir.
+
+    Must only be called after ``get_collection_list()`` has been called at least once.
+    """
+    return _COLLECTION_LIST.get_global_cache_dir()
+
+
 __all__ = [
     "CollectionList",
     "get_collection_list",
+    "get_global_cache_dir",
     "load_collection_data_from_disk",
 ]

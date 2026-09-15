@@ -26,6 +26,7 @@ from ..paths.utils import (
 from ..reporting import PartReporter, get_session_reporter
 from .collections import (
     CollectionSetup,
+    get_git_ceiling_env_var,
     prepare_collections,
 )
 from .utils import silence_run_verbosity
@@ -184,6 +185,7 @@ def add_docs_check(
                 command.append("--check-extra-docs-refs")
 
             env = {"ANSIBLE_COLLECTIONS_PATH": collections_path}
+            env.update(get_git_ceiling_env_var())
             if is_new_enough(antsibull_docs_version, min_version="2.24.0"):
                 command.extend(["--message-format", "json"])
                 with silence_run_verbosity():

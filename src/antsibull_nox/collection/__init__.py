@@ -17,7 +17,12 @@ from .install import (
     setup_collections,
     setup_current_tree,
 )
-from .search import CollectionList, Runner, load_collection_data_from_disk
+from .search import (
+    CollectionList,
+    Runner,
+    get_global_cache_dir,
+    load_collection_data_from_disk,
+)
 from .utils import force_collection_version
 
 __all__ = [
@@ -28,6 +33,7 @@ __all__ = [
     "Runner",
     "build_collection",
     "force_collection_version",
+    "get_global_cache_dir",
     "load_collection_data_from_disk",
     "setup_collections",
     "setup_current_tree",
