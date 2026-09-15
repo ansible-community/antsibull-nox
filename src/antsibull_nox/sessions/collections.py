@@ -22,12 +22,16 @@ from ..ansible import AnsibleCoreVersion, parse_ansible_core_version
 from ..collection import (
     CollectionData,
     Runner,
+    get_global_cache_dir,
     setup_collections,
     setup_current_tree,
 )
 from ..paths.utils import (
     create_temp_directory,
 )
+
+# https://git-scm.com/docs/git#Documentation/git.txt-GITCEILINGDIRECTORIES
+GIT_CEILING_DIRECTORIES = "GIT_CEILING_DIRECTORIES"
 
 
 @dataclass
@@ -172,6 +176,28 @@ def prepare_collections(
         current_collection=setup.current_collection,
         current_path=t.cast(Path, current_setup.current_path),
     )
+
+
+def get_git_ceiling_env_var() -> dict[str, str]:
+    """
+    Return environment variables so that git does not find the collection's
+    git repo when looking for git repos in the collection cache.
+    """
+    # It would be better to get the path of the .nox directory,
+    # but right now nox's API doesn't offer a way to get hold of it
+    # reliably.
+    global_cache_dir = str(get_global_cache_dir())
+    current_value = os.environ.get(GIT_CEILING_DIRECTORIES)
+    if current_value:
+        # Note that from the documentation it is unclear how to provide
+        # absolute paths on Windows, since the documentation claims that
+        # the value "should be a colon-separated list of absolute paths".
+        # I did checked git's code, it seems to simply split by ":", no
+        # matter what. So C:\Foo will be treated as two separate paths...
+        new_value = f"{global_cache_dir}:{current_value}"
+    else:
+        new_value = global_cache_dir
+    return {GIT_CEILING_DIRECTORIES: new_value}
 
 
 __all__ = [
