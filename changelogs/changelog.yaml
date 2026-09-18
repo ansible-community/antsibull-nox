@@ -741,3 +741,17 @@ releases:
       - 1.9.1.yml
       - 257-extensions.yml
     release_date: '2026-08-30'
+  1.9.2:
+    changes:
+      bugfixes:
+        - Ansible-core now has a ``stable-2.22`` branch, and ``devel``'s version has
+          been bumped to 2.23 (https://github.com/ansible-community/antsibull-nox/pull/263).
+        - When invoking antsibull-docs, make sure that the ``GIT_CEILING_DIRECTORIES``
+          environment variable is updated so that VCS detection will not accidentally
+          detect git for collections in antsibull-nox's collection cache (https://github.com/ansible-community/antsibull-nox/pull/262).
+      release_summary: Maintenance release.
+    fragments:
+      - 1.9.2.yml
+      - 262-git-fix.yml
+      - ansible-core-2.22.yml
+    release_date: '2026-09-18'

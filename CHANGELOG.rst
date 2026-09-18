@@ -4,6 +4,20 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.9.2
+======
+
+Release Summary
+---------------
+
+Maintenance release.
+
+Bugfixes
+--------
+
+- Ansible-core now has a ``stable-2.22`` branch, and ``devel``'s version has been bumped to 2.23 (https://github.com/ansible-community/antsibull-nox/pull/263).
+- When invoking antsibull-docs, make sure that the ``GIT_CEILING_DIRECTORIES`` environment variable is updated so that VCS detection will not accidentally detect git for collections in antsibull-nox's collection cache (https://github.com/ansible-community/antsibull-nox/pull/262).
+
 v1.9.1
 ======
 

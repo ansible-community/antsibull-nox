@@ -1,2 +1,0 @@
-bugfixes:
-  - "Ansible-core now has a ``stable-2.22`` branch, and ``devel``'s version has been bumped to 2.23 (https://github.com/ansible-community/antsibull-nox/pull/263)."

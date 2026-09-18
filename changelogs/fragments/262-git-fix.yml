@@ -1,4 +1,0 @@
-bugfixes:
-  - "When invoking antsibull-docs, make sure that the ``GIT_CEILING_DIRECTORIES`` environment variable is updated
-     so that VCS detection will not accidentally detect git for collections in antsibull-nox's collection cache
-     (https://github.com/ansible-community/antsibull-nox/pull/262)."
