@@ -43,7 +43,7 @@ class AnsibleCoreInfo:
 
 
 _MIN_SUPPORTED_VERSION = Version.parse("2.9")
-_CURRENT_DEVEL_VERSION = Version.parse("2.22")
+_CURRENT_DEVEL_VERSION = Version.parse("2.23")
 _CURRENT_MILESTONE_VERSION = Version.parse("2.22")
 
 _SUPPORTED_CORE_VERSIONS: dict[Version | t.Literal["milestone"], AnsibleCoreInfo] = {
@@ -115,6 +115,13 @@ _SUPPORTED_CORE_VERSIONS: dict[Version | t.Literal["milestone"], AnsibleCoreInfo
             ["3.12", "3.13", "3.14"],
             ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"],
         ],
+        "2.22": [
+            ["3.13", "3.14", "3.15"],
+            # Every 6th release supports seven Python versions on the target
+            # pylint: disable-next=line-too-long
+            # (https://docs.ansible.com/projects/ansible-core/devel/reference_appendices/release_and_maintenance.html#ansible-core-target-node-python-support)
+            ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"],
+        ],
         "milestone": [
             ["3.13", "3.14", "3.15"],
             ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"],
@@ -123,13 +130,6 @@ _SUPPORTED_CORE_VERSIONS: dict[Version | t.Literal["milestone"], AnsibleCoreInfo
         # The following might need updates. Look for the "``ansible-core`` support matrix" table in:
         # https://github.com/ansible/ansible-documentation/blob/devel/docs/docsite/rst/reference_appendices/release_and_maintenance.rst?plain=1
         # It contains commented-out entries for future ansible-core versions.
-        "2.22": [
-            ["3.13", "3.14", "3.15"],
-            # Every 6th release supports seven Python versions on the target
-            # pylint: disable-next=line-too-long
-            # (https://docs.ansible.com/projects/ansible-core/devel/reference_appendices/release_and_maintenance.html#ansible-core-target-node-python-support)
-            ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"],
-        ],
         "2.23": [
             ["3.13", "3.14", "3.15"],
             ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"],
