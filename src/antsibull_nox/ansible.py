@@ -44,7 +44,7 @@ class AnsibleCoreInfo:
 
 _MIN_SUPPORTED_VERSION = Version.parse("2.9")
 _CURRENT_DEVEL_VERSION = Version.parse("2.23")
-_CURRENT_MILESTONE_VERSION = Version.parse("2.22")
+_CURRENT_MILESTONE_VERSION = Version.parse("2.23")
 
 _SUPPORTED_CORE_VERSIONS: dict[Version | t.Literal["milestone"], AnsibleCoreInfo] = {
     (
