@@ -4,6 +4,19 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.9.3
+======
+
+Release Summary
+---------------
+
+Maintenance release.
+
+Bugfixes
+--------
+
+- Adjust internal ansible-core metadata to the latest ``milestone`` branch bump (https://github.com/ansible-community/antsibull-nox/pull/264).
+
 v1.9.2
 ======
 
