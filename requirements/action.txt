@@ -28,7 +28,7 @@ filelock==3.19.1 ; python_full_version < '3.10'
     # via
     #   python-discovery
     #   virtualenv
-filelock==3.32.6 ; python_full_version >= '3.10'
+filelock==3.32.7 ; python_full_version >= '3.10'
     # via
     #   python-discovery
     #   virtualenv
@@ -47,7 +47,7 @@ packaging==26.3
     #   nox
 platformdirs==4.4.0 ; python_full_version < '3.10'
     # via virtualenv
-platformdirs==4.11.8 ; python_full_version >= '3.10'
+platformdirs==4.11.11 ; python_full_version >= '3.10'
     # via
     #   nox
     #   virtualenv
@@ -55,7 +55,7 @@ pydantic==2.13.5
     # via antsibull-nox
 pydantic-core==2.46.5
     # via pydantic
-python-discovery==1.6.0
+python-discovery==1.6.1
     # via
     #   nox
     #   virtualenv
@@ -80,5 +80,5 @@ typing-inspection==0.4.2 ; python_full_version < '3.10'
     # via pydantic
 typing-inspection==0.4.4 ; python_full_version >= '3.10'
     # via pydantic
-virtualenv==21.7.9
+virtualenv==21.9.0
     # via nox
