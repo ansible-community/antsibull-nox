@@ -47,15 +47,23 @@ packaging==26.3
     #   nox
 platformdirs==4.4.0 ; python_full_version < '3.10'
     # via virtualenv
-platformdirs==4.12.3 ; python_full_version >= '3.10'
+platformdirs==4.12.4 ; python_full_version == '3.10.*'
     # via
     #   nox
     #   virtualenv
-pydantic==2.13.5
+platformdirs==4.13.0 ; python_full_version >= '3.11'
+    # via
+    #   nox
+    #   virtualenv
+pydantic==2.13.5 ; python_full_version < '3.10'
     # via antsibull-nox
-pydantic-core==2.46.5
+pydantic==2.14.1 ; python_full_version >= '3.10'
+    # via antsibull-nox
+pydantic-core==2.46.5 ; python_full_version < '3.10'
     # via pydantic
-python-discovery==1.6.1
+pydantic-core==2.50.1 ; python_full_version >= '3.10'
+    # via pydantic
+python-discovery==1.6.2
     # via
     #   nox
     #   virtualenv
@@ -65,7 +73,7 @@ pyyaml==6.0.3
     #   antsibull-nox
 semantic-version==2.10.0
     # via antsibull-nox
-tomli==2.4.1 ; python_full_version < '3.11'
+tomli==2.5.0 ; python_full_version < '3.11'
     # via
     #   antsibull-nox
     #   dependency-groups
