@@ -57,9 +57,8 @@ def create_initial_config(
     """
     try:
         _create_initial_config()
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        print(f"Error: {exc}", file=sys.stderr)
-        return 3
+    except Exception as exc:
+        raise FailCLIError(f"{exc}", code=3) from exc
     return 0
 
 
@@ -76,14 +75,14 @@ def show_changes(args: argparse.Namespace, config: Config | Exception | None) ->
     try:
         init_cd(config=config, config_path=config_path, force=True)
         if not supports_cd():
-            print(f"{config_path} does not support change detection.", file=sys.stderr)
-            return 3
+            raise FailCLIError(
+                f"{config_path} does not support change detection.", code=3
+            )
 
         base_branch = get_base_branch()
         changes = get_changes(relative_to=cwd) or []
     except ValueError as exc:
-        print(f"Error while fetching changes: {exc}", file=sys.stderr)
-        return 3
+        raise FailCLIError(f"while fetching changes: {exc}", code=3) from exc
 
     original = set(changes)
     python_deps: set[Path] = set()
@@ -158,9 +157,8 @@ def update_azp_config(
         )
         if fail_on_change and changed:
             return 1
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        print(f"Error: {exc}", file=sys.stderr)
-        return 3
+    except Exception as exc:
+        raise FailCLIError(f"{exc}", code=3) from exc
     return 0
 
 

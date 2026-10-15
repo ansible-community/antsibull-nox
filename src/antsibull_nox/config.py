@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import typing as t
+from pathlib import Path
 
 import pydantic as p
 
@@ -877,6 +878,7 @@ class CollectionConfig(_BaseModel):
 
 class _GitReleaserFragment:
     release_branch: str = "main"
+    collection_root: p.FilePath = Path(".")
     tag_format: str = "{version}"
     sign_commits: bool = True
     sign_tags: bool = True
@@ -893,7 +895,7 @@ class _GalaxyReleaserFragment:
     galaxy_base_url: str = "https://galaxy.ansible.com/api/"
 
 
-class ZuulReleaser(_BaseModel, _GitHubReleaserFragment, _GalaxyReleaserFragment):
+class ZuulGitHubReleaser(_BaseModel, _GitHubReleaserFragment, _GalaxyReleaserFragment):
     """
     Configuration for releasing with Zuul and GitHub.
     """
@@ -904,7 +906,7 @@ class ZuulReleaser(_BaseModel, _GitHubReleaserFragment, _GalaxyReleaserFragment)
     project_name: str
 
 
-Releaser = t.Annotated[t.Union[ZuulReleaser], p.Field(discriminator="type")]
+Releaser = t.Annotated[t.Union[ZuulGitHubReleaser], p.Field(discriminator="type")]
 
 
 class Config(_BaseModel):
