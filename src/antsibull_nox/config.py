@@ -878,7 +878,7 @@ class CollectionConfig(_BaseModel):
 
 class _GitReleaserFragment:
     release_branch: str = "main"
-    collection_root: p.FilePath = Path(".")
+    collection_root: p.DirectoryPath = Path(".")
     tag_format: str = "{version}"
     sign_commits: bool = True
     sign_tags: bool = True
