@@ -1,0 +1,2 @@
+minor_changes:
+  - "Add ``release`` subcommand to CLI tool that makes releasing certain Ansible collections easier (https://github.com/ansible-community/antsibull-nox/pull/272, https://github.com/ansible-community/antsibull-nox/pull/273)."
