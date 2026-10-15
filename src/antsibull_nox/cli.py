@@ -25,7 +25,8 @@ from ._pydantic import get_formatted_error_messages as _get_formatted_error_mess
 from .azp import ExtraSession as _AzpExtraSession
 from .azp import update_azp_config as _update_azp_config
 from .cd import get_base_branch, get_changes, init_cd, supports_cd
-from .config import CONFIG_FILENAME, load_config_from_toml
+from .cli_helper import FailCLIError, require_config
+from .config import CONFIG_FILENAME, Config, load_config_from_toml
 from .init import create_initial_config as _create_initial_config
 from .lint_config import lint_config as _lint_config
 from .sessions.utils.paths import PythonDependencies, add_python_deps
@@ -38,7 +39,7 @@ except ImportError:
     HAS_ARGCOMPLETE = False
 
 
-def lint_config(_: argparse.Namespace) -> int:
+def lint_config(_args: argparse.Namespace, _config: Config | Exception | None) -> int:
     """
     Lint antsibull-nox config file.
     """
@@ -48,7 +49,9 @@ def lint_config(_: argparse.Namespace) -> int:
     return 0 if len(errors) == 0 else 3
 
 
-def create_initial_config(_: argparse.Namespace) -> int:
+def create_initial_config(
+    _args: argparse.Namespace, _config: Config | Exception | None
+) -> int:
     """
     Create noxfile.py and antsibull-nox.toml.
     """
@@ -60,7 +63,7 @@ def create_initial_config(_: argparse.Namespace) -> int:
     return 0
 
 
-def show_changes(args: argparse.Namespace) -> int:
+def show_changes(args: argparse.Namespace, config: Config | Exception | None) -> int:
     """
     Show changes.
     """
@@ -68,11 +71,7 @@ def show_changes(args: argparse.Namespace) -> int:
 
     config_path = Path(CONFIG_FILENAME)
     cwd = Path.cwd()
-    try:
-        config = load_config_from_toml(config_path)
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        print(f"Error: {exc}", file=sys.stderr)
-        return 3
+    config = require_config(config)
 
     try:
         init_cd(config=config, config_path=config_path, force=True)
@@ -113,10 +112,14 @@ def show_changes(args: argparse.Namespace) -> int:
     return 0
 
 
-def update_azp_config(args: argparse.Namespace) -> int:
+def update_azp_config(
+    args: argparse.Namespace, config: Config | Exception | None
+) -> int:
     """
     Update AZP config.
     """
+    config = require_config(config)
+
     min_ansible_core: str | None = args.min_ansible_core
     max_ansible_core: str | None = args.max_ansible_core
     include_tags: str | None = args.include_tags
@@ -145,6 +148,7 @@ def update_azp_config(args: argparse.Namespace) -> int:
                     f" has invalid structure:\n{errors}"
                 ) from None
         changed = _update_azp_config(
+            config=config,
             min_ansible_core=min_ansible_core,
             max_ansible_core=max_ansible_core,
             include_tags=include_tags,
@@ -162,7 +166,7 @@ def update_azp_config(args: argparse.Namespace) -> int:
 
 # Mapping from command line subcommand names to functions which implement those.
 # The functions need to take a single argument, the processed list of args.
-ARGS_MAP: dict[str, Callable[[argparse.Namespace], int]] = {
+ARGS_MAP: dict[str, Callable[[argparse.Namespace, Config | Exception | None], int]] = {
     "lint-config": lint_config,
     "init": create_initial_config,
     "show-changes": show_changes,
@@ -170,13 +174,25 @@ ARGS_MAP: dict[str, Callable[[argparse.Namespace], int]] = {
 }
 
 
-class InvalidArgumentError(Exception):
+def get_optional_config_or_error() -> Config | Exception | None:
     """
-    Error while parsing arguments.
+    Try to load error.
+
+    Return ``None`` if config file does not exist, the exception if one happened,
+    or the config's contents.
     """
+    config_path = Path(CONFIG_FILENAME)
+    if not config_path.exists():
+        return None
+    try:
+        return load_config_from_toml(config_path)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return exc
 
 
-def parse_args(program_name: str, args: list[str]) -> argparse.Namespace:
+def parse_args(
+    program_name: str, args: list[str], _config: Config | Exception | None
+) -> argparse.Namespace:
     """
     Parse the command line arguments.
     """
@@ -266,13 +282,14 @@ def run(args: list[str]) -> int:
     Run the program.
     """
     program_name = os.path.basename(args[0])
+    config = get_optional_config_or_error()
     try:
-        parsed_args: argparse.Namespace = parse_args(program_name, args[1:])
-    except InvalidArgumentError as e:
-        print(e, file=sys.stderr)
-        return 2
+        parsed_args: argparse.Namespace = parse_args(program_name, args[1:], config)
 
-    return ARGS_MAP[parsed_args.command](parsed_args)
+        return ARGS_MAP[parsed_args.command](parsed_args, config)
+    except FailCLIError as e:
+        print(e.message, file=sys.stderr)
+        return e.code
 
 
 def main() -> int:

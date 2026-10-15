@@ -875,6 +875,38 @@ class CollectionConfig(_BaseModel):
     min_python_version: t.Union[MinPythonVersionConstants, PVersion] = "default"
 
 
+class _GitReleaserFragment:
+    release_branch: str = "main"
+    tag_format: str = "{version}"
+    sign_commits: bool = True
+    sign_tags: bool = True
+
+
+class _GitHubReleaserFragment(_GitReleaserFragment):
+    project_url: str
+    project_remote: str = "upstream"
+    release_title: str
+    release_body: str
+
+
+class _GalaxyReleaserFragment:
+    galaxy_base_url: str = "https://galaxy.ansible.com/api/"
+
+
+class ZuulReleaser(_BaseModel, _GitHubReleaserFragment, _GalaxyReleaserFragment):
+    """
+    Configuration for releasing with Zuul and GitHub.
+    """
+
+    type: t.Literal["zuul+github"]
+
+    zuul_base_url: str
+    project_name: str
+
+
+Releaser = t.Annotated[t.Union[ZuulReleaser], p.Field(discriminator="type")]
+
+
 class Config(_BaseModel):
     """
     The contents of a antsibull-nox config file.
@@ -890,6 +922,7 @@ class Config(_BaseModel):
     vcs: t.Optional[VCS] = None
     sessions: Sessions = Sessions()
     collection: CollectionConfig = CollectionConfig()
+    releaser: t.Optional[Releaser] = None
 
 
 def load_config_from_toml(path: str | os.PathLike) -> Config:
@@ -976,3 +1009,10 @@ def lint_config_toml() -> list[str]:
     return [
         f"{message.file}: {message.message}" for message in lint_config_toml_messages()
     ]
+
+
+def create_config_not_found_error() -> FileNotFoundError:
+    """
+    Create a FileNotFoundError for the config file.
+    """
+    return FileNotFoundError(f"No such file or directory: {CONFIG_FILENAME!r}")
