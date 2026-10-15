@@ -976,3 +976,10 @@ def lint_config_toml() -> list[str]:
     return [
         f"{message.file}: {message.message}" for message in lint_config_toml_messages()
     ]
+
+
+def create_config_not_found_error() -> FileNotFoundError:
+    """
+    Create a FileNotFoundError for the config file.
+    """
+    return FileNotFoundError(f"No such file or directory: {CONFIG_FILENAME!r}")

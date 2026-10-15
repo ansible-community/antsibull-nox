@@ -25,10 +25,7 @@ from pathlib import Path
 import pydantic as _p
 
 from .ansible import AnsibleCoreVersion, parse_ansible_core_version
-from .config import (
-    CONFIG_FILENAME,
-    load_config_from_toml,
-)
+from .config import Config
 from .lint_config import NOXFILE_PY
 from .sessions.utils.output import _BOLD, _RESET, Color
 from .utils import Version
@@ -397,7 +394,6 @@ def _show_diff(
 
 def _check_azp_files() -> None:
     for expected_file in (
-        CONFIG_FILENAME,
         NOXFILE_PY,
         _AZURE_PIPELINES_CONFIG,
     ):
@@ -407,6 +403,7 @@ def _check_azp_files() -> None:
 
 def update_azp_config(
     *,
+    config: Config,
     min_ansible_core: str | None = None,
     max_ansible_core: str | None = None,
     include_tags: str | None = None,
@@ -422,8 +419,6 @@ def update_azp_config(
     _check_azp_files()
     azp_definition: Path = Path(_AZURE_PIPELINES_CONFIG)
 
-    config_path = Path(CONFIG_FILENAME)
-    config = load_config_from_toml(config_path)
     split_up_unit_tests = False
     if config.sessions.ansible_test_units:
         split_up_unit_tests = config.sessions.ansible_test_units.split_by_python_version
