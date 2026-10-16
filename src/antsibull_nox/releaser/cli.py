@@ -12,12 +12,30 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Callable
+from pathlib import Path
 
-from ..cli_helper import FailCLIError, require_config
+from semantic_version import Version
+
+from ..cli_helper import FailCLIError, InvalidArgumentError, require_config
+from ..collection.data import CollectionData
+from ..collection.search import load_collection_data_from_disk
 from ..config import Config, Releaser, create_config_not_found_error
+from .base import BaseReleaser, VerifyFailed
 
 _CANNOT_BE_USED_PREFIX = "This subcommand cannot be used because of: "
 _NO_RELEASER_ERROR = "no releaser has been configured."
+
+
+# pylint: disable-next=inconsistent-return-statements
+def get_releaser(config: Releaser) -> BaseReleaser:
+    """
+    Create BaseReleaser instance.
+    """
+    if config.type == "zuul+github":
+        # pylint: disable-next=import-outside-toplevel
+        from .zuul_github import ZuulGitHubReleaser
+
+        return ZuulGitHubReleaser(config)
 
 
 def create_subcommand(
@@ -40,13 +58,94 @@ def create_subcommand(
     )
     releaser_subparsers.required = True
 
-    # TODO
+    wait = releaser_subparsers.add_parser(
+        "wait",
+        description="Wait until the release has been published.",
+    )
+    wait.add_argument("version")
+    wait.add_argument(
+        "--skip-validation",
+        default=False,
+        action="store_true",
+        help="Do not validate the release (see 'validate' subcommand).",
+    )
+
+    validate = releaser_subparsers.add_parser(
+        "validate",
+        description="Validate that the release is published and its contents are as expected.",
+    )
+    validate.add_argument("version")
+
+
+def parse_version(version: str, *, name: str = "version") -> Version:
+    """
+    Parse semantic version
+    """
+    try:
+        return Version(version)
+    except ValueError as exc:
+        raise InvalidArgumentError(
+            f"Cannot parse {name} parameter {version!r}: {exc}"
+        ) from exc
+
+
+def cmd_wait(
+    args: argparse.Namespace,
+    collection: CollectionData,
+    _config: Config,
+    releaser: Releaser,
+) -> int:
+    """
+    The 'wait' subcommand.
+    """
+    v = parse_version(args.version)
+    skip_validation: bool = args.skip_validation
+
+    r = get_releaser(releaser)
+    try:
+        r.wait_until_released(
+            namespace=collection.namespace,
+            name=collection.name,
+            version=v,
+            verify=not skip_validation,
+        )
+        return 0
+    except VerifyFailed as exc:
+        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
+    except ValueError as exc:
+        raise FailCLIError(f"Error: {exc}", code=3) from exc
+
+
+def cmd_validate(
+    args: argparse.Namespace,
+    collection: CollectionData,
+    _config: Config,
+    releaser: Releaser,
+) -> int:
+    """
+    The 'validate' subcommand.
+    """
+    v = parse_version(args.version)
+
+    r = get_releaser(releaser)
+    try:
+        r.verify_release(
+            namespace=collection.namespace, name=collection.name, version=v
+        )
+        return 0
+    except VerifyFailed as exc:
+        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
+    except ValueError as exc:
+        raise FailCLIError(f"Error: {exc}", code=3) from exc
 
 
 # Mapping from command line 'release' subcommand names to functions which implement those.
 # The functions need to take a single argument, the processed list of args.
-RELEASE_ARGS_MAP: dict[str, Callable[[argparse.Namespace, Config, Releaser], int]] = {
-    # TODO
+RELEASE_ARGS_MAP: dict[
+    str, Callable[[argparse.Namespace, CollectionData, Config, Releaser], int]
+] = {
+    "wait": cmd_wait,
+    "validate": cmd_validate,
 }
 
 
@@ -58,8 +157,12 @@ def release_command(args: argparse.Namespace, config: Config | Exception | None)
     if config.releaser is None:
         raise FailCLIError(_NO_RELEASER_ERROR, code=3)
 
+    collection_data = load_collection_data_from_disk(Path("."))
+
     try:
-        return RELEASE_ARGS_MAP[args.subcommand](args, config, config.releaser)
+        return RELEASE_ARGS_MAP[args.subcommand](
+            args, collection_data, config, config.releaser
+        )
     except ValueError as exc:
         raise FailCLIError(f"{exc}", code=3) from exc
 
