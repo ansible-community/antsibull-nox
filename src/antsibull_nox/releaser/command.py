@@ -17,6 +17,8 @@ import subprocess
 import sys
 import typing as t
 
+from .ui import prompt_user
+
 if t.TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Iterable, Mapping
 
@@ -134,20 +136,6 @@ class CommandRunner(metaclass=abc.ABCMeta):
         return p
 
 
-def _prompt(prompt: str, *, accept: list[str], default: str | None = None) -> str:
-    query = "/".join(accept)
-    if default is not None:
-        query = f"{query}, default={default}"
-    prompt = f"{prompt} ({query}) "
-    while True:
-        value = input(prompt)
-        if value in accept:
-            return value
-        if not value and default is not None:
-            return default
-        print(f"Value {value!r} is not acceptable. Try again.")
-
-
 def repeat_if_failed(
     command: Callable[[], _T], *, postprocess: Callable[[_T], _T] | None = None
 ) -> _T:
@@ -165,7 +153,12 @@ def repeat_if_failed(
             if sys.stdout.isatty():
                 print(str(exc), file=sys.stderr)
                 retry = (
-                    _prompt("Do you want to retry?", accept=["y", "n"], default="y")
+                    prompt_user(
+                        "Do you want to retry?",
+                        accept=["y", "n"],
+                        default="y",
+                        abort="n",
+                    )
                     == "y"
                 )
             else:

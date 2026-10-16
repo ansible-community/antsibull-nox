@@ -82,6 +82,7 @@ class Git(CommandRunner):
         """
         args: list[str | os.PathLike[str]] = [
             "archive",
+            "--format=tar",
             f"--output={tarball_path}",
         ]
         if prefix is not None:

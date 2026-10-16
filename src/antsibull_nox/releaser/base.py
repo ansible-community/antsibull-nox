@@ -12,11 +12,34 @@ from __future__ import annotations
 
 import abc
 
+from semantic_version import Version
+
+
+class VerifyFailed(ValueError):
+    """
+    Indicate that the verification failed (as opposed to other error during verification).
+    """
+
 
 class BaseReleaser(metaclass=abc.ABCMeta):
     """
     Base releaser class.
     """
+
+    @abc.abstractmethod
+    def wait_until_released(
+        self, *, namespace: str, name: str, version: Version, verify: bool
+    ) -> None:
+        """
+        Wait for the release to appear.
+        """
+
+    @abc.abstractmethod
+    def verify_release(self, *, namespace: str, name: str, version: Version) -> None:
+        """
+        Verify that the release has been released as expected.
+        Raise ``VerifyFailed`` if validation fails, and ``ValueError`` in case of other errors.
+        """
 
 
 __all__ = ("BaseReleaser",)
