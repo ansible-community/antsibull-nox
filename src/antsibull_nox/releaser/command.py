@@ -11,11 +11,13 @@ Command runner helpers.
 from __future__ import annotations
 
 import abc
+import contextlib
 import os
 import shlex
 import subprocess
 import sys
 import typing as t
+from pathlib import Path
 
 from .ui import prompt_user
 
@@ -167,4 +169,17 @@ def repeat_if_failed(
                 raise
 
 
-__all__ = ("CommandRunner", "repeat_if_failed")
+@contextlib.contextmanager
+def chdir(path: Path) -> t.Generator[None]:
+    """
+    Context manager for temporarily changing the current directory.
+    """
+    cwd = Path.cwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(cwd)
+
+
+__all__ = ("CommandRunner", "chdir", "repeat_if_failed")
