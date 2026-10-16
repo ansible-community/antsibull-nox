@@ -43,6 +43,7 @@ dependencies = [
     "packaging",
     "pydantic ~= 2.0",
     "pyyaml",
+    "requests",
     "semantic_version",
     "tomli; python_version<'3.11'",
 ]
