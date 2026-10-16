@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import typing as t
+from pathlib import Path
 
 from .command import CommandRunner
 
@@ -45,6 +46,28 @@ class Git(CommandRunner):
             args.extend(["--", what])
         result = self.run(args, allow_rc=[0], cwd=path)
         return not result.stdout
+
+    def get_current_commit(
+        self,
+        *,
+        path: str | os.PathLike[str] | None,
+    ) -> str:
+        """
+        Get the commit of the current commit.
+        """
+        result = self.run_text(["rev-parse", "HEAD"], allow_rc=[0], cwd=path)
+        return result.stdout.strip()
+
+    def get_repository_root(
+        self,
+        *,
+        path: str | os.PathLike[str] | None,
+    ) -> Path:
+        """
+        Get the repository's root.
+        """
+        result = self.run_text(["rev-parse", "--show-toplevel"], allow_rc=[0], cwd=path)
+        return Path(result.stdout.rstrip("\n"))
 
     def has_staged_changes(
         self,
