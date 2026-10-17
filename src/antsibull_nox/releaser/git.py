@@ -307,17 +307,17 @@ class GitReleaser(BaseVCSReleaser):
 
         root = self.__git.get_repository_root()
         branch = self.__git.get_current_branch()
-        if branch != self.__config.release_branch:
+        if branch != self.__config.git_release_branch:
             raise ValueError(
-                f"Expected to be in branch {self.__config.release_branch}"
+                f"Expected to be in branch {self.__config.git_release_branch}"
                 f" for releasing, but are in branch {branch}!"
             )
         status = self.__git.status(path=root)
         danger_paths = [
             (str(p) + (os.sep if is_dir else "")).encode("utf-8")
             for p, is_dir in [
-                (self.__config.collection_root / "changelogs" / "fragments", True),
-                (self.__config.collection_root / "galaxy.yml", False),
+                (self.__config.git_collection_root / "changelogs" / "fragments", True),
+                (self.__config.git_collection_root / "galaxy.yml", False),
             ]
         ]
         for s in status:
@@ -327,7 +327,7 @@ class GitReleaser(BaseVCSReleaser):
                 raise ValueError(
                     f"Git repository has dangerous untracked path {s.path.decode('utf-8')}"
                 )
-        coll = root / self.__config.collection_root
+        coll = root / self.__config.git_collection_root
 
         act_cwd = cwd.resolve()
         act_coll = coll.resolve()
@@ -353,6 +353,17 @@ class GitReleaser(BaseVCSReleaser):
                 f"galaxy.yml's version is {collection.version}, expected {version}!"
             )
 
+        tag = template_string(
+            self.__config.git_tag_format, variables={"version": str(version)}
+        )
+        release_commit_message = template_string(
+            self.__config.git_release_commit_message,
+            variables={"version": str(version)},
+        )
+        release_tag_message = template_string(
+            self.__config.git_release_tag_message, variables={"version": str(version)}
+        )
+
         commit = self.__git.get_current_commit(path=root)
         try:
             # Update changelog
@@ -362,7 +373,9 @@ class GitReleaser(BaseVCSReleaser):
             subprocess.run(args, cwd=coll, check=True)
 
             # Stage changes
-            status = self.__git.status(path=root, what=self.__config.collection_root)
+            status = self.__git.status(
+                path=root, what=self.__config.git_collection_root
+            )
             changed_paths = []
             for s in status:
                 if s.x in ("?", "!"):
@@ -377,30 +390,20 @@ class GitReleaser(BaseVCSReleaser):
             self.__git.add(changed_paths, path=root)
 
             # Create release commit
-            release_commit_message = template_string(
-                self.__config.release_commit_message,
-                variables={"version": str(version)},
-            )
             repeat_if_failed(
                 lambda: self.__git.commit(
                     message=release_commit_message,
-                    signed=self.__config.sign_commits,
+                    signed=self.__config.git_sign_commits,
                     path=root,
                 ),
             )
 
             # Create release tag
-            release_tag_message = template_string(
-                self.__config.release_tag_message, variables={"version": str(version)}
-            )
-            tag = template_string(
-                self.__config.tag_format, variables={"version": str(version)}
-            )
             repeat_if_failed(
                 lambda: self.__git.tag(
                     tag=tag,
                     message=release_tag_message,
-                    signed=self.__config.sign_tags,
+                    signed=self.__config.git_sign_tags,
                     path=root,
                 ),
             )
@@ -415,9 +418,9 @@ class GitReleaser(BaseVCSReleaser):
         Create tarball (.tar) of a tagged release. Return prefix that all entries have.
         """
         tag = template_string(
-            self.__config.tag_format, variables={"version": str(version)}
+            self.__config.git_tag_format, variables={"version": str(version)}
         )
-        prefix_str: str | None = str(self.__config.collection_root)
+        prefix_str: str | None = str(self.__config.git_collection_root)
         prefix: str | None
         if prefix_str == ".":
             prefix, prefix_str = None, None
