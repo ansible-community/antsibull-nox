@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import json
+import tarfile
 import typing as t
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -20,6 +22,9 @@ import pydantic as p
 from semantic_version import Version
 
 from ._http import RequestsSession
+
+if t.TYPE_CHECKING:  # pragma: no cover
+    _T = t.TypeVar("_T", bound=p.BaseModel)
 
 
 def _validate(
@@ -294,6 +299,58 @@ class GalaxyClient(RequestsSession):
         Download a release's tarball.
         """
         self._download_file(release.download_url, path)
+
+
+def _load(files: dict[str, bytes], filename: str, schema: type[_T]) -> _T:
+    try:
+        data = json.loads(files[filename])
+    except KeyError:
+        raise ValueError(f"Cannot find file {filename}.") from None
+    except Exception as exc:
+        raise ValueError(f"Error while JSON parsing {filename}: {exc}") from exc
+
+    try:
+        return schema.model_validate(data)
+    except Exception as exc:
+        raise ValueError(f"Error while parsing {filename}: {exc}") from exc
+
+
+def extract_manifest_and_files_from_tarball(
+    tarball_path: Path,
+) -> tuple[Manifest, Files]:
+    """
+    Extracts the manifest (MANIFEST.json) and the files list (FILES.json) from a collection tarball.
+    """
+    filenames = {"MANIFEST.json", "FILES.json"}
+    files: dict[str, bytes] = {}
+    try:
+        with tarfile.open(tarball_path, "r:gz") as tar:
+            for file in tar:
+                if file.name in filenames:
+                    if file.name in files:
+                        raise ValueError(
+                            f"Collection tarball {tarball_path} contains {file.name} twice!"
+                        )
+                    file_p = tar.extractfile(file)
+                    if file_p:
+                        with file_p:
+                            files[file.name] = file_p.read()
+    except IOError as exc:
+        raise ValueError(
+            "Error while searching for mainfest and files list"
+            f" in collection tarball {tarball_path}: {exc}"
+        ) from exc
+    if len(files) < len(filenames):
+        missing = " and ".join(sorted([fn for fn in filenames if fn not in files]))
+        raise ValueError(f"Collection tarball {tarball_path} is missing {missing}.")
+    try:
+        manifest_json = _load(files, "MANIFEST.json", Manifest)
+        files_json = _load(files, "FILES.json", Files)
+        return manifest_json, files_json
+    except ValueError as exc:
+        raise ValueError(
+            f"Error while parsing collection tarball {tarball_path}: {exc}"
+        ) from exc
 
 
 __all__ = (
