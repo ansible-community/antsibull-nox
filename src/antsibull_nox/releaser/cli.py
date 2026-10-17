@@ -61,6 +61,7 @@ def create_subcommand(
     vcs_release = releaser_subparsers.add_parser(
         "vcs-release",
         description="Create release in VCS.",
+        help="Create release in VCS",
     )
     vcs_release.add_argument("version")
 
@@ -72,6 +73,7 @@ def create_subcommand(
     wait = releaser_subparsers.add_parser(
         "wait",
         description="Wait until the release has been published.",
+        help="Wait until the release has been published",
     )
     wait.add_argument("version")
     wait.add_argument(
@@ -90,6 +92,7 @@ def create_subcommand(
     validate = releaser_subparsers.add_parser(
         "validate",
         description="Validate that the release is published and its contents are as expected.",
+        help="Validate that the release is published and its contents are as expected",
     )
     validate.add_argument("version")
     validate.add_argument(
