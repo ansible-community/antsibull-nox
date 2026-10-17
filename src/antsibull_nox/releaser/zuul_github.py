@@ -20,7 +20,13 @@ from semantic_version import Version
 from ..config import ZuulGitHubReleaser as ZuulGitHubReleaserConfig
 from ._template import template_string
 from .base import BaseReleaser, VerifyFailed
-from .galaxy import GalaxyClient, ReleaseInfo, extract_manifest_and_files_from_tarball
+from .galaxy import (
+    GalaxyClient,
+    ReleaseInfo,
+    ValidationError,
+    extract_manifest_and_files_from_tarball,
+    validate_tarball,
+)
 from .git import GitReleaser
 from .ui import Retry, retry, wait_for
 from .zuul import BuildInfo, ZuulClient
@@ -63,7 +69,13 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         return f
 
     def wait_until_released(
-        self, *, namespace: str, name: str, version: Version, verify: bool
+        self,
+        *,
+        namespace: str,
+        name: str,
+        version: Version,
+        verify: bool,
+        validate_with_sources: bool = True,
     ) -> None:
         """
         Wait for the release to appear.
@@ -117,14 +129,35 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         release = wait_for(get_release, interval=datetime.timedelta(seconds=10))
         if verify:
             print("Verifying...")
-            self._verify(release, namespace, name, version)
+            self._verify(
+                release,
+                namespace,
+                name,
+                version,
+                validate_with_sources=validate_with_sources,
+            )
+
+    def _raise_errors_exception(self, errors: list[ValidationError]) -> None:
+        if errors:
+            error_list = "\n".join(
+                [f"{error.ftype} {error.tarball_path}: {error}" for error in errors]
+            )
+            raise VerifyFailed(
+                f"Failed to validate files in Galaxy collection tarball:\n{error_list}"
+            )
 
     def _verify(
-        self, release: ReleaseInfo, namespace: str, name: str, version: Version
+        self,
+        release: ReleaseInfo,
+        namespace: str,
+        name: str,
+        version: Version,
+        validate_with_sources: bool,
     ) -> None:
         with tempfile.TemporaryDirectory() as tempdir_name:
             tempdir = Path(tempdir_name)
             galaxy_tarball = tempdir / "galaxy.tar"
+            print("Downloading Galaxy tarball...")
             retry(
                 lambda: self.galaxy_client.download_release(release, galaxy_tarball),
                 what="Downloading Galaxy tarball",
@@ -136,6 +169,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                     f"Validation of Galaxy tarball checksum failed: {exc}"
                 ) from exc
 
+            print("Extracting MANIFEST.json and FILES.json...")
             manifest, files = extract_manifest_and_files_from_tarball(galaxy_tarball)
             if manifest.collection_info.name != name:
                 raise VerifyFailed(
@@ -153,15 +187,46 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                     f" {manifest.collection_info.version!r}, but expected {version!r}."
                 )
 
+            # pylint: disable-next=fixme
             # TODO: more detailled validation against galaxy.yml
 
-            # TODO: validate files in tarball
+            print("Validate Galaxy tarball against FILES.json...")
+            self._raise_errors_exception(
+                validate_tarball(
+                    galaxy_tarball,
+                    files,
+                    is_tgz=True,
+                    is_galaxy_tarball=True,
+                    prefix=None,
+                )
+            )
 
-            # TODO: create archive from tag, validate its contents against the manifest
+            if validate_with_sources:
+                print("Validate CVS sources against FILES.json...")
+                source_tarball = tempdir / "source.tar"
+                source_prefix = self.create_release_tarball(
+                    tarball_path=source_tarball, version=version
+                )
+                self._raise_errors_exception(
+                    validate_tarball(
+                        source_tarball,
+                        files,
+                        is_tgz=False,
+                        is_galaxy_tarball=False,
+                        prefix=source_prefix,
+                    )
+                )
 
         print("Release successfully verified.")
 
-    def verify_release(self, *, namespace: str, name: str, version: Version) -> None:
+    def verify_release(
+        self,
+        *,
+        namespace: str,
+        name: str,
+        version: Version,
+        validate_with_sources: bool = True,
+    ) -> None:
         """
         Verify that the release has been released as expected.
         Raise ``ValueError`` if validation fails.
@@ -169,7 +234,13 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         release = self.galaxy_client.get_specific_release(namespace, name, version)
         if release is None:
             raise ValueError(f"Cannot find release {version}")
-        self._verify(release, namespace, name, version)
+        self._verify(
+            release,
+            namespace,
+            name,
+            version,
+            validate_with_sources=validate_with_sources,
+        )
 
 
 __all__ = ("ZuulGitHubReleaser",)

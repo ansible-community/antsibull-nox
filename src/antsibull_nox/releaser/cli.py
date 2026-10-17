@@ -64,6 +64,11 @@ def create_subcommand(
     )
     vcs_release.add_argument("version")
 
+    extra_steps_needed = (
+        "This should be disabled if extra steps are needed"
+        " to build the Galaxy tarball from the sources."
+    )
+
     wait = releaser_subparsers.add_parser(
         "wait",
         description="Wait until the release has been published.",
@@ -75,12 +80,24 @@ def create_subcommand(
         action="store_true",
         help="Do not validate the release (see 'validate' subcommand).",
     )
+    wait.add_argument(
+        "--skip-source-validation",
+        default=False,
+        action="store_true",
+        help=f"When validating, do not validate the release's sources. {extra_steps_needed}",
+    )
 
     validate = releaser_subparsers.add_parser(
         "validate",
         description="Validate that the release is published and its contents are as expected.",
     )
     validate.add_argument("version")
+    validate.add_argument(
+        "--skip-source-validation",
+        default=False,
+        action="store_true",
+        help=f"Do not validate the release's sources. {extra_steps_needed}",
+    )
 
 
 def parse_version(version: str, *, name: str = "version") -> Version:
@@ -125,6 +142,7 @@ def cmd_wait(
     """
     v = parse_version(args.version)
     skip_validation: bool = args.skip_validation
+    skip_source_validation: bool = args.skip_source_validation
 
     r = get_releaser(releaser)
     try:
@@ -133,6 +151,7 @@ def cmd_wait(
             name=collection.name,
             version=v,
             verify=not skip_validation,
+            validate_with_sources=not skip_source_validation,
         )
         return 0
     except VerifyFailed as exc:
@@ -151,11 +170,15 @@ def cmd_validate(
     The 'validate' subcommand.
     """
     v = parse_version(args.version)
+    skip_source_validation: bool = args.skip_source_validation
 
     r = get_releaser(releaser)
     try:
         r.verify_release(
-            namespace=collection.namespace, name=collection.name, version=v
+            namespace=collection.namespace,
+            name=collection.name,
+            version=v,
+            validate_with_sources=not skip_source_validation,
         )
         return 0
     except VerifyFailed as exc:

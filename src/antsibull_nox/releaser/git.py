@@ -408,5 +408,30 @@ class GitReleaser(BaseVCSReleaser):
             self.__git.restore_to_commit(commit, path=root, clean=False)
             raise
 
+    def create_release_tarball(
+        self, *, tarball_path: Path, version: Version
+    ) -> str | None:
+        """
+        Create tarball (.tar) of a tagged release. Return prefix that all entries have.
+        """
+        tag = template_string(
+            self.__config.tag_format, variables={"version": str(version)}
+        )
+        prefix_str: str | None = str(self.__config.collection_root)
+        prefix: str | None
+        if prefix_str == ".":
+            prefix, prefix_str = None, None
+        else:
+            prefix, prefix_str = prefix_str, f"{prefix_str}/"
+        root = self.__git.get_repository_root()
+        self.__git.archive(
+            commit=tag,
+            tarball_path=tarball_path,
+            prefix=prefix_str,
+            path=root,
+            what=prefix,
+        )
+        return prefix
+
 
 __all__ = ("Git", "GitReleaser")
