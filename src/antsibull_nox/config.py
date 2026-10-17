@@ -882,6 +882,8 @@ class _GitReleaserFragment:
     tag_format: str = "{version}"
     sign_commits: bool = True
     sign_tags: bool = True
+    release_commit_message: str = "Release {version}."
+    release_tag_message: str = "{version}"
 
 
 class _GitHubReleaserFragment(_GitReleaserFragment):
