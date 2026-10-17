@@ -274,7 +274,8 @@ def parse_args(
 
     releaser_parser = subparsers.add_parser(
         "release",
-        description="Release subcommand",
+        description="Release subcommand.",
+        help="Release subcommand",
     )
     release_create_subcommand(releaser_parser, config)
 
