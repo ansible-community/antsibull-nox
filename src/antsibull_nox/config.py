@@ -887,7 +887,8 @@ class _GitReleaserFragment:
 
 
 class _GitHubReleaserFragment(_GitReleaserFragment):
-    github_repo_url: str
+    github_org: str
+    github_repo: str
     github_upstream_remote: str = "upstream"
     github_release_title: str
     github_release_body: str
