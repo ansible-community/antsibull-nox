@@ -32,25 +32,43 @@ def _validate(
 
 
 def _validate_file(
-    filename: str, digest: tuple[str, hashlib._Hash, str] | None, file: t.IO[bytes]
+    filename: str,
+    digest: tuple[str, hashlib._Hash, str] | None,
+    file: t.IO[bytes],
+    *,
+    size: int | None = None,
 ) -> None:
     if digest is None:
         return
     orig_digest, h, hash_name = digest
+    actual_size = 0
     try:
         while True:
             data = file.read(65536)
             if not data:
                 break
+            actual_size += len(data)
             h.update(data)
     except IOError as exc:
         raise ValueError(f"I/O error while validating {filename}: {exc}") from exc
+    if size is not None and size != actual_size:
+        raise ValueError(
+            f"Expected {filename} to have {size} bytes, but it has {actual_size} bytes"
+        )
     _validate(filename, h.hexdigest(), orig_digest, hash_name)
 
 
 def _validate_content(
-    filename: str, digest: tuple[str, hashlib._Hash, str] | None, data: bytes
+    filename: str,
+    digest: tuple[str, hashlib._Hash, str] | None,
+    data: bytes,
+    *,
+    size: int | None = None,
 ) -> None:
+    if size is not None and size != len(data):
+        raise ValueError(
+            f"Expected {filename} to have {size} bytes, but it has {len(data)} bytes"
+        )
     if digest is None:
         return
     orig_digest, h, hash_name = digest
@@ -59,13 +77,17 @@ def _validate_content(
 
 
 def _validate_path(
-    filename: str, digest: tuple[str, hashlib._Hash, str] | None, path: Path
+    filename: str,
+    digest: tuple[str, hashlib._Hash, str] | None,
+    path: Path,
+    *,
+    size: int | None = None,
 ) -> None:
     if digest is None:
         return
     try:
         with path.open("rb") as f:
-            _validate_file(filename, digest, f)
+            _validate_file(filename, digest, f, size=size)
     except IOError as exc:
         raise ValueError(f"I/O error while validating {filename}: {exc}") from exc
 
@@ -88,19 +110,19 @@ class Artifact(p.BaseModel):
         """
         Validate file contents against stored digest.
         """
-        _validate_file(self.filename, self._get_digest(), file)
+        _validate_file(self.filename, self._get_digest(), file, size=self.size)
 
     def validate_content(self, data: bytes) -> None:
         """
         Validate file contents against stored digest.
         """
-        _validate_content(self.filename, self._get_digest(), data)
+        _validate_content(self.filename, self._get_digest(), data, size=self.size)
 
     def validate_path(self, path: Path) -> None:
         """
         Validate file contents against stored digest.
         """
-        _validate_path(self.filename, self._get_digest(), path)
+        _validate_path(self.filename, self._get_digest(), path, size=self.size)
 
 
 class Namespace(p.BaseModel):
@@ -219,17 +241,17 @@ class ReleaseInfo(p.BaseModel):
     """
 
     version: str
-    created_at: datetime.datetime
+    created_at: t.Optional[datetime.datetime] = None
     updated_at: t.Optional[datetime.datetime] = None
     requires_ansible: t.Optional[str] = None
     artifact: Artifact
     download_url: str
-    name: str
+    name: t.Optional[str] = None
     namespace: Namespace
     signatures: list[t.Any] = []
     metadata: Metadata
-    manifest: Manifest
-    files: Files
+    manifest: t.Optional[Manifest] = None
+    files: t.Optional[Files] = None
 
 
 def q(value: str) -> str:
