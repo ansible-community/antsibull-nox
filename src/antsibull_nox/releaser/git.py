@@ -22,8 +22,7 @@ from ..collection.data import CollectionData
 from ..config import _GitReleaserFragment
 from ._template import template_string
 from .base import BaseVCSReleaser
-from .command import CommandRunner
-from .ui import retry
+from .command import CommandRunner, repeat_if_failed
 
 if t.TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Iterable
@@ -382,13 +381,12 @@ class GitReleaser(BaseVCSReleaser):
                 self.__config.release_commit_message,
                 variables={"version": str(version)},
             )
-            retry(
+            repeat_if_failed(
                 lambda: self.__git.commit(
                     message=release_commit_message,
                     signed=self.__config.sign_commits,
                     path=root,
                 ),
-                what="Create release commit",
             )
 
             # Create release tag
@@ -398,14 +396,13 @@ class GitReleaser(BaseVCSReleaser):
             tag = template_string(
                 self.__config.tag_format, variables={"version": str(version)}
             )
-            retry(
+            repeat_if_failed(
                 lambda: self.__git.tag(
                     tag=tag,
                     message=release_tag_message,
                     signed=self.__config.sign_tags,
                     path=root,
                 ),
-                what="Create release tag",
             )
         except BaseException:
             self.__git.restore_to_commit(commit, path=root, clean=False)
