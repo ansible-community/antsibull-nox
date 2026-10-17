@@ -14,6 +14,8 @@ import abc
 
 from semantic_version import Version
 
+from ..collection.data import CollectionData
+
 
 class VerifyFailed(ValueError):
     """
@@ -21,7 +23,23 @@ class VerifyFailed(ValueError):
     """
 
 
-class BaseReleaser(metaclass=abc.ABCMeta):
+class BaseVCSReleaser(metaclass=abc.ABCMeta):
+    """
+    Base releaser class for VCS part (prepare, create release in VCS).
+    """
+
+    @abc.abstractmethod
+    def create_vcs_release(
+        self, *, collection: CollectionData, version: Version
+    ) -> None:
+        """
+        Create release in VCS.
+
+        Ensure we're in the right branch, create release commit(s) and tag(s).
+        """
+
+
+class BaseReleaser(BaseVCSReleaser, metaclass=abc.ABCMeta):
     """
     Base releaser class.
     """

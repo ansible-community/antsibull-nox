@@ -294,3 +294,17 @@ class GalaxyClient(RequestsSession):
         Download a release's tarball.
         """
         self._download_file(release.download_url, path)
+
+
+__all__ = (
+    "Artifact",
+    "ContentEntry",
+    "Metadata",
+    "CollectionInfo",
+    "ManifestEntry",
+    "Manifest",
+    "Files",
+    "ReleaseInfo",
+    "Namespace",
+    "GalaxyClient",
+)
