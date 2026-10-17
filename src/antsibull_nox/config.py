@@ -877,20 +877,20 @@ class CollectionConfig(_BaseModel):
 
 
 class _GitReleaserFragment:
-    release_branch: str = "main"
-    collection_root: p.DirectoryPath = Path(".")
-    tag_format: str = "{version}"
-    sign_commits: bool = True
-    sign_tags: bool = True
-    release_commit_message: str = "Release {version}."
-    release_tag_message: str = "{version}"
+    git_release_branch: str = "main"
+    git_collection_root: p.DirectoryPath = Path(".")
+    git_tag_format: str = "{version}"
+    git_sign_commits: bool = True
+    git_sign_tags: bool = True
+    git_release_commit_message: str = "Release {version}."
+    git_release_tag_message: str = "{version}"
 
 
 class _GitHubReleaserFragment(_GitReleaserFragment):
-    project_url: str
-    project_remote: str = "upstream"
-    release_title: str
-    release_body: str
+    github_repo_url: str
+    github_upstream_remote: str = "upstream"
+    github_release_title: str
+    github_release_body: str
 
 
 class _GalaxyReadReleaserFragment:
@@ -907,7 +907,7 @@ class ZuulGitHubReleaser(
     type: t.Literal["zuul+github"]
 
     zuul_base_url: str
-    project_name: str
+    zuul_project_name: str
 
 
 Releaser = t.Annotated[t.Union[ZuulGitHubReleaser], p.Field(discriminator="type")]
