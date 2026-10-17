@@ -197,7 +197,7 @@ def parse_args(
 
     toplevel_parser = argparse.ArgumentParser(
         prog=program_name,
-        description="Script to manage generated documentation for ansible",
+        description="Collection testing and maintenance tool.",
     )
     toplevel_parser.add_argument(
         "--version",
@@ -212,16 +212,18 @@ def parse_args(
 
     subparsers.add_parser(
         "lint-config",
-        description="Lint antsibull-nox configuration file",
+        description="Lint antsibull-nox configuration file.",
+        help="Lint antsibull-nox configuration file",
     )
 
     subparsers.add_parser(
         "init",
-        description="Create noxfile and antsibull-nox configuration file",
+        description="Create noxfile and antsibull-nox configuration file.",
+        help="Create noxfile and antsibull-nox configuration file",
     )
 
     show_changes_parser = subparsers.add_parser(
-        "show-changes", description="Show changed files"
+        "show-changes", description="Show changed files.", help="Show changed files"
     )
     show_changes_parser.add_argument(
         "--add-python-deps",
@@ -234,7 +236,7 @@ def parse_args(
     )
 
     update_azp_parser = subparsers.add_parser(
-        "update-azp-config", description="Update AZP config"
+        "update-azp-config", description="Update AZP config.", help="Update AZP config"
     )
     update_azp_parser.add_argument(
         "--min-ansible-core", help="Minimum ansible-core version"
