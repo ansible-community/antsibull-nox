@@ -20,7 +20,7 @@ from semantic_version import Version
 from ..config import ZuulGitHubReleaser as ZuulGitHubReleaserConfig
 from ._template import template_string
 from .base import BaseReleaser, VerifyFailed
-from .galaxy import GalaxyClient, ReleaseInfo
+from .galaxy import GalaxyClient, ReleaseInfo, extract_manifest_and_files_from_tarball
 from .git import GitReleaser
 from .ui import Retry, retry, wait_for
 from .zuul import BuildInfo, ZuulClient
@@ -117,9 +117,11 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         release = wait_for(get_release, interval=datetime.timedelta(seconds=10))
         if verify:
             print("Verifying...")
-            self._verify(release, version)
+            self._verify(release, namespace, name, version)
 
-    def _verify(self, release: ReleaseInfo, version: Version) -> None:
+    def _verify(
+        self, release: ReleaseInfo, namespace: str, name: str, version: Version
+    ) -> None:
         with tempfile.TemporaryDirectory() as tempdir_name:
             tempdir = Path(tempdir_name)
             galaxy_tarball = tempdir / "galaxy.tar"
@@ -133,6 +135,25 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                 raise VerifyFailed(
                     f"Validation of Galaxy tarball checksum failed: {exc}"
                 ) from exc
+
+            manifest, files = extract_manifest_and_files_from_tarball(galaxy_tarball)
+            if manifest.collection_info.name != name:
+                raise VerifyFailed(
+                    "Galaxy tarball manifest's collection name is"
+                    f" {manifest.collection_info.name!r}, but expected {name!r}."
+                )
+            if manifest.collection_info.namespace != namespace:
+                raise VerifyFailed(
+                    "Galaxy tarball manifest's collection namespace is"
+                    f" {manifest.collection_info.namespace!r}, but expected {namespace!r}."
+                )
+            if manifest.collection_info.version != str(version):
+                raise VerifyFailed(
+                    "Galaxy tarball manifest's collection version is"
+                    f" {manifest.collection_info.version!r}, but expected {version!r}."
+                )
+
+            # TODO: more detailled validation against galaxy.yml
 
             # TODO: validate files in tarball
 
@@ -148,7 +169,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         release = self.galaxy_client.get_specific_release(namespace, name, version)
         if release is None:
             raise ValueError(f"Cannot find release {version}")
-        self._verify(release, version)
+        self._verify(release, namespace, name, version)
 
 
 __all__ = ("ZuulGitHubReleaser",)
