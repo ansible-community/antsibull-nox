@@ -11,6 +11,7 @@ Collection releasers base classes.
 from __future__ import annotations
 
 import abc
+from pathlib import Path
 
 from semantic_version import Version
 
@@ -38,6 +39,14 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
         Ensure we're in the right branch, create release commit(s) and tag(s).
         """
 
+    @abc.abstractmethod
+    def create_release_tarball(
+        self, *, tarball_path: Path, version: Version
+    ) -> str | None:
+        """
+        Create tarball (.tar) of a tagged release. Return prefix that all entries have.
+        """
+
 
 class BaseReleaser(BaseVCSReleaser, metaclass=abc.ABCMeta):
     """
@@ -46,14 +55,27 @@ class BaseReleaser(BaseVCSReleaser, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def wait_until_released(
-        self, *, namespace: str, name: str, version: Version, verify: bool
+        self,
+        *,
+        namespace: str,
+        name: str,
+        version: Version,
+        verify: bool,
+        validate_with_sources: bool = True,
     ) -> None:
         """
         Wait for the release to appear.
         """
 
     @abc.abstractmethod
-    def verify_release(self, *, namespace: str, name: str, version: Version) -> None:
+    def verify_release(
+        self,
+        *,
+        namespace: str,
+        name: str,
+        version: Version,
+        validate_with_sources: bool = True,
+    ) -> None:
         """
         Verify that the release has been released as expected.
         Raise ``VerifyFailed`` if validation fails, and ``ValueError`` in case of other errors.

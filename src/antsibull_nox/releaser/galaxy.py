@@ -10,9 +10,11 @@ Galaxy helpers.
 
 from __future__ import annotations
 
+import dataclasses
 import datetime
 import hashlib
 import json
+import os
 import tarfile
 import typing as t
 from pathlib import Path
@@ -327,6 +329,10 @@ def extract_manifest_and_files_from_tarball(
         with tarfile.open(tarball_path, "r:gz") as tar:
             for file in tar:
                 if file.name in filenames:
+                    if file.type not in (tarfile.REGTYPE, tarfile.AREGTYPE):
+                        raise ValueError(
+                            f"Collection tarball {tarball_path} contains a non-file {file.name}!"
+                        )
                     if file.name in files:
                         raise ValueError(
                             f"Collection tarball {tarball_path} contains {file.name} twice!"
@@ -351,6 +357,134 @@ def extract_manifest_and_files_from_tarball(
         raise ValueError(
             f"Error while parsing collection tarball {tarball_path}: {exc}"
         ) from exc
+
+
+def _extract_tarball(
+    tarball_path: Path, *, is_tgz: bool, is_galaxy_tarball: bool
+) -> tuple[dict[str, bytes], dict[str, str], set[str]]:
+    try:
+        with tarfile.open(tarball_path, "r:gz" if is_tgz else "r") as tar:
+            tar_files: dict[str, bytes] = {}
+            tar_links: dict[str, str] = {}
+            tar_dirs: set[str] = {".", ""}
+            for file in tar:
+                if file.type in (tarfile.REGTYPE, tarfile.AREGTYPE):
+                    file_p = tar.extractfile(file)
+                    if file_p:
+                        with file_p:
+                            tar_files[file.name] = file_p.read()
+                elif file.type in (tarfile.SYMTYPE,):
+                    tar_links[file.name] = file.linkname
+                elif file.type == tarfile.DIRTYPE:
+                    tar_dirs.add(file.name)
+                elif is_galaxy_tarball:
+                    raise ValueError(
+                        f"Found unexpected entry {file.name} of type {file.type!r}"
+                        f" in Galaxy collection tarball {tarball_path}!"
+                    )
+            return tar_files, tar_links, tar_dirs
+    except IOError as exc:
+        raise ValueError(
+            "Error while searching for mainfest and files list"
+            f" in collection tarball {tarball_path}: {exc}"
+        ) from exc
+
+
+@dataclasses.dataclass
+class ValidationError:
+    """
+    Validation error.
+    """
+
+    collection_path: str | None
+    tarball_path: str
+    ftype: t.Literal["file", "dir"]
+    error: str
+
+
+def validate_tarball(
+    tarball_path: Path,
+    files: Files,
+    *,
+    is_tgz: bool = True,
+    is_galaxy_tarball: bool = False,
+    prefix: str | os.PathLike[str] | None = None,
+) -> list[ValidationError]:
+    """
+    Validate tarball contents against a file manifest.
+    """
+    tar_files, tar_links, tar_dirs = _extract_tarball(
+        tarball_path, is_tgz=is_tgz, is_galaxy_tarball=is_galaxy_tarball
+    )
+
+    def resolve_file(path: str) -> bytes:
+        links: set[str] = set()
+        while True:
+            data = tar_files.get(path)
+            if data is not None:
+                return data
+            link = tar_links.get(path)
+            if link is None:
+                raise ValueError(f"Cannot find link destination for {path}!")
+            if path in links:
+                raise ValueError(f"Found link loop involving {path}!")
+            links.add(path)
+            path = os.path.normpath(os.path.join(os.path.dirname(path), link))
+
+    errors = []
+    found_files: set[str] = set()
+    for entry in files.files:
+        entry_path = entry.name
+        if prefix is not None:
+            entry_path = os.path.join(prefix, entry_path)
+        if entry.ftype == "dir":
+            if entry_path not in tar_dirs:
+                errors.append(
+                    ValidationError(
+                        collection_path=entry.name,
+                        tarball_path=entry_path,
+                        ftype="dir",
+                        error=f"Tarball does not contain directory {entry_path}",
+                    )
+                )
+        if entry.ftype == "file":
+            found_files.add(entry_path)
+            data = resolve_file(entry_path)
+            try:
+                entry.validate_content(data)
+            except ValueError as exc:
+                errors.append(
+                    ValidationError(
+                        collection_path=entry.name,
+                        tarball_path=entry_path,
+                        ftype="file",
+                        error=f"{exc}",
+                    )
+                )
+    if is_galaxy_tarball:
+        found_files.add("MANIFEST.json")
+        found_files.add("FILES.json")
+        for file in tar_files:
+            if file not in found_files:
+                errors.append(
+                    ValidationError(
+                        collection_path=None,
+                        tarball_path=file,
+                        ftype="file",
+                        error="Unexpected file in collection tarball",
+                    )
+                )
+        for file in tar_links:
+            if file not in found_files:
+                errors.append(
+                    ValidationError(
+                        collection_path=None,
+                        tarball_path=file,
+                        ftype="file",
+                        error="Unexpected link in collection tarball",
+                    )
+                )
+    return errors
 
 
 __all__ = (
