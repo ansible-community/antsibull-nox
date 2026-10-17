@@ -20,6 +20,7 @@ from semantic_version import Version
 
 from ..collection.data import CollectionData
 from ..config import _GitReleaserFragment
+from ._template import template_string
 from .base import BaseVCSReleaser
 from .command import CommandRunner
 from .ui import retry
@@ -377,8 +378,9 @@ class GitReleaser(BaseVCSReleaser):
             self.__git.add(changed_paths, path=root)
 
             # Create release commit
-            release_commit_message = self.__config.release_commit_message.replace(
-                "{version}", str(version)
+            release_commit_message = template_string(
+                self.__config.release_commit_message,
+                variables={"version": str(version)},
             )
             retry(
                 lambda: self.__git.commit(
@@ -390,10 +392,12 @@ class GitReleaser(BaseVCSReleaser):
             )
 
             # Create release tag
-            release_tag_message = self.__config.release_tag_message.replace(
-                "{version}", str(version)
+            release_tag_message = template_string(
+                self.__config.release_tag_message, variables={"version": str(version)}
             )
-            tag = self.__config.tag_format.replace("{version}", str(version))
+            tag = template_string(
+                self.__config.tag_format, variables={"version": str(version)}
+            )
             retry(
                 lambda: self.__git.tag(
                     tag=tag,

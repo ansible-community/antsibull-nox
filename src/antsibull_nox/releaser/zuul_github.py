@@ -18,6 +18,7 @@ from pathlib import Path
 from semantic_version import Version
 
 from ..config import ZuulGitHubReleaser as ZuulGitHubReleaserConfig
+from ._template import template_string
 from .base import BaseReleaser, VerifyFailed
 from .galaxy import GalaxyClient, ReleaseInfo
 from .git import GitReleaser
@@ -67,7 +68,9 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         """
         Wait for the release to appear.
         """
-        tag = self.config.tag_format.replace("{version}", str(version))
+        tag = template_string(
+            self.config.tag_format, variables={"version": str(version)}
+        )
         expected_ref = f"refs/tags/{tag}"
 
         def get_build(log: LogFunction) -> BuildInfo:
