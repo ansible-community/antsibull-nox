@@ -893,11 +893,13 @@ class _GitHubReleaserFragment(_GitReleaserFragment):
     release_body: str
 
 
-class _GalaxyReleaserFragment:
+class _GalaxyReadReleaserFragment:
     galaxy_base_url: str = "https://galaxy.ansible.com/api/"
 
 
-class ZuulGitHubReleaser(_BaseModel, _GitHubReleaserFragment, _GalaxyReleaserFragment):
+class ZuulGitHubReleaser(
+    _BaseModel, _GitHubReleaserFragment, _GalaxyReadReleaserFragment
+):
     """
     Configuration for releasing with Zuul and GitHub.
     """
