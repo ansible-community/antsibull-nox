@@ -20,6 +20,7 @@ from semantic_version import Version
 from ..config import ZuulGitHubReleaser as ZuulGitHubReleaserConfig
 from .base import BaseReleaser, VerifyFailed
 from .galaxy import GalaxyClient, ReleaseInfo
+from .git import GitReleaser
 from .ui import Retry, retry, wait_for
 from .zuul import BuildInfo, ZuulClient
 
@@ -29,12 +30,13 @@ if t.TYPE_CHECKING:  # pragma: no cover
     from .ui import LogFunction
 
 
-class ZuulGitHubReleaser(BaseReleaser):
+class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
     """
     Releaser using Zuul + GitHub to publish to Ansible Galaxy.
     """
 
     def __init__(self, config: ZuulGitHubReleaserConfig) -> None:
+        GitReleaser.__init__(self, config)
         self.config = config
         self.zuul_client = ZuulClient(config.zuul_base_url)
         self.galaxy_client = GalaxyClient(config.galaxy_base_url)
