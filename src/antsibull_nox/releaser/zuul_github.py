@@ -81,7 +81,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         Wait for the release to appear.
         """
         tag = template_string(
-            self.config.tag_format, variables={"version": str(version)}
+            self.config.git_tag_format, variables={"version": str(version)}
         )
         expected_ref = f"refs/tags/{tag}"
 
@@ -91,7 +91,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                 builds = self.zuul_client.list_builds(
                     job_name="release-ansible-collection-galaxy",
                     pipeline="pre-release" if version.prerelease else "release",
-                    project=self.config.project_name,
+                    project=self.config.zuul_project_name,
                     ref=expected_ref,
                     exclude_results=["SKIPPED", "RETRY", "RETRY_LIMIT"],
                 )
