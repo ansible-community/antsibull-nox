@@ -81,5 +81,28 @@ class BaseReleaser(BaseVCSReleaser, metaclass=abc.ABCMeta):
         Raise ``VerifyFailed`` if validation fails, and ``ValueError`` in case of other errors.
         """
 
+    @abc.abstractmethod
+    def can_create_vcs_ui_release(self) -> bool:
+        """
+        Whether the VCS allows to create a release in its web UI.
+        """
+
+    @abc.abstractmethod
+    def create_vcs_ui_release(
+        self,
+        *,
+        namespace: str,
+        name: str,
+        version: Version,
+        make_draft: bool = True,
+        make_latest: bool = False,
+        verify: bool = True,
+        validate_with_sources: bool = True,
+    ) -> str | None:
+        """
+        Create release in the VCS's web UI.
+        Return a URL to the release, if available.
+        """
+
 
 __all__ = ("BaseReleaser",)

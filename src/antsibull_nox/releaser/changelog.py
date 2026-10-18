@@ -17,8 +17,10 @@ from antsibull_changelog.changes import add_release, load_changes
 from antsibull_changelog.cli import _determine_flatmap, _do_refresh
 from antsibull_changelog.config import (
     ChangelogConfig,
+    ChangelogOutput,
     CollectionDetails,
     PathsConfig,
+    TextFormat,
 )
 from antsibull_changelog.errors import ChangelogError
 from antsibull_changelog.fragment import (
@@ -28,7 +30,11 @@ from antsibull_changelog.fragment import (
 )
 from antsibull_changelog.logger import setup_logger
 from antsibull_changelog.plugins import load_plugins
-from antsibull_changelog.rendering.changelog import generate_changelog
+from antsibull_changelog.rendering.changelog import (
+    ChangelogGenerator,
+    generate_changelog,
+)
+from antsibull_changelog.rendering.md_document import MDDocumentRenderer
 from semantic_version import Version
 
 
@@ -135,4 +141,38 @@ def make_release(
         raise ValueError(f"Error while adding release to changelog: {exc}") from exc
 
 
-__all__ = ("make_release",)
+def get_markdown_extract(
+    *,
+    version: Version,
+    ansible_doc_bin: str | None = None,
+) -> str:
+    """
+    Generate changelog extract for a specific release.
+    """
+    setup_logger(0)
+
+    try:
+        paths = PathsConfig.force_collection(".", ansible_doc_bin=ansible_doc_bin)
+        collection_details = CollectionDetails(paths)
+        config = ChangelogConfig.load(paths, collection_details)
+
+        flatmap = _determine_flatmap(collection_details, config)
+
+        changes = load_changes(config)
+        changes.restrict_to(str(version))
+
+        generator = ChangelogGenerator(
+            config,
+            changes,
+            flatmap=flatmap,
+            render_config=ChangelogOutput(file="", format=TextFormat.MARKDOWN),
+        )
+        renderer = MDDocumentRenderer(start_level=1, add_section_ids=False)
+        generator.generate(renderer, only_latest=True)
+
+        return renderer.render()
+    except ChangelogError as exc:
+        raise ValueError(f"Error while obtaining changelog excerpt: {exc}") from exc
+
+
+__all__ = ("make_release", "get_markdown_extract")

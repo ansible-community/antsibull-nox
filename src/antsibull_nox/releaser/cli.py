@@ -46,6 +46,8 @@ def create_subcommand(releaser_parser: argparse.ArgumentParser, config: Config) 
         releaser_parser.epilog = f"{_CANNOT_BE_USED_PREFIX}Error: {_NO_RELEASER_ERROR}"
         return
 
+    releaser = get_releaser(config.releaser)
+
     releaser_subparsers = releaser_parser.add_subparsers(
         title="Subcommands", dest="subcommand", help="for help use: `SUBCOMMANDS -h`"
     )
@@ -94,6 +96,38 @@ def create_subcommand(releaser_parser: argparse.ArgumentParser, config: Config) 
         action="store_true",
         help=f"Do not validate the release's sources. {extra_steps_needed}",
     )
+
+    if releaser.can_create_vcs_ui_release():
+        create_vcs_ui_release = releaser_subparsers.add_parser(
+            "create-vcs-ui-release",
+            description="Create release in the VCS's UI.",
+            help="Create release in the VCS's UI",
+        )
+        create_vcs_ui_release.add_argument("version")
+        create_vcs_ui_release.add_argument(
+            "--publish",
+            default=False,
+            action="store_true",
+            help="Do not create a draft release.",
+        )
+        create_vcs_ui_release.add_argument(
+            "--make-latest",
+            default=False,
+            action="store_true",
+            help="Make the release 'latest'.",
+        )
+        create_vcs_ui_release.add_argument(
+            "--skip-validation",
+            default=False,
+            action="store_true",
+            help="Do not validate the release (see 'validate' subcommand).",
+        )
+        create_vcs_ui_release.add_argument(
+            "--skip-source-validation",
+            default=False,
+            action="store_true",
+            help=f"When validating, do not validate the release's sources. {extra_steps_needed}",
+        )
 
 
 def parse_version(version: str, *, name: str = "version") -> Version:
@@ -183,6 +217,39 @@ def cmd_validate(
         raise FailCLIError(f"Error: {exc}", code=3) from exc
 
 
+def cmd_create_vcs_ui_release(
+    args: argparse.Namespace,
+    collection: CollectionData,
+    _config: Config,
+    releaser: Releaser,
+) -> int:
+    """
+    The 'wait' subcommand.
+    """
+    v = parse_version(args.version)
+    skip_validation: bool = args.skip_validation
+    skip_source_validation: bool = args.skip_source_validation
+    publish: bool = args.publish
+    make_latest: bool = args.make_latest
+
+    r = get_releaser(releaser)
+    try:
+        r.create_vcs_ui_release(
+            namespace=collection.namespace,
+            name=collection.name,
+            version=v,
+            make_draft=not publish,
+            make_latest=make_latest,
+            verify=not skip_validation,
+            validate_with_sources=not skip_source_validation,
+        )
+        return 0
+    except VerifyFailed as exc:
+        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
+    except ValueError as exc:
+        raise FailCLIError(f"Error: {exc}", code=3) from exc
+
+
 # Mapping from command line 'release' subcommand names to functions which implement those.
 # The functions need to take a single argument, the processed list of args.
 RELEASE_ARGS_MAP: dict[
@@ -191,6 +258,7 @@ RELEASE_ARGS_MAP: dict[
     "vcs-release": cmd_vcs_release,
     "wait": cmd_wait,
     "validate": cmd_validate,
+    "create-vcs-ui-release": cmd_create_vcs_ui_release,
 }
 
 

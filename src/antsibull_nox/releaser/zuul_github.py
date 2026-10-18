@@ -28,6 +28,7 @@ from .galaxy import (
     validate_tarball,
 )
 from .git import GitReleaser
+from .github import GitHubClient
 from .ui import Retry, retry, wait_for
 from .zuul import BuildInfo, ZuulClient
 
@@ -47,6 +48,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         self.config = config
         self.zuul_client = ZuulClient(config.zuul_base_url)
         self.galaxy_client = GalaxyClient(config.galaxy_base_url)
+        self.github_client = GitHubClient(config)
 
     def _get_done_build(self, build: BuildInfo) -> Callable[[LogFunction], bool]:
         def f(log: LogFunction) -> bool:
@@ -241,6 +243,39 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
             version,
             validate_with_sources=validate_with_sources,
         )
+
+    def can_create_vcs_ui_release(self) -> bool:
+        """
+        Whether the VCS allows to create a release in its web UI.
+        """
+        return True
+
+    def create_vcs_ui_release(
+        self,
+        *,
+        namespace: str,
+        name: str,
+        version: Version,
+        make_draft: bool = True,
+        make_latest: bool = False,
+        verify: bool = True,
+        validate_with_sources: bool = True,
+    ) -> str | None:
+        """
+        Create release in the VCS's web UI.
+        Return a URL to the release, if available.
+        """
+        if verify:
+            self.verify_release(
+                namespace=namespace,
+                name=name,
+                version=version,
+                validate_with_sources=validate_with_sources,
+            )
+        html_url, _ = self.github_client.create_release(
+            version=version, make_draft=make_draft, make_latest=make_latest
+        )
+        return html_url
 
 
 __all__ = ("ZuulGitHubReleaser",)
