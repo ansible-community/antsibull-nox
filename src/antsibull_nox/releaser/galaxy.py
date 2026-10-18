@@ -287,7 +287,7 @@ class GalaxyClient(RequestsSession):
             f"{self._base_url}/v3/collections/{q(namespace)}/{q(name)}/"
             f"versions/{q(str(version))}/"
         )
-        r = self._get(url, expected=[200, 404], timeout=10)
+        r = self._get(url, expected=[200, 404], timeout=10, allow_redirects=True)
         if r.status_code == 404:
             return None
         try:
@@ -300,7 +300,7 @@ class GalaxyClient(RequestsSession):
         """
         Download a release's tarball.
         """
-        self._download_file(release.download_url, path)
+        self._download_file(release.download_url, path, allow_redirects=True)
 
 
 def _load(files: dict[str, bytes], filename: str, schema: type[_T]) -> _T:
