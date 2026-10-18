@@ -173,7 +173,7 @@ jobs:
           ALLOW_COVERAGE_CD_OVERRIDE: ${{ inputs.allow-coverage-cd-override }}
         id: determine-parameters
         run: |
-          # Compute job Python version
+          # Determine job parameters
           import json
           import os
           import pathlib
