@@ -180,7 +180,7 @@ class GitHubClient(RequestsSession):
                         make_latest=make_latest,
                         discussion_category_name=discussion_category_name,
                     )
-                except Forbidden, Unauthorized:
+                except (Forbidden, Unauthorized):
                     if token is None:
                         print("Authorization required...")
                     else:
@@ -246,7 +246,7 @@ class GitHubClient(RequestsSession):
             do_retry = retry < _NUM_RETRIES
             try:
                 return self._has_tag_api(token=token, tag=tag)
-            except Forbidden, Unauthorized:
+            except (Forbidden, Unauthorized):
                 if token is None:
                     print("Authorization required...")
                     if without_token:
@@ -312,7 +312,7 @@ class GitHubClient(RequestsSession):
             do_retry = retry < _NUM_RETRIES
             try:
                 return self._get_tag_release_url_api(token=token, tag=tag)
-            except Forbidden, Unauthorized:
+            except (Forbidden, Unauthorized):
                 if token is None:
                     print("Authorization required...")
                     if without_token:
