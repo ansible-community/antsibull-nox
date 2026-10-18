@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import dataclasses
 import os
-import subprocess
 import typing as t
 from pathlib import Path
 
@@ -22,6 +21,7 @@ from ..collection.data import CollectionData
 from ..config import _GitReleaserFragment
 from ._template import template_string
 from .base import BaseVCSReleaser
+from .changelog import make_release
 from .command import CommandRunner, repeat_if_failed
 
 if t.TYPE_CHECKING:  # pragma: no cover
@@ -347,7 +347,7 @@ class GitReleaser(BaseVCSReleaser):
 
         Ensure we're in the right branch, create release commit(s) and tag(s).
         """
-        root, coll = self.__check()
+        root, _ = self.__check()
         if collection.version != str(version):
             raise ValueError(
                 f"galaxy.yml's version is {collection.version}, expected {version}!"
@@ -367,10 +367,7 @@ class GitReleaser(BaseVCSReleaser):
         commit = self.__git.get_current_commit(path=root)
         try:
             # Update changelog
-            args = ["antsibull-changelog", "release", "--reload-plugins"]
-            if version.minor == 0 and version.bugfix == 0:
-                args.append("--cummulative-release")
-            subprocess.run(args, cwd=coll, check=True)
+            make_release(version, cummulative_release=True)
 
             # Stage changes
             status = self.__git.status(
