@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import typing as t
 from pathlib import Path
+from urllib.parse import quote_plus
 
 import requests
 
@@ -19,6 +20,38 @@ if t.TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Sequence
 
     _T = t.TypeVar("_T")
+
+
+def quote(value: str) -> str:
+    """
+    Quote value for URLs.
+    """
+    return quote_plus(value, encoding="utf-8")
+
+
+def quote_kv(key: str, value: str) -> str:
+    """
+    Quote key=value for query.
+    """
+    return f"{key}={quote(value)}"
+
+
+class Unauthorized(ValueError):
+    """
+    Specific error for HTTP status code 401 Unauthorized.
+    """
+
+
+class Forbidden(ValueError):
+    """
+    Specific error for HTTP status code 403 Forbidden.
+    """
+
+
+_HTTP_ERROR_CLASSES = {
+    401: Unauthorized,
+    403: Forbidden,
+}
 
 
 class RequestsSession(requests.Session):
@@ -45,7 +78,8 @@ class RequestsSession(requests.Session):
         if response.status_code not in (
             [expected] if isinstance(expected, int) else expected
         ):
-            raise ValueError(
+            cls = _HTTP_ERROR_CLASSES.get(response.status_code, ValueError)
+            raise cls(
                 f"Unexpected HTTP status {response.status_code} for {method} {url}"
             )
 
@@ -113,4 +147,4 @@ class RequestsSession(requests.Session):
         self._catch_errors(method="GET", url=url, action=download)
 
 
-__all__ = ("RequestsSession",)
+__all__ = ("Forbidden", "RequestsSession", "Unauthorized", "quote", "quote_kv")

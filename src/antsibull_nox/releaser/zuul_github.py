@@ -65,7 +65,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                 raise Retry()
             if latest_build.result == "SUCCESS":
                 return True
-            log(f"Build failed with status {latest_build.result}")
+            log(f"Build {build.uuid} failed with status {latest_build.result}")
             return False
 
         return f
@@ -265,6 +265,8 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         Create release in the VCS's web UI.
         Return a URL to the release, if available.
         """
+        if not self.github_client.has_tag(version=version):
+            raise ValueError(f"GitHub tag for {version} does not exist!")
         if verify:
             self.verify_release(
                 namespace=namespace,

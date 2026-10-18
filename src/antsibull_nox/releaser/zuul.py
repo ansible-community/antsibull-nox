@@ -14,9 +14,8 @@ import dataclasses
 import datetime
 import typing as t
 from collections.abc import Mapping, Sequence
-from urllib.parse import quote_plus
 
-from ._http import RequestsSession
+from ._http import RequestsSession, quote, quote_kv
 
 if t.TYPE_CHECKING:  # pragma: no cover
     ResultType = t.Literal[
@@ -47,20 +46,6 @@ def _parse_time(value: str | None) -> datetime.datetime | None:
     return datetime.datetime.fromisoformat(value)
 
 
-def quote(value: str) -> str:
-    """
-    Quote value for URLs.
-    """
-    return quote_plus(value, encoding="utf-8")
-
-
-def q(key: str, value: str) -> str:
-    """
-    Quote key=value for query.
-    """
-    return f"{key}={quote(value)}"
-
-
 def add_query(
     query: list[str], key: str, values: _T | Sequence[_T] | None, *, clazz: t.Type[_T]
 ) -> None:
@@ -73,7 +58,7 @@ def add_query(
         values = [values]
     assert isinstance(values, Sequence)
     for value in values:
-        query.append(q(key, str(value)))
+        query.append(quote_kv(key, str(value)))
 
 
 class ZuulClient(RequestsSession):
@@ -131,8 +116,8 @@ class ZuulClient(RequestsSession):
         add_query(query, "project", project, clazz=str)
         add_query(query, "ref", ref, clazz=str)
         add_query(query, "exclude_result", exclude_results, clazz=str)
-        query.append(q("skip", str(offset)))
-        query.append(q("limit", str(limit)))
+        query.append(quote_kv("skip", str(offset)))
+        query.append(quote_kv("limit", str(limit)))
 
         url = self._url("builds", query)
         r = self._get(url, expected=[200], timeout=30)

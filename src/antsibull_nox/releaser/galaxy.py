@@ -18,12 +18,11 @@ import os
 import tarfile
 import typing as t
 from pathlib import Path
-from urllib.parse import quote_plus
 
 import pydantic as p
 from semantic_version import Version
 
-from ._http import RequestsSession
+from ._http import RequestsSession, quote
 
 if t.TYPE_CHECKING:  # pragma: no cover
     _T = t.TypeVar("_T", bound=p.BaseModel)
@@ -261,13 +260,6 @@ class ReleaseInfo(p.BaseModel):
     files: t.Optional[Files] = None
 
 
-def q(value: str) -> str:
-    """
-    Quote value for URLs.
-    """
-    return quote_plus(value, encoding="utf-8")
-
-
 class GalaxyClient(RequestsSession):
     """
     Basic Galaxy client.
@@ -284,8 +276,8 @@ class GalaxyClient(RequestsSession):
         Get release information for a specific release.
         """
         url = (
-            f"{self._base_url}/v3/collections/{q(namespace)}/{q(name)}/"
-            f"versions/{q(str(version))}/"
+            f"{self._base_url}/v3/collections/{quote(namespace)}/{quote(name)}/"
+            f"versions/{quote(str(version))}/"
         )
         r = self._get(url, expected=[200, 404], timeout=10, allow_redirects=True)
         if r.status_code == 404:
