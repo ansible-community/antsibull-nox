@@ -61,7 +61,7 @@ antsibull-nox = "antsibull_nox.cli:main"
 [project.optional-dependencies]
 
 releaser = [
-    "antsibull-changelog >= 0.33.0",
+    "antsibull-changelog >= 0.35.2",
     "requests >= 2.32.5",
 ]
 
