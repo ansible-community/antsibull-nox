@@ -128,6 +128,12 @@ def create_subcommand(releaser_parser: argparse.ArgumentParser, config: Config) 
             action="store_true",
             help=f"When validating, do not validate the release's sources. {extra_steps_needed}",
         )
+        create_vcs_ui_release.add_argument(
+            "--without-token",
+            default=False,
+            action="store_true",
+            help="Do not use an API token. Will fail if this is not possible.",
+        )
 
 
 def parse_version(version: str, *, name: str = "version") -> Version:
@@ -231,6 +237,7 @@ def cmd_create_vcs_ui_release(
     skip_source_validation: bool = args.skip_source_validation
     publish: bool = args.publish
     make_latest: bool = args.make_latest
+    without_token: bool = args.without_token
     if make_latest and v.prerelease:
         raise InvalidArgumentError("Cannot mark a pre-release as latest.")
 
@@ -244,6 +251,7 @@ def cmd_create_vcs_ui_release(
             make_latest=make_latest,
             verify=not skip_validation,
             validate_with_sources=not skip_source_validation,
+            without_token=without_token,
         )
         return 0
     except VerifyFailed as exc:

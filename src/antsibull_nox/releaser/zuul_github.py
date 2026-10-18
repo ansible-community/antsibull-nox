@@ -250,6 +250,25 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         """
         return True
 
+    def has_vcs_ui_release(
+        self,
+        *,
+        namespace: str,
+        name: str,
+        version: Version,
+        without_token: bool = False,
+    ) -> str | None:
+        """
+        Check whether a release in the CVS's web UI already exists.
+        If it does not, return ``None``.
+        Otherwise, return a URL to the release if available, and an empty string otherwise.
+        """
+        if not self.github_client.has_tag(version=version, without_token=without_token):
+            return None
+        return self.github_client.get_tag_release_url(
+            version=version, without_token=without_token
+        )
+
     def create_vcs_ui_release(
         self,
         *,
@@ -260,13 +279,21 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         make_latest: bool = False,
         verify: bool = True,
         validate_with_sources: bool = True,
+        without_token: bool = False,
     ) -> str | None:
         """
         Create release in the VCS's web UI.
         Return a URL to the release, if available.
         """
-        if not self.github_client.has_tag(version=version):
+        if not self.github_client.has_tag(version=version, without_token=without_token):
             raise ValueError(f"GitHub tag for {version} does not exist!")
+        release_url = self.github_client.get_tag_release_url(
+            version=version, without_token=without_token
+        )
+        if release_url is not None:
+            raise ValueError(
+                f"Release for GitHub tag {version} already exists: {release_url}"
+            )
         if verify:
             self.verify_release(
                 namespace=namespace,
@@ -275,7 +302,10 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                 validate_with_sources=validate_with_sources,
             )
         html_url, _ = self.github_client.create_release(
-            version=version, make_draft=make_draft, make_latest=make_latest
+            version=version,
+            make_draft=make_draft,
+            make_latest=make_latest,
+            without_token=without_token,
         )
         return html_url
 

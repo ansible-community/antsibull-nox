@@ -145,6 +145,7 @@ class GitHubClient(RequestsSession):
         make_draft: bool = True,
         make_latest: bool = False,
         discussion_category_name: str | None = None,
+        without_token: bool = False,
     ) -> tuple[str | None, str | None]:
         """
         Create a GitHub release in the UI.
@@ -162,34 +163,37 @@ class GitHubClient(RequestsSession):
         body = template_string(self.__config.github_release_body, variables=variables)
         is_prerelease = bool(version.prerelease)
 
-        token = self.__get_token(required=False, reason="create release")
-        for retry in range(_NUM_RETRIES):
-            if token is None:
-                break
-            do_retry = retry + 1 < _NUM_RETRIES
-            try:
-                return self._create_release_api(
-                    token=token,
-                    tag=tag,
-                    name=name,
-                    body=body,
-                    is_prerelease=is_prerelease,
-                    make_draft=make_draft,
-                    make_latest=make_latest,
-                    discussion_category_name=discussion_category_name,
-                )
-            except Forbidden, Unauthorized:
+        if not without_token:
+            token = self.__get_token(required=False, reason="create release")
+            for retry in range(_NUM_RETRIES):
                 if token is None:
-                    print("Authorization required...")
-                else:
-                    print("Token not authorized!")
-                self.__reset_token()
-                if do_retry:
-                    token = self.__get_token(required=False, reason="create release")
-            except ValueError as exc:
-                suffix = ". Retrying..." if do_retry else ""
-                print(f"Unexpected error: {exc}{suffix}")
-        print("Trying alternative approach...")
+                    break
+                do_retry = retry + 1 < _NUM_RETRIES
+                try:
+                    return self._create_release_api(
+                        token=token,
+                        tag=tag,
+                        name=name,
+                        body=body,
+                        is_prerelease=is_prerelease,
+                        make_draft=make_draft,
+                        make_latest=make_latest,
+                        discussion_category_name=discussion_category_name,
+                    )
+                except Forbidden, Unauthorized:
+                    if token is None:
+                        print("Authorization required...")
+                    else:
+                        print("Token not authorized!")
+                    self.__reset_token()
+                    if do_retry:
+                        token = self.__get_token(
+                            required=False, reason="create release"
+                        )
+                except ValueError as exc:
+                    suffix = ". Retrying..." if do_retry else ""
+                    print(f"Unexpected error: {exc}{suffix}")
+            print("Trying alternative approach...")
 
         # Create URL
         params = [
@@ -223,6 +227,7 @@ class GitHubClient(RequestsSession):
         self,
         *,
         version: Version,
+        without_token: bool = False,
     ) -> bool:
         """
         Check whether a tag exists.
@@ -232,7 +237,9 @@ class GitHubClient(RequestsSession):
         )
 
         # In the first iteration, do not ask for a token; first try
-        token: str | None = self.__get_token(required=False, do_not_ask=True)
+        token = (
+            None if without_token else self.__get_token(required=False, do_not_ask=True)
+        )
         retry = 0
         while True:
             retry += 1
@@ -242,6 +249,74 @@ class GitHubClient(RequestsSession):
             except Forbidden, Unauthorized:
                 if token is None:
                     print("Authorization required...")
+                    if without_token:
+                        raise
+                else:
+                    print("Token not authorized!")
+                if not do_retry:
+                    raise
+                self.__reset_token()
+                token = self.__get_token(
+                    required=False, reason="verify existence of tag"
+                )
+            except ValueError as exc:
+                suffix = ". Retrying..." if do_retry else ""
+                print(f"Unexpected error: {exc}{suffix}")
+                if not do_retry:
+                    raise
+
+    def _get_tag_release_url_api(self, *, token: str | None, tag: str) -> str | None:
+        # https://docs.github.com/en/rest/releases/releases?apiVersion=2026-03-10#get-a-release-by-tag-name
+        url = f"{self.__api_base_url}/releases/tags/{quote(tag)}"
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2026-03-10",
+        }
+        if token is not None:
+            headers["Authorization"] = f"Bearer {token}"
+        r = self._get(url, headers=headers, timeout=10, expected=[200, 404])
+        if r.status_code == 404:
+            return None
+        try:
+            result = r.json()
+        except Exception as exc:
+            raise ValueError(f"Error while parsing GET {url} response: {exc}") from exc
+        html_url = result.get("html_url")
+        if not isinstance(html_url, str):
+            raise ValueError(
+                f"Error while parsing GET {url} response:"
+                f" 'html_url' is not a string, but {type(html_url)}"
+            )
+        return html_url
+
+    def get_tag_release_url(
+        self,
+        *,
+        version: Version,
+        without_token: bool = False,
+    ) -> str | None:
+        """
+        Check whether a release for that tag exists.
+        """
+        tag = template_string(
+            self.__config.git_tag_format, variables={"version": str(version)}
+        )
+
+        # In the first iteration, do not ask for a token; first try
+        token = (
+            None if without_token else self.__get_token(required=False, do_not_ask=True)
+        )
+        retry = 0
+        while True:
+            retry += 1
+            do_retry = retry < _NUM_RETRIES
+            try:
+                return self._get_tag_release_url_api(token=token, tag=tag)
+            except Forbidden, Unauthorized:
+                if token is None:
+                    print("Authorization required...")
+                    if without_token:
+                        raise
                 else:
                     print("Token not authorized!")
                 if not do_retry:

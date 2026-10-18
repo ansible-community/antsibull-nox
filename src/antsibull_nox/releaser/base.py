@@ -88,6 +88,21 @@ class BaseReleaser(BaseVCSReleaser, metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
+    def has_vcs_ui_release(
+        self,
+        *,
+        namespace: str,
+        name: str,
+        version: Version,
+        without_token: bool = False,
+    ) -> str | None:
+        """
+        Check whether a release in the CVS's web UI already exists.
+        If it does not, return ``None``.
+        Otherwise, return a URL to the release if available, and an empty string otherwise.
+        """
+
+    @abc.abstractmethod
     def create_vcs_ui_release(
         self,
         *,
@@ -98,6 +113,7 @@ class BaseReleaser(BaseVCSReleaser, metaclass=abc.ABCMeta):
         make_latest: bool = False,
         verify: bool = True,
         validate_with_sources: bool = True,
+        without_token: bool = False,
     ) -> str | None:
         """
         Create release in the VCS's web UI.
