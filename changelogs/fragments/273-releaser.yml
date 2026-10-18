@@ -1,3 +1,2 @@
 minor_changes:
-  - "Add ``release`` subcommand to CLI tool that makes releasing certain Ansible collections easier (https://github.com/ansible-community/antsibull-nox/pull/272, https://github.com/ansible-community/antsibull-nox/pull/273)."
-  - "Add ``requests`` dependency for use by the ``release`` subcommand (https://github.com/ansible-community/antsibull-nox/pull/272, https://github.com/ansible-community/antsibull-nox/pull/273)."
+  - "Add ``release`` subcommand to CLI tool that makes releasing certain Ansible collections easier. To install the extra requirements needed for this subcommand, use the dependency group ``releaser``: ``pip install antsibull-nox[releaser]`` (https://github.com/ansible-community/antsibull-nox/pull/272, https://github.com/ansible-community/antsibull-nox/pull/273)."

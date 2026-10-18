@@ -16,10 +16,10 @@ from pathlib import Path
 
 from semantic_version import Version
 
-from ..cli_helper import FailCLIError, InvalidArgumentError, require_config
+from ..cli_helper import FailCLIError, InvalidArgumentError
 from ..collection.data import CollectionData
 from ..collection.search import load_collection_data_from_disk
-from ..config import Config, Releaser, create_config_not_found_error
+from ..config import Config, Releaser
 from .base import BaseReleaser, VerifyFailed
 
 _CANNOT_BE_USED_PREFIX = "This subcommand cannot be used because of: "
@@ -38,17 +38,10 @@ def get_releaser(config: Releaser) -> BaseReleaser:
         return ZuulGitHubReleaser(config)
 
 
-def create_subcommand(
-    releaser_parser: argparse.ArgumentParser, config: Config | Exception | None
-) -> None:
+def create_subcommand(releaser_parser: argparse.ArgumentParser, config: Config) -> None:
     """
     Fill the 'release' subcommand's parser with content.
     """
-    if config is None:
-        config = create_config_not_found_error()
-    if isinstance(config, Exception):
-        releaser_parser.epilog = f"{_CANNOT_BE_USED_PREFIX}Error: {config}"
-        return
     if config.releaser is None:
         releaser_parser.epilog = f"{_CANNOT_BE_USED_PREFIX}Error: {_NO_RELEASER_ERROR}"
         return
@@ -201,11 +194,10 @@ RELEASE_ARGS_MAP: dict[
 }
 
 
-def release_command(args: argparse.Namespace, config: Config | Exception | None) -> int:
+def release_command(args: argparse.Namespace, config: Config) -> int:
     """
     Command for release subcommand, which is in turn a set of subcommands.
     """
-    config = require_config(config)
     if config.releaser is None:
         raise FailCLIError(_NO_RELEASER_ERROR, code=3)
 

@@ -29,8 +29,8 @@ from .cli_helper import FailCLIError, require_config
 from .config import CONFIG_FILENAME, Config, load_config_from_toml
 from .init import create_initial_config as _create_initial_config
 from .lint_config import lint_config as _lint_config
-from .releaser.cli import create_subcommand as release_create_subcommand
-from .releaser.cli import release_command
+from .releaser.cli_lazy import create_subcommand as release_create_subcommand
+from .releaser.cli_lazy import release_command
 from .sessions.utils.paths import PythonDependencies, add_python_deps
 
 try:
