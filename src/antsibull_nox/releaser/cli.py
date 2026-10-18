@@ -231,6 +231,8 @@ def cmd_create_vcs_ui_release(
     skip_source_validation: bool = args.skip_source_validation
     publish: bool = args.publish
     make_latest: bool = args.make_latest
+    if make_latest and v.prerelease:
+        raise InvalidArgumentError("Cannot mark a pre-release as latest.")
 
     r = get_releaser(releaser)
     try:
