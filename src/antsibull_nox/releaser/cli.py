@@ -65,6 +65,44 @@ def create_subcommand(releaser_parser: argparse.ArgumentParser, config: Config) 
         " to build the Galaxy tarball from the sources."
     )
 
+    release = releaser_subparsers.add_parser(
+        "release",
+        description="Initiate release from the local release in VCS.",
+        help="Initiate release from the local release in VCS",
+    )
+    release.add_argument("version")
+    release.add_argument(
+        "--skip-validation",
+        default=False,
+        action="store_true",
+        help="Do not validate the release (see 'validate' subcommand). This should not be used.",
+    )
+    release.add_argument(
+        "--skip-source-validation",
+        default=False,
+        action="store_true",
+        help=f"When validating, do not validate the release's sources. {extra_steps_needed}",
+    )
+    if releaser.can_create_vcs_ui_release():
+        release.add_argument(
+            "--publish",
+            default=False,
+            action="store_true",
+            help="Do not create a draft release.",
+        )
+        release.add_argument(
+            "--make-latest",
+            default=False,
+            action="store_true",
+            help="Make the release 'latest'.",
+        )
+        release.add_argument(
+            "--without-token",
+            default=False,
+            action="store_true",
+            help="Do not use an API token. Will fail if this is not possible.",
+        )
+
     wait = releaser_subparsers.add_parser(
         "wait",
         description="Wait until the release has been published.",
@@ -167,6 +205,50 @@ def cmd_vcs_release(
         raise FailCLIError(f"Error: {exc}", code=3) from exc
 
 
+def cmd_release(
+    args: argparse.Namespace,
+    collection: CollectionData,
+    _config: Config,
+    releaser: Releaser,
+) -> int:
+    """
+    The 'release' subcommand.
+    """
+    v = parse_version(args.version)
+    skip_validation: bool = args.skip_validation
+    skip_source_validation: bool = args.skip_source_validation
+    r = get_releaser(releaser)
+    if r.can_create_vcs_ui_release():
+        publish: bool = args.publish
+        make_latest: bool = args.make_latest
+        without_token: bool = args.without_token
+        if make_latest and v.prerelease:
+            raise InvalidArgumentError("Cannot mark a pre-release as latest.")
+    else:
+        publish = False
+        make_latest = False
+        without_token = True
+
+    try:
+        url = r.publish_release(
+            namespace=collection.namespace,
+            name=collection.name,
+            version=v,
+            make_draft=not publish,
+            make_latest=make_latest,
+            verify=not skip_validation,
+            validate_with_sources=not skip_source_validation,
+            without_token=without_token,
+        )
+        if url is not None:
+            print(f"VCS release available at: {url}")
+        return 0
+    except VerifyFailed as exc:
+        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
+    except ValueError as exc:
+        raise FailCLIError(f"Error: {exc}", code=3) from exc
+
+
 def cmd_wait(
     args: argparse.Namespace,
     collection: CollectionData,
@@ -230,7 +312,7 @@ def cmd_create_vcs_ui_release(
     releaser: Releaser,
 ) -> int:
     """
-    The 'wait' subcommand.
+    The 'create-vcs-ui-release' subcommand.
     """
     v = parse_version(args.version)
     skip_validation: bool = args.skip_validation
@@ -243,7 +325,7 @@ def cmd_create_vcs_ui_release(
 
     r = get_releaser(releaser)
     try:
-        r.create_vcs_ui_release(
+        url = r.create_vcs_ui_release(
             namespace=collection.namespace,
             name=collection.name,
             version=v,
@@ -253,6 +335,8 @@ def cmd_create_vcs_ui_release(
             validate_with_sources=not skip_source_validation,
             without_token=without_token,
         )
+        if url is not None:
+            print(f"VCS release available at: {url}")
         return 0
     except VerifyFailed as exc:
         raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
@@ -266,6 +350,7 @@ RELEASE_ARGS_MAP: dict[
     str, Callable[[argparse.Namespace, CollectionData, Config, Releaser], int]
 ] = {
     "vcs-release": cmd_vcs_release,
+    "release": cmd_release,
     "wait": cmd_wait,
     "validate": cmd_validate,
     "create-vcs-ui-release": cmd_create_vcs_ui_release,

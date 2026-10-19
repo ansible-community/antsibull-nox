@@ -27,7 +27,7 @@ from .galaxy import (
     extract_manifest_and_files_from_tarball,
     validate_tarball,
 )
-from .git import GitReleaser
+from .git import Git, GitReleaser
 from .github import GitHubClient
 from .ui import Retry, retry, wait_for
 from .zuul import BuildInfo, ZuulClient
@@ -301,6 +301,74 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                 version=version,
                 validate_with_sources=validate_with_sources,
             )
+        html_url, _ = self.github_client.create_release(
+            version=version,
+            make_draft=make_draft,
+            make_latest=make_latest,
+            without_token=without_token,
+        )
+        return html_url
+
+    def publish_release(
+        self,
+        *,
+        namespace: str,
+        name: str,
+        version: Version,
+        make_draft: bool = True,
+        make_latest: bool = False,
+        verify: bool = True,
+        validate_with_sources: bool = True,
+        without_token: bool = False,
+        force: bool = False,
+    ) -> str | None:
+        """
+        Initiate release process (if available),
+        wait for the release to happen,
+        validate it, and create a VCS web UI release if possible.
+        Return a URL to the release, if available.
+
+        ``force=True`` forces initiation of the release process,
+        assuming the VCS web UI release does not yet exist.
+        This could happen by deleting the remote release tag and
+        re-pushing it.
+        """
+        # First check whether we have a local tag, and whether the release already exists
+        if not self.has_vcs_release(version=version):
+            raise ValueError(f"Release tag {version} does not exist locally!")
+        release_url = self.github_client.get_tag_release_url(
+            version=version, without_token=without_token
+        )
+        if release_url is not None:
+            raise ValueError(
+                f"Release for GitHub tag {version} already exists: {release_url}"
+            )
+
+        # Push tag if it doesn't exist yet
+        has_remote_tag = self.github_client.has_tag(
+            version=version, without_token=without_token
+        )
+        if not has_remote_tag or force:
+            tag = template_string(
+                self.config.git_tag_format, variables={"version": str(version)}
+            )
+            git = Git()
+            if has_remote_tag:
+                git.remove_remote_tag(
+                    tag=tag, remote=self.config.github_upstream_remote
+                )
+            git.push_remote_tag(tag=tag, remote=self.config.github_upstream_remote)
+
+        # Wait for the release to appear on Galaxy, and validate it (if not disabled)
+        self.wait_until_released(
+            namespace=namespace,
+            name=name,
+            version=version,
+            verify=verify,
+            validate_with_sources=validate_with_sources,
+        )
+
+        # Create VCS release and return URL
         html_url, _ = self.github_client.create_release(
             version=version,
             make_draft=make_draft,

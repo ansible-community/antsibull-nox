@@ -292,6 +292,42 @@ class Git(CommandRunner):
         args = ["tag", "--delete", "--", tag]
         self.run(args, allow_rc=[0], cwd=path)
 
+    def push_remote_tag(
+        self,
+        *,
+        tag: str,
+        remote: str,
+        path: str | os.PathLike[str] | None = None,
+    ) -> None:
+        """
+        Push the tag to the remote.
+        """
+        args: list[str | os.PathLike[str]] = [
+            "push",
+            "--",
+            remote,
+            tag,
+        ]
+        self.run(args, allow_rc=[0], cwd=path)
+
+    def remove_remote_tag(
+        self,
+        *,
+        tag: str,
+        remote: str,
+        path: str | os.PathLike[str] | None = None,
+    ) -> None:
+        """
+        Remove the tag from the remote.
+        """
+        args: list[str | os.PathLike[str]] = [
+            "push",
+            "--",
+            remote,
+            f":{tag}",
+        ]
+        self.run(args, allow_rc=[0], cwd=path)
+
 
 class GitReleaser(BaseVCSReleaser):
     """
@@ -338,6 +374,17 @@ class GitReleaser(BaseVCSReleaser):
             )
 
         return root, coll
+
+    def has_vcs_release(self, *, version: Version) -> bool:
+        """
+        Check whether a release already exists in VCS.
+        """
+        tag = template_string(
+            self.__config.git_tag_format, variables={"version": str(version)}
+        )
+        root = self.__git.get_repository_root()
+        tags = self.__git.list_tags(path=root, pattern=tag)
+        return tag in tags
 
     def create_vcs_release(
         self, *, collection: CollectionData, version: Version

@@ -30,6 +30,12 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
+    def has_vcs_release(self, *, version: Version) -> bool:
+        """
+        Check whether a release already exists in VCS.
+        """
+
+    @abc.abstractmethod
     def create_vcs_release(
         self, *, collection: CollectionData, version: Version
     ) -> None:
@@ -118,6 +124,32 @@ class BaseReleaser(BaseVCSReleaser, metaclass=abc.ABCMeta):
         """
         Create release in the VCS's web UI.
         Return a URL to the release, if available.
+        """
+
+    @abc.abstractmethod
+    def publish_release(
+        self,
+        *,
+        namespace: str,
+        name: str,
+        version: Version,
+        make_draft: bool = True,
+        make_latest: bool = False,
+        verify: bool = True,
+        validate_with_sources: bool = True,
+        without_token: bool = False,
+        force: bool = False,
+    ) -> str | None:
+        """
+        Initiate release process (if available),
+        wait for the release to happen,
+        validate it, and create a VCS web UI release if possible.
+        Return a URL to the release, if available.
+
+        ``force=True`` forces initiation of the release process,
+        assuming the VCS web UI release does not yet exist.
+        This could happen by deleting the remote release tag and
+        re-pushing it.
         """
 
 
