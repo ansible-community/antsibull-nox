@@ -97,7 +97,8 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                     pipeline="pre-release" if version.prerelease else "release",
                     project=self.config.zuul_project_name,
                     ref=expected_ref,
-                    exclude_results=["SKIPPED", "RETRY", "RETRY_LIMIT"],
+                    # Specifying exclude_results leads to running builds no longer being listed...
+                    # exclude_results=["SKIPPED", "RETRY", "RETRY_LIMIT"],
                 )
             except ValueError as exc:
                 log(f"  Error: {exc}")

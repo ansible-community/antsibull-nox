@@ -69,7 +69,7 @@ class ZuulClient(RequestsSession):
     def __init__(self, *, base_url: str, tenant: str) -> None:
         super().__init__()
         base_url = base_url.rstrip("/")
-        self._base_url = f"{base_url}/api/tenant/{tenant}/"
+        self._base_url = f"{base_url}/api/tenant/{tenant}"
 
     def _url(self, url: str, query: list[str] | None = None) -> str:
         url = f"{self._base_url}/{url}"
