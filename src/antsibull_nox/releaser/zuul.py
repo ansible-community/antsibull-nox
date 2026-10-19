@@ -66,9 +66,10 @@ class ZuulClient(RequestsSession):
     Basic Zuul client.
     """
 
-    def __init__(self, base_url: str) -> None:
+    def __init__(self, *, base_url: str, tenant: str) -> None:
         super().__init__()
-        self._base_url = base_url.rstrip("/")
+        base_url = base_url.rstrip("/")
+        self._base_url = f"{base_url}/api/tenant/{tenant}/"
 
     def _url(self, url: str, query: list[str] | None = None) -> str:
         url = f"{self._base_url}/{url}"

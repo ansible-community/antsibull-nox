@@ -265,7 +265,7 @@ class GalaxyClient(RequestsSession):
     Basic Galaxy client.
     """
 
-    def __init__(self, base_url: str) -> None:
+    def __init__(self, *, base_url: str) -> None:
         super().__init__()
         self._base_url = base_url.rstrip("/")
 

@@ -46,8 +46,10 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
     def __init__(self, config: ZuulGitHubReleaserConfig) -> None:
         GitReleaser.__init__(self, config)
         self.config = config
-        self.zuul_client = ZuulClient(config.zuul_base_url)
-        self.galaxy_client = GalaxyClient(config.galaxy_base_url)
+        self.zuul_client = ZuulClient(
+            base_url=config.zuul_base_url, tenant=config.zuul_tenant
+        )
+        self.galaxy_client = GalaxyClient(base_url=config.galaxy_base_url)
         self.github_client = GitHubClient(config)
 
     def _get_done_build(self, build: BuildInfo) -> Callable[[LogFunction], bool]:

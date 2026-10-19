@@ -152,8 +152,12 @@ Galaxy configuration:
 Zuul configuration:
 
 * `zuul_base_url: str`:
-  The Zuul base AI URL, including the tenant.
-  Example: `https://gateway-cloud-softwarefactory.apps.ocp.cloud.ci.centos.org/zuul/api/tenant/ansible/`
+  The Zuul base URL.
+  Example: `https://gateway-cloud-softwarefactory.apps.ocp.cloud.ci.centos.org/zuul/`
+
+* `zuul_tenant: str`:
+  The Zuul tenant name.
+  Example: `ansible`
 
 * `zuul_project_name: str`:
   The Zuul project name.
