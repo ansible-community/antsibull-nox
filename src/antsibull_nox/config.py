@@ -908,6 +908,7 @@ class ZuulGitHubReleaser(
     type: t.Literal["zuul+github"]
 
     zuul_base_url: str
+    zuul_tenant: str
     zuul_project_name: str
 
 
