@@ -36,6 +36,7 @@ nav:
   - Config file reference: config-file.md
   - noxfile reference: reference.md
   - change-detection.md
+  - Releasing a collection: releaser.md
   - Troubleshooting: troubleshooting.md
   - Community: community.md
   - Release notes: changelog.md

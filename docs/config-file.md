@@ -195,6 +195,11 @@ The following options are available:
   Wildcards can be used,
   see [Python's fnmatch module](https://docs.python.org/3/library/fnmatch.html) for available wildcards.
 
+## Releaser configuration
+
+The `[releaser]` section allows to configure a releaser for this collection.
+This feature and its configuration is documented [on the 'Releasing a collection' page](releaser.md).
+
 ## Package names
 
 For many sessions, the package names of tools that are used / installed can be configured.

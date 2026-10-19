@@ -29,6 +29,8 @@ from .cli_helper import FailCLIError, require_config
 from .config import CONFIG_FILENAME, Config, load_config_from_toml
 from .init import create_initial_config as _create_initial_config
 from .lint_config import lint_config as _lint_config
+from .releaser.cli_lazy import create_subcommand as release_create_subcommand
+from .releaser.cli_lazy import release_command
 from .sessions.utils.paths import PythonDependencies, add_python_deps
 
 try:
@@ -169,6 +171,7 @@ ARGS_MAP: dict[str, Callable[[argparse.Namespace, Config | Exception | None], in
     "init": create_initial_config,
     "show-changes": show_changes,
     "update-azp-config": update_azp_config,
+    "release": release_command,
 }
 
 
@@ -189,7 +192,7 @@ def get_optional_config_or_error() -> Config | Exception | None:
 
 
 def parse_args(
-    program_name: str, args: list[str], _config: Config | Exception | None
+    program_name: str, args: list[str], config: Config | Exception | None
 ) -> argparse.Namespace:
     """
     Parse the command line arguments.
@@ -268,6 +271,13 @@ def parse_args(
         action="store_true",
         help="Show differences if configuration file is modified",
     )
+
+    releaser_parser = subparsers.add_parser(
+        "release",
+        description="Release subcommand.",
+        help="Release subcommand",
+    )
+    release_create_subcommand(releaser_parser, config)
 
     # This must come after all parser setup
     if HAS_ARGCOMPLETE:

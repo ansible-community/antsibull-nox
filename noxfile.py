@@ -44,7 +44,7 @@ def other_antsibull(
     if mode is None:
         mode = DEFAULT_MODE
     to_install: list[str | Path] = []
-    args = ("antsibull-fileutils",)
+    args = ("antsibull-changelog", "antsibull-docutils", "antsibull-fileutils")
     if additional_projects:
         args = list(args) + additional_projects
     for project in args:
