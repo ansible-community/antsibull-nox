@@ -15,6 +15,7 @@ import os
 import typing as t
 from pathlib import Path
 
+from antsibull_changelog.config import ChangelogConfig
 from antsibull_fileutils.yaml import store_yaml_file
 from semantic_version import Version
 
@@ -23,7 +24,11 @@ from ..config import _GitReleaserFragment
 from ._template import template_string
 from ._yaml import YAMLEditor
 from .base import BaseVCSReleaser
-from .changelog import check_for_release_summary, make_release
+from .changelog import (
+    check_for_release_summary,
+    get_changelog_config_and_files,
+    make_release,
+)
 from .command import CommandRunner, repeat_if_failed
 
 if t.TYPE_CHECKING:  # pragma: no cover
@@ -340,8 +345,28 @@ class GitReleaser(BaseVCSReleaser):
         self.__config = config
         self.__git = Git()
 
-    def __check(self) -> tuple[Path, Path]:
+    def __check(
+        self, version: Version, *, clean_changelogs: bool = False
+    ) -> tuple[Path, Path, ChangelogConfig, list[Path]]:
         cwd = Path.cwd()
+
+        _, config, changelogs = get_changelog_config_and_files(version=version)
+
+        danger_paths_raw: list[tuple[Path, bool]] = [
+            (self.__config.git_collection_root / "changelogs" / config.notes_dir, True),
+            (
+                self.__config.git_collection_root / "changelogs" / config.changes_file,
+                False,
+            ),
+            (self.__config.git_collection_root / "galaxy.yml", False),
+        ]
+        if clean_changelogs:
+            danger_paths_raw.extend(
+                (
+                    (self.__config.git_collection_root / changelog, False)
+                    for changelog in changelogs
+                )
+            )
 
         root = self.__git.get_repository_root()
         branch = self.__git.get_current_branch()
@@ -353,10 +378,7 @@ class GitReleaser(BaseVCSReleaser):
         status = self.__git.status(path=root)
         danger_paths = [
             (str(p) + (os.sep if is_dir else "")).encode("utf-8")
-            for p, is_dir in [
-                (self.__config.git_collection_root / "changelogs" / "fragments", True),
-                (self.__config.git_collection_root / "galaxy.yml", False),
-            ]
+            for p, is_dir in danger_paths_raw
         ]
         for s in status:
             if s.x != "?":
@@ -375,7 +397,7 @@ class GitReleaser(BaseVCSReleaser):
                 f" should be {act_coll}, but we are in {act_cwd}!"
             )
 
-        return root, coll
+        return root, coll, config, changelogs
 
     def prepare_vcs_release(
         self, *, collection: CollectionData, version: Version, release_summary: str
@@ -386,7 +408,7 @@ class GitReleaser(BaseVCSReleaser):
         Ensure we're in the right branch, update version and create release summary,
         and then create preparation commit(s).
         """
-        root, _ = self.__check()
+        root, _, _, _ = self.__check(version)
 
         galaxy_yml = root / self.__config.git_collection_root / "galaxy.yml"
         changelog_fragment = (
@@ -450,6 +472,17 @@ class GitReleaser(BaseVCSReleaser):
             self.__git.restore_to_commit(commit, path=root, clean=False)
             raise
 
+    def _get_changed_paths(self, root: Path) -> list[str]:
+        status = self.__git.status(path=root, what=self.__config.git_collection_root)
+        changed_paths = []
+        for s in status:
+            if s.x in ("?", "!"):
+                continue
+            changed_paths.append(s.path.decode("utf-8"))
+            if s.renamed_from is not None:
+                changed_paths.append(s.renamed_from.decode("utf-8"))
+        return changed_paths
+
     def has_vcs_release(self, *, version: Version) -> bool:
         """
         Check whether a release already exists in VCS.
@@ -469,7 +502,9 @@ class GitReleaser(BaseVCSReleaser):
 
         Ensure we're in the right branch, create release commit(s) and tag(s).
         """
-        root, _ = self.__check()
+        root, _, changelog_config, changelogs = self.__check(
+            version, clean_changelogs=True
+        )
         if collection.version != str(version):
             raise ValueError(
                 f"galaxy.yml's version is {collection.version}, expected {version}!"
@@ -492,20 +527,18 @@ class GitReleaser(BaseVCSReleaser):
             make_release(version, cummulative_release=True)
 
             # Stage changes
-            status = self.__git.status(
-                path=root, what=self.__config.git_collection_root
-            )
-            changed_paths = []
-            for s in status:
-                if s.x in ("?", "!"):
-                    continue
-                changed_paths.append(s.path.decode("utf-8"))
-                if s.renamed_from is not None:
-                    changed_paths.append(s.renamed_from.decode("utf-8"))
-            if not changed_paths:
-                raise ValueError(
-                    "Found no changes for release commit. Has the release already been done?"
-                )
+            changed_paths = [
+                self.__config.git_collection_root
+                / "changelogs"
+                / changelog_config.notes_dir,
+                self.__config.git_collection_root
+                / "changelogs"
+                / changelog_config.changes_file,
+                *(
+                    self.__config.git_collection_root / changelog
+                    for changelog in changelogs
+                ),
+            ]
             self.__git.add(changed_paths, path=root)
 
             # Create release commit
