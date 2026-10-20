@@ -52,6 +52,39 @@ def lint_fragments(
     return True
 
 
+def setup_config(
+    *,
+    ansible_doc_bin: str | None,
+) -> tuple[PathsConfig, CollectionDetails, ChangelogConfig]:
+    """
+    Create config objects.
+    """
+    paths = PathsConfig.force_collection(".", ansible_doc_bin=ansible_doc_bin)
+    collection_details = CollectionDetails(paths)
+    config = ChangelogConfig.load(paths, collection_details)
+    return paths, collection_details, config
+
+
+def find_release_summary(fragments: list[ChangelogFragment]) -> str | None:
+    """
+    Check whether there's a release summary in the given list of fragments.
+    """
+    result: str | None = None
+    result_path: str | None = None
+    for fragment in fragments:
+        release_summary = fragment.content.get("release_summary")
+        if isinstance(release_summary, str):
+            if result_path is not None:
+                raise ValueError(
+                    f"Found two release summaries in {fragment.path} and {result_path}!"
+                )
+            result = release_summary
+            result_path = fragment.path
+        elif release_summary is not None:
+            raise ValueError(f"Release summary in {fragment.path} is not a string!")
+    return result
+
+
 def make_release(
     version: Version,
     *,
@@ -68,9 +101,9 @@ def make_release(
         date = datetime.date.today()
 
     try:
-        paths = PathsConfig.force_collection(".", ansible_doc_bin=ansible_doc_bin)
-        collection_details = CollectionDetails(paths)
-        config = ChangelogConfig.load(paths, collection_details)
+        paths, collection_details, config = setup_config(
+            ansible_doc_bin=ansible_doc_bin
+        )
 
         flatmap = _determine_flatmap(collection_details, config)
 
@@ -102,7 +135,7 @@ def make_release(
                 "Use `antsibull-changelog lint` to manually lint before releasing."
             )
 
-        if not any("release_summary" in fragment.content for fragment in fragments):
+        if find_release_summary(fragments) is None:
             raise ValueError(
                 f"There is no release_summary for {version} in the changelog fragments."
             )
