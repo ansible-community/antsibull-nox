@@ -209,7 +209,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
             if validate_with_sources:
                 print("Validate CVS sources against FILES.json...")
                 source_tarball = tempdir / "source.tar"
-                source_prefix = self.create_release_tarball(
+                source_prefix = self.create_release_source_tarball(
                     tarball_path=source_tarball, version=version
                 )
                 self._raise_errors_exception(

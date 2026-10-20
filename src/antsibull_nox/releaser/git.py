@@ -455,7 +455,7 @@ class GitReleaser(BaseVCSReleaser):
             self.__git.restore_to_commit(commit, path=root, clean=False)
             raise
 
-    def create_release_tarball(
+    def create_release_source_tarball(
         self, *, tarball_path: Path, version: Version
     ) -> str | None:
         """

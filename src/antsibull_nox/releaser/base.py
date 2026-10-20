@@ -46,7 +46,7 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def create_release_tarball(
+    def create_release_source_tarball(
         self, *, tarball_path: Path, version: Version
     ) -> str | None:
         """
