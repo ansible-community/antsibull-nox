@@ -198,11 +198,8 @@ def cmd_vcs_release(
     v = parse_version(args.version)
 
     r = get_releaser(releaser)
-    try:
-        r.create_vcs_release(collection=collection, version=v)
-        return 0
-    except ValueError as exc:
-        raise FailCLIError(f"Error: {exc}", code=3) from exc
+    r.create_vcs_release(collection=collection, version=v)
+    return 0
 
 
 def cmd_release(
@@ -229,24 +226,19 @@ def cmd_release(
         make_latest = False
         without_token = True
 
-    try:
-        url = r.publish_release(
-            namespace=collection.namespace,
-            name=collection.name,
-            version=v,
-            make_draft=not publish,
-            make_latest=make_latest,
-            verify=not skip_validation,
-            validate_with_sources=not skip_source_validation,
-            without_token=without_token,
-        )
-        if url is not None:
-            print(f"VCS release available at: {url}")
-        return 0
-    except VerifyFailed as exc:
-        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
-    except ValueError as exc:
-        raise FailCLIError(f"Error: {exc}", code=3) from exc
+    url = r.publish_release(
+        namespace=collection.namespace,
+        name=collection.name,
+        version=v,
+        make_draft=not publish,
+        make_latest=make_latest,
+        verify=not skip_validation,
+        validate_with_sources=not skip_source_validation,
+        without_token=without_token,
+    )
+    if url is not None:
+        print(f"VCS release available at: {url}")
+    return 0
 
 
 def cmd_wait(
@@ -263,19 +255,14 @@ def cmd_wait(
     skip_source_validation: bool = args.skip_source_validation
 
     r = get_releaser(releaser)
-    try:
-        r.wait_until_released(
-            namespace=collection.namespace,
-            name=collection.name,
-            version=v,
-            verify=not skip_validation,
-            validate_with_sources=not skip_source_validation,
-        )
-        return 0
-    except VerifyFailed as exc:
-        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
-    except ValueError as exc:
-        raise FailCLIError(f"Error: {exc}", code=3) from exc
+    r.wait_until_released(
+        namespace=collection.namespace,
+        name=collection.name,
+        version=v,
+        verify=not skip_validation,
+        validate_with_sources=not skip_source_validation,
+    )
+    return 0
 
 
 def cmd_validate(
@@ -291,18 +278,13 @@ def cmd_validate(
     skip_source_validation: bool = args.skip_source_validation
 
     r = get_releaser(releaser)
-    try:
-        r.verify_release(
-            namespace=collection.namespace,
-            name=collection.name,
-            version=v,
-            validate_with_sources=not skip_source_validation,
-        )
-        return 0
-    except VerifyFailed as exc:
-        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
-    except ValueError as exc:
-        raise FailCLIError(f"Error: {exc}", code=3) from exc
+    r.verify_release(
+        namespace=collection.namespace,
+        name=collection.name,
+        version=v,
+        validate_with_sources=not skip_source_validation,
+    )
+    return 0
 
 
 def cmd_create_vcs_ui_release(
@@ -324,24 +306,19 @@ def cmd_create_vcs_ui_release(
         raise InvalidArgumentError("Cannot mark a pre-release as latest.")
 
     r = get_releaser(releaser)
-    try:
-        url = r.create_vcs_ui_release(
-            namespace=collection.namespace,
-            name=collection.name,
-            version=v,
-            make_draft=not publish,
-            make_latest=make_latest,
-            verify=not skip_validation,
-            validate_with_sources=not skip_source_validation,
-            without_token=without_token,
-        )
-        if url is not None:
-            print(f"VCS release available at: {url}")
-        return 0
-    except VerifyFailed as exc:
-        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
-    except ValueError as exc:
-        raise FailCLIError(f"Error: {exc}", code=3) from exc
+    url = r.create_vcs_ui_release(
+        namespace=collection.namespace,
+        name=collection.name,
+        version=v,
+        make_draft=not publish,
+        make_latest=make_latest,
+        verify=not skip_validation,
+        validate_with_sources=not skip_source_validation,
+        without_token=without_token,
+    )
+    if url is not None:
+        print(f"VCS release available at: {url}")
+    return 0
 
 
 # Mapping from command line 'release' subcommand names to functions which implement those.
@@ -370,8 +347,10 @@ def release_command(args: argparse.Namespace, config: Config) -> int:
         return RELEASE_ARGS_MAP[args.subcommand](
             args, collection_data, config, config.releaser
         )
+    except VerifyFailed as exc:
+        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
     except ValueError as exc:
-        raise FailCLIError(f"{exc}", code=3) from exc
+        raise FailCLIError(f"Error: {exc}", code=3) from exc
 
 
 __all__ = ("create_subcommand", "release_command")
