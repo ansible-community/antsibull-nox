@@ -127,6 +127,18 @@ Git configuration:
   Whether non-release commits should be signed or not.
   If not set, the value of `git_sign_commits` will be used.
 
+* `git_post_release_bump: "next-major" | "next-minor" | "next-bugfix" | "post-prerelease" | None` (default `None`):
+  How to bump the version number after a release:
+
+    * `next-major` increases the major version, so `1.2.3-alpha` gets changed to `2.0.0`;
+    * `next-minor` increases the minor version, so `1.2.3-alpha` gets changed to `1.3.0`;
+    * `next-bugfix` increases the bugfix version, so `1.2.3-alpha` gets changed to `1.2.4`;
+    * `post-prerelease` appends a `post0` prerelease component, so `1.2.3-alpha` gets changed to `1.2.3-alpha.post0`;
+
+* `git_post_release_commit_message: str | None` (default `None`):
+  The commit message for release preparation commits.
+  This template supports the `{old-version}` and `{newversion}` variables.
+
 GitHub configuration:
 
 * `github_org: str`:

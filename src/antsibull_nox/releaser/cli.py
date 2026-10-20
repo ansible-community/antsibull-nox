@@ -19,7 +19,7 @@ from semantic_version import Version
 from ..cli_helper import FailCLIError, InvalidArgumentError
 from ..collection.data import CollectionData
 from ..collection.search import load_collection_data_from_disk
-from ..config import Config, Releaser
+from ..config import Config, Releaser, VersionBump, VersionBumpValues
 from .base import BaseReleaser, VerifyFailed
 
 _CANNOT_BE_USED_PREFIX = "This subcommand cannot be used because of: "
@@ -69,6 +69,31 @@ def create_subcommand(releaser_parser: argparse.ArgumentParser, config: Config) 
         help="Create release in VCS",
     )
     vcs_release.add_argument("version")
+
+    vcs_bump_version = releaser_subparsers.add_parser(
+        "vcs-bump-version",
+        description="Bump version in VCS.",
+        help="Bump version in VCS",
+    )
+    vcs_bump_version.add_argument("--new-version", help="The new version.")
+    vcs_bump_version.add_argument(
+        "--bump",
+        choices=VersionBumpValues,
+        help=(
+            "How to obtain the new version from the current version."
+            " 'next-major': increase the major part;"
+            " 'next-minor': increase the minor part;"
+            " 'next-bugfix': increase the bugfix part;"
+            " 'post-prerelease': append 'post0' to the prerelease part."
+        ),
+    )
+    vcs_bump_version.add_argument("--message", "-m", help="The commit message.")
+    vcs_bump_version.epilog = """\
+At most one of --new-version and --bump must be specified.
+If none is specified, the bump method must be configured in the releaser config.
+
+Also if --message is not specified, a commit message must be configured in the releaser config.
+"""
 
     extra_steps_needed = (
         "This should be disabled if extra steps are needed"
@@ -229,6 +254,35 @@ def cmd_vcs_release(
     return 0
 
 
+def cmd_vcs_bump_version(
+    args: argparse.Namespace,
+    collection: CollectionData,
+    _config: Config,
+    releaser: Releaser,
+) -> int:
+    """
+    The 'vcs-release' subcommand.
+    """
+    new_version = (
+        parse_version(args.new_version) if args.new_version is not None else None
+    )
+    bump: VersionBump | None = args.bump
+    message: str | None = args.message
+
+    r = get_releaser(releaser)
+    actual_new_version = r.bump_version(
+        collection=collection,
+        new_version=new_version,
+        bump=bump,
+        commit_message=message,
+    )
+    if actual_new_version is not None:
+        print(f"Version bumped to {actual_new_version}")
+    else:
+        print("Version was already set.")
+    return 0
+
+
 def cmd_release(
     args: argparse.Namespace,
     collection: CollectionData,
@@ -355,6 +409,7 @@ RELEASE_ARGS_MAP: dict[
 ] = {
     "vcs-prepare": cmd_vcs_prepare,
     "vcs-release": cmd_vcs_release,
+    "vcs-bump-version": cmd_vcs_bump_version,
     "release": cmd_release,
     "wait": cmd_wait,
     "validate": cmd_validate,

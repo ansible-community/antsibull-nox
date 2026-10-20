@@ -18,6 +18,7 @@ import nox
 from ..cd import (
     get_changes,
 )
+from ..collection.search import GALAXY_YML
 from ..config import CONFIG_FILENAME
 from ..messages.parse import parse_antsibull_docs_errors
 from ..paths.utils import (
@@ -69,7 +70,7 @@ def file_of_interest(file: Path) -> bool:
         return True
     if file.is_relative_to("docs/docsite"):
         return True
-    if file in (Path("meta/runtime.yml"), Path("galaxy.yml")):
+    if file in (Path("meta/runtime.yml"), Path(GALAXY_YML)):
         return True
     if file.is_relative_to("plugins"):
         if file.is_relative_to("plugins/module_utils"):
