@@ -235,6 +235,7 @@ def cmd_vcs_prepare(
 
     r = get_releaser(releaser)
     r.prepare_vcs_release(collection=collection, version=v, release_summary=message)
+    print(f"The {v} release has been prepared.")
     return 0
 
 
@@ -251,6 +252,7 @@ def cmd_vcs_release(
 
     r = get_releaser(releaser)
     r.create_vcs_release(collection=collection, version=v)
+    print(f"The {v} release has been created.")
     return 0
 
 
@@ -317,8 +319,13 @@ def cmd_release(
         validate_with_sources=not skip_source_validation,
         without_token=without_token,
     )
-    if url is not None:
-        print(f"VCS release available at: {url}")
+    if r.can_create_vcs_ui_release():
+        if url is not None:
+            print(f"The collection has been published; VCS release available at: {url}")
+        else:
+            print("The collection has been published; VCS release has been created.")
+    else:
+        print("The collection has been published.")
     return 0
 
 
@@ -343,6 +350,7 @@ def cmd_wait(
         verify=not skip_validation,
         validate_with_sources=not skip_source_validation,
     )
+    print("The release has been published!")
     return 0
 
 
@@ -399,6 +407,8 @@ def cmd_create_vcs_ui_release(
     )
     if url is not None:
         print(f"VCS release available at: {url}")
+    else:
+        print("VCS release has been created.")
     return 0
 
 
