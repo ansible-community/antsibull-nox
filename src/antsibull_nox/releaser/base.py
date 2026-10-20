@@ -30,6 +30,17 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
+    def prepare_vcs_release(
+        self, *, collection: CollectionData, version: Version, release_summary: str
+    ) -> None:
+        """
+        Prepare a release in VCS.
+
+        Ensure we're in the right branch, update version and create release summary,
+        and then create preparation commit(s).
+        """
+
+    @abc.abstractmethod
     def has_vcs_release(self, *, version: Version) -> bool:
         """
         Check whether a release already exists in VCS.

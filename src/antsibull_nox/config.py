@@ -884,6 +884,8 @@ class _GitReleaserFragment:
     git_sign_tags: bool = True
     git_release_commit_message: str = "Release {version}."
     git_release_tag_message: str = "{version}"
+    git_prepare_commit_message: str = "Prepare {version}."
+    git_sign_other_commits: t.Optional[bool] = None
 
 
 class _GitHubReleaserFragment(_GitReleaserFragment):

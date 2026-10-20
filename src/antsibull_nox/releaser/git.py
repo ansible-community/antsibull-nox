@@ -15,13 +15,15 @@ import os
 import typing as t
 from pathlib import Path
 
+from antsibull_fileutils.yaml import store_yaml_file
 from semantic_version import Version
 
 from ..collection.data import CollectionData
 from ..config import _GitReleaserFragment
 from ._template import template_string
+from ._yaml import YAMLEditor
 from .base import BaseVCSReleaser
-from .changelog import make_release
+from .changelog import check_for_release_summary, make_release
 from .command import CommandRunner, repeat_if_failed
 
 if t.TYPE_CHECKING:  # pragma: no cover
@@ -374,6 +376,79 @@ class GitReleaser(BaseVCSReleaser):
             )
 
         return root, coll
+
+    def prepare_vcs_release(
+        self, *, collection: CollectionData, version: Version, release_summary: str
+    ) -> None:
+        """
+        Prepare a release in VCS.
+
+        Ensure we're in the right branch, update version and create release summary,
+        and then create preparation commit(s).
+        """
+        root, _ = self.__check()
+
+        galaxy_yml = root / self.__config.git_collection_root / "galaxy.yml"
+        changelog_fragment = (
+            root
+            / self.__config.git_collection_root
+            / "changelogs"
+            / "fragments"
+            / f"{version}.yml"
+        )
+
+        if changelog_fragment.exists():
+            raise ValueError(
+                f"The release summary changelog fragment {changelog_fragment}"
+                f" for {version} already exists!"
+            )
+        existing_summary = check_for_release_summary()
+        if existing_summary is not None:
+            raise ValueError(
+                "There already exists a release summary changelog fragment:"
+                f" {existing_summary[0].path}"
+            )
+
+        sign_commit = self.__config.git_sign_other_commits
+        if sign_commit is None:
+            sign_commit = self.__config.git_sign_commits
+        commit_message = template_string(
+            self.__config.git_prepare_commit_message,
+            variables={"version": str(version)},
+        )
+
+        commit = self.__git.get_current_commit(path=root)
+        try:
+            # Update version in galaxy.yml
+            galaxy = YAMLEditor(path=galaxy_yml)
+            field = galaxy.find(key="version")
+            if field is None:
+                field = galaxy.create(key="version", value="")
+            version_str = str(version)
+            if field.value != version_str:
+                field.set(version_str)
+                galaxy.write()
+
+            # Write changelog fragment
+            fragment = {
+                "release_summary": release_summary,
+            }
+            store_yaml_file(changelog_fragment, fragment, nice=True)
+
+            # Stage changes
+            self.__git.add([galaxy_yml, changelog_fragment], path=root)
+
+            # Create release commit
+            repeat_if_failed(
+                lambda: self.__git.commit(
+                    message=commit_message,
+                    signed=sign_commit,
+                    path=root,
+                ),
+            )
+        except BaseException:
+            self.__git.restore_to_commit(commit, path=root, clean=False)
+            raise
 
     def has_vcs_release(self, *, version: Version) -> bool:
         """

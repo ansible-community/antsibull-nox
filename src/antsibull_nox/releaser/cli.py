@@ -53,6 +53,16 @@ def create_subcommand(releaser_parser: argparse.ArgumentParser, config: Config) 
     )
     releaser_subparsers.required = True
 
+    vcs_prepare = releaser_subparsers.add_parser(
+        "vcs-prepare",
+        description="Prepare a release in VCS.",
+        help="Prepare a release in VCS",
+    )
+    vcs_prepare.add_argument("version")
+    vcs_prepare.add_argument(
+        "-m", "--message", required=True, help="The release summary."
+    )
+
     vcs_release = releaser_subparsers.add_parser(
         "vcs-release",
         description="Create release in VCS.",
@@ -184,6 +194,23 @@ def parse_version(version: str, *, name: str = "version") -> Version:
         raise InvalidArgumentError(
             f"Cannot parse {name} parameter {version!r}: {exc}"
         ) from exc
+
+
+def cmd_vcs_prepare(
+    args: argparse.Namespace,
+    collection: CollectionData,
+    _config: Config,
+    releaser: Releaser,
+) -> int:
+    """
+    The 'vcs-release' subcommand.
+    """
+    v = parse_version(args.version)
+    message: str = args.message
+
+    r = get_releaser(releaser)
+    r.prepare_vcs_release(collection=collection, version=v, release_summary=message)
+    return 0
 
 
 def cmd_vcs_release(
@@ -326,6 +353,7 @@ def cmd_create_vcs_ui_release(
 RELEASE_ARGS_MAP: dict[
     str, Callable[[argparse.Namespace, CollectionData, Config, Releaser], int]
 ] = {
+    "vcs-prepare": cmd_vcs_prepare,
     "vcs-release": cmd_vcs_release,
     "release": cmd_release,
     "wait": cmd_wait,

@@ -119,6 +119,14 @@ Git configuration:
   The tag annotation message for the release tag.
   This template only supports the `{version}` variable.
 
+* `git_prepare_commit_message: str` (default `"Prepare {version}."`):
+  The commit message for release preparation commits.
+  This template only supports the `{version}` variable.
+
+* `git_sign_other_commits: bool | None` (default `None`):
+  Whether non-release commits should be signed or not.
+  If not set, the value of `git_sign_commits` will be used.
+
 GitHub configuration:
 
 * `github_org: str`:

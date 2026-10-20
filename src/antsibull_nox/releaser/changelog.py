@@ -65,24 +65,43 @@ def setup_config(
     return paths, collection_details, config
 
 
-def find_release_summary(fragments: list[ChangelogFragment]) -> str | None:
+def find_release_summary(
+    fragments: list[ChangelogFragment],
+) -> tuple[ChangelogFragment, str] | None:
     """
     Check whether there's a release summary in the given list of fragments.
+    If yes, return the fragment and the release summary.
     """
-    result: str | None = None
-    result_path: str | None = None
+    result: tuple[ChangelogFragment, str] | None = None
     for fragment in fragments:
         release_summary = fragment.content.get("release_summary")
         if isinstance(release_summary, str):
-            if result_path is not None:
+            if result is not None:
                 raise ValueError(
-                    f"Found two release summaries in {fragment.path} and {result_path}!"
+                    f"Found two release summaries in {fragment.path} and {result[0].path}!"
                 )
-            result = release_summary
-            result_path = fragment.path
+            result = fragment, release_summary
         elif release_summary is not None:
             raise ValueError(f"Release summary in {fragment.path} is not a string!")
     return result
+
+
+def check_for_release_summary(
+    *,
+    ansible_doc_bin: str | None = None,
+) -> tuple[ChangelogFragment, str] | None:
+    """
+    Check whether there's a release summary.
+    If yes, return the fragment and the release summary.
+    """
+    try:
+        paths, _, config = setup_config(ansible_doc_bin=ansible_doc_bin)
+        fragments = load_fragments(paths, config)
+        return find_release_summary(fragments)
+    except ChangelogError as exc:
+        raise ValueError(
+            f"Error while finding release summary in changelog fragments: {exc}"
+        ) from exc
 
 
 def make_release(
@@ -208,4 +227,4 @@ def get_markdown_extract(
         raise ValueError(f"Error while obtaining changelog excerpt: {exc}") from exc
 
 
-__all__ = ("make_release", "get_markdown_extract")
+__all__ = ("check_for_release_summary", "make_release", "get_markdown_extract")
