@@ -92,13 +92,13 @@ httpcore==1.0.9 ; python_full_version < '3.10'
     # via httpx
 httpcore2==2.14.0 ; python_full_version == '3.10.*' and sys_platform != 'emscripten'
     # via httpx2
-httpcore2==2.15.1 ; python_full_version >= '3.11' and sys_platform != 'emscripten'
+httpcore2==2.16.0 ; python_full_version >= '3.11' and sys_platform != 'emscripten'
     # via httpx2
 httpx==0.28.1 ; python_full_version < '3.10'
     # via hatch
 httpx2==2.14.0 ; python_full_version == '3.10.*'
     # via hatch
-httpx2==2.15.1 ; python_full_version >= '3.11'
+httpx2==2.16.0 ; python_full_version >= '3.11'
     # via hatch
 httpx2-jsfetch==1.0 ; python_full_version >= '3.12' and sys_platform == 'emscripten'
     # via httpx2
@@ -268,7 +268,7 @@ virtualenv==21.14.12
     # via hatch
 zipp==3.23.1 ; python_full_version < '3.10'
     # via importlib-metadata
-zipp==4.1.1 ; python_full_version >= '3.10' and python_full_version < '3.12'
+zipp==4.1.2 ; python_full_version >= '3.10' and python_full_version < '3.12'
     # via importlib-metadata
 zstandard==0.25.0 ; python_full_version < '3.10'
     # via hatch
