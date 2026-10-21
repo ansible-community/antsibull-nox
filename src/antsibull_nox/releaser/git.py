@@ -29,6 +29,7 @@ from .base import BaseVCSReleaser
 from .changelog import (
     check_for_release_summary,
     get_changelog_config_and_files,
+    lint_fragment_content,
     make_release,
 )
 from .command import CommandRunner, repeat_if_failed
@@ -426,7 +427,7 @@ class GitReleaser(BaseVCSReleaser):
         Ensure we're in the right branch, update version and create release summary,
         and then create preparation commit(s).
         """
-        root, _, _, _ = self.__check(version)
+        root, _, changelog_config, _ = self.__check(version)
 
         galaxy_yml = root / self.__config.git_collection_root / GALAXY_YML
         changelog_fragment = (
@@ -457,6 +458,18 @@ class GitReleaser(BaseVCSReleaser):
             variables={"version": str(version)},
         )
 
+        fragment = {
+            "release_summary": release_summary,
+        }
+        fragment_errors = lint_fragment_content(
+            config=changelog_config, fragment_content=fragment
+        )
+        if fragment_errors:
+            errors = "\n".join(
+                (f"{line}:{col}:{message}" for line, col, message in fragment_errors)
+            )
+            raise ValueError(f"Error while linting the changelog fragment:\n{errors}")
+
         commit = self.__git.get_current_commit(path=root)
         try:
             # Update version in galaxy.yml
@@ -470,9 +483,6 @@ class GitReleaser(BaseVCSReleaser):
                 galaxy.write()
 
             # Write changelog fragment
-            fragment = {
-                "release_summary": release_summary,
-            }
             store_yaml_file(changelog_fragment, fragment, nice=True)
 
             # Stage changes

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import typing as t
 from pathlib import Path
 
 from antsibull_changelog.changes import add_release, load_changes
@@ -37,6 +38,22 @@ from antsibull_changelog.rendering.changelog import (
 )
 from antsibull_changelog.rendering.md_document import MDDocumentRenderer
 from semantic_version import Version
+
+
+def lint_fragment_content(
+    *,
+    fragment_content: dict[str, t.Any],
+    config: ChangelogConfig,
+) -> list[tuple[int, int, str]]:
+    """
+    Run linter on the contents of a changelog fragment. Return the list of errors.
+    """
+    linter = ChangelogFragmentLinter(config)
+    fragment = ChangelogFragment(
+        content=fragment_content, path="", fragment_format=TextFormat.RESTRUCTURED_TEXT
+    )
+    errors = linter.lint(fragment)
+    return [(line, col, message) for _, line, col, message in errors]
 
 
 def lint_fragments(
@@ -260,6 +277,7 @@ def get_markdown_extract(
 __all__ = (
     "check_for_release_summary",
     "get_changelog_config_and_files",
-    "make_release",
     "get_markdown_extract",
+    "lint_fragment_content",
+    "make_release",
 )
