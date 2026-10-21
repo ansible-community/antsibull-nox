@@ -42,7 +42,7 @@ humanize==4.16.0 ; python_full_version >= '3.10'
     # via nox
 nox==2026.4.10 ; python_full_version < '3.10'
     # via antsibull-nox
-nox==2026.8.17 ; python_full_version >= '3.10'
+nox==2026.10.20 ; python_full_version >= '3.10'
     # via antsibull-nox
 packaging==26.3
     # via
@@ -93,5 +93,5 @@ typing-inspection==0.4.2 ; python_full_version < '3.10'
     # via pydantic
 typing-inspection==0.4.4 ; python_full_version >= '3.10'
     # via pydantic
-virtualenv==21.14.11
+virtualenv==21.14.12
     # via nox
