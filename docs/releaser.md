@@ -191,8 +191,11 @@ Zuul configuration:
 In this example, we assume we want to do a 3.5.1 release of the community.crypto collection.
 
 1. Prepare the release.
-   For this, we create a changelog fragment with `release_summary`,
-   and modify the `version` entry of `galaxy.yml` to the value `3.5.1`.
+   Run `antsibull-nox release vcs-prepare 3.5.1 -m "Bugfix release."
+   This creates a changelog fragment with `release_summary` set to "Bugfix release.",
+   and modifies the `version` entry of `galaxy.yml` to the value `3.5.1`.
+   Generally it is a good idea to push this commit to `upstream` and `origin`
+   and let CI run through before continuing.
 
 1. Trigger the Git release.
    Run `antsibull-nox release vcs-release 3.5.1`.
@@ -229,3 +232,9 @@ In this example, we assume we want to do a 3.5.1 release of the community.crypto
     1. Validate the release on Ansible Galaxy to make sure it equals the release you pushed;
     1. Create a GitHub release (as draft unless `--publish` is passed,
        respectively open the web form if no GitHub token is provided).
+
+1. In community.crypto, we keep the `version` in `galaxy.yml` always set to the upcoming feature release,
+   unless we are preparing a bugfix release or a pre-release.
+   Run `antsibull-nox release vcs-bump-version`.
+   This uses the `git_post_release_bump = "next-minor"` setting to set `version` to `3.6.0`.
+   Push the resulting commit to `upstream` and `origin`.
