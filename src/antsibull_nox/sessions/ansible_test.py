@@ -342,6 +342,7 @@ def add_ansible_test_session(
     )(run_ansible_test)
 
     if register_name:
+        python_version = get_recent_python_version(core_info.controller_python_versions)
         data: dict[str, t.Any] = {
             "name": name,
             "ansible-core": (
@@ -349,14 +350,16 @@ def add_ansible_test_session(
                 if ansible_core_branch_name is not None
                 else str(parsed_ansible_core_version)
             ),
-            "python": str(
-                get_recent_python_version(core_info.controller_python_versions)
-            ),
+            "python": str(python_version),
         }
         if register_extra_data:
             data.update(register_extra_data)
         if register_tags:
             data["tags"] = sorted(register_tags)
+        if data.get("gha-container") is None:
+            if python_version < Version(3, 10):
+                # ubuntu-26.04 no longer supports Python 3.9
+                data["gha-container"] = "ubuntu-24.04"
         register(register_name, data)
 
 
