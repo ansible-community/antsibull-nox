@@ -23,17 +23,26 @@ permissions:
 
 jobs:
   nox:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.image || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - session: test
-            python-versions: "3.9, 3.10, 3.11, 3.12, 3.13, 3.14, 3.15"
-            force-python: ""
+            python-versions: "3.10, 3.11, 3.12, 3.13, 3.14, 3.15"
+            force-python: "3.10 3.11 3.12 3.13 3.14 3.15"
             extra-args: ""
             codecov: true
             packages: ""
+            image: ""
+
+          - session: test
+            python-versions: "3.9"
+            force-python: "3.9"
+            extra-args: ""
+            codecov: true
+            packages: ""
+            image: ubuntu-24.04
 
           - session: integration
             python-versions: "3.14"
@@ -41,6 +50,7 @@ jobs:
             extra-args: ""
             codecov: true
             packages: ""
+            image: ""
 
           - session: lint
             python-versions: "3.14"
@@ -48,6 +58,7 @@ jobs:
             extra-args: ""
             codecov: false
             packages: ""
+            image: ""
 
           - session: pip-compile
             python-versions: "3.15"
@@ -55,6 +66,7 @@ jobs:
             extra-args: "--check"
             codecov: false
             packages: ""
+            image: ""
     name: "Run nox ${{ matrix.session }} session"
     steps:
       - name: Check out antsibull-nox
