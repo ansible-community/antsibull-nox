@@ -16,6 +16,7 @@ from pathlib import Path
 from semantic_version import Version
 
 from ..collection.data import CollectionData
+from ..config import VersionBump
 
 
 class VerifyFailed(ValueError):
@@ -28,6 +29,17 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
     """
     Base releaser class for VCS part (prepare, create release in VCS).
     """
+
+    @abc.abstractmethod
+    def prepare_vcs_release(
+        self, *, collection: CollectionData, version: Version, release_summary: str
+    ) -> None:
+        """
+        Prepare a release in VCS.
+
+        Ensure we're in the right branch, update version and create release summary,
+        and then create preparation commit(s).
+        """
 
     @abc.abstractmethod
     def has_vcs_release(self, *, version: Version) -> bool:
@@ -46,11 +58,32 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def create_release_tarball(
+    def create_release_source_tarball(
         self, *, tarball_path: Path, version: Version
     ) -> str | None:
         """
         Create tarball (.tar) of a tagged release. Return prefix that all entries have.
+        """
+
+    @abc.abstractmethod
+    def bump_version(
+        self,
+        *,
+        collection: CollectionData,
+        new_version: Version | None = None,
+        bump: VersionBump | None = None,
+        commit_message: str | None = None,
+    ) -> Version | None:
+        """
+        Bump the version after a release.
+
+        One of ``bump`` and ``new_version`` must be provided.
+        If none is provided, a fallback value is taken from the config.
+        If that is not available, the call will fail.
+
+        Similarly for the commit message.
+
+        Returns the new version if it was set.
         """
 
 

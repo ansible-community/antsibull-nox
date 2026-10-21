@@ -19,7 +19,7 @@ from semantic_version import Version
 from ..cli_helper import FailCLIError, InvalidArgumentError
 from ..collection.data import CollectionData
 from ..collection.search import load_collection_data_from_disk
-from ..config import Config, Releaser
+from ..config import Config, Releaser, VersionBump, VersionBumpValues
 from .base import BaseReleaser, VerifyFailed
 
 _CANNOT_BE_USED_PREFIX = "This subcommand cannot be used because of: "
@@ -53,12 +53,47 @@ def create_subcommand(releaser_parser: argparse.ArgumentParser, config: Config) 
     )
     releaser_subparsers.required = True
 
+    vcs_prepare = releaser_subparsers.add_parser(
+        "vcs-prepare",
+        description="Prepare a release in VCS.",
+        help="Prepare a release in VCS",
+    )
+    vcs_prepare.add_argument("version")
+    vcs_prepare.add_argument(
+        "-m", "--message", required=True, help="The release summary."
+    )
+
     vcs_release = releaser_subparsers.add_parser(
         "vcs-release",
         description="Create release in VCS.",
         help="Create release in VCS",
     )
     vcs_release.add_argument("version")
+
+    vcs_bump_version = releaser_subparsers.add_parser(
+        "vcs-bump-version",
+        description="Bump version in VCS.",
+        help="Bump version in VCS",
+    )
+    vcs_bump_version.add_argument("--new-version", help="The new version.")
+    vcs_bump_version.add_argument(
+        "--bump",
+        choices=VersionBumpValues,
+        help=(
+            "How to obtain the new version from the current version."
+            " 'next-major': increase the major part;"
+            " 'next-minor': increase the minor part;"
+            " 'next-bugfix': increase the bugfix part;"
+            " 'post-prerelease': append 'post0' to the prerelease part."
+        ),
+    )
+    vcs_bump_version.add_argument("--message", "-m", help="The commit message.")
+    vcs_bump_version.epilog = """\
+At most one of --new-version and --bump must be specified.
+If none is specified, the bump method must be configured in the releaser config.
+
+Also if --message is not specified, a commit message must be configured in the releaser config.
+"""
 
     extra_steps_needed = (
         "This should be disabled if extra steps are needed"
@@ -186,6 +221,24 @@ def parse_version(version: str, *, name: str = "version") -> Version:
         ) from exc
 
 
+def cmd_vcs_prepare(
+    args: argparse.Namespace,
+    collection: CollectionData,
+    _config: Config,
+    releaser: Releaser,
+) -> int:
+    """
+    The 'vcs-release' subcommand.
+    """
+    v = parse_version(args.version)
+    message: str = args.message
+
+    r = get_releaser(releaser)
+    r.prepare_vcs_release(collection=collection, version=v, release_summary=message)
+    print(f"The {v} release has been prepared.")
+    return 0
+
+
 def cmd_vcs_release(
     args: argparse.Namespace,
     collection: CollectionData,
@@ -198,11 +251,38 @@ def cmd_vcs_release(
     v = parse_version(args.version)
 
     r = get_releaser(releaser)
-    try:
-        r.create_vcs_release(collection=collection, version=v)
-        return 0
-    except ValueError as exc:
-        raise FailCLIError(f"Error: {exc}", code=3) from exc
+    r.create_vcs_release(collection=collection, version=v)
+    print(f"The {v} release has been created.")
+    return 0
+
+
+def cmd_vcs_bump_version(
+    args: argparse.Namespace,
+    collection: CollectionData,
+    _config: Config,
+    releaser: Releaser,
+) -> int:
+    """
+    The 'vcs-release' subcommand.
+    """
+    new_version = (
+        parse_version(args.new_version) if args.new_version is not None else None
+    )
+    bump: VersionBump | None = args.bump
+    message: str | None = args.message
+
+    r = get_releaser(releaser)
+    actual_new_version = r.bump_version(
+        collection=collection,
+        new_version=new_version,
+        bump=bump,
+        commit_message=message,
+    )
+    if actual_new_version is not None:
+        print(f"Version bumped to {actual_new_version}")
+    else:
+        print("Version was already set.")
+    return 0
 
 
 def cmd_release(
@@ -229,24 +309,24 @@ def cmd_release(
         make_latest = False
         without_token = True
 
-    try:
-        url = r.publish_release(
-            namespace=collection.namespace,
-            name=collection.name,
-            version=v,
-            make_draft=not publish,
-            make_latest=make_latest,
-            verify=not skip_validation,
-            validate_with_sources=not skip_source_validation,
-            without_token=without_token,
-        )
+    url = r.publish_release(
+        namespace=collection.namespace,
+        name=collection.name,
+        version=v,
+        make_draft=not publish,
+        make_latest=make_latest,
+        verify=not skip_validation,
+        validate_with_sources=not skip_source_validation,
+        without_token=without_token,
+    )
+    if r.can_create_vcs_ui_release():
         if url is not None:
-            print(f"VCS release available at: {url}")
-        return 0
-    except VerifyFailed as exc:
-        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
-    except ValueError as exc:
-        raise FailCLIError(f"Error: {exc}", code=3) from exc
+            print(f"The collection has been published; VCS release available at: {url}")
+        else:
+            print("The collection has been published; VCS release has been created.")
+    else:
+        print("The collection has been published.")
+    return 0
 
 
 def cmd_wait(
@@ -263,19 +343,15 @@ def cmd_wait(
     skip_source_validation: bool = args.skip_source_validation
 
     r = get_releaser(releaser)
-    try:
-        r.wait_until_released(
-            namespace=collection.namespace,
-            name=collection.name,
-            version=v,
-            verify=not skip_validation,
-            validate_with_sources=not skip_source_validation,
-        )
-        return 0
-    except VerifyFailed as exc:
-        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
-    except ValueError as exc:
-        raise FailCLIError(f"Error: {exc}", code=3) from exc
+    r.wait_until_released(
+        namespace=collection.namespace,
+        name=collection.name,
+        version=v,
+        verify=not skip_validation,
+        validate_with_sources=not skip_source_validation,
+    )
+    print("The release has been published!")
+    return 0
 
 
 def cmd_validate(
@@ -291,18 +367,13 @@ def cmd_validate(
     skip_source_validation: bool = args.skip_source_validation
 
     r = get_releaser(releaser)
-    try:
-        r.verify_release(
-            namespace=collection.namespace,
-            name=collection.name,
-            version=v,
-            validate_with_sources=not skip_source_validation,
-        )
-        return 0
-    except VerifyFailed as exc:
-        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
-    except ValueError as exc:
-        raise FailCLIError(f"Error: {exc}", code=3) from exc
+    r.verify_release(
+        namespace=collection.namespace,
+        name=collection.name,
+        version=v,
+        validate_with_sources=not skip_source_validation,
+    )
+    return 0
 
 
 def cmd_create_vcs_ui_release(
@@ -324,24 +395,21 @@ def cmd_create_vcs_ui_release(
         raise InvalidArgumentError("Cannot mark a pre-release as latest.")
 
     r = get_releaser(releaser)
-    try:
-        url = r.create_vcs_ui_release(
-            namespace=collection.namespace,
-            name=collection.name,
-            version=v,
-            make_draft=not publish,
-            make_latest=make_latest,
-            verify=not skip_validation,
-            validate_with_sources=not skip_source_validation,
-            without_token=without_token,
-        )
-        if url is not None:
-            print(f"VCS release available at: {url}")
-        return 0
-    except VerifyFailed as exc:
-        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
-    except ValueError as exc:
-        raise FailCLIError(f"Error: {exc}", code=3) from exc
+    url = r.create_vcs_ui_release(
+        namespace=collection.namespace,
+        name=collection.name,
+        version=v,
+        make_draft=not publish,
+        make_latest=make_latest,
+        verify=not skip_validation,
+        validate_with_sources=not skip_source_validation,
+        without_token=without_token,
+    )
+    if url is not None:
+        print(f"VCS release available at: {url}")
+    else:
+        print("VCS release has been created.")
+    return 0
 
 
 # Mapping from command line 'release' subcommand names to functions which implement those.
@@ -349,7 +417,9 @@ def cmd_create_vcs_ui_release(
 RELEASE_ARGS_MAP: dict[
     str, Callable[[argparse.Namespace, CollectionData, Config, Releaser], int]
 ] = {
+    "vcs-prepare": cmd_vcs_prepare,
     "vcs-release": cmd_vcs_release,
+    "vcs-bump-version": cmd_vcs_bump_version,
     "release": cmd_release,
     "wait": cmd_wait,
     "validate": cmd_validate,
@@ -370,8 +440,10 @@ def release_command(args: argparse.Namespace, config: Config) -> int:
         return RELEASE_ARGS_MAP[args.subcommand](
             args, collection_data, config, config.releaser
         )
+    except VerifyFailed as exc:
+        raise FailCLIError(f"Verification failed: {exc}", code=4) from exc
     except ValueError as exc:
-        raise FailCLIError(f"{exc}", code=3) from exc
+        raise FailCLIError(f"Error: {exc}", code=3) from exc
 
 
 __all__ = ("create_subcommand", "release_command")

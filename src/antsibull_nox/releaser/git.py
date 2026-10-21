@@ -15,13 +15,23 @@ import os
 import typing as t
 from pathlib import Path
 
+from antsibull_changelog.config import ChangelogConfig
+from antsibull_fileutils.yaml import store_yaml_file
 from semantic_version import Version
 
 from ..collection.data import CollectionData
-from ..config import _GitReleaserFragment
+from ..collection.search import GALAXY_YML
+from ..config import VersionBump, _GitReleaserFragment
 from ._template import template_string
+from ._version import get_next_version
+from ._yaml import YAMLEditor
 from .base import BaseVCSReleaser
-from .changelog import make_release
+from .changelog import (
+    check_for_release_summary,
+    get_changelog_config_and_files,
+    lint_fragment_content,
+    make_release,
+)
 from .command import CommandRunner, repeat_if_failed
 
 if t.TYPE_CHECKING:  # pragma: no cover
@@ -338,8 +348,44 @@ class GitReleaser(BaseVCSReleaser):
         self.__config = config
         self.__git = Git()
 
-    def __check(self) -> tuple[Path, Path]:
+    def __check(
+        self,
+        version: Version,
+        *,
+        clean_changelog_data: bool = True,
+        clean_changelogs: bool = False,
+    ) -> tuple[Path, Path, ChangelogConfig, list[Path]]:
         cwd = Path.cwd()
+
+        _, config, changelogs = get_changelog_config_and_files(version=version)
+
+        danger_paths_raw: list[tuple[Path, bool]] = [
+            (self.__config.git_collection_root / GALAXY_YML, False),
+        ]
+        if clean_changelog_data:
+            danger_paths_raw.extend(
+                [
+                    (
+                        self.__config.git_collection_root
+                        / "changelogs"
+                        / config.notes_dir,
+                        True,
+                    ),
+                    (
+                        self.__config.git_collection_root
+                        / "changelogs"
+                        / config.changes_file,
+                        False,
+                    ),
+                ]
+            )
+        if clean_changelogs:
+            danger_paths_raw.extend(
+                (
+                    (self.__config.git_collection_root / changelog, False)
+                    for changelog in changelogs
+                )
+            )
 
         root = self.__git.get_repository_root()
         branch = self.__git.get_current_branch()
@@ -351,10 +397,7 @@ class GitReleaser(BaseVCSReleaser):
         status = self.__git.status(path=root)
         danger_paths = [
             (str(p) + (os.sep if is_dir else "")).encode("utf-8")
-            for p, is_dir in [
-                (self.__config.git_collection_root / "changelogs" / "fragments", True),
-                (self.__config.git_collection_root / "galaxy.yml", False),
-            ]
+            for p, is_dir in danger_paths_raw
         ]
         for s in status:
             if s.x != "?":
@@ -373,7 +416,100 @@ class GitReleaser(BaseVCSReleaser):
                 f" should be {act_coll}, but we are in {act_cwd}!"
             )
 
-        return root, coll
+        return root, coll, config, changelogs
+
+    def prepare_vcs_release(
+        self, *, collection: CollectionData, version: Version, release_summary: str
+    ) -> None:
+        """
+        Prepare a release in VCS.
+
+        Ensure we're in the right branch, update version and create release summary,
+        and then create preparation commit(s).
+        """
+        root, _, changelog_config, _ = self.__check(version)
+
+        galaxy_yml = root / self.__config.git_collection_root / GALAXY_YML
+        changelog_fragment = (
+            root
+            / self.__config.git_collection_root
+            / "changelogs"
+            / "fragments"
+            / f"{version}.yml"
+        )
+
+        if changelog_fragment.exists():
+            raise ValueError(
+                f"The release summary changelog fragment {changelog_fragment}"
+                f" for {version} already exists!"
+            )
+        existing_summary = check_for_release_summary()
+        if existing_summary is not None:
+            raise ValueError(
+                "There already exists a release summary changelog fragment:"
+                f" {existing_summary[0].path}"
+            )
+
+        sign_commit = self.__config.git_sign_other_commits
+        if sign_commit is None:
+            sign_commit = self.__config.git_sign_commits
+        commit_message = template_string(
+            self.__config.git_prepare_commit_message,
+            variables={"version": str(version)},
+        )
+
+        fragment = {
+            "release_summary": release_summary,
+        }
+        fragment_errors = lint_fragment_content(
+            config=changelog_config, fragment_content=fragment
+        )
+        if fragment_errors:
+            errors = "\n".join(
+                (f"{line}:{col}:{message}" for line, col, message in fragment_errors)
+            )
+            raise ValueError(f"Error while linting the changelog fragment:\n{errors}")
+
+        commit = self.__git.get_current_commit(path=root)
+        try:
+            # Update version in galaxy.yml
+            galaxy = YAMLEditor(path=galaxy_yml)
+            field = galaxy.find(key="version")
+            if field is None:
+                field = galaxy.create(key="version", value="")
+            version_str = str(version)
+            if field.value != version_str:
+                field.set(version_str)
+                galaxy.write()
+
+            # Write changelog fragment
+            store_yaml_file(changelog_fragment, fragment, nice=True)
+
+            # Stage changes
+            self.__git.add([galaxy_yml, changelog_fragment], path=root)
+
+            # Create release commit
+            repeat_if_failed(
+                lambda: self.__git.commit(
+                    message=commit_message,
+                    signed=sign_commit,
+                    path=root,
+                ),
+            )
+        except BaseException:
+            self.__git.restore_to_commit(commit, path=root, clean=False)
+            raise
+
+    def _get_changed_paths(self, root: Path) -> list[str]:
+        status = self.__git.status(path=root, what=self.__config.git_collection_root)
+        changed_paths = []
+        for s in status:
+            if s.x in ("?", "!"):
+                continue
+            changed_paths.append(s.path.decode("utf-8"))
+            if s.renamed_from is not None:
+                changed_paths.append(s.renamed_from.decode("utf-8"))
+        return changed_paths
 
     def has_vcs_release(self, *, version: Version) -> bool:
         """
@@ -394,7 +530,9 @@ class GitReleaser(BaseVCSReleaser):
 
         Ensure we're in the right branch, create release commit(s) and tag(s).
         """
-        root, _ = self.__check()
+        root, _, changelog_config, changelogs = self.__check(
+            version, clean_changelogs=True
+        )
         if collection.version != str(version):
             raise ValueError(
                 f"galaxy.yml's version is {collection.version}, expected {version}!"
@@ -417,20 +555,18 @@ class GitReleaser(BaseVCSReleaser):
             make_release(version, cummulative_release=True)
 
             # Stage changes
-            status = self.__git.status(
-                path=root, what=self.__config.git_collection_root
-            )
-            changed_paths = []
-            for s in status:
-                if s.x in ("?", "!"):
-                    continue
-                changed_paths.append(s.path.decode("utf-8"))
-                if s.renamed_from is not None:
-                    changed_paths.append(s.renamed_from.decode("utf-8"))
-            if not changed_paths:
-                raise ValueError(
-                    "Found no changes for release commit. Has the release already been done?"
-                )
+            changed_paths = [
+                self.__config.git_collection_root
+                / "changelogs"
+                / changelog_config.notes_dir,
+                self.__config.git_collection_root
+                / "changelogs"
+                / changelog_config.changes_file,
+                *(
+                    self.__config.git_collection_root / changelog
+                    for changelog in changelogs
+                ),
+            ]
             self.__git.add(changed_paths, path=root)
 
             # Create release commit
@@ -455,7 +591,7 @@ class GitReleaser(BaseVCSReleaser):
             self.__git.restore_to_commit(commit, path=root, clean=False)
             raise
 
-    def create_release_tarball(
+    def create_release_source_tarball(
         self, *, tarball_path: Path, version: Version
     ) -> str | None:
         """
@@ -479,6 +615,97 @@ class GitReleaser(BaseVCSReleaser):
             what=prefix,
         )
         return prefix
+
+    def bump_version(
+        self,
+        *,
+        collection: CollectionData,
+        new_version: Version | None = None,
+        bump: VersionBump | None = None,
+        commit_message: str | None = None,
+    ) -> Version | None:
+        """
+        Bump the version after a release.
+
+        One of ``bump`` and ``new_version`` must be provided.
+        If none is provided, a fallback value is taken from the config.
+        If that is not available, the call will fail.
+
+        Similarly for the commit message.
+
+        Returns the new version if it was set.
+        """
+        if new_version is not None and bump is not None:
+            raise ValueError("Cannot specify both new_version and bump!")
+        if new_version is None:
+            if not collection.version:
+                raise ValueError(
+                    "The collection has no current version, so we cannot determine the next one."
+                )
+            try:
+                current_version = Version(collection.version)
+            except Exception as exc:
+                raise ValueError(
+                    f"Cannot parse collection version {collection.version!r}: {exc}"
+                ) from exc
+            if bump is not None:
+                new_version = get_next_version(current_version, bump)
+            elif self.__config.git_post_release_bump is not None:
+                new_version = get_next_version(
+                    current_version, self.__config.git_post_release_bump
+                )
+            else:
+                raise ValueError(
+                    "You need to specify a new version, or how to bump the current version."
+                )
+
+        root, _, _, _ = self.__check(version=None, clean_changelog_data=False)
+        galaxy_yml = root / self.__config.git_collection_root / GALAXY_YML
+
+        sign_commit = self.__config.git_sign_other_commits
+        if sign_commit is None:
+            sign_commit = self.__config.git_sign_commits
+
+        if commit_message is None:
+            if self.__config.git_post_release_commit_message is None:
+                raise ValueError("You need to specify a commit message.")
+            commit_message = template_string(
+                self.__config.git_post_release_commit_message,
+                variables={
+                    "new-version": str(new_version),
+                    "old-version": collection.version or "",
+                },
+            )
+
+        commit = self.__git.get_current_commit(path=root)
+        try:
+            # Update version in galaxy.yml
+            galaxy = YAMLEditor(path=galaxy_yml)
+            field = galaxy.find(key="version")
+            if field is None:
+                field = galaxy.create(key="version", value="")
+            version_str = str(new_version)
+            if field.value == version_str:
+                # Version already set - return.
+                return None
+            field.set(version_str)
+            galaxy.write()
+
+            # Stage changes
+            self.__git.add([galaxy_yml], path=root)
+
+            # Create release commit
+            repeat_if_failed(
+                lambda: self.__git.commit(
+                    message=commit_message,
+                    signed=sign_commit,
+                    path=root,
+                ),
+            )
+            return new_version
+        except BaseException:
+            self.__git.restore_to_commit(commit, path=root, clean=False)
+            raise
 
 
 __all__ = ("Git", "GitReleaser")
