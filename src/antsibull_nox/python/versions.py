@@ -48,7 +48,7 @@ _PYTHON_VERSIONS_TO_TRY: tuple[Version, ...] = tuple(
     ]
 )
 
-_LATEST_PYTHON_VERSION = Version.parse("3.14")
+_LATEST_PYTHON_VERSION = Version.parse("3.15")
 
 
 @functools.cache
