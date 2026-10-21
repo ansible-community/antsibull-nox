@@ -41,13 +41,13 @@ def create_subcommand(
     try:
         # pylint: disable-next=import-outside-toplevel
         from .cli import create_subcommand as create_subcommand_impl
+
+        create_subcommand_impl(releaser_parser, config)
     except ImportError:
         releaser_parser.epilog = (
             f"{_CANNOT_BE_USED_PREFIX}Error: {_MISSING_REQUIREMENTS}"
         )
         return
-
-    create_subcommand_impl(releaser_parser, config)
 
 
 def release_command(args: argparse.Namespace, config: Config | Exception | None) -> int:
@@ -61,10 +61,10 @@ def release_command(args: argparse.Namespace, config: Config | Exception | None)
     try:
         # pylint: disable-next=import-outside-toplevel
         from .cli import release_command as release_command_impl
+
+        return release_command_impl(args, config)
     except ImportError as exc:
         raise FailCLIError(_MISSING_REQUIREMENTS, code=3) from exc
-
-    return release_command_impl(args, config)
 
 
 __all__ = ("create_subcommand", "release_command")
