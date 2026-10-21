@@ -202,7 +202,11 @@ def zizmor(session: nox.Session) -> None:
 
 
 def check_no_modifications(
-    session: nox.Session, *, where: list[str] | None = None, message: str | None = None
+    session: nox.Session,
+    *,
+    where: list[str] | None = None,
+    message: str | None = None,
+    show_diff: bool = False,
 ) -> None:
     modified = session.run(
         "git",
@@ -214,9 +218,17 @@ def check_no_modifications(
         silent=True,
     )
     if modified:
+        diff = ""
+        if show_diff:
+            diff = "\n\n" + session.run(
+                "git", "diff", *(where or []), external=True, silent=True
+            )
         session.error(
-            message
-            or "There are modified or untracked files. Commit, restore, or remove them before running this"
+            (
+                message
+                or "There are modified or untracked files. Commit, restore, or remove them before running this"
+            )
+            + diff
         )
 
 
@@ -374,5 +386,8 @@ def pip_compile(session: nox.Session, req: str) -> None:
 
     if check_mode:
         check_no_modifications(
-            session, where=[out_file], message=f"Output file {out_file} was changed!"
+            session,
+            where=[out_file],
+            message=f"Output file {out_file} was changed!",
+            show_diff=True,
         )
