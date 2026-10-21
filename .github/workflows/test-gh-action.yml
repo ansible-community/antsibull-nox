@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   coverage-test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.python == '3.9' && 'ubuntu-24.04' || 'ubuntu-latest' }}
     name: "Run all tests with Py${{ matrix.python }}"
     strategy:
       fail-fast: false
