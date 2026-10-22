@@ -213,13 +213,20 @@ def _pick_python_version(core_info: AnsibleCoreInfo) -> str | list[str]:
     return [str(python_version) for python_version in python_versions]
 
 
-def _get_maximum_gha_container_for_python_version(
+def _get_maximum_gha_container(
+    *,
     python_version: Version,
+    ansible_core_version: AnsibleCoreVersion,
 ) -> str | None:
     """
     For a given Python version, returns the necessary GHA image name
     if ubuntu-latest is known to not work with this Python version.
     """
+    if ansible_core_version in (
+        "devel",
+        "milestone",
+    ) or ansible_core_version >= Version(2, 22):
+        return "ubuntu-26.04"
     if python_version < Version(3, 7):
         # ubuntu-22.04 no longer supports Python 3.6
         return "ubuntu-20.04"
@@ -376,8 +383,9 @@ def add_ansible_test_session(
         if register_tags:
             data["tags"] = sorted(register_tags)
         if data.get("gha-container") is None:
-            gha_container = _get_maximum_gha_container_for_python_version(
-                python_version
+            gha_container = _get_maximum_gha_container(
+                python_version=python_version,
+                ansible_core_version=parsed_ansible_core_version,
             )
             if gha_container is not None:
                 data["gha-container"] = gha_container
