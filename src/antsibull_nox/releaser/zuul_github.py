@@ -17,6 +17,7 @@ from pathlib import Path
 
 from semantic_version import Version
 
+from ..config import Releaser as ReleaserConfig
 from ..config import ZuulGitHubReleaser as ZuulGitHubReleaserConfig
 from ._template import template_string
 from .base import BaseReleaser, VerifyFailed
@@ -51,6 +52,14 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         )
         self.galaxy_client = GalaxyClient(base_url=config.galaxy_base_url)
         self.github_client = GitHubClient(config)
+
+    def is_config_close_enough(self, *, other_config: ReleaserConfig) -> bool:
+        """
+        Check whether the provided releaser config is "close enough" to the current config.
+        """
+        return other_config.type == self.config.type and isinstance(
+            other_config, ZuulGitHubReleaserConfig
+        )
 
     def _get_done_build(self, build: BuildInfo) -> Callable[[LogFunction], bool]:
         def f(log_callback: LogFunction) -> bool:

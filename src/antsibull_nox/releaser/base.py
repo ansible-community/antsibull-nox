@@ -16,7 +16,7 @@ from pathlib import Path
 from semantic_version import Version
 
 from ..collection.data import CollectionData
-from ..config import VersionBump
+from ..config import Releaser, VersionBump
 
 
 class VerifyFailed(ValueError):
@@ -29,6 +29,12 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
     """
     Base releaser class for VCS part (prepare, create release in VCS).
     """
+
+    @abc.abstractmethod
+    def is_vcs_config_close_enough(self, *, other_config: Releaser) -> bool:
+        """
+        Check whether the provided VCS releaser config is "close enough" to the current config.
+        """
 
     @abc.abstractmethod
     def prepare_vcs_release(
@@ -103,6 +109,12 @@ class BaseReleaser(BaseVCSReleaser, metaclass=abc.ABCMeta):
     """
     Base releaser class.
     """
+
+    @abc.abstractmethod
+    def is_config_close_enough(self, *, other_config: Releaser) -> bool:
+        """
+        Check whether the provided releaser config is "close enough" to the current config.
+        """
 
     @abc.abstractmethod
     def wait_until_released(

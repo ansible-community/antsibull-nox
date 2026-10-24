@@ -73,7 +73,11 @@ def get_actual_releaser(config: Releaser, *, version: Version) -> BaseReleaser:
             f"{CONFIG_FILENAME} for release {version} does not specify a releaser",
             code=3,
         )
-    if new_config.type != config.type:
+    if (
+        new_config.type != config.type
+        or not r.is_vcs_config_close_enough(other_config=new_config)
+        or not r.is_config_close_enough(other_config=new_config)
+    ):
         raise FailCLIError(
             f"{CONFIG_FILENAME} for release {version} specifies a different releaser"
             " than the current repository state",

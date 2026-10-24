@@ -21,7 +21,9 @@ from semantic_version import Version
 
 from ..collection.data import CollectionData
 from ..collection.search import GALAXY_YML
-from ..config import CONFIG_FILENAME, VersionBump, _GitReleaserFragment
+from ..config import CONFIG_FILENAME
+from ..config import Releaser as ReleaserConfig
+from ..config import VersionBump, _GitReleaserFragment
 from ._template import template_string
 from ._version import get_next_version
 from ._yaml import YAMLEditor
@@ -391,6 +393,14 @@ class GitReleaser(BaseVCSReleaser):
     def __init__(self, config: _GitReleaserFragment) -> None:
         self.__config = config
         self.__git = Git()
+
+    def is_vcs_config_close_enough(self, *, other_config: ReleaserConfig) -> bool:
+        """
+        Check whether the provided VCS releaser config is "close enough" to the current config.
+        """
+        if not isinstance(other_config, _GitReleaserFragment):
+            return False
+        return other_config.git_tag_format == self.__config.git_tag_format
 
     def __check(
         self,
