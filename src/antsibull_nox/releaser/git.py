@@ -21,7 +21,7 @@ from semantic_version import Version
 
 from ..collection.data import CollectionData
 from ..collection.search import GALAXY_YML
-from ..config import VersionBump, _GitReleaserFragment
+from ..config import CONFIG_FILENAME, VersionBump, _GitReleaserFragment
 from ._template import template_string
 from ._version import get_next_version
 from ._yaml import YAMLEditor
@@ -338,6 +338,50 @@ class Git(CommandRunner):
         ]
         self.run(args, allow_rc=[0], cwd=path)
 
+    def get_object_type(
+        self,
+        *,
+        ref: str,
+        path: str | os.PathLike[str] | None = None,
+    ) -> str | None:
+        """
+        Return type of object ``ref`` (basically what 'git cat-file -t <ref>' returns).
+        Return ``None`` in case the object does not exist.
+        """
+        args: list[str | os.PathLike[str]] = [
+            "cat-file",
+            "-t",
+            "--",
+            ref,
+        ]
+        result = self.run_text(args, allow_rc=[0, 128], cwd=path)
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip()
+
+    def show(
+        self,
+        *,
+        file: str | os.PathLike[str],
+        ref: str,
+        path: str | os.PathLike[str] | None = None,
+    ) -> bytes | None:
+        """
+        Given a file and a reference, obtain the file's contents in that version of the tree.
+        Returns ``None`` if the file or tree does not exist.
+        """
+        # Does not work with '--', so we do some manual checking that ref isn't wrongly interpreted:
+        if ref.startswith("-"):
+            raise ValueError(f"Invalid Git object reference: {ref!r}")
+        args: list[str | os.PathLike[str]] = [
+            "show",
+            f"{ref}:{file}",
+        ]
+        result = self.run(args, allow_rc=[0, 128], cwd=path)
+        if result.returncode != 0:
+            return None
+        return result.stdout
+
 
 class GitReleaser(BaseVCSReleaser):
     """
@@ -521,6 +565,31 @@ class GitReleaser(BaseVCSReleaser):
         root = self.__git.get_repository_root()
         tags = self.__git.list_tags(path=root, pattern=tag)
         return tag in tags
+
+    def get_config_file_from_release(
+        self, *, version: Version
+    ) -> tuple[bool, bytes | None]:
+        """
+        Check whether a release already exists in VCS, and returns its antsibull-nox configuration.
+
+        The return value ``(exists, contents)`` consists out of a boolean
+        ``exists`` whether the release exists, and a bytes string ``contents``
+        that contains the contents of antsibull-nox.toml if it exists for that release.
+        """
+        tag = template_string(
+            self.__config.git_tag_format, variables={"version": str(version)}
+        )
+        ref = f"refs/tags/{tag}"
+        root = self.__git.get_repository_root()
+        objtype = self.__git.get_object_type(ref=ref, path=root)
+        if objtype != "tag":
+            return False, None
+        result = self.__git.show(
+            file=self.__config.git_collection_root / CONFIG_FILENAME,
+            ref=ref,
+            path=root,
+        )
+        return True, result
 
     def create_vcs_release(
         self, *, collection: CollectionData, version: Version

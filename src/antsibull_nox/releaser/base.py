@@ -48,6 +48,18 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
+    def get_config_file_from_release(
+        self, *, version: Version
+    ) -> tuple[bool, bytes | None]:
+        """
+        Check whether a release already exists in VCS, and returns its antsibull-nox configuration.
+
+        The return value ``(exists, contents)`` consists out of a boolean
+        ``exists`` whether the release exists, and a bytes string ``contents``
+        that contains the contents of antsibull-nox.toml if it exists for that release.
+        """
+
+    @abc.abstractmethod
     def create_vcs_release(
         self, *, collection: CollectionData, version: Version
     ) -> None:
