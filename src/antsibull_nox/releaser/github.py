@@ -23,6 +23,7 @@ from ..config import _GitHubReleaserFragment
 from ._http import Forbidden, RequestsSession, Unauthorized, quote, quote_kv
 from ._template import template_string
 from .changelog import get_markdown_extract
+from .ui import log
 
 _NUM_RETRIES = 3
 
@@ -87,8 +88,8 @@ class GitHubClient(RequestsSession):
                     self.__token = gh_token
                     return gh_token
             except KeyboardInterrupt:
-                print("Aborted.")
-                print("Continuing without token...")
+                log("Aborted.")
+                log("Continuing without token...")
 
         if not required:
             return None
@@ -182,9 +183,9 @@ class GitHubClient(RequestsSession):
                     )
                 except (Forbidden, Unauthorized):
                     if token is None:
-                        print("Authorization required...")
+                        log("Authorization required...")
                     else:
-                        print("Token not authorized!")
+                        log("Token not authorized!")
                     self.__reset_token()
                     if do_retry:
                         token = self.__get_token(
@@ -192,8 +193,8 @@ class GitHubClient(RequestsSession):
                         )
                 except ValueError as exc:
                     suffix = ". Retrying..." if do_retry else ""
-                    print(f"Unexpected error: {exc}{suffix}")
-            print("Trying alternative approach...")
+                    log(f"Unexpected error: {exc}{suffix}")
+            log("Trying alternative approach...")
 
         # Create URL
         params = [
@@ -248,11 +249,11 @@ class GitHubClient(RequestsSession):
                 return self._has_tag_api(token=token, tag=tag)
             except (Forbidden, Unauthorized):
                 if token is None:
-                    print("Authorization required...")
+                    log("Authorization required...")
                     if without_token:
                         raise
                 else:
-                    print("Token not authorized!")
+                    log("Token not authorized!")
                 if not do_retry:
                     raise
                 self.__reset_token()
@@ -261,7 +262,7 @@ class GitHubClient(RequestsSession):
                 )
             except ValueError as exc:
                 suffix = ". Retrying..." if do_retry else ""
-                print(f"Unexpected error: {exc}{suffix}")
+                log(f"Unexpected error: {exc}{suffix}")
                 if not do_retry:
                     raise
 
@@ -314,11 +315,11 @@ class GitHubClient(RequestsSession):
                 return self._get_tag_release_url_api(token=token, tag=tag)
             except (Forbidden, Unauthorized):
                 if token is None:
-                    print("Authorization required...")
+                    log("Authorization required...")
                     if without_token:
                         raise
                 else:
-                    print("Token not authorized!")
+                    log("Token not authorized!")
                 if not do_retry:
                     raise
                 self.__reset_token()
@@ -327,6 +328,6 @@ class GitHubClient(RequestsSession):
                 )
             except ValueError as exc:
                 suffix = ". Retrying..." if do_retry else ""
-                print(f"Unexpected error: {exc}{suffix}")
+                log(f"Unexpected error: {exc}{suffix}")
                 if not do_retry:
                     raise

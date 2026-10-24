@@ -28,6 +28,7 @@ from ..config import (
     load_config_from_toml_data,
 )
 from .base import BaseReleaser, VerifyFailed
+from .ui import log
 
 _CANNOT_BE_USED_PREFIX = "This subcommand cannot be used because of: "
 _NO_RELEASER_ERROR = "no releaser has been configured."
@@ -79,7 +80,7 @@ def get_actual_releaser(config: Releaser, *, version: Version) -> BaseReleaser:
             code=3,
         )
     if new_config != config:
-        print(f"Reloading releaser configuration for release {version}.")
+        log(f"Reloading releaser configuration for release {version}.")
     return get_releaser(new_config)
 
 
@@ -291,7 +292,7 @@ def cmd_vcs_prepare(
 
     r = get_releaser(releaser)
     r.prepare_vcs_release(collection=collection, version=v, release_summary=message)
-    print(f"The {v} release has been prepared.")
+    log(f"The {v} release has been prepared.")
     return 0
 
 
@@ -308,7 +309,7 @@ def cmd_vcs_release(
 
     r = get_releaser(releaser)
     r.create_vcs_release(collection=collection, version=v)
-    print(f"The {v} release has been created.")
+    log(f"The {v} release has been created.")
     return 0
 
 
@@ -335,9 +336,9 @@ def cmd_vcs_bump_version(
         commit_message=message,
     )
     if actual_new_version is not None:
-        print(f"Version bumped to {actual_new_version}")
+        log(f"Version bumped to {actual_new_version}")
     else:
-        print("Version was already set.")
+        log("Version was already set.")
     return 0
 
 
@@ -377,11 +378,11 @@ def cmd_release(
     )
     if r.can_create_vcs_ui_release():
         if url is not None:
-            print(f"The collection has been published; VCS release available at: {url}")
+            log(f"The collection has been published; VCS release available at: {url}")
         else:
-            print("The collection has been published; VCS release has been created.")
+            log("The collection has been published; VCS release has been created.")
     else:
-        print("The collection has been published.")
+        log("The collection has been published.")
     return 0
 
 
@@ -406,7 +407,7 @@ def cmd_wait(
         verify=not skip_validation,
         validate_with_sources=not skip_source_validation,
     )
-    print("The release has been published!")
+    log("The release has been published!")
     return 0
 
 
@@ -462,9 +463,9 @@ def cmd_create_vcs_ui_release(
         without_token=without_token,
     )
     if url is not None:
-        print(f"VCS release available at: {url}")
+        log(f"VCS release available at: {url}")
     else:
-        print("VCS release has been created.")
+        log("VCS release has been created.")
     return 0
 
 

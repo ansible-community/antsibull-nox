@@ -19,7 +19,7 @@ import sys
 import typing as t
 from pathlib import Path
 
-from .ui import prompt_user
+from .ui import log, prompt_user
 
 if t.TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Iterable, Mapping
@@ -153,7 +153,7 @@ def repeat_if_failed(
         except ValueError as exc:
             retry = True
             if sys.stdout.isatty():
-                print(str(exc), file=sys.stderr)
+                log(str(exc))
                 retry = (
                     prompt_user(
                         "Do you want to retry?",
@@ -164,7 +164,7 @@ def repeat_if_failed(
                     == "y"
                 )
             else:
-                print("No TTY found, do not ask user to try again.", file=sys.stderr)
+                log("No TTY found, do not ask user to try again.")
             if not retry:
                 raise
 
