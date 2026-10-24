@@ -68,7 +68,7 @@ jobs:
             codecov: false
             packages: ""
             image: ""
-    name: "Run nox ${{ matrix.session }} session"
+    name: "Run nox ${{ matrix.session }} session (Py ${{ matrix.python-versions }})"
     steps:
       - name: Check out antsibull-nox
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
