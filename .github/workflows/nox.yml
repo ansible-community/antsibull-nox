@@ -17,6 +17,7 @@ name: nox
 
 env:
   FORCE_COLOR: "1"
+  OTHER_ANTSIBULL_MODE: local
 
 permissions:
   contents: read
