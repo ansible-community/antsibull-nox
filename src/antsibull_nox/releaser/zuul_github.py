@@ -17,6 +17,7 @@ from pathlib import Path
 
 from semantic_version import Version
 
+from ..config import Releaser as ReleaserConfig
 from ..config import ZuulGitHubReleaser as ZuulGitHubReleaserConfig
 from ._template import template_string
 from .base import BaseReleaser, VerifyFailed
@@ -29,7 +30,7 @@ from .galaxy import (
 )
 from .git import Git, GitReleaser
 from .github import GitHubClient
-from .ui import Retry, retry, wait_for
+from .ui import Retry, log, retry, wait_for
 from .zuul import BuildInfo, ZuulClient
 
 if t.TYPE_CHECKING:  # pragma: no cover
@@ -52,22 +53,30 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         self.galaxy_client = GalaxyClient(base_url=config.galaxy_base_url)
         self.github_client = GitHubClient(config)
 
+    def is_config_close_enough(self, *, other_config: ReleaserConfig) -> bool:
+        """
+        Check whether the provided releaser config is "close enough" to the current config.
+        """
+        return other_config.type == self.config.type and isinstance(
+            other_config, ZuulGitHubReleaserConfig
+        )
+
     def _get_done_build(self, build: BuildInfo) -> Callable[[LogFunction], bool]:
-        def f(log: LogFunction) -> bool:
-            log(f"Get status of build {build.uuid}...")
+        def f(log_callback: LogFunction) -> bool:
+            log_callback(f"Get status of build {build.uuid}...")
             try:
                 latest_build = self.zuul_client.get_build(uuid=build.uuid)
             except ValueError as exc:
-                log(f"  Error: {exc}")
+                log_callback(f"  Error: {exc}")
                 raise Retry() from None
             if latest_build is None:
-                log(f"Build {build.uuid} vanished...")
+                log_callback(f"Build {build.uuid} vanished...")
                 return False
             if latest_build.result is None:
                 raise Retry()
             if latest_build.result == "SUCCESS":
                 return True
-            log(f"Build {build.uuid} failed with status {latest_build.result}")
+            log_callback(f"Build {build.uuid} failed with status {latest_build.result}")
             return False
 
         return f
@@ -89,8 +98,8 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         )
         expected_ref = f"refs/tags/{tag}"
 
-        def get_build(log: LogFunction) -> BuildInfo:
-            log("Looking for Zuul builds...")
+        def get_build(log_callback: LogFunction) -> BuildInfo:
+            log_callback("Looking for Zuul builds...")
             try:
                 builds = self.zuul_client.list_builds(
                     job_name="release-ansible-collection-galaxy",
@@ -101,15 +110,15 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                     # exclude_results=["SKIPPED", "RETRY", "RETRY_LIMIT"],
                 )
             except ValueError as exc:
-                log(f"  Error: {exc}")
+                log_callback(f"  Error: {exc}")
                 raise Retry() from None
             for build in builds:
                 if build.result in ("SUCCESS", None):
                     return build
             raise Retry()
 
-        def get_release(log: LogFunction) -> ReleaseInfo:
-            log("Looking for Galaxy release...")
+        def get_release(log_callback: LogFunction) -> ReleaseInfo:
+            log_callback("Looking for Galaxy release...")
             try:
                 release = self.galaxy_client.get_specific_release(
                     namespace, name, version
@@ -117,14 +126,14 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                 if release is not None:
                     return release
             except ValueError as exc:
-                log(f"  Error: {exc}")
+                log_callback(f"  Error: {exc}")
             raise Retry()
 
         # Wait for successful build
         while True:
             build = wait_for(get_build, interval=datetime.timedelta(seconds=30))
             if build.result == "SUCCESS":
-                print("Found successful build")
+                log("Found successful build")
                 break
             if wait_for(
                 self._get_done_build(build), interval=datetime.timedelta(seconds=10)
@@ -133,7 +142,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
 
         release = wait_for(get_release, interval=datetime.timedelta(seconds=10))
         if verify:
-            print("Verifying...")
+            log("Verifying...")
             self._verify(
                 release,
                 namespace,
@@ -162,7 +171,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
         with tempfile.TemporaryDirectory() as tempdir_name:
             tempdir = Path(tempdir_name)
             galaxy_tarball = tempdir / "galaxy.tar"
-            print("Downloading Galaxy tarball...")
+            log("Downloading Galaxy tarball...")
             retry(
                 lambda: self.galaxy_client.download_release(release, galaxy_tarball),
                 what="Downloading Galaxy tarball",
@@ -174,7 +183,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                     f"Validation of Galaxy tarball checksum failed: {exc}"
                 ) from exc
 
-            print("Extracting MANIFEST.json and FILES.json...")
+            log("Extracting MANIFEST.json and FILES.json...")
             manifest, files = extract_manifest_and_files_from_tarball(galaxy_tarball)
             if manifest.collection_info.name != name:
                 raise VerifyFailed(
@@ -195,7 +204,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
             # pylint: disable-next=fixme
             # TODO: more detailled validation against galaxy.yml
 
-            print("Validate Galaxy tarball against FILES.json...")
+            log("Validate Galaxy tarball against FILES.json...")
             self._raise_errors_exception(
                 validate_tarball(
                     galaxy_tarball,
@@ -207,7 +216,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
             )
 
             if validate_with_sources:
-                print("Validate CVS sources against FILES.json...")
+                log("Validate CVS sources against FILES.json...")
                 source_tarball = tempdir / "source.tar"
                 source_prefix = self.create_release_source_tarball(
                     tarball_path=source_tarball, version=version
@@ -222,7 +231,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
                     )
                 )
 
-        print("Release successfully verified.")
+        log("Release successfully verified.")
 
     def verify_release(
         self,

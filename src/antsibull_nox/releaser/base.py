@@ -16,7 +16,7 @@ from pathlib import Path
 from semantic_version import Version
 
 from ..collection.data import CollectionData
-from ..config import VersionBump
+from ..config import Releaser, VersionBump
 
 
 class VerifyFailed(ValueError):
@@ -29,6 +29,12 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
     """
     Base releaser class for VCS part (prepare, create release in VCS).
     """
+
+    @abc.abstractmethod
+    def is_vcs_config_close_enough(self, *, other_config: Releaser) -> bool:
+        """
+        Check whether the provided VCS releaser config is "close enough" to the current config.
+        """
 
     @abc.abstractmethod
     def prepare_vcs_release(
@@ -45,6 +51,18 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
     def has_vcs_release(self, *, version: Version) -> bool:
         """
         Check whether a release already exists in VCS.
+        """
+
+    @abc.abstractmethod
+    def get_config_file_from_release(
+        self, *, version: Version
+    ) -> tuple[bool, bytes | None]:
+        """
+        Check whether a release already exists in VCS, and returns its antsibull-nox configuration.
+
+        The return value ``(exists, contents)`` consists out of a boolean
+        ``exists`` whether the release exists, and a bytes string ``contents``
+        that contains the contents of antsibull-nox.toml if it exists for that release.
         """
 
     @abc.abstractmethod
@@ -91,6 +109,12 @@ class BaseReleaser(BaseVCSReleaser, metaclass=abc.ABCMeta):
     """
     Base releaser class.
     """
+
+    @abc.abstractmethod
+    def is_config_close_enough(self, *, other_config: Releaser) -> bool:
+        """
+        Check whether the provided releaser config is "close enough" to the current config.
+        """
 
     @abc.abstractmethod
     def wait_until_released(

@@ -22,6 +22,13 @@ if t.TYPE_CHECKING:  # pragma: no cover
     LogFunction = Callable[[str], None]
 
 
+def log(message: str) -> None:
+    """
+    Emit releaser log message.
+    """
+    print(message)
+
+
 class Retry(Exception):
     """
     Indicate that we're not done yet.
@@ -38,10 +45,6 @@ def wait_for(
 
     The action is passed a ``LogFunction`` that it can use to log output.
     """
-
-    def log(msg: str) -> None:
-        print(msg)
-
     while True:
         start = datetime.datetime.now()
         try:
@@ -80,7 +83,7 @@ def prompt_user(
             return value
         if not value and default is not None:
             return default
-        print(f"Value {value!r} is not acceptable. Try again.")
+        log(f"Value {value!r} is not acceptable. Try again.")
 
 
 def retry(action: Callable[[], _T], *, what: str, num_retries: int = 3) -> _T:
@@ -91,8 +94,8 @@ def retry(action: Callable[[], _T], *, what: str, num_retries: int = 3) -> _T:
         try:
             return action()
         except ValueError as exc:
-            print(f"{what} failed with {exc}, retrying... ({index + 1}/{num_retries})")
+            log(f"{what} failed with {exc}, retrying... ({index + 1}/{num_retries})")
     return action()
 
 
-__all__ = ("Retry", "prompt_user", "wait_for")
+__all__ = ("Retry", "log", "prompt_user", "wait_for")

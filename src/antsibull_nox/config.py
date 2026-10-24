@@ -31,8 +31,10 @@ from .utils import Version
 
 try:
     from tomllib import load as _load_toml
+    from tomllib import loads as _load_toml_data
 except ImportError:
     from tomli import load as _load_toml  # type: ignore
+    from tomli import loads as _load_toml_data  # type: ignore
 
 
 CONFIG_FILENAME = "antsibull-nox.toml"
@@ -950,6 +952,19 @@ def load_config_from_toml(path: str | os.PathLike) -> Config:
             data = _load_toml(f)
         except ValueError as exc:
             raise ValueError(f"Error while reading {path}: {exc}") from exc
+    return Config.model_validate(data)
+
+
+def load_config_from_toml_data(*, path: str | os.PathLike, content: bytes) -> Config:
+    """
+    Load a config TOML file from a file's data.
+    """
+    try:
+        data = _load_toml_data(content.decode("utf-8", errors="strict"))
+    except UnicodeError as exc:
+        raise ValueError(f"Error while decoding {path}: {exc}") from exc
+    except ValueError as exc:
+        raise ValueError(f"Error while reading {path}: {exc}") from exc
     return Config.model_validate(data)
 
 

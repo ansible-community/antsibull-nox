@@ -19,8 +19,16 @@ from semantic_version import Version
 from ..cli_helper import FailCLIError, InvalidArgumentError
 from ..collection.data import CollectionData
 from ..collection.search import load_collection_data_from_disk
-from ..config import Config, Releaser, VersionBump, VersionBumpValues
+from ..config import (
+    CONFIG_FILENAME,
+    Config,
+    Releaser,
+    VersionBump,
+    VersionBumpValues,
+    load_config_from_toml_data,
+)
 from .base import BaseReleaser, VerifyFailed
+from .ui import log
 
 _CANNOT_BE_USED_PREFIX = "This subcommand cannot be used because of: "
 _NO_RELEASER_ERROR = "no releaser has been configured."
@@ -36,6 +44,48 @@ def get_releaser(config: Releaser) -> BaseReleaser:
         from .zuul_github import ZuulGitHubReleaser
 
         return ZuulGitHubReleaser(config)
+
+
+def get_actual_releaser(config: Releaser, *, version: Version) -> BaseReleaser:
+    """
+    Create BaseReleaser instance from the repository's state at release ``version``.
+    """
+    r = get_releaser(config)
+    exists, config_contents = r.get_config_file_from_release(version=version)
+    if not exists:
+        raise FailCLIError(f"The release {version} does not exist!", code=3)
+    if config_contents is None:
+        raise FailCLIError(
+            f"The release {version} does not have a {CONFIG_FILENAME} configuration file!",
+            code=3,
+        )
+    try:
+        antsibull_nox_config = load_config_from_toml_data(
+            path=CONFIG_FILENAME, content=config_contents
+        )
+    except Exception as exc:
+        raise FailCLIError(
+            f"Error when loading {CONFIG_FILENAME} for release {version}: {exc}", code=3
+        ) from exc
+    new_config = antsibull_nox_config.releaser
+    if new_config is None:
+        raise FailCLIError(
+            f"{CONFIG_FILENAME} for release {version} does not specify a releaser",
+            code=3,
+        )
+    if (
+        new_config.type != config.type
+        or not r.is_vcs_config_close_enough(other_config=new_config)
+        or not r.is_config_close_enough(other_config=new_config)
+    ):
+        raise FailCLIError(
+            f"{CONFIG_FILENAME} for release {version} specifies a different releaser"
+            " than the current repository state",
+            code=3,
+        )
+    if new_config != config:
+        log(f"Reloading releaser configuration for release {version}.")
+    return get_releaser(new_config)
 
 
 def create_subcommand(releaser_parser: argparse.ArgumentParser, config: Config) -> None:
@@ -100,11 +150,19 @@ Also if --message is not specified, a commit message must be configured in the r
         " to build the Galaxy tarball from the sources."
     )
 
+    load_release_config_epilog = (
+        "Antsibull-nox will reload its config from the repository state of the release"
+        " for this subcommand."
+        " It will fail if the releaser configuration at that state is too different"
+        " from the current releaser configuration."
+    )
+
     release = releaser_subparsers.add_parser(
         "release",
         description="Initiate release from the local release in VCS.",
         help="Initiate release from the local release in VCS",
     )
+    release.epilog = load_release_config_epilog
     release.add_argument("version")
     release.add_argument(
         "--skip-validation",
@@ -143,6 +201,7 @@ Also if --message is not specified, a commit message must be configured in the r
         description="Wait until the release has been published.",
         help="Wait until the release has been published",
     )
+    wait.epilog = load_release_config_epilog
     wait.add_argument("version")
     wait.add_argument(
         "--skip-validation",
@@ -162,6 +221,7 @@ Also if --message is not specified, a commit message must be configured in the r
         description="Validate that the release is published and its contents are as expected.",
         help="Validate that the release is published and its contents are as expected",
     )
+    validate.epilog = load_release_config_epilog
     validate.add_argument("version")
     validate.add_argument(
         "--skip-source-validation",
@@ -176,6 +236,7 @@ Also if --message is not specified, a commit message must be configured in the r
             description="Create release in the VCS's UI.",
             help="Create release in the VCS's UI",
         )
+        create_vcs_ui_release.epilog = load_release_config_epilog
         create_vcs_ui_release.add_argument("version")
         create_vcs_ui_release.add_argument(
             "--publish",
@@ -235,7 +296,7 @@ def cmd_vcs_prepare(
 
     r = get_releaser(releaser)
     r.prepare_vcs_release(collection=collection, version=v, release_summary=message)
-    print(f"The {v} release has been prepared.")
+    log(f"The {v} release has been prepared.")
     return 0
 
 
@@ -252,7 +313,7 @@ def cmd_vcs_release(
 
     r = get_releaser(releaser)
     r.create_vcs_release(collection=collection, version=v)
-    print(f"The {v} release has been created.")
+    log(f"The {v} release has been created.")
     return 0
 
 
@@ -279,9 +340,9 @@ def cmd_vcs_bump_version(
         commit_message=message,
     )
     if actual_new_version is not None:
-        print(f"Version bumped to {actual_new_version}")
+        log(f"Version bumped to {actual_new_version}")
     else:
-        print("Version was already set.")
+        log("Version was already set.")
     return 0
 
 
@@ -297,7 +358,7 @@ def cmd_release(
     v = parse_version(args.version)
     skip_validation: bool = args.skip_validation
     skip_source_validation: bool = args.skip_source_validation
-    r = get_releaser(releaser)
+    r = get_actual_releaser(releaser, version=v)
     if r.can_create_vcs_ui_release():
         publish: bool = args.publish
         make_latest: bool = args.make_latest
@@ -321,11 +382,11 @@ def cmd_release(
     )
     if r.can_create_vcs_ui_release():
         if url is not None:
-            print(f"The collection has been published; VCS release available at: {url}")
+            log(f"The collection has been published; VCS release available at: {url}")
         else:
-            print("The collection has been published; VCS release has been created.")
+            log("The collection has been published; VCS release has been created.")
     else:
-        print("The collection has been published.")
+        log("The collection has been published.")
     return 0
 
 
@@ -342,7 +403,7 @@ def cmd_wait(
     skip_validation: bool = args.skip_validation
     skip_source_validation: bool = args.skip_source_validation
 
-    r = get_releaser(releaser)
+    r = get_actual_releaser(releaser, version=v)
     r.wait_until_released(
         namespace=collection.namespace,
         name=collection.name,
@@ -350,7 +411,7 @@ def cmd_wait(
         verify=not skip_validation,
         validate_with_sources=not skip_source_validation,
     )
-    print("The release has been published!")
+    log("The release has been published!")
     return 0
 
 
@@ -366,7 +427,7 @@ def cmd_validate(
     v = parse_version(args.version)
     skip_source_validation: bool = args.skip_source_validation
 
-    r = get_releaser(releaser)
+    r = get_actual_releaser(releaser, version=v)
     r.verify_release(
         namespace=collection.namespace,
         name=collection.name,
@@ -394,7 +455,7 @@ def cmd_create_vcs_ui_release(
     if make_latest and v.prerelease:
         raise InvalidArgumentError("Cannot mark a pre-release as latest.")
 
-    r = get_releaser(releaser)
+    r = get_actual_releaser(releaser, version=v)
     url = r.create_vcs_ui_release(
         namespace=collection.namespace,
         name=collection.name,
@@ -406,9 +467,9 @@ def cmd_create_vcs_ui_release(
         without_token=without_token,
     )
     if url is not None:
-        print(f"VCS release available at: {url}")
+        log(f"VCS release available at: {url}")
     else:
-        print("VCS release has been created.")
+        log("VCS release has been created.")
     return 0
 
 
