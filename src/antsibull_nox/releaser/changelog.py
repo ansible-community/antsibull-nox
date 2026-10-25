@@ -114,6 +114,8 @@ def get_changelog_config_and_files(
 
 def find_release_summary(
     fragments: list[ChangelogFragment],
+    *,
+    config: ChangelogConfig,
 ) -> tuple[ChangelogFragment, str] | None:
     """
     Check whether there's a release summary in the given list of fragments.
@@ -121,7 +123,7 @@ def find_release_summary(
     """
     result: tuple[ChangelogFragment, str] | None = None
     for fragment in fragments:
-        release_summary = fragment.content.get("release_summary")
+        release_summary = fragment.content.get(config.prelude_name)
         if isinstance(release_summary, str):
             if result is not None:
                 raise ValueError(
@@ -144,7 +146,7 @@ def check_for_release_summary(
     try:
         paths, _, config = setup_config(ansible_doc_bin=ansible_doc_bin)
         fragments = load_fragments(paths, config)
-        return find_release_summary(fragments)
+        return find_release_summary(fragments, config=config)
     except ChangelogError as exc:
         raise ValueError(
             f"Error while finding release summary in changelog fragments: {exc}"
@@ -201,7 +203,7 @@ def make_release(
                 "Use `antsibull-changelog lint` to manually lint before releasing."
             )
 
-        if find_release_summary(fragments) is None:
+        if find_release_summary(fragments, config=config) is None:
             raise ValueError(
                 f"There is no release_summary for {version} in the changelog fragments."
             )

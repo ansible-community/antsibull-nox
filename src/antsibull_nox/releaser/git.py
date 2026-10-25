@@ -513,7 +513,7 @@ class GitReleaser(BaseVCSReleaser):
         )
 
         fragment = {
-            "release_summary": release_summary,
+            changelog_config.prelude_name: release_summary,
         }
         fragment_errors = lint_fragment_content(
             config=changelog_config, fragment_content=fragment
