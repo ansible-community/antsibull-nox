@@ -13,9 +13,11 @@ from __future__ import annotations
 import dataclasses
 import os
 import typing as t
+from collections import defaultdict
 from pathlib import Path
 
-from antsibull_changelog.config import ChangelogConfig
+from antsibull_changelog.changes import ChangesData
+from antsibull_changelog.config import ChangelogConfig, TextFormat
 from antsibull_fileutils.yaml import store_yaml_file
 from semantic_version import Version
 
@@ -27,12 +29,14 @@ from ..config import VersionBump, _GitReleaserFragment
 from ._template import template_string
 from ._version import get_next_version
 from ._yaml import YAMLEditor
-from .base import BaseVCSReleaser
+from .base import BaseVCSReleaser, ReleasePreview
 from .changelog import (
     check_for_release_summary,
     get_changelog_config_and_files,
     lint_fragment_content,
+    load_changelog,
     make_release,
+    render_changelog_extract,
 )
 from .command import CommandRunner, repeat_if_failed
 
@@ -513,7 +517,7 @@ class GitReleaser(BaseVCSReleaser):
         )
 
         fragment = {
-            "release_summary": release_summary,
+            changelog_config.prelude_name: release_summary,
         }
         fragment_errors = lint_fragment_content(
             config=changelog_config, fragment_content=fragment
@@ -785,6 +789,124 @@ class GitReleaser(BaseVCSReleaser):
         except BaseException:
             self.__git.restore_to_commit(commit, path=root, clean=False)
             raise
+
+    def _get_previous_release(
+        self,
+        *,
+        collection_version: Version | None,
+        changes_data: ChangesData,
+    ) -> Version | None:
+        if collection_version and self.has_vcs_release(version=collection_version):
+            if str(collection_version) not in changes_data.releases:
+                raise ValueError(
+                    f"Current version {collection_version} has a VCS release,"
+                    " but does not appear in changelog!"
+                )
+            if changes_data.latest_version != str(collection_version):
+                raise ValueError(
+                    f"Current version {collection_version} is before the latest release"
+                    f" in the changelog ({changes_data.latest_version})!"
+                )
+            return collection_version
+        if changes_data.has_release:
+            try:
+                return Version(changes_data.latest_version)
+            except Exception as exc:
+                raise ValueError(
+                    "Error while parsing the latest"
+                    f" changelog version {changes_data.latest_version!r}: {exc}"
+                ) from exc
+        return None
+
+    def vcs_preview(
+        self,
+        *,
+        collection: CollectionData,
+        allow_plugin_cache: bool = False,
+    ) -> ReleasePreview:
+        """
+        Collect a release preview.
+        """
+        collection_version: Version | None = None
+        if collection.version:
+            try:
+                collection_version = Version(collection.version)
+            except Exception as exc:
+                raise ValueError(
+                    f"Error while parsing the collection version {collection.version!r}: {exc}"
+                ) from exc
+
+        commit = self.__git.get_current_commit()
+        if collection_version:
+            cache_version = Version(
+                major=collection_version.major,
+                minor=collection_version.minor,
+                patch=collection_version.patch,
+                prerelease=collection_version.prerelease + (commit,),
+            )
+        else:
+            cache_version = Version(major=0, minor=0, patch=0, prerelease=(commit,))
+
+        _, collection_details, config, changes_data, fragments, plugins = (
+            load_changelog(
+                cache_version=cache_version,
+                allow_plugin_cache=allow_plugin_cache,
+            )
+        )
+        previous_release = self._get_previous_release(
+            collection_version=collection_version,
+            changes_data=changes_data,
+        )
+
+        # Determine changes
+        change_count: dict[str, int] = defaultdict(int)
+        for fragment in fragments:
+            for section, values in fragment.content.items():
+                change_count[section] += 1 if isinstance(values, str) else len(values)
+        section_names: dict[str, str] = {}
+        section_names[config.prelude_name] = config.prelude_title
+        section_names.update(config.sections)
+
+        # Determine new plugins
+        new_plugins = []
+        for plugin in plugins:
+            if not plugin.version_added:
+                continue
+            try:
+                v = Version(plugin.version_added)
+            except Exception as exc:
+                raise ValueError(
+                    f"Error while parsing version_added for plugin {plugin}: {exc}!"
+                ) from exc
+            if previous_release is None or previous_release < v:
+                new_plugins.append(plugin)
+
+        changelog = render_changelog_extract(
+            fragments=fragments,
+            plugins=new_plugins,
+            collection_details=collection_details,
+            config=config,
+            text_format=TextFormat.RESTRUCTURED_TEXT,
+        )
+
+        return ReleasePreview(
+            previous_release=previous_release,
+            current_version=collection_version,
+            changelog_section_count=change_count,
+            changelog_section_names=section_names,
+            changelog_new_plugins=len(new_plugins),
+            changelog_txt=changelog,
+            has_features=change_count["minor_changes"] > 0,
+            has_new_plugins=len(new_plugins) > 0,
+            has_deprecations=change_count["deprecated_features"] > 0,
+            has_bugfixes=any(
+                change_count[s] > 0 for s in ("bugfixes", "security_fixes")
+            ),
+            has_major_changes=change_count["major_changes"] > 0,
+            has_breaking_changes=any(
+                change_count[s] > 0 for s in ("breaking_changes", "removed_features")
+            ),
+        )
 
 
 __all__ = ("Git", "GitReleaser")

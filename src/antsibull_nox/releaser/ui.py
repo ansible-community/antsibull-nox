@@ -11,6 +11,9 @@ UI helpers.
 from __future__ import annotations
 
 import datetime
+import os
+import subprocess
+import sys
 import time
 import typing as t
 
@@ -98,4 +101,33 @@ def retry(action: Callable[[], _T], *, what: str, num_retries: int = 3) -> _T:
     return action()
 
 
-__all__ = ("Retry", "log", "prompt_user", "wait_for")
+def _show_pager(lines: list[str]) -> None:
+    env = dict(os.environ)
+    env["LESS"] = "FRSX"
+    with subprocess.Popen(
+        ["less"], shell=False, stdin=subprocess.PIPE, stdout=sys.stdout, env=env
+    ) as p:
+        p.communicate(input="\n".join(lines).encode("utf-8"))
+
+
+def show_lines(lines: list[str]) -> None:
+    """
+    Show a list of lines on the screen.
+    Use a pager if possible.
+    """
+    if sys.stdout.isatty():
+        try:
+            with subprocess.Popen(
+                ["less", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            ) as p:
+                p.communicate()
+            if p.returncode == 0:
+                _show_pager(lines)
+                return
+        except IOError:
+            pass
+    for line in lines:
+        log(line)
+
+
+__all__ = ("Retry", "log", "prompt_user", "show_lines", "wait_for")

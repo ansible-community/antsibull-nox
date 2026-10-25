@@ -23,14 +23,14 @@ TEST_GET_NEXT_VERSION_DATA: list[tuple[Version, Version, Version, Version, Versi
         Version("1.2.3-alpha"),
         Version("2.0.0"),
         Version("1.3.0"),
-        Version("1.2.4"),
+        Version("1.2.3"),
         Version("1.2.3-alpha.post0"),
     ),
     (
         Version("0.1.2-beta.123"),
         Version("1.0.0"),
         Version("0.2.0"),
-        Version("0.1.3"),
+        Version("0.1.2"),
         Version("0.1.2-beta.123.post0"),
     ),
 ]

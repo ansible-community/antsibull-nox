@@ -20,13 +20,11 @@ def get_next_version(version: Version, bump: VersionBump) -> Version:
     Given a current version and bump instructions, compute a new version.
     """
     if bump == "next-major":
-        return Version(major=version.major + 1, minor=0, patch=0)
+        return version.next_major()
     if bump == "next-minor":
-        return Version(major=version.major, minor=version.minor + 1, patch=0)
+        return version.next_minor()
     if bump == "next-bugfix":
-        return Version(
-            major=version.major, minor=version.minor, patch=version.patch + 1
-        )
+        return version.next_patch()
     if bump == "post-prerelease":
         return Version(
             major=version.major,
