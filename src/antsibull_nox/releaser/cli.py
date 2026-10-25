@@ -29,7 +29,7 @@ from ..config import (
     load_config_from_toml_data,
 )
 from .base import BaseReleaser, VerifyFailed
-from .ui import log
+from .ui import log, show_lines
 
 _CANNOT_BE_USED_PREFIX = "This subcommand cannot be used because of: "
 _NO_RELEASER_ERROR = "no releaser has been configured."
@@ -434,8 +434,7 @@ def cmd_vcs_preview(
         for line in preview.changelog_txt.splitlines():
             l(line)
 
-    for line in lines:
-        log(line)
+    show_lines(lines)
     return 0
 
 
