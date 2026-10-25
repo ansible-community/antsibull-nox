@@ -93,5 +93,5 @@ typing-inspection==0.4.2 ; python_full_version < '3.10'
     # via pydantic
 typing-inspection==0.4.4 ; python_full_version >= '3.10'
     # via pydantic
-virtualenv==21.14.12
+virtualenv==21.14.13
     # via nox
