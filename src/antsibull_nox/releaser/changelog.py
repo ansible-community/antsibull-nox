@@ -10,13 +10,12 @@ Changelog helpers.
 
 from __future__ import annotations
 
-import argparse
 import datetime
 import typing as t
 from pathlib import Path
 
 from antsibull_changelog.changes import ChangesData, add_release, load_changes
-from antsibull_changelog.cli import _determine_flatmap, _do_refresh
+from antsibull_changelog.cli import do_refresh
 from antsibull_changelog.config import (
     ChangelogConfig,
     ChangelogOutput,
@@ -37,6 +36,7 @@ from antsibull_changelog.rendering.changelog import (
     create_document_renderer,
     generate_changelog,
 )
+from antsibull_changelog.utils import determine_flatmap
 from semantic_version import Version
 
 
@@ -210,7 +210,7 @@ def make_release(
             ansible_doc_bin=ansible_doc_bin
         )
 
-        flatmap = _determine_flatmap(collection_details, config)
+        flatmap = determine_flatmap(collection_details, config)
 
         codename = None
 
@@ -245,15 +245,18 @@ def make_release(
                 f"There is no release_summary for {version} in the changelog fragments."
             )
 
-        args = argparse.Namespace(
-            refresh_plugins=None,
-            refresh_fragments=None,
-            refresh=False,
-            reload_plugins=True,
-            use_ansible_doc=False,
-        )
-        plugins, fragments = _do_refresh(
-            args, paths, collection_details, config, changes, plugins, fragments
+        plugins, fragments = do_refresh(
+            args_refresh_plugins=None,
+            args_refresh_fragments=None,
+            args_refresh=False,
+            args_reload_plugins=True,
+            args_use_ansible_doc=False,
+            paths=paths,
+            collection_details=collection_details,
+            config=config,
+            changes=changes,
+            plugins=plugins,
+            fragments=fragments,
         )
         add_release(
             config,
@@ -306,7 +309,7 @@ def render_changelog_extract(
         for fragment in fragments:
             changes.add_fragment(fragment, fake_version_str)
 
-        flatmap = _determine_flatmap(collection_details, config)
+        flatmap = determine_flatmap(collection_details, config)
 
         generator = ChangelogGenerator(
             config,
@@ -338,7 +341,7 @@ def get_markdown_extract(
         collection_details = CollectionDetails(paths)
         config = ChangelogConfig.load(paths, collection_details)
 
-        flatmap = _determine_flatmap(collection_details, config)
+        flatmap = determine_flatmap(collection_details, config)
 
         changes = load_changes(config)
         changes.restrict_to(str(version))
