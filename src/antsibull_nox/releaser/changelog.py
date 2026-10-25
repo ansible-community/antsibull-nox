@@ -15,7 +15,7 @@ import datetime
 import typing as t
 from pathlib import Path
 
-from antsibull_changelog.changes import add_release, load_changes
+from antsibull_changelog.changes import ChangesData, add_release, load_changes
 from antsibull_changelog.cli import _determine_flatmap, _do_refresh
 from antsibull_changelog.config import (
     ChangelogConfig,
@@ -31,12 +31,12 @@ from antsibull_changelog.fragment import (
     load_fragments,
 )
 from antsibull_changelog.logger import setup_logger
-from antsibull_changelog.plugins import load_plugins
+from antsibull_changelog.plugins import PluginDescription, load_plugins
 from antsibull_changelog.rendering.changelog import (
     ChangelogGenerator,
+    create_document_renderer,
     generate_changelog,
 )
-from antsibull_changelog.rendering.md_document import MDDocumentRenderer
 from semantic_version import Version
 
 
@@ -153,6 +153,40 @@ def check_for_release_summary(
         ) from exc
 
 
+def load_changelog(
+    *,
+    ansible_doc_bin: str | None = None,
+) -> tuple[
+    PathsConfig,
+    CollectionDetails,
+    ChangelogConfig,
+    ChangesData,
+    list[ChangelogFragment],
+    list[PluginDescription],
+]:
+    """
+    Load the current changelog data.
+    """
+    try:
+        paths, collection_details, config = setup_config(
+            ansible_doc_bin=ansible_doc_bin
+        )
+        changes = load_changes(config)
+        fragments = load_fragments(paths, config)
+        plugins = load_plugins(
+            paths=paths,
+            collection_details=collection_details,
+            config=config,
+            version="",
+            force_reload=True,
+            use_ansible_doc=False,
+            add_plugin_period=config.add_plugin_period,
+        )
+        return paths, collection_details, config, changes, fragments, plugins
+    except ChangelogError as exc:
+        raise ValueError(f"Error while loading changelog data: {exc}") from exc
+
+
 def make_release(
     version: Version,
     *,
@@ -242,10 +276,54 @@ def make_release(
         raise ValueError(f"Error while adding release to changelog: {exc}") from exc
 
 
+def render_changelog_extract(
+    *,
+    fragments: list[ChangelogFragment],
+    plugins: list[PluginDescription],
+    config: ChangelogConfig,
+    collection_details: CollectionDetails,
+    text_format: TextFormat,
+) -> str:
+    """
+    ...
+    """
+    setup_logger(0)
+
+    try:
+        changes = ChangesData(config, "")
+        fake_version_str = "1.0.0"
+        changes.add_release(
+            fake_version_str, None, datetime.date.today(), update_existing=False
+        )
+        for plugin in plugins:
+            if plugin.category == "plugin":
+                changes.add_plugin(plugin, fake_version_str)
+            if plugin.category == "object":
+                changes.add_object(plugin, fake_version_str)
+        for fragment in fragments:
+            changes.add_fragment(fragment, fake_version_str)
+
+        flatmap = _determine_flatmap(collection_details, config)
+
+        generator = ChangelogGenerator(
+            config,
+            changes,
+            flatmap=flatmap,
+            render_config=ChangelogOutput(file="", format=text_format),
+        )
+        renderer = create_document_renderer(text_format, start_level=1)
+        generator.generate(renderer, only_latest=True)
+
+        return renderer.render()
+    except ChangelogError as exc:
+        raise ValueError(f"Error while obtaining changelog excerpt: {exc}") from exc
+
+
 def get_markdown_extract(
     *,
     version: Version,
     ansible_doc_bin: str | None = None,
+    text_format: TextFormat,
 ) -> str:
     """
     Generate changelog extract for a specific release.
@@ -266,9 +344,9 @@ def get_markdown_extract(
             config,
             changes,
             flatmap=flatmap,
-            render_config=ChangelogOutput(file="", format=TextFormat.MARKDOWN),
+            render_config=ChangelogOutput(file="", format=text_format),
         )
-        renderer = MDDocumentRenderer(start_level=1, add_section_ids=False)
+        renderer = create_document_renderer(text_format, start_level=1)
         generator.generate(renderer, only_latest=True)
 
         return renderer.render()
@@ -281,5 +359,7 @@ __all__ = (
     "get_changelog_config_and_files",
     "get_markdown_extract",
     "lint_fragment_content",
+    "load_changelog",
     "make_release",
+    "render_changelog_extract",
 )

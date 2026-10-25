@@ -17,6 +17,7 @@ import sys
 import typing as t
 import webbrowser
 
+from antsibull_changelog.config import TextFormat
 from semantic_version import Version
 
 from ..config import _GitHubReleaserFragment
@@ -158,7 +159,9 @@ class GitHubClient(RequestsSession):
             "version": str(version),
             "repository_url": self.__base_url,
             "branch": self.__config.git_release_branch,
-            "changelog": get_markdown_extract(version=version),
+            "changelog": get_markdown_extract(
+                version=version, text_format=TextFormat.MARKDOWN
+            ),
         }
         name = template_string(self.__config.github_release_title, variables=variables)
         body = template_string(self.__config.github_release_body, variables=variables)
