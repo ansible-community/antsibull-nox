@@ -20,6 +20,9 @@ from semantic_version import Version
 from ..collection.data import CollectionData
 from ..config import Releaser, VersionBump
 
+if t.TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Mapping
+
 
 class VerifyFailed(ValueError):
     """
@@ -35,6 +38,9 @@ class ReleasePreview:
 
     previous_release: Version | None
     current_version: Version | None
+    changelog_section_count: Mapping[str, int]
+    changelog_section_names: Mapping[str, str]
+    changelog_new_plugins: int
     changelog_txt: str
     has_features: bool
     has_new_plugins: bool
@@ -144,6 +150,7 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
         self,
         *,
         collection: CollectionData,
+        allow_plugin_cache: bool = False,
     ) -> ReleasePreview:
         """
         Collect a release preview.

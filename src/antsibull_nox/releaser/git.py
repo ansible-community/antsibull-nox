@@ -13,6 +13,7 @@ from __future__ import annotations
 import dataclasses
 import os
 import typing as t
+from collections import defaultdict
 from pathlib import Path
 
 from antsibull_changelog.changes import ChangesData
@@ -821,6 +822,7 @@ class GitReleaser(BaseVCSReleaser):
         self,
         *,
         collection: CollectionData,
+        allow_plugin_cache: bool = False,
     ) -> ReleasePreview:
         """
         Collect a release preview.
@@ -835,18 +837,21 @@ class GitReleaser(BaseVCSReleaser):
                 ) from exc
 
         _, collection_details, config, changes_data, fragments, plugins = (
-            load_changelog()
+            load_changelog(allow_plugin_cache=allow_plugin_cache)
         )
         previous_release = self._get_previous_release(
-            collection_version=collection_version, changes_data=changes_data
+            collection_version=collection_version,
+            changes_data=changes_data,
         )
 
         # Determine changes
-        change_categories: set[str] = set()
+        change_count: dict[str, int] = defaultdict(int)
         for fragment in fragments:
             for section, values in fragment.content.items():
-                if values:
-                    change_categories.add(section)
+                change_count[section] += 1 if isinstance(values, str) else len(values)
+        section_names: dict[str, str] = {}
+        section_names[config.prelude_name] = config.prelude_title
+        section_names.update(config.sections)
 
         # Determine new plugins
         new_plugins = []
@@ -873,16 +878,19 @@ class GitReleaser(BaseVCSReleaser):
         return ReleasePreview(
             previous_release=previous_release,
             current_version=collection_version,
+            changelog_section_count=change_count,
+            changelog_section_names=section_names,
+            changelog_new_plugins=len(new_plugins),
             changelog_txt=changelog,
-            has_features="minor_changes" in change_categories,
+            has_features=change_count["minor_changes"] > 0,
             has_new_plugins=len(new_plugins) > 0,
-            has_deprecations="deprecated_features" in change_categories,
+            has_deprecations=change_count["deprecated_features"] > 0,
             has_bugfixes=any(
-                s in change_categories for s in ("bugfixes", "security_fixes")
+                change_count[s] > 0 for s in ("bugfixes", "security_fixes")
             ),
-            has_major_changes="major_changes" in change_categories,
+            has_major_changes=change_count["major_changes"] > 0,
             has_breaking_changes=any(
-                s in change_categories for s in ("breaking_changes", "removed_features")
+                change_count[s] > 0 for s in ("breaking_changes", "removed_features")
             ),
         )
 

@@ -146,10 +146,16 @@ If none is specified, the bump method must be configured in the releaser config.
 Also if --message is not specified, a commit message must be configured in the releaser config.
 """
 
-    releaser_subparsers.add_parser(
+    vcs_preview = releaser_subparsers.add_parser(
         "vcs-preview",
         description="Preview the next release in VCS.",
         help="Preview the next release in VCS",
+    )
+    vcs_preview.add_argument(
+        "--use-plugin-cache",
+        default=False,
+        action="store_true",
+        help="Use the plugin cache. Can give inaccurate results for new plugins/modules/roles.",
     )
 
     extra_steps_needed = (
@@ -364,7 +370,7 @@ def cmd_vcs_bump_version(
 
 
 def cmd_vcs_preview(
-    _args: argparse.Namespace,
+    args: argparse.Namespace,
     collection: CollectionData,
     _config: Config,
     releaser: Releaser,
@@ -372,6 +378,7 @@ def cmd_vcs_preview(
     """
     The 'vcs-preview' subcommand.
     """
+    use_plugin_cache: bool = args.use_plugin_cache
 
     lines = []
 
@@ -389,7 +396,7 @@ def cmd_vcs_preview(
         l(f"{key}:{space}{value}")
 
     r = get_releaser(releaser)
-    preview = r.vcs_preview(collection=collection)
+    preview = r.vcs_preview(collection=collection, allow_plugin_cache=use_plugin_cache)
     l("")
     f("Previous release", preview.previous_release or "--")
     f("Current version", preview.current_version or "--")
