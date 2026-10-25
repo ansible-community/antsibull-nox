@@ -38,6 +38,9 @@ from antsibull_changelog.rendering.changelog import (
 from antsibull_changelog.utils import determine_flatmap
 from semantic_version import Version
 
+if t.TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Mapping
+
 
 def lint_fragment_content(
     *,
@@ -288,9 +291,10 @@ def render_changelog_extract(
     config: ChangelogConfig,
     collection_details: CollectionDetails,
     text_format: TextFormat,
+    renderer_kwargs: Mapping[str, t.Any] | None = None,
 ) -> str:
     """
-    ...
+    Generate changelog extract from its components.
     """
     setup_logger(0)
 
@@ -316,6 +320,7 @@ def render_changelog_extract(
             ChangelogOutput(file="", format=text_format),
             flatmap=flatmap,
             only_latest=True,
+            renderer_kwargs=renderer_kwargs,
         )
         return text
     except ChangelogError as exc:
@@ -327,6 +332,7 @@ def get_changelog_extract(
     version: Version,
     ansible_doc_bin: str | None = None,
     text_format: TextFormat,
+    renderer_kwargs: Mapping[str, t.Any] | None = None,
 ) -> str:
     """
     Generate changelog extract for a specific release.
@@ -349,6 +355,7 @@ def get_changelog_extract(
             ChangelogOutput(file="", format=text_format),
             flatmap=flatmap,
             only_latest=True,
+            renderer_kwargs=renderer_kwargs,
         )
         return text
     except ChangelogError as exc:

@@ -160,7 +160,9 @@ class GitHubClient(RequestsSession):
             "repository_url": self.__base_url,
             "branch": self.__config.git_release_branch,
             "changelog": get_changelog_extract(
-                version=version, text_format=TextFormat.MARKDOWN
+                version=version,
+                text_format=TextFormat.MARKDOWN,
+                renderer_kwargs={"add_section_ids": False},
             ),
         }
         name = template_string(self.__config.github_release_title, variables=variables)

@@ -887,6 +887,7 @@ class GitReleaser(BaseVCSReleaser):
             collection_details=collection_details,
             config=config,
             text_format=TextFormat.RESTRUCTURED_TEXT,
+            renderer_kwargs={},
         )
 
         return ReleasePreview(
