@@ -11,6 +11,8 @@ Collection releasers base classes.
 from __future__ import annotations
 
 import abc
+import dataclasses
+import typing as t
 from pathlib import Path
 
 from semantic_version import Version
@@ -23,6 +25,39 @@ class VerifyFailed(ValueError):
     """
     Indicate that the verification failed (as opposed to other error during verification).
     """
+
+
+@dataclasses.dataclass
+class ReleasePreview:
+    """
+    Preview of the next VCS release.
+    """
+
+    previous_release: Version | None
+    current_version: Version | None
+    changelog_txt: str
+    has_features: bool
+    has_new_plugins: bool
+    has_deprecations: bool
+    has_bugfixes: bool
+    has_major_changes: bool
+    has_breaking_changes: bool
+
+    def get_minimum_required_version_bump(
+        self,
+    ) -> t.Literal["new-major", "new-minor", "new-patch", "none"]:
+        """
+        Return the minimum required version bump according to semantic versioning
+        (https://semver.org/).
+        """
+        if self.has_breaking_changes or self.has_major_changes:
+            return "new-major"
+        if self.has_features or self.has_new_plugins or self.has_deprecations:
+            return "new-minor"
+        if self.has_bugfixes:
+            return "new-patch"
+        # Apparently there are no changes?
+        return "none"
 
 
 class BaseVCSReleaser(metaclass=abc.ABCMeta):
@@ -102,6 +137,16 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
         Similarly for the commit message.
 
         Returns the new version if it was set.
+        """
+
+    @abc.abstractmethod
+    def vcs_preview(
+        self,
+        *,
+        collection: CollectionData,
+    ) -> ReleasePreview:
+        """
+        Collect a release preview.
         """
 
 
@@ -210,4 +255,4 @@ class BaseReleaser(BaseVCSReleaser, metaclass=abc.ABCMeta):
         """
 
 
-__all__ = ("BaseReleaser",)
+__all__ = ("BaseReleaser", "BaseVCSReleaser", "ReleasePreview")

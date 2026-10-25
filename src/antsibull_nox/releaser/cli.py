@@ -11,6 +11,7 @@ CLI subcommand.
 from __future__ import annotations
 
 import argparse
+import typing as t
 from collections.abc import Callable
 from pathlib import Path
 
@@ -144,6 +145,12 @@ If none is specified, the bump method must be configured in the releaser config.
 
 Also if --message is not specified, a commit message must be configured in the releaser config.
 """
+
+    releaser_subparsers.add_parser(
+        "vcs-preview",
+        description="Preview the next release in VCS.",
+        help="Preview the next release in VCS",
+    )
 
     extra_steps_needed = (
         "This should be disabled if extra steps are needed"
@@ -356,6 +363,66 @@ def cmd_vcs_bump_version(
     return 0
 
 
+def cmd_vcs_preview(
+    _args: argparse.Namespace,
+    collection: CollectionData,
+    _config: Config,
+    releaser: Releaser,
+) -> int:
+    """
+    The 'vcs-preview' subcommand.
+    """
+
+    def f(key: str, value: t.Any) -> None:
+        insert = max(1, 40 - len(key))
+        if insert > 2:
+            space = " " + (insert - 2) * "." + " "
+        else:
+            space = insert * " "
+        if isinstance(value, bool):
+            value = "yes" if value else "no"
+        log(f"{key}:{space}{value}")
+
+    r = get_releaser(releaser)
+    preview = r.vcs_preview(collection=collection)
+    log("")
+    f("Previous release", preview.previous_release or "--")
+    f("Current version", preview.current_version or "--")
+    bump = preview.get_minimum_required_version_bump()
+    f("Minimum version bump", bump)
+    expected_min_version: Version | None = None
+    if preview.previous_release is not None and bump != "none":
+        if bump == "new-major":
+            expected_min_version = preview.previous_release.next_major()
+        if bump == "new-minor":
+            expected_min_version = preview.previous_release.next_minor()
+        if bump == "new-patch":
+            expected_min_version = preview.previous_release.next_patch()
+        if (
+            preview.current_version
+            and preview.current_version.truncate()
+            != preview.previous_release.truncate()
+        ):
+            if preview.current_version < expected_min_version:
+                log(
+                    "WARNING: The current version should be set"
+                    f" to at least {expected_min_version}!"
+                )
+        else:
+            f("Expected minimum next version", expected_min_version)
+    log("")
+    f("Has features", preview.has_features)
+    f("Has new plugins", preview.has_new_plugins)
+    f("Has deprecations", preview.has_deprecations)
+    f("Has bugfixes", preview.has_bugfixes)
+    f("Has major changes", preview.has_major_changes)
+    f("Has breaking changes", preview.has_breaking_changes)
+    if preview.changelog_txt:
+        log("")
+        log(preview.changelog_txt)
+    return 0
+
+
 def cmd_release(
     args: argparse.Namespace,
     collection: CollectionData,
@@ -491,6 +558,7 @@ RELEASE_ARGS_MAP: dict[
     "vcs-prepare": cmd_vcs_prepare,
     "vcs-release": cmd_vcs_release,
     "vcs-bump-version": cmd_vcs_bump_version,
+    "vcs-preview": cmd_vcs_preview,
     "release": cmd_release,
     "wait": cmd_wait,
     "validate": cmd_validate,
