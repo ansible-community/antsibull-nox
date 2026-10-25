@@ -32,9 +32,8 @@ from antsibull_changelog.fragment import (
 from antsibull_changelog.logger import setup_logger
 from antsibull_changelog.plugins import PluginDescription, load_plugins
 from antsibull_changelog.rendering.changelog import (
-    ChangelogGenerator,
-    create_document_renderer,
     generate_changelog,
+    generate_changelog_content,
 )
 from antsibull_changelog.utils import determine_flatmap
 from semantic_version import Version
@@ -311,21 +310,19 @@ def render_changelog_extract(
 
         flatmap = determine_flatmap(collection_details, config)
 
-        generator = ChangelogGenerator(
+        text, _ = generate_changelog_content(
             config,
             changes,
+            ChangelogOutput(file="", format=text_format),
             flatmap=flatmap,
-            render_config=ChangelogOutput(file="", format=text_format),
+            only_latest=True,
         )
-        renderer = create_document_renderer(text_format, start_level=1)
-        generator.generate(renderer, only_latest=True)
-
-        return renderer.render()
+        return text
     except ChangelogError as exc:
         raise ValueError(f"Error while obtaining changelog excerpt: {exc}") from exc
 
 
-def get_markdown_extract(
+def get_changelog_extract(
     *,
     version: Version,
     ansible_doc_bin: str | None = None,
@@ -346,16 +343,14 @@ def get_markdown_extract(
         changes = load_changes(config)
         changes.restrict_to(str(version))
 
-        generator = ChangelogGenerator(
+        text, _ = generate_changelog_content(
             config,
             changes,
+            ChangelogOutput(file="", format=text_format),
             flatmap=flatmap,
-            render_config=ChangelogOutput(file="", format=text_format),
+            only_latest=True,
         )
-        renderer = create_document_renderer(text_format, start_level=1)
-        generator.generate(renderer, only_latest=True)
-
-        return renderer.render()
+        return text
     except ChangelogError as exc:
         raise ValueError(f"Error while obtaining changelog excerpt: {exc}") from exc
 
@@ -363,7 +358,7 @@ def get_markdown_extract(
 __all__ = (
     "check_for_release_summary",
     "get_changelog_config_and_files",
-    "get_markdown_extract",
+    "get_changelog_extract",
     "lint_fragment_content",
     "load_changelog",
     "make_release",

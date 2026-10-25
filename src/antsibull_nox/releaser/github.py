@@ -23,7 +23,7 @@ from semantic_version import Version
 from ..config import _GitHubReleaserFragment
 from ._http import Forbidden, RequestsSession, Unauthorized, quote, quote_kv
 from ._template import template_string
-from .changelog import get_markdown_extract
+from .changelog import get_changelog_extract
 from .ui import log
 
 _NUM_RETRIES = 3
@@ -159,7 +159,7 @@ class GitHubClient(RequestsSession):
             "version": str(version),
             "repository_url": self.__base_url,
             "branch": self.__config.git_release_branch,
-            "changelog": get_markdown_extract(
+            "changelog": get_changelog_extract(
                 version=version, text_format=TextFormat.MARKDOWN
             ),
         }
