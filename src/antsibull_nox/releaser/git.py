@@ -836,8 +836,22 @@ class GitReleaser(BaseVCSReleaser):
                     f"Error while parsing the collection version {collection.version!r}: {exc}"
                 ) from exc
 
+        commit = self.__git.get_current_commit()
+        if collection_version:
+            cache_version = Version(
+                major=collection_version.major,
+                minor=collection_version.minor,
+                patch=collection_version.patch,
+                prerelease=collection_version.prerelease + (commit,),
+            )
+        else:
+            cache_version = Version(major=0, minor=0, patch=0, prerelease=(commit,))
+
         _, collection_details, config, changes_data, fragments, plugins = (
-            load_changelog(allow_plugin_cache=allow_plugin_cache)
+            load_changelog(
+                cache_version=cache_version,
+                allow_plugin_cache=allow_plugin_cache,
+            )
         )
         previous_release = self._get_previous_release(
             collection_version=collection_version,

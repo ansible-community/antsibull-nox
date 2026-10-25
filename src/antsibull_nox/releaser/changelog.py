@@ -155,6 +155,7 @@ def check_for_release_summary(
 
 def load_changelog(
     *,
+    cache_version: Version | None = None,
     ansible_doc_bin: str | None = None,
     allow_plugin_cache: bool = False,
 ) -> tuple[
@@ -178,10 +179,9 @@ def load_changelog(
             paths=paths,
             collection_details=collection_details,
             config=config,
-            version=collection_details.version
-            or (changes.latest_version if changes.has_release else "dev"),
-            force_reload=not allow_plugin_cache,
-            ignore_cache=not allow_plugin_cache,
+            version=str(cache_version) if cache_version else "dev",
+            force_reload=not (allow_plugin_cache and cache_version),
+            ignore_cache=not (allow_plugin_cache and cache_version),
             use_ansible_doc=False,
             add_plugin_period=config.add_plugin_period,
         )

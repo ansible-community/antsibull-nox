@@ -155,7 +155,8 @@ Also if --message is not specified, a commit message must be configured in the r
         "--use-plugin-cache",
         default=False,
         action="store_true",
-        help="Use the plugin cache. Can give inaccurate results for new plugins/modules/roles.",
+        help="Use the plugin cache."
+        " Useful if you plan to call this multiple times in a row without commiting inbetween.",
     )
 
     extra_steps_needed = (
