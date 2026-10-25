@@ -333,6 +333,16 @@ def cmd_vcs_bump_version(
     message: str | None = args.message
 
     r = get_releaser(releaser)
+    if (
+        new_version is None
+        and bump is None
+        and collection.version
+        and not r.has_vcs_release(version=collection.version)
+    ):
+        raise ValueError(
+            f"The current version is already {collection.version}, for which no release exists."
+            " If you insist to bump the version, provide either a new version or --bump explicity."
+        )
     actual_new_version = r.bump_version(
         collection=collection,
         new_version=new_version,
