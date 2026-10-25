@@ -373,6 +373,11 @@ def cmd_vcs_preview(
     The 'vcs-preview' subcommand.
     """
 
+    lines = []
+
+    def l(line: str) -> None:  # noqa: E743
+        lines.append(line)
+
     def f(key: str, value: t.Any) -> None:
         insert = max(1, 40 - len(key))
         if insert > 2:
@@ -381,11 +386,11 @@ def cmd_vcs_preview(
             space = insert * " "
         if isinstance(value, bool):
             value = "yes" if value else "no"
-        log(f"{key}:{space}{value}")
+        l(f"{key}:{space}{value}")
 
     r = get_releaser(releaser)
     preview = r.vcs_preview(collection=collection)
-    log("")
+    l("")
     f("Previous release", preview.previous_release or "--")
     f("Current version", preview.current_version or "--")
     bump = preview.get_minimum_required_version_bump()
@@ -410,7 +415,7 @@ def cmd_vcs_preview(
                 )
         else:
             f("Expected minimum next version", expected_min_version)
-    log("")
+    l("")
     f("Has features", preview.has_features)
     f("Has new plugins", preview.has_new_plugins)
     f("Has deprecations", preview.has_deprecations)
@@ -418,8 +423,12 @@ def cmd_vcs_preview(
     f("Has major changes", preview.has_major_changes)
     f("Has breaking changes", preview.has_breaking_changes)
     if preview.changelog_txt:
-        log("")
-        log(preview.changelog_txt)
+        l("")
+        for line in preview.changelog_txt.splitlines():
+            l(line)
+
+    for line in lines:
+        log(line)
     return 0
 
 
