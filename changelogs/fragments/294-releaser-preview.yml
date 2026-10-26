@@ -1,0 +1,3 @@
+bugfixes:
+  - Fix version warning output in ``release vcs-preview`` subcommand
+    (https://github.com/ansible-community/antsibull-nox/pull/294).
