@@ -18,7 +18,7 @@ import time
 import typing as t
 
 if t.TYPE_CHECKING:  # pragma: no cover
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     _T = t.TypeVar("_T")
 
@@ -63,7 +63,7 @@ def wait_for(
 def prompt_user(
     prompt: str,
     *,
-    accept: list[str],
+    accept: Sequence[str],
     default: str | None = None,
     abort: str | None = None,
 ) -> str:
