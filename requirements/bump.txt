@@ -12,7 +12,7 @@ annotated-types==0.8.0 ; python_full_version >= '3.10'
     # via
     #   antsibull-changelog
     #   pydantic
-antsibull-changelog==0.35.2
+antsibull-changelog==0.36.0
     # via -r requirements/bump.in
 antsibull-docs-parser==1.2.3
     # via antsibull-changelog
