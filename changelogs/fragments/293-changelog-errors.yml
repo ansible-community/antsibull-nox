@@ -1,0 +1,3 @@
+bugfixes:
+  - When changelog operations fail due to ansible-doc failing, show nicer error messages
+    (https://github.com/ansible-community/antsibull-nox/pull/293).

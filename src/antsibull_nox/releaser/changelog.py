@@ -11,6 +11,7 @@ Changelog helpers.
 from __future__ import annotations
 
 import datetime
+import subprocess
 import typing as t
 from pathlib import Path
 
@@ -155,6 +156,14 @@ def check_for_release_summary(
         ) from exc
 
 
+def _format_cpe(exc: subprocess.CalledProcessError) -> str:
+    stderr = exc.stderr
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode("utf-8", errors="replace")
+    appendix = f"\n\nStandard error output: {stderr}" if stderr else ""
+    return f"Error while invoking ansible-doc: {exc}{appendix}"
+
+
 def load_changelog(
     *,
     cache_version: Version | None = None,
@@ -190,6 +199,8 @@ def load_changelog(
         return paths, collection_details, config, changes, fragments, plugins
     except ChangelogError as exc:
         raise ValueError(f"Error while loading changelog data: {exc}") from exc
+    except subprocess.CalledProcessError as exc:
+        raise ValueError(_format_cpe(exc)) from exc
 
 
 def make_release(
@@ -282,6 +293,8 @@ def make_release(
             )
     except ChangelogError as exc:
         raise ValueError(f"Error while adding release to changelog: {exc}") from exc
+    except subprocess.CalledProcessError as exc:
+        raise ValueError(_format_cpe(exc)) from exc
 
 
 def render_changelog_extract(
