@@ -63,7 +63,7 @@ class YAMLEditor:
         Read YAML file's contents.
         """
         self._path = path
-        with self._path.open("rt", encoding="utf-8") as f:
+        with self._path.open("rt", encoding="utf-8", newline="") as f:
             self._lines = f.readlines()
         self._start = 0
         self._end = len(self._lines)
@@ -118,6 +118,10 @@ class YAMLEditor:
             elif content.endswith(("\n", "\r")):
                 line_ending = content[-1:]
                 content = content[:-1]
+            else:  # pragma: no cover
+                raise ValueError(
+                    f"Implementation error: cannot identify line ending of {content!r}"
+                )
             quote = ""
             if len(content) > 1:
                 if content.startswith("'") and content.endswith("'"):

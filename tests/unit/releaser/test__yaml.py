@@ -142,7 +142,7 @@ foo: baz
         "foo",
         "bar",
         "boom",
-        "foo: boom\nbaz: bam\n\n",
+        "foo: boom\r\nbaz: bam\n\r",
     ),
 ]
 
@@ -164,7 +164,7 @@ def test_YAMLEditor(
     editor = YAMLEditor(path=file)
     field = editor.find(key=key)
     if expected_value is None:
-        assert field == None
+        assert field is None
         field = editor.create(key=key, value=new_value)
     else:
         assert field is not None
