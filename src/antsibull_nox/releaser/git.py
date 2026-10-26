@@ -596,7 +596,7 @@ class GitReleaser(BaseVCSReleaser):
         ref = f"refs/tags/{tag}"
         root = self.__git.get_repository_root()
         objtype = self.__git.get_object_type(ref=ref, path=root)
-        if objtype != "tag":
+        if objtype not in ("commit", "tag"):
             return False, None
         result = self.__git.show(
             file=self.__config.git_collection_root / CONFIG_FILENAME,
