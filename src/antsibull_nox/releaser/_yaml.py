@@ -106,7 +106,7 @@ class YAMLEditor:
                     f"Can only work on simple string-valued YAML keys {key!r}"
                 )
             content = remainder.lstrip()
-            if content.startswith(("|", ">")):
+            if content.startswith(("|", ">", "[", "{")):
                 raise ValueError(
                     f"Can only work on simple string-valued YAML keys {key!r}"
                 )
@@ -142,8 +142,12 @@ class YAMLEditor:
         """
         index = self._end
         self._lines.insert(index, "")
+        field = YAMLField(
+            editor=self, line=index, prefix=f"{key}: ", value="" if value else "x"
+        )
         self._end += 1
-        return YAMLField(editor=self, line=index, prefix=f"{key}: ", value=value)
+        field.set(value)
+        return field
 
 
 __all__ = ("YAMLEditor",)
