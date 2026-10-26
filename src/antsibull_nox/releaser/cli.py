@@ -424,8 +424,8 @@ def cmd_vcs_preview(
             and preview.current_version.truncate()
             != preview.previous_release.truncate()
         ):
-            if preview.current_version < expected_min_version:
-                log(
+            if preview.current_version.truncate() < expected_min_version:
+                l(
                     "WARNING: The current version should be set"
                     f" to at least {expected_min_version}!"
                 )
