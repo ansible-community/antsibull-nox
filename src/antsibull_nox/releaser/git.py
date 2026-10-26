@@ -26,6 +26,7 @@ from ..collection.search import GALAXY_YML
 from ..config import CONFIG_FILENAME
 from ..config import Releaser as ReleaserConfig
 from ..config import VersionBump, _GitReleaserFragment
+from ._command import CommandRunner, repeat_if_failed
 from ._template import template_string
 from ._version import get_next_version
 from ._yaml import YAMLEditor
@@ -38,7 +39,6 @@ from .changelog import (
     make_release,
     render_changelog_extract,
 )
-from .command import CommandRunner, repeat_if_failed
 
 if t.TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Iterable

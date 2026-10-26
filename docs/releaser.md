@@ -190,6 +190,48 @@ Zuul configuration:
 
 In this example, we assume we want to do a 3.5.1 release of the community.crypto collection.
 
+1. Look at new changes in the collection.
+   Run `antsibull-nox release vcs-preview`.
+
+    This shows the version of the last release (in this branch),
+    the version in current `galaxy.yml`,
+    the minimum version bump computed from the found changelog entries
+    and found new modules/plugins,
+    and a summary of changes
+    and a preview of the changelog.
+
+    For the state of the [community.crypto repository](https://github.com/ansible-collections/community.crypto/) directly before releasing 3.5.1,
+    this looks like:
+    ```
+    Previous release: ...................... 3.5.0
+    Current version: ....................... 3.5.1
+    Minimum version bump: .................. new-patch
+
+    Has features: .......................... no
+    Has new plugins: ....................... no
+    Has deprecations: ...................... no
+    Has bugfixes: .......................... yes
+    Has major changes: ..................... no
+    Has breaking changes: .................. no
+
+    Release Summary
+    ---------------
+
+    Bugfix release.
+
+    Bugfixes
+    --------
+
+    - openssh_keypair - change the value ``mldsa44`` for ``type`` to ``mldsa44-ed25519`` for OpenSSH ML-DSA-44 keys, since ``mldsa44`` is not a valid ``ssh-keygen`` key type (https://github.com/ansible-collections/community.crypto/pull/1083).
+    ```
+
+    !!! note
+        Note that if minor changes are used for maintenance changes
+        or major changes for important features,
+        the minimum version bump computed will be too high.
+        If you think it is too high,
+        take a closer look at the changes listed in the changelog preview.
+
 1. Prepare the release.
    Run `antsibull-nox release vcs-prepare 3.5.1 -m "Bugfix release."
    This creates a changelog fragment with `release_summary` set to "Bugfix release.",
@@ -236,5 +278,6 @@ In this example, we assume we want to do a 3.5.1 release of the community.crypto
 1. In community.crypto, we keep the `version` in `galaxy.yml` always set to the upcoming feature release,
    unless we are preparing a bugfix release or a pre-release.
    Run `antsibull-nox release vcs-bump-version`.
-   This uses the `git_post_release_bump = "next-minor"` setting to set `version` to `3.6.0`.
-   Push the resulting commit to `upstream` and `origin`.
+
+    This uses the `git_post_release_bump = "next-minor"` setting to set `version` to `3.6.0`.
+    Push the resulting commit to `upstream` and `origin`.
