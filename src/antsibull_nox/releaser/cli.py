@@ -47,7 +47,9 @@ def get_releaser(config: Releaser) -> BaseReleaser:
         return ZuulGitHubReleaser(config)
 
 
-def get_actual_releaser(config: Releaser, *, version: Version) -> BaseReleaser:
+def get_actual_releaser(
+    config: Releaser, *, version: Version, require_release_config: bool = True
+) -> BaseReleaser:
     """
     Create BaseReleaser instance from the repository's state at release ``version``.
     """
@@ -56,6 +58,8 @@ def get_actual_releaser(config: Releaser, *, version: Version) -> BaseReleaser:
     if not exists:
         raise FailCLIError(f"The release {version} does not exist!", code=3)
     if config_contents is None:
+        if not require_release_config:
+            return r
         raise FailCLIError(
             f"The release {version} does not have a {CONFIG_FILENAME} configuration file!",
             code=3,
@@ -70,6 +74,8 @@ def get_actual_releaser(config: Releaser, *, version: Version) -> BaseReleaser:
         ) from exc
     new_config = antsibull_nox_config.releaser
     if new_config is None:
+        if not require_release_config:
+            return r
         raise FailCLIError(
             f"{CONFIG_FILENAME} for release {version} does not specify a releaser",
             code=3,
@@ -79,6 +85,8 @@ def get_actual_releaser(config: Releaser, *, version: Version) -> BaseReleaser:
         or not r.is_vcs_config_close_enough(other_config=new_config)
         or not r.is_config_close_enough(other_config=new_config)
     ):
+        if not require_release_config:
+            return r
         raise FailCLIError(
             f"{CONFIG_FILENAME} for release {version} specifies a different releaser"
             " than the current repository state",
@@ -520,7 +528,7 @@ def cmd_validate(
     v = parse_version(args.version)
     skip_source_validation: bool = args.skip_source_validation
 
-    r = get_actual_releaser(releaser, version=v)
+    r = get_actual_releaser(releaser, version=v, require_release_config=False)
     r.verify_release(
         namespace=collection.namespace,
         name=collection.name,
