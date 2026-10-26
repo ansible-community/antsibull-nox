@@ -4,6 +4,32 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.10.0
+=======
+
+Release Summary
+---------------
+
+Bugfix and feature release.
+
+Minor Changes
+-------------
+
+- Add ``release`` subcommand to CLI tool that makes releasing certain Ansible collections easier. To install the extra requirements needed for this subcommand, use the dependency group ``releaser``: ``pip install antsibull-nox[releaser]``
+
+  Right now, the releaser tooling included in antsibull-nox is experimental and might have breaking changes in regular minor feature releases
+  (https://github.com/ansible-community/antsibull-nox/pull/272,
+  https://github.com/ansible-community/antsibull-nox/pull/273,
+  https://github.com/ansible-community/antsibull-nox/pull/278).
+
+Bugfixes
+--------
+
+- Bump maximum used Python version to 3.15 (https://github.com/ansible-community/antsibull-nox/pull/281).
+- Declare support for Python 3.15 (https://github.com/ansible-community/antsibull-nox/pull/276).
+- For GitHub Actions, set ``gha-container`` to ``ubuntu-24.04`` if not set and Python < 3.10 is used (https://github.com/ansible-community/antsibull-nox/pull/281, https://github.com/ansible-community/antsibull-nox/pull/283).
+- Update supported Python versions for ansible-core milestone (https://github.com/ansible-community/antsibull-nox/pull/274).
+
 v1.9.3
 ======
 

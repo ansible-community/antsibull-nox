@@ -1,2 +1,0 @@
-bugfixes:
-  - "For GitHub Actions, set ``gha-container`` to ``ubuntu-24.04`` if not set and Python < 3.10 is used (https://github.com/ansible-community/antsibull-nox/pull/281, https://github.com/ansible-community/antsibull-nox/pull/283)."
