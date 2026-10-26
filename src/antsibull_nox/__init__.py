@@ -22,7 +22,7 @@ from .reporting import setup as _setup_reporting
 from .sessions.ansible_test import add_ansible_test_session
 from .sessions.utils import IN_CI
 
-__version__ = "1.10.0"
+__version__ = "1.10.0.post0"
 
 
 def load_antsibull_nox_toml() -> None:
