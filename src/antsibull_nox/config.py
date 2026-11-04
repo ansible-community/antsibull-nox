@@ -18,7 +18,13 @@ import pydantic as p
 
 from antsibull_nox.ee_config import create_ee_config
 
-from ._pydantic import PYDANTIC_VERSION, forbid_extras, get_formatted_error_messages
+from ._pydantic import (
+    PYDANTIC_VERSION,
+    forbid_extras,
+    get_formatted_error_messages,
+    register_files_and_dirs_to_validate,
+    validate_files_and_dirs,
+)
 from .ansible import AnsibleCoreVersion, MinPythonVersionConstants
 from .data.antsibull_nox_data_util import Message
 from .sessions.utils.packages import PackageConstraints as _PackageConstraints
@@ -220,6 +226,32 @@ class _BaseModel(p.BaseModel):
     model_config = p.ConfigDict(frozen=True, extra="allow", validate_default=True)
 
 
+@register_files_and_dirs_to_validate(
+    existing_file_properties=(
+        "ruff_config",
+        "ruff_modules_config",
+        "isort_config",
+        "isort_modules_config",
+        "black_config",
+        "black_modules_config",
+        "ruff_format_config",
+        "ruff_format_modules_config",
+        "ruff_autofix_config",
+        "ruff_autofix_modules_config",
+        "ruff_check_config",
+        "ruff_check_modules_config",
+        "flake8_config",
+        "flake8_modules_config",
+        "pylint_rcfile",
+        "pylint_modules_rcfile",
+        "yamllint_config",
+        "yamllint_config_plugins",
+        "yamllint_config_plugins_examples",
+        "yamllint_config_extra_docs",
+        "mypy_config",
+        "mypy_modules_config",
+    )
+)
 class SessionLint(_BaseModel):
     """
     Lint session config.
@@ -229,62 +261,62 @@ class SessionLint(_BaseModel):
     code_files: t.Union[t.Literal["default"], list[str]] = "default"
     extra_code_files: t.Optional[list[str]] = None
     module_files: t.Union[t.Literal["default"], list[str]] = "default"
-    ruff_config: t.Optional[p.FilePath] = None
-    ruff_modules_config: t.Optional[p.FilePath] = None
+    ruff_config: t.Optional[Path] = None
+    ruff_modules_config: t.Optional[Path] = None
     ruff_package: Packages = PackageName(name="ruff")
 
     # isort:
     run_isort: bool = True
-    isort_config: t.Optional[p.FilePath] = None
-    isort_modules_config: t.Optional[p.FilePath] = None
+    isort_config: t.Optional[Path] = None
+    isort_modules_config: t.Optional[Path] = None
     isort_package: Packages = PackageName(name="isort")
 
     # black:
     run_black: bool = True
     run_black_modules: t.Optional[bool] = None
-    black_config: t.Optional[p.FilePath] = None
-    black_modules_config: t.Optional[p.FilePath] = None
+    black_config: t.Optional[Path] = None
+    black_modules_config: t.Optional[Path] = None
     black_package: Packages = PackageName(name="black")
 
     # ruff format:
     run_ruff_format: bool = False
-    ruff_format_config: t.Optional[p.FilePath] = None
-    ruff_format_modules_config: t.Optional[p.FilePath] = None
+    ruff_format_config: t.Optional[Path] = None
+    ruff_format_modules_config: t.Optional[Path] = None
     ruff_format_package: t.Optional[Packages] = None
 
     # ruff autofix:
     run_ruff_autofix: bool = False
-    ruff_autofix_config: t.Optional[p.FilePath] = None
-    ruff_autofix_modules_config: t.Optional[p.FilePath] = None
+    ruff_autofix_config: t.Optional[Path] = None
+    ruff_autofix_modules_config: t.Optional[Path] = None
     ruff_autofix_package: t.Optional[Packages] = None
     ruff_autofix_select: list[str] = []
 
     # ruff check:
     run_ruff_check: bool = False
-    ruff_check_config: t.Optional[p.FilePath] = None
-    ruff_check_modules_config: t.Optional[p.FilePath] = None
+    ruff_check_config: t.Optional[Path] = None
+    ruff_check_modules_config: t.Optional[Path] = None
     ruff_check_package: t.Optional[Packages] = None
 
     # flake8:
     run_flake8: bool = True
-    flake8_config: t.Optional[p.FilePath] = None
-    flake8_modules_config: t.Optional[p.FilePath] = None
+    flake8_config: t.Optional[Path] = None
+    flake8_modules_config: t.Optional[Path] = None
     flake8_package: Packages = PackageName(name="flake8")
 
     # pylint:
     run_pylint: bool = True
-    pylint_rcfile: t.Optional[p.FilePath] = None
-    pylint_modules_rcfile: t.Optional[p.FilePath] = None
+    pylint_rcfile: t.Optional[Path] = None
+    pylint_modules_rcfile: t.Optional[Path] = None
     pylint_package: Packages = PackageName(name="pylint")
     pylint_ansible_core_package: Packages = PackageName(name="ansible-core")
     pylint_extra_deps: list[PackageFieldOrString] = []
 
     # yamllint:
     run_yamllint: bool = True
-    yamllint_config: t.Optional[p.FilePath] = None
-    yamllint_config_plugins: t.Optional[p.FilePath] = None
-    yamllint_config_plugins_examples: t.Optional[p.FilePath] = None
-    yamllint_config_extra_docs: t.Optional[p.FilePath] = None
+    yamllint_config: t.Optional[Path] = None
+    yamllint_config_plugins: t.Optional[Path] = None
+    yamllint_config_plugins_examples: t.Optional[Path] = None
+    yamllint_config_extra_docs: t.Optional[Path] = None
     yamllint_package: Packages = PackageName(name="yamllint")
     yamllint_antsibull_docutils_package: Packages = PackageName(
         name="antsibull-docutils"
@@ -292,8 +324,8 @@ class SessionLint(_BaseModel):
 
     # mypy:
     run_mypy: bool = True
-    mypy_config: t.Optional[p.FilePath] = None
-    mypy_modules_config: t.Optional[p.FilePath] = None
+    mypy_config: t.Optional[Path] = None
+    mypy_modules_config: t.Optional[Path] = None
     mypy_package: Packages = PackageName(name="mypy")
     mypy_ansible_core_package: Packages = PackageName(name="ansible-core")
     mypy_extra_deps: list[PackageFieldOrString] = []
@@ -492,6 +524,9 @@ class SessionExtraChecks(_BaseModel):
     avoid_character_group: list[AvoidCharacterGroup] = []
 
 
+@register_files_and_dirs_to_validate(
+    existing_file_properties=("galaxy_importer_config_path",)
+)
 class SessionBuildImportCheck(_BaseModel):
     """
     Collection build and Galaxy import session config.
@@ -503,7 +538,7 @@ class SessionBuildImportCheck(_BaseModel):
     run_galaxy_importer: bool = True
     galaxy_importer_package: Packages = PackageName(name="galaxy-importer")
     # https://github.com/ansible/galaxy-importer#configuration
-    galaxy_importer_config_path: t.Optional[p.FilePath] = None
+    galaxy_importer_config_path: t.Optional[Path] = None
     galaxy_importer_always_show_logs: bool = False
 
 
@@ -882,9 +917,12 @@ VersionBump = t.Literal["next-major", "next-minor", "next-bugfix", "post-prerele
 VersionBumpValues: tuple[VersionBump, ...] = t.get_args(VersionBump)
 
 
+@register_files_and_dirs_to_validate(
+    existing_directory_properties=("git_collection_root",)
+)
 class _GitReleaserFragment:
     git_release_branch: str = "main"
-    git_collection_root: p.DirectoryPath = Path(".")
+    git_collection_root: Path = Path(".")
     git_tag_format: str = "{version}"
     git_sign_commits: bool = True
     git_sign_tags: bool = True
@@ -982,9 +1020,42 @@ def lint_config_toml_messages() -> list[Message]:
         # https://github.com/pydantic/pydantic/discussions/2652#discussioncomment-17853656
         if PYDANTIC_VERSION < (2, 12):
             forbid_extras(Config)
-            Config.model_validate(data)
+            config = Config.model_validate(data)
         else:
-            Config.model_validate(data, extra="forbid")
+            config = Config.model_validate(data, extra="forbid")
+
+        missing_files_dirs = []
+        if config.sessions.lint:
+            missing_files_dirs.extend(
+                validate_files_and_dirs(
+                    config.sessions.lint, model=SessionLint, path=["sessions", "lint"]
+                )
+            )
+        if config.sessions.build_import_check:
+            missing_files_dirs.extend(
+                validate_files_and_dirs(
+                    config.sessions.build_import_check,
+                    model=SessionBuildImportCheck,
+                    path=["sessions", "build_import_check"],
+                )
+            )
+        if isinstance(config.releaser, _GitReleaserFragment):
+            missing_files_dirs.extend(
+                validate_files_and_dirs(
+                    config.releaser, model=_GitReleaserFragment, path=["releaser"]
+                )
+            )
+        for entry in missing_files_dirs:
+            errors.append(
+                Message(
+                    file=path,
+                    start=None,
+                    end=None,
+                    level="error",
+                    id=None,
+                    message=entry,
+                )
+            )
     except p.ValidationError as exc:
         for error in get_formatted_error_messages(exc):
             errors.append(
