@@ -215,16 +215,12 @@ def _pick_python_version(core_info: AnsibleCoreInfo) -> str | list[str]:
 
 def _get_maximum_gha_container_for_python_and_ansible_version(
     python_version: Version,
-    ansible_version: AnsibleCoreVersion,
+    ansible_version: AnsibleCoreVersion,  # pylint: disable=unused-argument
 ) -> str | None:
     """
-    For a given Python version, returns the necessary GHA image name
-    if ubuntu-latest is known to not work with this Python version.
+    For a given Python and ansible-core version, returns the necessary GHA image name
+    if ubuntu-latest is known to not work with this Python and ansible-core version.
     """
-    if isinstance(ansible_version, Version) and ansible_version >= Version(2, 22):
-        # HACK This is a workaround for https://github.com/ansible/ansible/issues/87731.
-        # REMOVE ONCE THAT IS RESOLVED!
-        return "ubuntu-22.04"
     if python_version < Version(3, 7):
         # ubuntu-22.04 no longer supports Python 3.6
         return "ubuntu-20.04"

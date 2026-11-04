@@ -1,5 +1,0 @@
-bugfixes:
-  - "Temporary workaround for a problem with ansible-test from ansible-core 2.22
-     that manifests on GitHub Actions (`bug report <https://github.com/ansible/ansible/issues/87731>`__)
-     that uses ``ubuntu-22.04`` instead
-     (https://github.com/ansible-community/antsibull-nox/pull/297)."
