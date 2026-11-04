@@ -816,6 +816,14 @@ class GitReleaser(BaseVCSReleaser):
                     "Error while parsing the latest"
                     f" changelog version {changes_data.latest_version!r}: {exc}"
                 ) from exc
+        if changes_data.ancestor is not None:
+            try:
+                return Version(changes_data.ancestor)
+            except Exception as exc:
+                raise ValueError(
+                    "Error while parsing the ancestor"
+                    f" changelog version {changes_data.ancestor!r}: {exc}"
+                ) from exc
         return None
 
     def vcs_preview(
