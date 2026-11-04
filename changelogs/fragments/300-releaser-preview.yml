@@ -1,0 +1,5 @@
+bugfixes:
+  - Fix previous version detection in ``release vcs-preview`` subcommand
+    when there is no previous release in the current changelog, but a
+    changelog ancestor is set
+    (https://github.com/ansible-community/antsibull-nox/pull/300).
