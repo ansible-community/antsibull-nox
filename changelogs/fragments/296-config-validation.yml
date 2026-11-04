@@ -1,0 +1,5 @@
+bugfixes:
+  - "Only check for config file / collection root existence when validating (linting) the configuration, not when loading it.
+     This prevents the releaser having trouble when loading a release's antsibull-nox config which references config files
+     or directories that do not exist in the current branch
+     (https://github.com/ansible-community/antsibull-nox/pull/296)."

@@ -20,7 +20,8 @@ Helpers for pydantic.
 from __future__ import annotations
 
 import typing as t
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Sequence
+from pathlib import Path
 
 import pydantic as p
 
@@ -115,8 +116,84 @@ def get_formatted_error_messages(error: p.ValidationError) -> list[str]:
     return [format_error(err) for err in error.errors()]
 
 
+_Class = t.TypeVar("_Class")
+_PydanticClass = t.TypeVar("_PydanticClass", bound=p.BaseModel)
+
+
+def register_files_and_dirs_to_validate(
+    *,
+    existing_file_properties: tuple[str, ...] | None = None,
+    existing_directory_properties: tuple[str, ...] | None = None,
+) -> t.Callable[[type[_Class]], type[_Class]]:
+    def append(clz: type[_Class], name: str, values: tuple[str, ...]) -> None:
+        current = getattr(clz, name, None) or ()
+        setattr(clz, name, current + values)
+
+    def f(clz: type[_Class]) -> type[_Class]:
+        append(
+            clz, "_validate_existing_file_properties", existing_file_properties or ()
+        )
+        append(
+            clz,
+            "_validate_existing_directory_properties",
+            existing_directory_properties or (),
+        )
+        return clz
+
+    return f
+
+
+def validate_files_and_dirs(
+    instance: _Class,
+    *,
+    model: type[_Class],
+    path: Sequence[str] | None = None,
+) -> list[str]:
+    result = []
+
+    def fail(field: str, message: str) -> None:
+        location: list[str] = []
+        if path:
+            location.extend(path)
+        location.append(field)
+        result.append(f"{' -> '.join(location)}: {message}")
+
+    def check(value: t.Any, field: str, what: t.Literal["file", "dir"]) -> None:
+        if value is None:
+            return
+        if not isinstance(value, Path):
+            raise RuntimeError(
+                f"Value of field {field} is neither None or Path, but {value!r}"
+            )
+        if what == "file" and not value.is_file():
+            fail(field, f"{value} is not an existing file")
+        if what == "dir" and not value.is_dir():
+            fail(field, f"{value} is not an existing directory")
+
+    assert isinstance(instance, model)
+    existing_file_properties: tuple[str, ...] | None = getattr(
+        model, "_validate_existing_file_properties", None
+    )
+    existing_directory_properties: tuple[str, ...] | None = getattr(
+        model, "_validate_existing_directory_properties", None
+    )
+    if existing_file_properties is None or existing_directory_properties is None:
+        raise RuntimeError(
+            f"The model {model} has not been annotated with @register_files_and_dirs_to_validate"
+        )
+    for field in existing_file_properties:
+        value = getattr(instance, field)
+        check(value, field, "file")
+    for field in existing_directory_properties:
+        value = getattr(instance, field)
+        check(value, field, "dir")
+    return result
+
+
 __all__ = [
     "PYDANTIC_VERSION",
     "forbid_extras",
     "get_formatted_error_messages",
+    "register_files_and_dirs_to_validate",
+    "validate_files_and_dirs",
 ]
