@@ -221,9 +221,7 @@ def _get_maximum_gha_container_for_python_and_ansible_version(
     For a given Python version, returns the necessary GHA image name
     if ubuntu-latest is known to not work with this Python version.
     """
-    if ansible_version in ("devel", "milestone") or ansible_version >= Version(
-        2, 22
-    ):  # type: ignore[operator]
+    if isinstance(ansible_version, Version) and ansible_version >= Version(2, 22):
         # HACK This is a workaround for https://github.com/ansible/ansible/issues/87731.
         # REMOVE ONCE THAT IS RESOLVED!
         return "ubuntu-22.04"
