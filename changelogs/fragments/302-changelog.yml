@@ -1,0 +1,5 @@
+bugfixes:
+  - "When rendering the changelog for use in the ``release release`` and ``release create-vcs-ui-release`` subcommands,
+     use the changelog data file from the release tag and not from the current branch. The data file from the current
+     branch might not include the release version the command needs to get the changelog entry for
+     (https://github.com/ansible-community/antsibull-nox/pull/302)."

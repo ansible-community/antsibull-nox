@@ -18,6 +18,8 @@ from pathlib import Path
 from antsibull_changelog.changes import ChangesData, add_release, load_changes
 from antsibull_changelog.cli import do_refresh
 from antsibull_changelog.config import (
+    CHANGELOGS_DIR,
+    CONFIG_FILENAME,
     ChangelogConfig,
     ChangelogOutput,
     CollectionDetails,
@@ -37,6 +39,7 @@ from antsibull_changelog.rendering.changelog import (
     generate_changelog_content,
 )
 from antsibull_changelog.utils import determine_flatmap
+from antsibull_fileutils.yaml import load_yaml_bytes
 from semantic_version import Version
 
 if t.TYPE_CHECKING:  # pragma: no cover
@@ -346,6 +349,7 @@ def get_changelog_extract(
     ansible_doc_bin: str | None = None,
     text_format: TextFormat,
     renderer_kwargs: Mapping[str, t.Any] | None = None,
+    get_file_contents: t.Callable[[Path], bytes | None],
 ) -> str:
     """
     Generate changelog extract for a specific release.
@@ -355,11 +359,38 @@ def get_changelog_extract(
     try:
         paths = PathsConfig.force_collection(".", ansible_doc_bin=ansible_doc_bin)
         collection_details = CollectionDetails(paths)
-        config = ChangelogConfig.load(paths, collection_details)
-
+        galaxy_yml = get_file_contents(Path("galaxy.yml"))
+        if galaxy_yml is None:
+            raise ChangelogError("Cannot find galaxy.yml")
+        collection_details.set_galaxy_yaml_content(galaxy_yml)
+        config_path = Path(CHANGELOGS_DIR) / CONFIG_FILENAME
+        changelog_config = get_file_contents(config_path)
+        if changelog_config is None:
+            raise ChangelogError(f"Cannot find {config_path}")
+        try:
+            config_data = load_yaml_bytes(changelog_config)
+        except Exception as exc:
+            raise ChangelogError(f"Cannot load {config_path}: {exc}") from exc
+        if not isinstance(config_data, dict):
+            raise ChangelogError(f"{config_path} must be a dictionary")
+        config = ChangelogConfig.parse(
+            paths,
+            collection_details,
+            config_data,
+            ignore_is_other_project=False,
+        )
         flatmap = determine_flatmap(collection_details, config)
 
-        changes = load_changes(config)
+        changes_path = Path(CHANGELOGS_DIR) / config.changes_file
+        changes_bytes = get_file_contents(changes_path)
+        if changes_bytes is None:
+            raise ChangelogError(f"Cannot find {changes_path}")
+        try:
+            changes_data = load_yaml_bytes(changes_bytes)
+        except Exception as exc:
+            raise ChangelogError(f"Cannot load {changes_path}: {exc}") from exc
+        changes = ChangesData(config, str(changes_path), data_override=changes_data)
+
         changes.restrict_to(str(version))
 
         text, _ = generate_changelog_content(
