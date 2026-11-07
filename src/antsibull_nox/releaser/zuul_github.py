@@ -318,6 +318,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
             make_draft=make_draft,
             make_latest=make_latest,
             without_token=without_token,
+            git=self._git,
         )
         return html_url
 
@@ -386,6 +387,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
             make_draft=make_draft,
             make_latest=make_latest,
             without_token=without_token,
+            git=self._git,
         )
         return html_url
 
