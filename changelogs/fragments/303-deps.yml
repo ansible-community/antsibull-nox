@@ -1,0 +1,2 @@
+bugfixes:
+  - "When checking requirements for ``antsibull-nox release``, also check the requests version (https://github.com/ansible-community/antsibull-nox/pull/303)."
