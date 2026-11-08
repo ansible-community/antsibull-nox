@@ -398,6 +398,10 @@ class GitReleaser(BaseVCSReleaser):
         self.__config = config
         self.__git = Git()
 
+    @property
+    def _git(self) -> Git:
+        return self.__git
+
     def is_vcs_config_close_enough(self, *, other_config: ReleaserConfig) -> bool:
         """
         Check whether the provided VCS releaser config is "close enough" to the current config.

@@ -16,6 +16,7 @@ import os
 import sys
 import typing as t
 import webbrowser
+from pathlib import Path
 
 from antsibull_changelog.config import OutputTextFormat
 from semantic_version import Version
@@ -24,6 +25,7 @@ from ..config import _GitHubReleaserFragment
 from ._http import Forbidden, RequestsSession, Unauthorized, quote, quote_kv
 from ._template import template_string
 from .changelog import get_changelog_extract
+from .git import Git
 from .ui import log
 
 _NUM_RETRIES = 3
@@ -140,6 +142,10 @@ class GitHubClient(RequestsSession):
             )
         return html_url, result.get("discussion_url")
 
+    def _get_file_content(self, *, path: Path, tag: str, git: Git) -> bytes | None:
+        ref = f"refs/tags/{tag}"
+        return git.show(file=self.__config.git_collection_root / path, ref=ref)
+
     def create_release(
         self,
         *,
@@ -148,6 +154,7 @@ class GitHubClient(RequestsSession):
         make_latest: bool = False,
         discussion_category_name: str | None = None,
         without_token: bool = False,
+        git: Git,
     ) -> tuple[str | None, str | None]:
         """
         Create a GitHub release in the UI.
@@ -163,6 +170,9 @@ class GitHubClient(RequestsSession):
                 version=version,
                 text_format=OutputTextFormat.MARKDOWN,
                 renderer_kwargs={"add_section_ids": False},
+                get_file_contents=lambda path: self._get_file_content(
+                    path=path, tag=tag, git=git
+                ),
             ),
         }
         name = template_string(self.__config.github_release_title, variables=variables)
