@@ -154,7 +154,7 @@ class ZuulGitHubReleaser(BaseReleaser, GitReleaser):
     def _raise_errors_exception(self, errors: list[ValidationError]) -> None:
         if errors:
             error_list = "\n".join(
-                [f"{error.ftype} {error.tarball_path}: {error}" for error in errors]
+                [f"{error.ftype} {error.tarball_path}: {error.error}" for error in errors]
             )
             raise VerifyFailed(
                 f"Failed to validate files in Galaxy collection tarball:\n{error_list}"
