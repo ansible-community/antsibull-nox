@@ -22,7 +22,7 @@ from packaging.version import parse as _packaging_parse
 from ..cli_helper import FailCLIError, require_config
 from ..config import Config, create_config_not_found_error
 
-MIN_ANTSIBULL_CHANGELOG = "0.36.0"
+MIN_ANTSIBULL_CHANGELOG = "0.37.0"
 MIN_REQUESTS = "2.32.5"
 
 _CANNOT_BE_USED_PREFIX = "This subcommand cannot be used because of: "
