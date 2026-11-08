@@ -1,0 +1,7 @@
+minor_changes:
+  - "The ``release vcs-preview`` subcommand now formats the changelog preview as plain text with ANSI formatting,
+     limited to the number of columns of the terminal, instead of showing the RST sources which could require
+     massive horizontal scrolling (https://github.com/ansible-community/antsibull-nox/pull/304)."
+  - "The antsibull-nox[releaser] group now requires antsibull-changelog 0.37.0+,
+     which in turn requires antsibull-docutils[unicode] and thus a new transitive dependency for Python < 3.15
+     (https://github.com/ansible-community/antsibull-nox/pull/304)."
