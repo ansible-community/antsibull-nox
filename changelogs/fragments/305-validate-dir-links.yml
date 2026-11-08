@@ -1,0 +1,3 @@
+bugfixes:
+  - "Correctly handle symlinks to directories in the ``release validate`` subcommand, and other subcommands that validate
+     release tarballs (https://github.com/ansible-community/antsibull-nox/pull/305)."
