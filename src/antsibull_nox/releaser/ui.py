@@ -11,9 +11,12 @@ UI helpers.
 from __future__ import annotations
 
 import datetime
+import fcntl
 import os
+import struct
 import subprocess
 import sys
+import termios
 import time
 import typing as t
 
@@ -130,4 +133,26 @@ def show_lines(lines: list[str]) -> None:
         log(line)
 
 
-__all__ = ("Retry", "log", "prompt_user", "show_lines", "wait_for")
+def get_terminal_column_width() -> int:
+    """
+    Retrieve the terminal column width, if available.
+    Return a default column width otherwise.
+    """
+    if os.isatty(1):
+        # Borrowed from ansible-core's ansible.utils.display.Display._set_column_width
+        tty_size = struct.unpack(
+            "HHHH", fcntl.ioctl(1, termios.TIOCGWINSZ, struct.pack("HHHH", 0, 0, 0, 0))
+        )[1]
+        if tty_size >= 10:
+            return tty_size
+    return 120
+
+
+__all__ = (
+    "Retry",
+    "get_terminal_column_width",
+    "log",
+    "prompt_user",
+    "show_lines",
+    "wait_for",
+)

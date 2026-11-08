@@ -21,6 +21,7 @@ from antsibull_changelog.config import (
     ChangelogConfig,
     ChangelogOutput,
     CollectionDetails,
+    OutputTextFormat,
     PathsConfig,
     TextFormat,
 )
@@ -303,7 +304,7 @@ def render_changelog_extract(
     plugins: list[PluginDescription],
     config: ChangelogConfig,
     collection_details: CollectionDetails,
-    text_format: TextFormat,
+    text_format: OutputTextFormat,
     renderer_kwargs: Mapping[str, t.Any] | None = None,
 ) -> str:
     """
@@ -344,7 +345,7 @@ def get_changelog_extract(
     *,
     version: Version,
     ansible_doc_bin: str | None = None,
-    text_format: TextFormat,
+    text_format: OutputTextFormat,
     renderer_kwargs: Mapping[str, t.Any] | None = None,
 ) -> str:
     """

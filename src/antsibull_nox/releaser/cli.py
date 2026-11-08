@@ -29,7 +29,7 @@ from ..config import (
     load_config_from_toml_data,
 )
 from .base import BaseReleaser, VerifyFailed
-from .ui import log, show_lines
+from .ui import get_terminal_column_width, log, show_lines
 
 _CANNOT_BE_USED_PREFIX = "This subcommand cannot be used because of: "
 _NO_RELEASER_ERROR = "no releaser has been configured."
@@ -405,7 +405,11 @@ def cmd_vcs_preview(
         l(f"{key}:{space}{value}")
 
     r = get_releaser(releaser)
-    preview = r.vcs_preview(collection=collection, allow_plugin_cache=use_plugin_cache)
+    preview = r.vcs_preview(
+        collection=collection,
+        allow_plugin_cache=use_plugin_cache,
+        column_width=get_terminal_column_width(),
+    )
     l("")
     f("Previous release", preview.previous_release or "--")
     f("Current version", preview.current_version or "--")

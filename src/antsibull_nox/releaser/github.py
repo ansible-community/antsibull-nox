@@ -17,7 +17,7 @@ import sys
 import typing as t
 import webbrowser
 
-from antsibull_changelog.config import TextFormat
+from antsibull_changelog.config import OutputTextFormat
 from semantic_version import Version
 
 from ..config import _GitHubReleaserFragment
@@ -161,7 +161,7 @@ class GitHubClient(RequestsSession):
             "branch": self.__config.git_release_branch,
             "changelog": get_changelog_extract(
                 version=version,
-                text_format=TextFormat.MARKDOWN,
+                text_format=OutputTextFormat.MARKDOWN,
                 renderer_kwargs={"add_section_ids": False},
             ),
         }
