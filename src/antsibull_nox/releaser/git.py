@@ -17,7 +17,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from antsibull_changelog.changes import ChangesData
-from antsibull_changelog.config import ChangelogConfig, TextFormat
+from antsibull_changelog.config import ChangelogConfig, OutputTextFormat
 from antsibull_fileutils.yaml import store_yaml_file
 from semantic_version import Version
 
@@ -831,6 +831,7 @@ class GitReleaser(BaseVCSReleaser):
         *,
         collection: CollectionData,
         allow_plugin_cache: bool = False,
+        column_width: int,
     ) -> ReleasePreview:
         """
         Collect a release preview.
@@ -894,8 +895,11 @@ class GitReleaser(BaseVCSReleaser):
             plugins=new_plugins,
             collection_details=collection_details,
             config=config,
-            text_format=TextFormat.RESTRUCTURED_TEXT,
-            renderer_kwargs={},
+            text_format=OutputTextFormat.TEXT,
+            renderer_kwargs={
+                "column_width": column_width,
+                "use_ansi_formatting": "always",
+            },
         )
 
         return ReleasePreview(

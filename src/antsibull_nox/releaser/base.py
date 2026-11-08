@@ -151,6 +151,7 @@ class BaseVCSReleaser(metaclass=abc.ABCMeta):
         *,
         collection: CollectionData,
         allow_plugin_cache: bool = False,
+        column_width: int,
     ) -> ReleasePreview:
         """
         Collect a release preview.
