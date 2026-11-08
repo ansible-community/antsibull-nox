@@ -394,28 +394,35 @@ class ValidationError:
     error: str
 
 
-def validate_tarball(
-    tarball_path: Path,
-    files: Files,
-    *,
-    is_tgz: bool = True,
-    is_galaxy_tarball: bool = False,
-    prefix: str | os.PathLike[str] | None = None,
-) -> list[ValidationError]:
-    """
-    Validate tarball contents against a file manifest.
-    """
-    tar_files, tar_links, tar_dirs = _extract_tarball(
-        tarball_path, is_tgz=is_tgz, is_galaxy_tarball=is_galaxy_tarball
-    )
+class _Validator:
+    def __init__(
+        self,
+        *,
+        tarball_path: Path,
+        is_tgz: bool,
+        is_galaxy_tarball: bool,
+        prefix: str | os.PathLike[str] | None,
+    ) -> None:
+        tar_files, tar_links, tar_dirs = _extract_tarball(
+            tarball_path, is_tgz=is_tgz, is_galaxy_tarball=is_galaxy_tarball
+        )
+        self.tar_files = tar_files
+        self.tar_links = tar_links
+        self.tar_dirs = tar_dirs
+        self.found_files: set[str] = set()
+        self.prefix = prefix
 
-    def resolve_file(path: str) -> bytes:
+    def _resolve_file(self, *, path: str) -> bytes:
+        """
+        Look up file data (and resolve links to a file).
+        Return the file's contents if it was found.
+        """
         links: set[str] = set()
         while True:
-            data = tar_files.get(path)
+            data = self.tar_files.get(path)
             if data is not None:
                 return data
-            link = tar_links.get(path)
+            link = self.tar_links.get(path)
             if link is None:
                 raise ValueError(f"Cannot find link destination for {path}!")
             if path in links:
@@ -423,25 +430,47 @@ def validate_tarball(
             links.add(path)
             path = os.path.normpath(os.path.join(os.path.dirname(path), link))
 
-    errors = []
-    found_files: set[str] = set()
-    for entry in files.files:
+    def _resolve_dir(self, *, path: str) -> tuple[str, bool]:
+        """
+        Look up a directory (and resolve links to a directory).
+        Return ``True`` if the directory was found, ``False`` if not.
+        """
+        links: set[str] = set()
+        while True:
+            if path in self.tar_dirs:
+                return path, True
+            link = self.tar_links.get(path)
+            if link is None:
+                return path, False
+            self.found_files.add(path)
+            if path in links:
+                raise ValueError(f"Found link loop involving {path}!")
+            links.add(path)
+            path = os.path.normpath(os.path.join(os.path.dirname(path), link))
+
+    def _process_file(
+        self, *, entry: ManifestEntry, errors: list[ValidationError]
+    ) -> None:
         entry_path = entry.name
-        if prefix is not None:
-            entry_path = os.path.join(prefix, entry_path)
+        if self.prefix is not None:
+            entry_path = os.path.join(self.prefix, entry_path)
         if entry.ftype == "dir":
-            if entry_path not in tar_dirs:
+            dir_dest, dir_found = self._resolve_dir(path=entry_path)
+            if not dir_found:
+                msg = f"Tarball does not contain directory {entry_path}"
+                if dir_dest != entry_path:
+                    msg = f"{msg} (link chain ends at {dir_dest})"
                 errors.append(
                     ValidationError(
                         collection_path=entry.name,
                         tarball_path=entry_path,
                         ftype="dir",
-                        error=f"Tarball does not contain directory {entry_path}",
+                        error=msg,
                     )
                 )
         if entry.ftype == "file":
-            found_files.add(entry_path)
-            data = resolve_file(entry_path)
+            self.found_files.add(entry_path)
+            data = self._resolve_file(path=entry_path)
             try:
                 entry.validate_content(data)
             except ValueError as exc:
@@ -453,11 +482,25 @@ def validate_tarball(
                         error=f"{exc}",
                     )
                 )
-    if is_galaxy_tarball:
-        found_files.add("MANIFEST.json")
-        found_files.add("FILES.json")
-        for file in tar_files:
-            if file not in found_files:
+
+    def process(self, *, files: Files) -> list[ValidationError]:
+        """
+        Check tarball contents against ``files``.
+        """
+        errors: list[ValidationError] = []
+        for entry in files.files:
+            self._process_file(entry=entry, errors=errors)
+        return errors
+
+    def check_galaxy_tarball(self) -> list[ValidationError]:
+        """
+        Check that nothing else is inside the tarball.
+        """
+        errors = []
+        self.found_files.add("MANIFEST.json")
+        self.found_files.add("FILES.json")
+        for file in self.tar_files:
+            if file not in self.found_files:
                 errors.append(
                     ValidationError(
                         collection_path=None,
@@ -466,8 +509,8 @@ def validate_tarball(
                         error="Unexpected file in collection tarball",
                     )
                 )
-        for file in tar_links:
-            if file not in found_files:
+        for file in self.tar_links:
+            if file not in self.found_files:
                 errors.append(
                     ValidationError(
                         collection_path=None,
@@ -476,6 +519,29 @@ def validate_tarball(
                         error="Unexpected link in collection tarball",
                     )
                 )
+        return errors
+
+
+def validate_tarball(
+    tarball_path: Path,
+    files: Files,
+    *,
+    is_tgz: bool = True,
+    is_galaxy_tarball: bool = False,
+    prefix: str | os.PathLike[str] | None = None,
+) -> list[ValidationError]:
+    """
+    Validate tarball contents against a file manifest.
+    """
+    validator = _Validator(
+        tarball_path=tarball_path,
+        is_tgz=is_tgz,
+        is_galaxy_tarball=is_galaxy_tarball,
+        prefix=prefix,
+    )
+    errors = validator.process(files=files)
+    if is_galaxy_tarball:
+        errors.extend(validator.check_galaxy_tarball())
     return errors
 
 
