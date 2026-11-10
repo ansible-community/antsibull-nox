@@ -73,7 +73,7 @@ def other_antsibull(
     return to_install
 
 
-@nox.session
+@nox.session(allow_parallel=True)
 def integration(session: nox.Session) -> None:
     install(session, ".[coverage]", *other_antsibull(), editable=True)
     tmp = Path(session.create_tmp())
@@ -114,7 +114,9 @@ def integration(session: nox.Session) -> None:
     session.run("coverage", "report", env=env)
 
 
-@nox.session(python=["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"])
+@nox.session(
+    python=["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"], allow_parallel=True
+)
 def test(session: nox.Session) -> None:
     install(session, ".[test, coverage]", *other_antsibull(), editable=True)
     covfile = Path(session.create_tmp(), ".coverage")
@@ -146,15 +148,12 @@ def coverage(session: nox.Session) -> None:
     session.run("coverage", "report", "-m")
 
 
-@nox.session
-def lint(session: nox.Session) -> None:
-    session.notify("formatters")
-    session.notify("codeqa")
-    session.notify("typing")
-    session.notify("zizmor")
+@nox.session(allow_parallel=True, requires=["formatters", "codeqa", "typing", "zizmor"])
+def lint(session: nox.Session):
+    pass
 
 
-@nox.session
+@nox.session(allow_parallel=IN_CI)
 def formatters(session: nox.Session) -> None:
     install(session, ".[formatters]", *other_antsibull())
     posargs = list(session.posargs)
@@ -164,7 +163,7 @@ def formatters(session: nox.Session) -> None:
     session.run("black", *posargs, "src", "tests", "noxfile.py")
 
 
-@nox.session
+@nox.session(allow_parallel=True)
 def codeqa(session: nox.Session) -> None:
     install(session, ".[codeqa]", *other_antsibull(), editable=True)
     session.run("flake8", "src/antsibull_nox", "tests", *session.posargs)
@@ -181,7 +180,7 @@ def codeqa(session: nox.Session) -> None:
     session.run("antsibull-changelog", "lint")
 
 
-@nox.session
+@nox.session(allow_parallel=True)
 def typing(session: nox.Session) -> None:
     install(
         session,
@@ -195,7 +194,7 @@ def typing(session: nox.Session) -> None:
     )
 
 
-@nox.session
+@nox.session(allow_parallel=True)
 def zizmor(session: nox.Session) -> None:
     session.install("-r", "requirements/zizmor.txt")
     session.run("zizmor", ".")
