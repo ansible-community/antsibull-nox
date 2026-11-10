@@ -108,6 +108,7 @@ jobs:
           extra-args: ${{ matrix.extra-args }}
           force-pythons: ${{ matrix.force-python }}
           working-directory: antsibull-nox
+          parallel: auto
           codecov: ${{ matrix.codecov }}
           codecov-session: coverage
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
