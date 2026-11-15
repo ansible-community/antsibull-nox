@@ -118,7 +118,7 @@ def show_lines(lines: list[str]) -> None:
     Show a list of lines on the screen.
     Use a pager if possible.
     """
-    if sys.stdout.isatty():
+    if sys.stdout.isatty() and sys.stdin.isatty() and os.environ.get("TERM") != "dumb":
         try:
             with subprocess.Popen(
                 ["less", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE

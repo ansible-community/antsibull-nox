@@ -902,7 +902,9 @@ class GitReleaser(BaseVCSReleaser):
             text_format=OutputTextFormat.TEXT,
             renderer_kwargs={
                 "column_width": column_width,
-                "use_ansi_formatting": "always",
+                "use_ansi_formatting": (
+                    "always" if os.environ.get("TERM") != "dumb" else "never"
+                ),
             },
         )
 
