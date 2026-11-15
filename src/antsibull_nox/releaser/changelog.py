@@ -197,7 +197,6 @@ def load_changelog(
             version=str(cache_version) if cache_version else "dev",
             force_reload=not (allow_plugin_cache and cache_version),
             ignore_cache=not (allow_plugin_cache and cache_version),
-            use_ansible_doc=False,
             add_plugin_period=config.add_plugin_period,
         )
         return paths, collection_details, config, changes, fragments, plugins
@@ -247,7 +246,6 @@ def make_release(
             config=config,
             version=str(version),
             force_reload=True,
-            use_ansible_doc=False,
             add_plugin_period=config.add_plugin_period,
         )
         fragments = load_fragments(paths, config)
