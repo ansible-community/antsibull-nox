@@ -2,7 +2,9 @@
 #    uv pip compile --universal --python-version 3.9 --output-file requirements/bump.txt requirements/bump.in
 aiofiles==25.1.0
     # via antsibull-fileutils
-annotated-doc==0.0.5
+annotated-doc==0.0.5 ; python_full_version < '3.10'
+    # via typer
+annotated-doc==0.0.6 ; python_full_version >= '3.10'
     # via typer
 annotated-types==0.7.0 ; python_full_version < '3.10'
     # via
@@ -72,7 +74,7 @@ filelock==4.1.0 ; python_full_version == '3.10.*'
     # via
     #   python-discovery
     #   virtualenv
-filelock==4.2.9 ; python_full_version >= '3.11'
+filelock==4.2.10 ; python_full_version >= '3.11'
     # via
     #   python-discovery
     #   virtualenv
@@ -96,13 +98,13 @@ httpcore==1.0.9 ; python_full_version < '3.10'
     # via httpx
 httpcore2==2.14.0 ; python_full_version == '3.10.*' and sys_platform != 'emscripten'
     # via httpx2
-httpcore2==2.16.0 ; python_full_version >= '3.11' and sys_platform != 'emscripten'
+httpcore2==2.16.1 ; python_full_version >= '3.11' and sys_platform != 'emscripten'
     # via httpx2
 httpx==0.28.1 ; python_full_version < '3.10'
     # via hatch
 httpx2==2.14.0 ; python_full_version == '3.10.*'
     # via hatch
-httpx2==2.16.0 ; python_full_version >= '3.11'
+httpx2==2.16.1 ; python_full_version >= '3.11'
     # via hatch
 httpx2-jsfetch==1.0 ; python_full_version >= '3.12' and sys_platform == 'emscripten'
     # via httpx2
@@ -118,7 +120,7 @@ importlib-metadata==8.7.1 ; python_full_version < '3.10'
     # via keyring
 importlib-metadata==9.0.1 ; python_full_version == '3.10.*'
     # via keyring
-importlib-metadata==10.1.0 ; python_full_version == '3.11.*'
+importlib-metadata==10.2.0 ; python_full_version == '3.11.*'
     # via keyring
 jaraco-classes==3.4.0
     # via keyring
@@ -136,9 +138,11 @@ jeepney==0.9.0 ; sys_platform == 'linux'
     #   secretstorage
 keyring==25.7.0
     # via hatch
+lazy-importer==0.1.0 ; python_full_version == '3.11.*'
+    # via importlib-metadata
 markdown-it-py==3.0.0 ; python_full_version < '3.10'
     # via rich
-markdown-it-py==4.2.0 ; python_full_version >= '3.10'
+markdown-it-py==4.3.0 ; python_full_version >= '3.10'
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
@@ -196,6 +200,7 @@ pydantic==2.14.3 ; python_full_version >= '3.10'
     # via
     #   antsibull-changelog
     #   rstcheck-core
+    #   typer
 pydantic-core==2.46.5 ; python_full_version < '3.10'
     # via pydantic
 pydantic-core==2.50.4 ; python_full_version >= '3.10'
@@ -218,7 +223,7 @@ rich==15.0.0
     #   typer
 rstcheck==6.2.5 ; python_full_version < '3.10'
     # via antsibull-changelog
-rstcheck==6.3.0 ; python_full_version >= '3.10'
+rstcheck==6.3.1 ; python_full_version >= '3.10'
     # via antsibull-changelog
 rstcheck-core==1.2.2 ; python_full_version < '3.10'
     # via rstcheck
@@ -252,7 +257,7 @@ truststore==0.10.5 ; python_full_version >= '3.10' and sys_platform != 'emscript
     #   httpx2
 typer==0.23.2 ; python_full_version < '3.10'
     # via rstcheck
-typer==0.28.0 ; python_full_version >= '3.10'
+typer==0.29.1 ; python_full_version >= '3.10'
     # via rstcheck
 typing-extensions==4.16.0
     # via
@@ -270,7 +275,7 @@ typing-inspection==0.4.5 ; python_full_version >= '3.10'
     # via pydantic
 userpath==1.9.2
     # via hatch
-uv==0.13.7
+uv==0.13.8
     # via hatch
 virtualenv==21.15.6
     # via hatch
