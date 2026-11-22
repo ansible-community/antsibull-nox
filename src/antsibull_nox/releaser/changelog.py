@@ -265,7 +265,6 @@ def make_release(
             args_refresh_fragments=None,
             args_refresh=False,
             args_reload_plugins=True,
-            args_use_ansible_doc=False,
             paths=paths,
             collection_details=collection_details,
             config=config,
