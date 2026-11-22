@@ -4,6 +4,33 @@ Antsibull Nox Helper Release Notes
 
 .. contents:: Topics
 
+v1.11.0
+=======
+
+Release Summary
+---------------
+
+Feature and bugfix release.
+
+Minor Changes
+-------------
+
+- The ``antsibull-nox release`` subcommand now requires antsibull-changelog 0.38.0 or newer (https://github.com/ansible-community/antsibull-nox/pull/309).
+- The ``release vcs-preview`` subcommand now formats the changelog preview as plain text with ANSI formatting, limited to the number of columns of the terminal, instead of showing the RST sources which could require massive horizontal scrolling (https://github.com/ansible-community/antsibull-nox/pull/304).
+- The antsibull-nox[releaser] group now requires antsibull-changelog 0.37.0+, which in turn requires antsibull-docutils[unicode] and thus a new transitive dependency for Python < 3.15 (https://github.com/ansible-community/antsibull-nox/pull/302, https://github.com/ansible-community/antsibull-nox/pull/304).
+
+Bugfixes
+--------
+
+- Correctly handle symlinks to directories in the ``release validate`` subcommand, and other subcommands that validate release tarballs (https://github.com/ansible-community/antsibull-nox/pull/305).
+- Fix previous version detection in ``release vcs-preview`` subcommand when there is no previous release in the current changelog, but a changelog ancestor is set (https://github.com/ansible-community/antsibull-nox/pull/300).
+- Fix version warning output in ``release vcs-preview`` subcommand (https://github.com/ansible-community/antsibull-nox/pull/294).
+- In ``antsibull-nox release vcs-preview``, do not use ANSI sequences or pager when the terminal is dumb (``TERM=dumb``) (https://github.com/ansible-community/antsibull-nox/pull/308).
+- Only check for config file / collection root existence when validating (linting) the configuration, not when loading it. This prevents the releaser having trouble when loading a release's antsibull-nox config which references config files or directories that do not exist in the current branch (https://github.com/ansible-community/antsibull-nox/pull/296).
+- When changelog operations fail due to ansible-doc failing, show nicer error messages (https://github.com/ansible-community/antsibull-nox/pull/293).
+- When checking requirements for ``antsibull-nox release``, also check the requests version (https://github.com/ansible-community/antsibull-nox/pull/303).
+- When rendering the changelog for use in the ``release release`` and ``release create-vcs-ui-release`` subcommands, use the changelog data file from the release tag and not from the current branch. The data file from the current branch might not include the release version the command needs to get the changelog entry for (https://github.com/ansible-community/antsibull-nox/pull/302).
+
 v1.10.0
 =======
 

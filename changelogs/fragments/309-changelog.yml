@@ -1,2 +1,0 @@
-minor_changes:
-  - "The ``antsibull-nox release`` subcommand now requires antsibull-changelog 0.38.0 or newer (https://github.com/ansible-community/antsibull-nox/pull/309)."

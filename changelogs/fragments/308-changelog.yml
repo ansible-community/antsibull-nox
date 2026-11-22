@@ -1,2 +1,0 @@
-bugfixes:
-  - "In ``antsibull-nox release vcs-preview``, do not use ANSI sequences or pager when the terminal is dumb (``TERM=dumb``) (https://github.com/ansible-community/antsibull-nox/pull/308)."
