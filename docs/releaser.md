@@ -200,29 +200,24 @@ In this example, we assume we want to do a 3.5.1 release of the community.crypto
     and a summary of changes
     and a preview of the changelog.
 
-    For the state of the [community.crypto repository](https://github.com/ansible-collections/community.crypto/) directly before releasing 3.5.1,
+    For the state of the [community.crypto repository](https://github.com/ansible-collections/community.crypto/) directly before releasing 3.6.0,
     this looks like:
     ```
-    Previous release: ...................... 3.5.0
-    Current version: ....................... 3.5.1
-    Minimum version bump: .................. new-patch
+    Previous release: ...................... 3.5.1
+    Current version: ....................... 3.6.0
+    Minimum version bump: .................. new-minor
 
-    Has features: .......................... no
+    Has features: .......................... yes
     Has new plugins: ....................... no
     Has deprecations: ...................... no
-    Has bugfixes: .......................... yes
+    Has bugfixes: .......................... no
     Has major changes: ..................... no
     Has breaking changes: .................. no
 
-    Release Summary
-    ---------------
+    Minor Changes
+    ─────────────
 
-    Bugfix release.
-
-    Bugfixes
-    --------
-
-    - openssh_keypair - change the value ``mldsa44`` for ``type`` to ``mldsa44-ed25519`` for OpenSSH ML-DSA-44 keys, since ``mldsa44`` is not a valid ``ssh-keygen`` key type (https://github.com/ansible-collections/community.crypto/pull/1083).
+    - acme_* modules - add `ca_path` option (https://github.com/ansible-collections/community.crypto/pull/1092).
     ```
 
     !!! note
