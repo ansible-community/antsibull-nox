@@ -11,7 +11,7 @@ Bugfix release\.
 <a id="bugfixes"></a>
 ### Bugfixes
 
-* > \([https\://github\.com/ansible\-community/antsibull\-nox/issues/313](https\://github\.com/ansible\-community/antsibull\-nox/issues/313)\, [https\://github\.com/ansible\-community/antsibull\-nox/pull/316](https\://github\.com/ansible\-community/antsibull\-nox/pull/316)\)\.
+* Correctly sanitize session names when creating temporary directories \([https\://github\.com/ansible\-community/antsibull\-nox/issues/313](https\://github\.com/ansible\-community/antsibull\-nox/issues/313)\, [https\://github\.com/ansible\-community/antsibull\-nox/pull/316](https\://github\.com/ansible\-community/antsibull\-nox/pull/316)\)\.
 * Fix bug in license check when trying to check file that no longer exists \([https\://github\.com/ansible\-community/antsibull\-nox/issues/314](https\://github\.com/ansible\-community/antsibull\-nox/issues/314)\, [https\://github\.com/ansible\-community/antsibull\-nox/pull/315](https\://github\.com/ansible\-community/antsibull\-nox/pull/315)\)\.
 
 <a id="v1-11-0"></a>

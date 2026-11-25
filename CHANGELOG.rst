@@ -15,7 +15,7 @@ Bugfix release.
 Bugfixes
 --------
 
--  (https://github.com/ansible-community/antsibull-nox/issues/313, https://github.com/ansible-community/antsibull-nox/pull/316).
+- Correctly sanitize session names when creating temporary directories (https://github.com/ansible-community/antsibull-nox/issues/313, https://github.com/ansible-community/antsibull-nox/pull/316).
 - Fix bug in license check when trying to check file that no longer exists (https://github.com/ansible-community/antsibull-nox/issues/314, https://github.com/ansible-community/antsibull-nox/pull/315).
 
 v1.11.0
