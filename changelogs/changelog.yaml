@@ -845,3 +845,15 @@ releases:
       - 308-changelog.yml
       - 309-changelog.yml
     release_date: '2026-11-22'
+  1.11.1:
+    changes:
+      bugfixes:
+        - ' (https://github.com/ansible-community/antsibull-nox/issues/313, https://github.com/ansible-community/antsibull-nox/pull/316).'
+        - Fix bug in license check when trying to check file that no longer exists
+          (https://github.com/ansible-community/antsibull-nox/issues/314, https://github.com/ansible-community/antsibull-nox/pull/315).
+      release_summary: Bugfix release.
+    fragments:
+      - 1.11.1.yml
+      - 315-license-check.yml
+      - 316-sanitize.yml
+    release_date: '2026-11-25'

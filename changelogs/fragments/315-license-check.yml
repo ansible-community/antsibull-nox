@@ -1,2 +1,0 @@
-bugfixes:
-  - "Fix bug in license check when trying to check file that no longer exists (https://github.com/ansible-community/antsibull-nox/issues/314, https://github.com/ansible-community/antsibull-nox/pull/315)."
