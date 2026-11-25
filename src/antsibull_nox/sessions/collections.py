@@ -11,6 +11,7 @@ Create nox sessions.
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import typing as t
 from dataclasses import dataclass
@@ -107,6 +108,16 @@ def _create_venv_run_subprocess(session: nox.Session) -> Runner:
     return run
 
 
+_SANITIZER = re.compile("[^a-zA-Z0-9._-]")
+
+
+def _sanitize(name: str) -> str:
+    # See https://github.com/ansible-community/antsibull-nox/issues/313 for why this is needed.
+    name = _SANITIZER.sub("", name)
+    # We also limit the length to avoid too long paths
+    return name[:30]
+
+
 # NOTE: This is publicly documented API!
 # Any change to the API must not be breaking, and must be
 # updated in docs/reference.md!
@@ -153,7 +164,9 @@ def prepare_collections(
             return None
         place = Path(purelib)
     elif install_out_of_tree:
-        place = create_temp_directory(f"antsibull-nox-{session.name}-collection-root-")
+        place = create_temp_directory(
+            f"antsibull-nox-{_sanitize(session.name)}-collection-root-"
+        )
     else:
         place = Path(session.virtualenv.location) / "collection-root"
     place.mkdir(exist_ok=True)
