@@ -158,7 +158,10 @@ def main() -> int:
             path = path[2:]
         if path in ignore_paths or path.startswith("tests/output/"):
             continue
-        sr = os.stat(path)
+        try:
+            sr = os.stat(path)
+        except FileNotFoundError:
+            continue
         if not stat.S_ISREG(sr.st_mode):
             continue
         if sr.st_size == 0:
