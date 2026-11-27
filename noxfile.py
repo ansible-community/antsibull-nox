@@ -75,7 +75,7 @@ def other_antsibull(
 
 @nox.session(allow_parallel=True)
 def integration(session: nox.Session) -> None:
-    install(session, ".[coverage]", *other_antsibull(), editable=True)
+    install(session, ".", "--group", "coverage", *other_antsibull(), editable=True)
     tmp = Path(session.create_tmp())
     covfile = tmp / ".coverage"
     env = {"COVERAGE_FILE": f"{covfile.absolute()}", **session.env}
@@ -118,7 +118,16 @@ def integration(session: nox.Session) -> None:
     python=["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"], allow_parallel=True
 )
 def test(session: nox.Session) -> None:
-    install(session, ".[test, coverage]", *other_antsibull(), editable=True)
+    install(
+        session,
+        ".",
+        "--group",
+        "test",
+        "--group",
+        "coverage",
+        *other_antsibull(),
+        editable=True,
+    )
     covfile = Path(session.create_tmp(), ".coverage")
     more_args = []
     if session.python not in {"3.9", "3.10", "3.11"}:
@@ -138,7 +147,7 @@ def test(session: nox.Session) -> None:
 
 @nox.session
 def coverage(session: nox.Session) -> None:
-    install(session, ".[coverage]", *other_antsibull(), editable=True)
+    install(session, ".", "--group", "coverage", *other_antsibull(), editable=True)
     combined = map(str, Path().glob(".nox/*/tmp/.coverage"))
     # Combine the results into a single .coverage file in the root
     session.run("coverage", "combine", "--keep", *combined)
@@ -155,7 +164,7 @@ def lint(session: nox.Session):
 
 @nox.session(allow_parallel=IN_CI)
 def formatters(session: nox.Session) -> None:
-    install(session, ".[formatters]", *other_antsibull())
+    install(session, ".", "--group", "formatters", *other_antsibull())
     posargs = list(session.posargs)
     if IN_CI:
         posargs.append("--check")
@@ -165,7 +174,7 @@ def formatters(session: nox.Session) -> None:
 
 @nox.session(allow_parallel=True)
 def codeqa(session: nox.Session) -> None:
-    install(session, ".[codeqa]", *other_antsibull(), editable=True)
+    install(session, ".", "--group", "codeqa", *other_antsibull(), editable=True)
     session.run("flake8", "src/antsibull_nox", "tests", *session.posargs)
     session.run(
         "pylint",
@@ -184,7 +193,9 @@ def codeqa(session: nox.Session) -> None:
 def typing(session: nox.Session) -> None:
     install(
         session,
-        ".[typing]",
+        ".",
+        "--group",
+        "typing",
         *other_antsibull(additional_projects=["antsibull-docutils"]),
     )
     session.run(
