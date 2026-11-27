@@ -59,20 +59,15 @@ antsibull-nox = "antsibull_nox.cli:main"
 
 
 [project.optional-dependencies]
-
 releaser = [
     "antsibull-changelog >= 0.38.0",
     "requests >= 2.32.5",
 ]
-
 all = [
     "antsibull-nox[releaser]",
 ]
 
-#
-# Development. Not user facing.
-#
-
+[dependency-groups]
 codeqa = [
     "antsibull-nox[all]",
     "antsibull-changelog",
@@ -81,11 +76,9 @@ codeqa = [
     "reuse",
 ]
 coverage = [
-    "antsibull-nox[all]",
     "coverage[toml]",
 ]
 formatters = [
-    "antsibull-nox[all]",
     "black>=24",
     "isort",
 ]
@@ -103,13 +96,12 @@ typing = [
     "types-PyYAML",
 ]
 dev = [
-    "antsibull-nox[all]",
     # Used by nox sessions
-    "antsibull-nox[codeqa]",
-    "antsibull-nox[coverage]",
-    "antsibull-nox[formatters]",
-    "antsibull-nox[test]",
-    "antsibull-nox[typing]",
+    {include-group = "codeqa"},
+    {include-group = "coverage"},
+    {include-group = "formatters"},
+    {include-group = "test"},
+    {include-group = "typing"},
 ]
 
 [tool.hatch.version]
